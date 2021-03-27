@@ -35,14 +35,14 @@
 #if defined(ESP32)
 // ESP32 GPIO to C64 IEC Serial Port
 #define IEC_PIN_ATN          39    // IO39 CMD
-#define IEC_PIN_CLOCK        27    // IO27 CKIN
+#define IEC_PIN_CLK        27    // IO27 CKIN
 #define IEC_PIN_DATA         32    // IO32 CKOUT
 //#define IEC_PIN_SRQ         26    // IO26 INT
 //#define IEC_PIN_RESET       21    // IO15
 #elif defined(ESP8266)
 // ESP8266 GPIO to C64 IEC Serial Port
 #define IEC_PIN_ATN          D5    // IO14
-#define IEC_PIN_CLOCK        D6    // IO12
+#define IEC_PIN_CLK          D6    // IO12
 #define IEC_PIN_DATA         D7    // IO13
 //#define IEC_PIN_SRQ         D0    // IO16
 //#define IEC_PIN_RESET       D8    // IO15
@@ -127,7 +127,7 @@ inline static void ledOFF()
 
 // Select the FileSystem in PLATFORMIO.INI file
 //#define USE_SPIFFS
-//#define USE_LITTLEFS
+#define USE_LITTLEFS
 //#define USE_SDFS
 
 // Format storage if a valid file system is not found

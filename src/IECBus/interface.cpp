@@ -795,11 +795,12 @@ void Interface::sendFile()
 
 		if (!success || i != len)
 		{
-			bool s1 = m_iec.readATN();
-			bool s2 = m_iec.readCLOCK();
-			bool s3 = m_iec.readDATA();
+			//bool s1 = m_iec.readATN();
+			//bool s2 = m_iec.readCLOCK();
+			//bool s3 = m_iec.readDATA();
 
-			Serial.printf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			//Serial.printf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			Serial.println("Transfer failed!");
 		}
 	}
 } // sendFile
@@ -1003,11 +1004,12 @@ void Interface::sendFileHTTP()
 
 		if (!success || i != len)
 		{
-			bool s1 = m_iec.readATN();
-			bool s2 = m_iec.readCLOCK();
-			bool s3 = m_iec.readDATA();
+			//bool s1 = m_iec.readATN();
+			//bool s2 = m_iec.readCLOCK();
+			//bool s3 = m_iec.readDATA();
 
-			debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			//debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			debugPrintln("Transfer failed!");
 		}
 	}
 }
@@ -1810,11 +1812,12 @@ void Interface::sendFile()
 
         if (!success)
         {
-            bool s1 = m_iec.readATN();
-            bool s2 = m_iec.readCLOCK();
-            bool s3 = m_iec.readDATA();
+            //bool s1 = m_iec.readATN();
+            //bool s2 = m_iec.readCLOCK();
+            //bool s3 = m_iec.readDATA();
 
-            debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+            //debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			debugPrintln("Transfer failed!");
         }
     }
 } // sendFile
@@ -2009,11 +2012,12 @@ void Interface::sendFileHTTP()
 
         if (!success)
         {
-            bool s1 = m_iec.readATN();
-            bool s2 = m_iec.readCLOCK();
-            bool s3 = m_iec.readDATA();
+            //bool s1 = m_iec.readATN();
+            //bool s2 = m_iec.readCLOCK();
+            //bool s3 = m_iec.readDATA();
 
-            debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+            //debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			debugPrintln("Transfer failed!");
         }
     }
 }
