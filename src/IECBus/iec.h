@@ -99,31 +99,6 @@ public:
 
 	IECState state() const;
 
-	// inline boolean readATN()
-	// {
-	// 	return readPIN(IEC_PIN_ATN);
-	// }
-
-	// inline boolean readCLOCK()
-	// {
-	// 	return readPIN(IEC_PIN_CLK);
-	// }
-
-	// inline boolean readDATA()
-	// {
-	// 	return readPIN(IEC_PIN_DATA);
-	// }
-
-	// inline boolean readSRQ()
-	// {
-	// 	return readPIN(IEC_PIN_SRQ);
-	// }
-
-	// inline boolean readRESET()
-	// {
-	// 	return readPIN(IEC_PIN_RESET);
-	// }
-
 private:
 	// IEC Bus Commands
 	ATNCheck deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
@@ -177,26 +152,6 @@ private:
 		espDigitalWrite(pinNumber, state ? LOW : HIGH);
 	}
 
-	// inline void writeATN(boolean state)
-	// {
-	// 	writePIN(IEC_PIN_ATN, state);
-	// }
-
-	// inline void writeCLOCK(boolean state)
-	// {
-	// 	writePIN(IEC_PIN_CLK, state);
-	// }
-
-	// inline void writeDATA(boolean state)
-	// {
-	// 	writePIN(IEC_PIN_DATA, state);
-	// }
-
-	// inline void writeSRQ(boolean state)
-	// {
-	// 	writePIN(IEC_PIN_SRQ, state);
-	// }
-
 	inline void ICACHE_RAM_ATTR espPinMode(uint8_t pin, uint8_t mode) {
 #if defined(ESP8266)		
 		if(mode == OUTPUT){
@@ -210,45 +165,6 @@ private:
 		}
 #elif defined(ESP32)
 			pinMode( pin, mode );
-
-		// uint32_t pinFunction = 0, pinControl = 0;
-
-		// //lock gpio
-		// if(mode & INPUT) {
-		// 	if(pin < 32) {
-		// 		GPIO.enable_w1tc = ((uint32_t)1 << pin);
-		// 	} else {
-		// 		GPIO.enable1_w1tc.val = ((uint32_t)1 << (pin - 32));
-		// 	}
-		// } else if(mode & OUTPUT) {
-		// 	if(pin > 33){
-		// 		//unlock gpio
-		// 		return;//pins above 33 can be only inputs
-		// 	} else if(pin < 32) {
-		// 		GPIO.enable_w1ts = ((uint32_t)1 << pin);
-		// 	} else {
-		// 		GPIO.enable1_w1ts.val = ((uint32_t)1 << (pin - 32));
-		// 	}
-		// }
-
-		// pinFunction |= ((uint32_t)2 << FUN_DRV_S);//what are the drivers?
-		// pinFunction |= FUN_IE;//input enable but required for output as well?
-
-		// if(mode & (INPUT | OUTPUT)) {
-		// 	pinFunction |= ((uint32_t)2 << MCU_SEL_S);
-		// } else if(mode == SPECIAL) {
-		// 	pinFunction |= ((uint32_t)(((pin)==1||(pin)==3)?0:1) << MCU_SEL_S);
-		// } else {
-		// 	pinFunction |= ((uint32_t)(mode >> 5) << MCU_SEL_S);
-		// }
-
-		// ESP_REG(DR_REG_IO_MUX_BASE + esp32_gpioMux[pin].reg) = pinFunction;
-
-		// if(mode & OPEN_DRAIN) {
-		// 	pinControl = (1 << GPIO_PIN0_PAD_DRIVER_S);
-		// }
-
-		// GPIO.pin[pin].val = pinControl;
 #endif
 	}
 
