@@ -10,6 +10,12 @@
 class IEC
 {
 public:
+	enum IECline
+	{
+		pulled = true,
+		released = false
+	};
+
 	enum IECState
 	{
 		noFlags = 0,
@@ -100,7 +106,7 @@ public:
 
 	inline boolean readCLOCK()
 	{
-		return readPIN(IEC_PIN_CLOCK);
+		return readPIN(IEC_PIN_CLK);
 	}
 
 	inline boolean readDATA()
@@ -108,15 +114,15 @@ public:
 		return readPIN(IEC_PIN_DATA);
 	}
 
-//	inline boolean readSRQ()
-//	{
-//		return readPIN(IEC_PIN_SRQ);
-//	}
+	// inline boolean readSRQ()
+	// {
+	// 	return readPIN(IEC_PIN_SRQ);
+	// }
 
-//	inline boolean readRESET()
-//	{
-//		return readPIN(IEC_PIN_RESET);
-//	}
+	// inline boolean readRESET()
+	// {
+	// 	return readPIN(IEC_PIN_RESET);
+	// }
 
 private:
 	// IEC Bus Commands
@@ -134,15 +140,35 @@ private:
 	boolean turnAround(void);
 	boolean undoTurnAround(void);
 
-	// false = LOW, true == HIGH
-	boolean readPIN(byte pinNumber)
+	// true => PULL => DIGI_LOW
+	inline void pull(int pinNumber)
+	{
+		espPinMode(pinNumber, OUTPUT);
+		espDigitalWrite(pinNumber, LOW);
+	}
+
+	// false => RELEASE => DIGI_HIGH
+	inline void release(int pinNumber)
+	{
+		// releasing line can set to input mode, which won't drive the bus - simple way to mimic open collector
+		espPinMode(pinNumber, OUTPUT);
+		espDigitalWrite(pinNumber, HIGH);
+	}
+
+	// inline IECline status(int pinNumber)
+	// {
+	// 	return readPIN(pinNumber);
+	// }
+
+	// true == PULL == LOW, false == RELEASE == HIGH
+	bool readPIN(byte pinNumber)
 	{
 		// To be able to read line we must be set to input, not driving.
 		espPinMode(pinNumber, INPUT);
 		return espDigitalRead(pinNumber) ? true : false;
 	}
 
-	// true == PULL == HIGH, false == RELEASE == LOW
+	// true == PULL == LOW, false == RELEASE == HIGH
 	void writePIN(byte pinNumber, boolean state)
 	{
 		espPinMode(pinNumber, state ? OUTPUT : INPUT);
@@ -156,7 +182,7 @@ private:
 
 	inline void writeCLOCK(boolean state)
 	{
-		writePIN(IEC_PIN_CLOCK, state);
+		writePIN(IEC_PIN_CLK, state);
 	}
 
 	inline void writeDATA(boolean state)

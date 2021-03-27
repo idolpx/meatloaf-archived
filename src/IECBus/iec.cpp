@@ -15,11 +15,11 @@ boolean  IEC::init()
 	// make sure the output states are initially LOW.
 	pinMode(IEC_PIN_ATN, OUTPUT);
 	pinMode(IEC_PIN_DATA, OUTPUT);
-	pinMode(IEC_PIN_CLOCK, OUTPUT);
+	pinMode(IEC_PIN_CLK, OUTPUT);
 //	pinMode(IEC_PIN_SRQ, OUTPUT);
 	digitalWrite(IEC_PIN_ATN, false);
 	digitalWrite(IEC_PIN_DATA, false);
-	digitalWrite(IEC_PIN_CLOCK, false);
+	digitalWrite(IEC_PIN_CLK, false);
 //	digitalWrite(IEC_PIN_SRQ, true);
 
 //#ifdef RESET_C64
@@ -29,7 +29,7 @@ boolean  IEC::init()
 
 	// initial pin modes in GPIO.
 	pinMode(IEC_PIN_ATN, INPUT);
-	pinMode(IEC_PIN_CLOCK, INPUT);
+	pinMode(IEC_PIN_CLK, INPUT);
 	pinMode(IEC_PIN_DATA, INPUT);
 //	pinMode(IEC_PIN_RESET, INPUT);
 
@@ -100,7 +100,7 @@ byte  IEC::receiveByte(void)
 	m_state = noFlags;
 
 	// Wait for talker ready
-	if(timeoutWait(IEC_PIN_CLOCK, false))
+	if(timeoutWait(IEC_PIN_CLK, false))
 		return 0;
 
 	// Say we're ready
@@ -123,7 +123,7 @@ byte  IEC::receiveByte(void)
 		writeDATA(false);
 
 		// but still wait for clk
-		if(timeoutWait(IEC_PIN_CLOCK, true))
+		if(timeoutWait(IEC_PIN_CLK, true))
 			return 0;
 	}
 
@@ -138,10 +138,10 @@ byte  IEC::receiveByte(void)
 #endif	
 	for(n = 0; n < 8; n++) {
 		data >>= 1;
-		if(timeoutWait(IEC_PIN_CLOCK, false))
+		if(timeoutWait(IEC_PIN_CLK, false))
 			return 0;
 		data or_eq (readDATA() ? (1 << 7) : 0);
-		if(timeoutWait(IEC_PIN_CLOCK, true))
+		if(timeoutWait(IEC_PIN_CLK, true))
 			return 0;
 	}
 	//debugPrintf("%.2X ", data);
@@ -227,7 +227,7 @@ boolean  IEC::turnAround(void)
 	debugPrintf("\r\nturnAround: ");
 
 	// Wait until clock is released
-	if(timeoutWait(IEC_PIN_CLOCK, false))
+	if(timeoutWait(IEC_PIN_CLK, false))
 	{
 		debugPrint("false");
 		return false;
@@ -256,7 +256,7 @@ boolean  IEC::undoTurnAround(void)
 	debugPrintf("\r\nundoTurnAround:");
 
 	// wait until the computer releases the clock line
-	if(timeoutWait(IEC_PIN_CLOCK, true))
+	if(timeoutWait(IEC_PIN_CLK, true))
 	{
 		debugPrint("false");
 		return false;
