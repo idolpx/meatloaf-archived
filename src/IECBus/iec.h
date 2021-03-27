@@ -104,10 +104,10 @@ public:
 	// 	return readPIN(IEC_PIN_ATN);
 	// }
 
-	inline boolean readCLOCK()
-	{
-		return readPIN(IEC_PIN_CLK);
-	}
+	// inline boolean readCLOCK()
+	// {
+	// 	return readPIN(IEC_PIN_CLK);
+	// }
 
 	inline boolean readDATA()
 	{

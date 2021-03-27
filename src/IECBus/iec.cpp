@@ -108,7 +108,7 @@ byte  IEC::receiveByte(void)
 
 	// Record how long CLOCK is high, more than 200 us means EOI
 	byte n = 0;
-	while(readCLOCK() and (n < 20)) {
+	while(status(IEC_PIN_CLK) == released && (n < 20)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
@@ -449,7 +449,7 @@ IEC::ATNCheck  IEC::deviceTalk(ATNCmd& atn_cmd)
 	debugPrintf("\r\ncheckATN: %.2X (%.2X SECOND) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
 
 	while(status(IEC_PIN_ATN) == pulled) {
-		if(readCLOCK()) {
+		if(status(IEC_PIN_CLK) == released) {
 			c = (ATNCommand)receive();
 			if(m_state bitand errorFlag)
 				return ATN_ERROR;
