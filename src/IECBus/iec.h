@@ -109,10 +109,10 @@ public:
 	// 	return readPIN(IEC_PIN_CLK);
 	// }
 
-	inline boolean readDATA()
-	{
-		return readPIN(IEC_PIN_DATA);
-	}
+	// inline boolean readDATA()
+	// {
+	// 	return readPIN(IEC_PIN_DATA);
+	// }
 
 	// inline boolean readSRQ()
 	// {

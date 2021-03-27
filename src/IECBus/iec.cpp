@@ -140,7 +140,7 @@ byte  IEC::receiveByte(void)
 		data >>= 1;
 		if(timeoutWait(IEC_PIN_CLK, false))
 			return 0;
-		data or_eq (readDATA() ? (1 << 7) : 0);
+		data or_eq (status(IEC_PIN_DATA) == released ? (1 << 7) : 0);
 		if(timeoutWait(IEC_PIN_CLK, true))
 			return 0;
 	}
