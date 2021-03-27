@@ -73,8 +73,8 @@ byte  IEC::timeoutWait(byte waitBit, boolean whileHigh)
 	}
 	// If down here, we have had a timeout.
 	// Release lines and go to inactive state with error flag
-	writeCLOCK(false);
-	writeDATA(false);
+	release(IEC_PIN_CLK);
+	release(IEC_PIN_DATA);
 
 	m_state = errorFlag;
 
@@ -104,7 +104,7 @@ byte  IEC::receiveByte(void)
 		return 0;
 
 	// Say we're ready
-	writeDATA(false);
+	release(IEC_PIN_DATA);
 
 	// Record how long CLOCK is high, more than 200 us means EOI
 	byte n = 0;
@@ -118,9 +118,9 @@ byte  IEC::receiveByte(void)
 		m_state or_eq eoiFlag;
 
 		// Acknowledge by pull down data more than 60 us
-		writeDATA(true);
+		pull(IEC_PIN_DATA);
 		delayMicroseconds(TIMING_BIT);
-		writeDATA(false);
+		release(IEC_PIN_DATA);
 
 		// but still wait for clk
 		if(timeoutWait(IEC_PIN_CLK, true))
@@ -147,7 +147,7 @@ byte  IEC::receiveByte(void)
 	//debugPrintf("%.2X ", data);
 
 	// Signal we accepted data:
-	writeDATA(true);
+	pull(IEC_PIN_DATA);
 
 	return data;
 } // receiveByte
@@ -164,7 +164,7 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 	// 	return false;
 
 	// Say we're ready
-	writeCLOCK(false);
+	release(IEC_PIN_CLK);
 
 	// Wait for listener to be ready
 	if(timeoutWait(IEC_PIN_DATA, false))
@@ -194,19 +194,19 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 	for(byte n = 0; n < 8; n++) {
 		// FIXME: Here check whether data pin goes low, if so end (enter cleanup)!
 
-		writeCLOCK(true);
+		pull(IEC_PIN_CLK);
 		// set data
 		writeDATA((data bitand 1) ? false : true);
 
 		delayMicroseconds(TIMING_BIT);
-		writeCLOCK(false);
+		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_BIT);
 
 		data >>= 1;
 	}
 
-	writeCLOCK(true);
-	writeDATA(false);
+	pull(IEC_PIN_CLK);
+	release(IEC_PIN_DATA);
 
 	// FIXME: Maybe make the following ending more like sd2iec instead.
 
@@ -234,9 +234,9 @@ boolean  IEC::turnAround(void)
 	}
 		
 
-	writeDATA(false);
+	release(IEC_PIN_DATA);
 	delayMicroseconds(TIMING_BIT);
-	writeCLOCK(true);
+	pull(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
 	debugPrint("true");
@@ -248,9 +248,9 @@ boolean  IEC::turnAround(void)
 // (the way it was when the computer was switched on)
 boolean  IEC::undoTurnAround(void)
 {
-	writeDATA(true);
+	pull(IEC_PIN_DATA);
 	delayMicroseconds(TIMING_BIT);
-	writeCLOCK(false);
+	release(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
 	debugPrintf("\r\nundoTurnAround:");
@@ -287,8 +287,8 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 	if(not readATN()) {
 
 		// Attention line is active, go to listener mode and get message. Being fast with the next two lines here is CRITICAL!
-		writeDATA(true);
-		writeCLOCK(false);
+		pull(IEC_PIN_DATA);
+		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_ATN_PREDELAY);
 
 		// Get first ATN byte, it is either LISTEN or TALK
@@ -342,8 +342,8 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 		{
 			// Either the message is not for us or insignificant, like unlisten.
 			delayMicroseconds(TIMING_ATN_DELAY);
-			writeDATA(false);
-			writeCLOCK(false);
+			release(IEC_PIN_DATA);
+			release(IEC_PIN_CLK);
 
 			if ( cc == ATN_CODE_UNTALK )
 				debugPrint("UNTALK");
@@ -365,8 +365,8 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 	else 
 	{
 		// No ATN, keep lines in a released state.
-		writeDATA(false);
-		writeCLOCK(false);
+		release(IEC_PIN_DATA);
+		release(IEC_PIN_CLK);
 	}
 
 	return ret;
@@ -527,8 +527,8 @@ boolean  IEC::sendEOI(byte data)
 boolean  IEC::sendFNF()
 {
 	// Message file not found by just releasing lines
-	writeDATA(false);
-	writeCLOCK(false);
+	release(IEC_PIN_DATA);
+	release(IEC_PIN_CLK);
 
 	// Hold back a little...
 	delayMicroseconds(TIMING_FNF_DELAY);
