@@ -12,26 +12,21 @@ IEC::IEC() :
 //
 boolean  IEC::init()
 {
-	// make sure the output states are initially LOW.
-	pinMode(IEC_PIN_ATN, OUTPUT);
-	pinMode(IEC_PIN_DATA, OUTPUT);
-	pinMode(IEC_PIN_CLK, OUTPUT);
-//	pinMode(IEC_PIN_SRQ, OUTPUT);
-	digitalWrite(IEC_PIN_ATN, false);
-	digitalWrite(IEC_PIN_DATA, false);
-	digitalWrite(IEC_PIN_CLK, false);
-//	digitalWrite(IEC_PIN_SRQ, true);
+	// make sure the output states are initially LOW
+	pull(IEC_PIN_ATN);
+	pull(IEC_PIN_DATA);
+	pull(IEC_PIN_CLK);
+	//pull(IEC_PIN_SRQ);
 
 //#ifdef RESET_C64
-//	pinMode(m_resetPin, OUTPUT);
-//	digitalWrite(m_resetPin, false);	// only early C64's could be reset by a slave going high.
+//	release(IEC_PIN_RESET);	// only early C64's could be reset by a slave going high.
 //#endif
 
-	// initial pin modes in GPIO.
+	// initial pin modes in GPIO
 	pinMode(IEC_PIN_ATN, INPUT);
 	pinMode(IEC_PIN_CLK, INPUT);
 	pinMode(IEC_PIN_DATA, INPUT);
-//	pinMode(IEC_PIN_RESET, INPUT);
+	//pinMode(IEC_PIN_SRQ, INPUT);
 
 
 	// Set port low, we don't need internal pullup
@@ -89,12 +84,14 @@ byte  IEC::timeoutWait(byte waitBit, boolean whileHigh)
 } // timeoutWait
 
 
-// IEC Recieve byte standard function
-//
-// Returns data recieved
-// Might set flags in iec_state
-//
-// FIXME: m_iec might be better returning bool and returning read byte as reference in order to indicate any error.
+// STEP 1: READY TO SEND
+// Sooner or later, the talker will want to talk, and send a character. 
+// When it's ready to go, it releases the Clock line to false.  This signal change might be 
+// translated as "I'm ready to send a character." The listener must detect this and respond, 
+// but it doesn't have to do so immediately. The listener will respond  to  the  talker's  
+// "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
+// a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
+// it might holdback for quite a while; there's no time limit. 
 byte  IEC::receiveByte(void)
 {
 	m_state = noFlags;
@@ -104,9 +101,17 @@ byte  IEC::receiveByte(void)
 		return 0;
 
 	// Say we're ready
+	// STEP 2: READY FOR DATA
+	// When  the  listener  is  ready  to  listen,  it  releases  the  Data  
+	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
+	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
+	// to  accept  data.  What  happens  next  is  variable.     
 	release(IEC_PIN_DATA);
 
-	// Record how long CLOCK is high, more than 200 us means EOI
+	// Either  the  talker  will pull the 
+	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
+	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
+	// without  the Clock line going to true, it has a special task to perform: note EOI.
 	byte n = 0;
 	while(status(IEC_PIN_CLK) == released && (n < 20)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
@@ -114,10 +119,24 @@ byte  IEC::receiveByte(void)
 	}
 
 	if(n >= TIMING_EOI_THRESH) {
-		// EOI intermission
+
+		// INTERMISSION: EOI
+		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the 
+		// listener knows  that  the  talker  is  trying  to  signal  EOI.    EOI,  which  formally  
+		// stands  for  "End  of  Indicator," means  "this  character  will  be  the  last  one."    
+		// If  it's  a  sequential  disk  file,  don't  ask  for  more:  there will be no more.  If it's 
+		// a relative record, that's the end of the record.  The character itself will still be coming, but 
+		// the listener should note: here comes the last character. So if the listener sees the 200 microsecond  
+		// time-out,  it  must  signal  "OK,  I  noticed  the  EOI"  back  to  the  talker,    I  does  this  
+		// by pulling  the  Data  line  true  for  at  least  60  microseconds,  and  then  releasing  it.  
+		// The  talker  will  then revert to transmitting the character in the usual way; within 60 microseconds 
+		// it will pull the Clock line  true,  and  transmission  will  continue.  At  this point,  the  Clock  
+		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common 
+		// transmission sequence.
+
 		m_state or_eq eoiFlag;
 
-		// Acknowledge by pull down data more than 60 us
+		// Acknowledge by pull down data more than 60us
 		pull(IEC_PIN_DATA);
 		delayMicroseconds(TIMING_BIT);
 		release(IEC_PIN_DATA);
@@ -127,52 +146,120 @@ byte  IEC::receiveByte(void)
 			return 0;
 	}
 
-	// Sample ATN
+	// Sample ATN and set flag to indicate SELECT or DATA mode
 	if(status(IEC_PIN_ATN) == pulled)
 		m_state or_eq atnFlag;
 
-	byte data = 0;
-	// Get the bits, sampling on clock rising edge:
+	
+	// STEP 3: SENDING THE BITS
+	// The talker has eight bits to send.  They will go out without handshake; in other words, 
+	// the listener had better be there to catch them, since the talker won't wait to hear from the listener.  At this 
+	// point, the talker controls both lines, Clock and Data.  At the beginning of the sequence, it is holding the 
+	// Clock true, while the Data line is released to false.  the Data line will change soon, since we'll sendthe data 
+	// over it. The eights bits will go out from the character one at a time, with the least significant bit going first.  
+	// For example, if the character is the ASCII question mark, which is  written  in  binary  as  00011111,  the  ones  
+	// will  go out  first,  followed  by  the  zeros.  Now,  for  each bit, we set the Data line true or false according 
+	// to whether the bit is one or zero.  As soon as that'sset, the Clock line is released to false, signalling "data ready."  
+	// The talker will typically have a bit in  place  and  be  signalling  ready  in  70  microseconds  or  less.  Once  
+	// the  talker  has  signalled  "data ready," it will hold the two lines steady for at least 20 microseconds timing needs 
+	// to be increased to 60  microseconds  if  the  Commodore  64  is  listening,  since  the  64's  video  chip  may  
+	// interrupt  the processor for 42 microseconds at a time, and without the extra wait the 64 might completely miss a 
+	// bit. The listener plays a passive role here; it sends nothing, and just watches.  As soon as it sees the Clock line 
+	// false, it grabs the bit from the Data line and puts it away.  It then waits for the clock line to go true, in order 
+	// to prepare for the next bit. When the talker figures the data has been held for a sufficient  length  of  time,  it  
+	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
+
+	// Listening for bits
 #if defined(ESP8266)
 	ESP.wdtFeed();
-#endif	
+#endif
+	byte data = 0;
 	for(n = 0; n < 8; n++) {
 		data >>= 1;
+
+		// wait for bit to be ready to read
 		if(timeoutWait(IEC_PIN_CLK, false))
 			return 0;
+
+		// get bit
 		data or_eq (status(IEC_PIN_DATA) == released ? (1 << 7) : 0);
+
+		// wait for talker to finish sending bit
 		if(timeoutWait(IEC_PIN_CLK, true))
 			return 0;
 	}
-	//debugPrintf("%.2X ", data);
 
-	// Signal we accepted data:
+	// STEP 4: FRAME HANDSHAKE
+	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
+	// and  the  Data  line  is  false.    The  listener  must  acknowledge  receiving  the  byte  OK  by pulling the Data 
+	// line to true. The talker is now watching the Data line.  If the listener doesn't pull the  Data  line  true  within  
+	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
+
+	// Acknowledge byte received
 	pull(IEC_PIN_DATA);
 
+	// STEP 5: START OVER
+	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
+	// and  the listener is holding the Data line true. We're ready for step 1; we may send another character - unless EOI has 
+	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
+	// the Clock and Data lines are released to false and transmission stops. 
+
+//	if(m_state bitand eoiFlag)
+//	{
+//		// EOI Received
+//		delayMicroseconds(TIMING_STABLE_WAIT);
+//		release(IEC_PIN_CLK);
+//		release(IEC_PIN_DATA);
+//	}
 	return data;
 } // receiveByte
 
 
-// IEC Send byte standard function
-//
-// Sends the byte and can signal EOI
-//
+// STEP 1: READY TO SEND
+// Sooner or later, the talker will want to talk, and send a character. 
+// When it's ready to go, it releases the Clock line to false.  This signal change might be 
+// translated as "I'm ready to send a character." The listener must detect this and respond, 
+// but it doesn't have to do so immediately. The listener will respond  to  the  talker's  
+// "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
+// a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
+// it might holdback for quite a while; there's no time limit. 
 boolean  IEC::sendByte(byte data, boolean signalEOI)
 {
-	// //Listener must have accepted previous data
-	// if(timeoutWait(IEC_PIN_DATA, true))
-	// 	return false;
+	//m_state = noFlags;
 
 	// Say we're ready
 	release(IEC_PIN_CLK);
 
 	// Wait for listener to be ready
+	// STEP 2: READY FOR DATA
+	// When  the  listener  is  ready  to  listen,  it  releases  the  Data  
+	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
+	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
+	// to  accept  data.  What  happens  next  is  variable.  
 	if(timeoutWait(IEC_PIN_DATA, false))
 		return false;
 
+	// Either  the  talker  will pull the 
+	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
+	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
+	// without  the Clock line going to true, it has a special task to perform: note EOI.
 	if(signalEOI) {
-		// FIXME: Make this like sd2iec and may not need a fixed delay here.
-		//debugPrint("{EOI}");
+
+		// INTERMISSION: EOI
+		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the 
+		// listener knows  that  the  talker  is  trying  to  signal  EOI.    EOI,  which  formally  
+		// stands  for  "End  of  Indicator," means  "this  character  will  be  the  last  one."    
+		// If  it's  a  sequential  disk  file,  don't  ask  for  more:  there will be no more.  If it's 
+		// a relative record, that's the end of the record.  The character itself will still be coming, but 
+		// the listener should note: here comes the last character. So if the listener sees the 200 microsecond  
+		// time-out,  it  must  signal  "OK,  I  noticed  the  EOI"  back  to  the  talker,    I  does  this  
+		// by pulling  the  Data  line  true  for  at  least  60  microseconds,  and  then  releasing  it.  
+		// The  talker  will  then revert to transmitting the character in the usual way; within 60 microseconds 
+		// it will pull the Clock line  true,  and  transmission  will  continue.  At  this point,  the  Clock  
+		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common 
+		// transmission sequence.
+
+		//m_state or_eq eoiFlag;
 
 		// Signal eoi by waiting 200 us
 		delayMicroseconds(TIMING_EOI_WAIT);
@@ -184,8 +271,28 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 		if(timeoutWait(IEC_PIN_DATA, false))
 			return false;
 	}
+	//else
+	//{
+		delayMicroseconds(TIMING_NO_EOI);		
+	//}
 
-	delayMicroseconds(TIMING_NO_EOI);
+	// STEP 3: SENDING THE BITS
+	// The talker has eight bits to send.  They will go out without handshake; in other words, 
+	// the listener had better be there to catch them, since the talker won't wait to hear from the listener.  At this 
+	// point, the talker controls both lines, Clock and Data.  At the beginning of the sequence, it is holding the 
+	// Clock true, while the Data line is released to false.  the Data line will change soon, since we'll sendthe data 
+	// over it. The eights bits will go out from the character one at a time, with the least significant bit going first.  
+	// For example, if the character is the ASCII question mark, which is  written  in  binary  as  00011111,  the  ones  
+	// will  go out  first,  followed  by  the  zeros.  Now,  for  each bit, we set the Data line true or false according 
+	// to whether the bit is one or zero.  As soon as that'sset, the Clock line is released to false, signalling "data ready."  
+	// The talker will typically have a bit in  place  and  be  signalling  ready  in  70  microseconds  or  less.  Once  
+	// the  talker  has  signalled  "data ready," it will hold the two lines steady for at least 20 microseconds timing needs 
+	// to be increased to 60  microseconds  if  the  Commodore  64  is  listening,  since  the  64's  video  chip  may  
+	// interrupt  the processor for 42 microseconds at a time, and without the extra wait the 64 might completely miss a 
+	// bit. The listener plays a passive role here; it sends nothing, and just watches.  As soon as it sees the Clock line 
+	// false, it grabs the bit from the Data line and puts it away.  It then waits for the clock line to go true, in order 
+	// to prepare for the next bit. When the talker figures the data has been held for a sufficient  length  of  time,  it  
+	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
 
 	// Send bits
 #if defined(ESP8266)
@@ -194,28 +301,46 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 	for(byte n = 0; n < 8; n++) {
 		// FIXME: Here check whether data pin goes low, if so end (enter cleanup)!
 
+		// tell listner to wait
 		pull(IEC_PIN_CLK);
+
 		// set data
 		(data bitand 1) ? release(IEC_PIN_DATA) : pull(IEC_PIN_DATA);
-
 		delayMicroseconds(TIMING_BIT);
+
+		// tell listener bit is ready to read
 		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_BIT);
 
 		data >>= 1;
 	}
 
+	// STEP 4: FRAME HANDSHAKE
+	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
+	// and  the  Data  line  is  false.    The  listener  must  acknowledge  receiving  the  byte  OK  by pulling the Data 
+	// line to true. The talker is now watching the Data line.  If the listener doesn't pull the  Data  line  true  within  
+	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
+
 	pull(IEC_PIN_CLK);
 	release(IEC_PIN_DATA);
-
-	// FIXME: Maybe make the following ending more like sd2iec instead.
-
-	// Line stabilization delay
-//	delayMicroseconds(TIMING_STABLE_WAIT);
 
 	// Wait for listener to accept data
 	if(timeoutWait(IEC_PIN_DATA, true))
 		return false;
+
+	// STEP 5: START OVER
+	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
+	// and  the listener is holding the Data line true. We're ready for step 1; we may send another character - unless EOI has 
+	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
+	// the Clock and Data lines are released to false and transmission stops. 
+
+//	if(m_state bitand eoiFlag)
+//	{
+//		// EOI Received
+//		delayMicroseconds(TIMING_STABLE_WAIT);
+//		release(IEC_PIN_CLK);
+//		release(IEC_PIN_DATA);
+//	}
 
 	return true;
 } // sendByte
@@ -275,8 +400,7 @@ boolean  IEC::undoTurnAround(void)
 
 // This function checks and deals with atn signal commands
 //
-// If a command is recieved, the atn_cmd.string is saved in atn_cmd. Only commands
-// for *this* device are dealt with.
+// If a command is recieved, the atn_cmd.string is saved in atn_cmd.
 //
 // Return value, see IEC::ATNCheck definition.
 IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
@@ -284,9 +408,63 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 	ATNCheck ret = ATN_IDLE;
 	byte i = 0;
 
+#ifdef DEBUG_TIMING
+	int pin = IEC_PIN_ATN;
+	pull(pin);
+	delayMicroseconds(1000); // 1000
+	release(pin);
+	delayMicroseconds(1000);
+
+	pin = IEC_PIN_CLOCK;
+	pull(pin);
+	delayMicroseconds(20); // 20
+	release(pin);
+	delayMicroseconds(1);
+
+	pin = IEC_PIN_DATA;
+	pull(pin);
+	delayMicroseconds(50); // 50
+	release(pin);
+	delayMicroseconds(1);
+
+	pin = IEC_PIN_SRQ;
+	pull(pin);
+	delayMicroseconds(60); // 60
+	release(pin);
+	delayMicroseconds(1);
+
+	pin = IEC_PIN_ATN;
+	pull(pin);
+	delayMicroseconds(100); // 100
+	release(pin);
+	delayMicroseconds(1);
+
+	pin = IEC_PIN_CLOCK;
+	pull(pin);
+	delayMicroseconds(200); // 200
+	release(pin);
+	delayMicroseconds(1);
+#endif
+
+	// ATN SEQUENCES
+	// When ATN is pulled true, everybody stops what they are doing. The processor will quickly 
+	// pull the Clock line true (it's going to send soon), so it may be hard to notice that all other devices 
+	// release the Clock line.  At the same time, the processor releases the Data line to false, but all other 
+	// devices are getting  ready  to  listen  and  will  each  pull  Data  to true.    They  had  better  do  
+	// this  within  one millisecond (1000 microseconds), since the processor is watching and may sound an 
+	// alarm ("device not  available")  if  it  doesn't  see  this  take  place.     Under  normal  circumstances,  
+	// transmission  now takes place as previously described.  The computer is sending commands rather than data, 
+	// but the characters  are  exchanged  with  exactly  the  same  timing  and  handshakes  as  before.    
+	// All  devices receive  the  commands,  but  only  the  specified  device  acts  upon  it.    This  results  
+	// in  a  curious situation:  you  can  send  a  command  to  a  nonexistent device  (try  "OPEN  6,6")  -  
+	// and  the  computer will  not  know  that  there  is  a  problem,  since  it  receives  valid  handshakes  
+	// from  the  other  devices. The  computer  will  notice  a  problem  when  you  try  to send  or  receive  
+	// data  from  the  nonexistent device,  since  the  unselected  devices  will  have  dropped  off  when  ATN  
+	// ceased,  leaving  you  with nobody to talk to.
+
 	if(status(IEC_PIN_ATN) == pulled) {
 
-		// Attention line is active, go to listener mode and get message. Being fast with the next two lines here is CRITICAL!
+		// Attention line is active, go to listener mode and get message.
 		pull(IEC_PIN_DATA);
 		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_ATN_PREDELAY);
