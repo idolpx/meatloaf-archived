@@ -175,15 +175,15 @@ private:
 		espDigitalWrite(pinNumber, state ? LOW : HIGH);
 	}
 
-	inline void writeATN(boolean state)
-	{
-		writePIN(IEC_PIN_ATN, state);
-	}
+	// inline void writeATN(boolean state)
+	// {
+	// 	writePIN(IEC_PIN_ATN, state);
+	// }
 
-	inline void writeCLOCK(boolean state)
-	{
-		writePIN(IEC_PIN_CLK, state);
-	}
+	// inline void writeCLOCK(boolean state)
+	// {
+	// 	writePIN(IEC_PIN_CLK, state);
+	// }
 
 	// inline void writeDATA(boolean state)
 	// {
