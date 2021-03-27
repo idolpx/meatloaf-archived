@@ -196,7 +196,7 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 
 		pull(IEC_PIN_CLK);
 		// set data
-		writeDATA((data bitand 1) ? false : true);
+		(data bitand 1) ? release(IEC_PIN_DATA) : pull(IEC_PIN_DATA);
 
 		delayMicroseconds(TIMING_BIT);
 		release(IEC_PIN_CLK);

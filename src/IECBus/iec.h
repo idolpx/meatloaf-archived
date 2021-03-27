@@ -185,15 +185,15 @@ private:
 		writePIN(IEC_PIN_CLK, state);
 	}
 
-	inline void writeDATA(boolean state)
-	{
-		writePIN(IEC_PIN_DATA, state);
-	}
+	// inline void writeDATA(boolean state)
+	// {
+	// 	writePIN(IEC_PIN_DATA, state);
+	// }
 
-//	inline void writeSRQ(boolean state)
-//	{
-//		writePIN(IEC_PIN_SRQ, state);
-//	}
+	// inline void writeSRQ(boolean state)
+	// {
+	// 	writePIN(IEC_PIN_SRQ, state);
+	// }
 
 	inline void ICACHE_RAM_ATTR espPinMode(uint8_t pin, uint8_t mode) {
 #if defined(ESP8266)		
