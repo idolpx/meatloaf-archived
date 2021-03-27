@@ -79,7 +79,7 @@ byte  IEC::timeoutWait(byte waitBit, boolean whileHigh)
 	m_state = errorFlag;
 
 	// Wait for ATN release, problem might have occured during attention
-	//while(not readATN());
+	//while(status(IEC_PIN_ATN) == pulled);
 
 	// Note: The while above is without timeout. If ATN is held low forever,
 	//       the CBM is out in the woods and needs a reset anyways.
@@ -128,7 +128,7 @@ byte  IEC::receiveByte(void)
 	}
 
 	// Sample ATN
-	if(false == readATN())
+	if(status(IEC_PIN_ATN) == pulled)
 		m_state or_eq atnFlag;
 
 	byte data = 0;
@@ -284,7 +284,7 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 	ATNCheck ret = ATN_IDLE;
 	byte i = 0;
 
-	if(not readATN()) {
+	if(status(IEC_PIN_ATN) == pulled) {
 
 		// Attention line is active, go to listener mode and get message. Being fast with the next two lines here is CRITICAL!
 		pull(IEC_PIN_DATA);
@@ -353,7 +353,7 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 			debugPrintf(" (%.2d DEVICE)", atn_cmd.device);			
 
 			// Wait for ATN to release and quit
-			while(not readATN());
+			while(status(IEC_PIN_ATN) == pulled);
 			debugPrintf("\r\ncheckATN: ATN Released\r\n");
 		}
 
@@ -448,7 +448,7 @@ IEC::ATNCheck  IEC::deviceTalk(ATNCmd& atn_cmd)
 	debugPrintf("(40 TALK) (%.2d DEVICE)", atn_cmd.device);
 	debugPrintf("\r\ncheckATN: %.2X (%.2X SECOND) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
 
-	while(not readATN()) {
+	while(status(IEC_PIN_ATN) == pulled) {
 		if(readCLOCK()) {
 			c = (ATNCommand)receive();
 			if(m_state bitand errorFlag)

@@ -99,10 +99,10 @@ public:
 
 	IECState state() const;
 
-	inline boolean readATN()
-	{
-		return readPIN(IEC_PIN_ATN);
-	}
+	// inline boolean readATN()
+	// {
+	// 	return readPIN(IEC_PIN_ATN);
+	// }
 
 	inline boolean readCLOCK()
 	{
@@ -155,10 +155,12 @@ private:
 		espDigitalWrite(pinNumber, HIGH);
 	}
 
-	// inline IECline status(int pinNumber)
-	// {
-	// 	return readPIN(pinNumber);
-	// }
+	inline IECline status(int pinNumber)
+	{
+		// To be able to read line we must be set to input, not driving.
+		espPinMode(pinNumber, INPUT);
+		return espDigitalRead(pinNumber) ? released : pulled;
+	}
 
 	// true == PULL == LOW, false == RELEASE == HIGH
 	bool readPIN(byte pinNumber)
