@@ -109,7 +109,7 @@ private:
 	ATNCheck deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
 	ATNCheck deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
 
-	byte timeoutWait(byte waitBit, boolean whileHigh);
+	byte timeoutWait(byte iecPIN, IECline lineStatus);
 	byte receiveByte(void);
 	boolean sendByte(byte data, boolean signalEOI);
 	boolean turnAround(void);
@@ -135,21 +135,6 @@ private:
 		// To be able to read line we must be set to input, not driving.
 		espPinMode(pinNumber, INPUT);
 		return espDigitalRead(pinNumber) ? released : pulled;
-	}
-
-	// true == PULL == LOW, false == RELEASE == HIGH
-	bool readPIN(byte pinNumber)
-	{
-		// To be able to read line we must be set to input, not driving.
-		espPinMode(pinNumber, INPUT);
-		return espDigitalRead(pinNumber) ? true : false;
-	}
-
-	// true == PULL == LOW, false == RELEASE == HIGH
-	void writePIN(byte pinNumber, boolean state)
-	{
-		espPinMode(pinNumber, state ? OUTPUT : INPUT);
-		espDigitalWrite(pinNumber, state ? LOW : HIGH);
 	}
 
 	inline void ICACHE_RAM_ATTR espPinMode(uint8_t pin, uint8_t mode) {

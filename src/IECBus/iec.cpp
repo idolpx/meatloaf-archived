@@ -39,10 +39,9 @@ boolean  IEC::init()
 	return true;
 } // init
 
-byte  IEC::timeoutWait(byte waitBit, boolean whileHigh)
+byte  IEC::timeoutWait(byte iecPIN, IECline lineStatus)
 {
-	word t = 0;
-	boolean c;
+	uint16_t t = 0;
 	
 #if defined(ESP8266)
 	ESP.wdtFeed();
@@ -50,22 +49,16 @@ byte  IEC::timeoutWait(byte waitBit, boolean whileHigh)
 	while(t < TIMEOUT) {
 
 		// Check the waiting condition:
-		c = readPIN(waitBit);
-
-		if(whileHigh)
+		if(status(iecPIN) == lineStatus)
 		{
-			c = not c;	
-		}
-
-		if(c)
-		{
-			//debugPrintln("timeoutWait: false");
+			// Got it!  Continue!
 			return false;
 		}
 
 		delayMicroseconds(1); // The aim is to make the loop at least 3 us
 		t++;
 	}
+
 	// If down here, we have had a timeout.
 	// Release lines and go to inactive state with error flag
 	release(IEC_PIN_CLK);
@@ -74,12 +67,12 @@ byte  IEC::timeoutWait(byte waitBit, boolean whileHigh)
 	m_state = errorFlag;
 
 	// Wait for ATN release, problem might have occured during attention
-	//while(status(IEC_PIN_ATN) == pulled);
+	while(status(IEC_PIN_ATN) == pulled);
 
 	// Note: The while above is without timeout. If ATN is held low forever,
 	//       the CBM is out in the woods and needs a reset anyways.
 
-	debugPrintf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d]", waitBit, whileHigh, t, m_state);
+	debugPrintf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d]", iecPIN, lineStatus, t, m_state);
 	return true;
 } // timeoutWait
 
@@ -97,7 +90,7 @@ byte  IEC::receiveByte(void)
 	m_state = noFlags;
 
 	// Wait for talker ready
-	if(timeoutWait(IEC_PIN_CLK, false))
+	if(timeoutWait(IEC_PIN_CLK, released))
 		return 0;
 
 	// Say we're ready
@@ -142,7 +135,7 @@ byte  IEC::receiveByte(void)
 		release(IEC_PIN_DATA);
 
 		// but still wait for clk
-		if(timeoutWait(IEC_PIN_CLK, true))
+		if(timeoutWait(IEC_PIN_CLK, pulled))
 			return 0;
 	}
 
@@ -178,14 +171,14 @@ byte  IEC::receiveByte(void)
 		data >>= 1;
 
 		// wait for bit to be ready to read
-		if(timeoutWait(IEC_PIN_CLK, false))
+		if(timeoutWait(IEC_PIN_CLK, released))
 			return 0;
 
 		// get bit
 		data or_eq (status(IEC_PIN_DATA) == released ? (1 << 7) : 0);
 
 		// wait for talker to finish sending bit
-		if(timeoutWait(IEC_PIN_CLK, true))
+		if(timeoutWait(IEC_PIN_CLK, pulled))
 			return 0;
 	}
 
@@ -204,13 +197,14 @@ byte  IEC::receiveByte(void)
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
 	// the Clock and Data lines are released to false and transmission stops. 
 
-//	if(m_state bitand eoiFlag)
-//	{
-//		// EOI Received
-//		delayMicroseconds(TIMING_STABLE_WAIT);
-//		release(IEC_PIN_CLK);
-//		release(IEC_PIN_DATA);
-//	}
+	// if(m_state bitand eoiFlag)
+	// {
+	// 	// EOI Received
+	// 	delayMicroseconds(TIMING_STABLE_WAIT);
+	// 	//release(IEC_PIN_CLK);
+	// 	release(IEC_PIN_DATA);
+	// }
+
 	return data;
 } // receiveByte
 
@@ -236,7 +230,7 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
 	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
 	// to  accept  data.  What  happens  next  is  variable.  
-	if(timeoutWait(IEC_PIN_DATA, false))
+	if(timeoutWait(IEC_PIN_DATA, released))
 		return false;
 
 	// Either  the  talker  will pull the 
@@ -265,10 +259,10 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 		delayMicroseconds(TIMING_EOI_WAIT);
 
 		// get eoi acknowledge:
-		if(timeoutWait(IEC_PIN_DATA, true))
+		if(timeoutWait(IEC_PIN_DATA, pulled))
 			return false;
 
-		if(timeoutWait(IEC_PIN_DATA, false))
+		if(timeoutWait(IEC_PIN_DATA, released))
 			return false;
 	}
 	//else
@@ -325,7 +319,7 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 	release(IEC_PIN_DATA);
 
 	// Wait for listener to accept data
-	if(timeoutWait(IEC_PIN_DATA, true))
+	if(timeoutWait(IEC_PIN_DATA, pulled))
 		return false;
 
 	// STEP 5: START OVER
@@ -352,7 +346,7 @@ boolean  IEC::turnAround(void)
 	debugPrintf("\r\nturnAround: ");
 
 	// Wait until clock is released
-	if(timeoutWait(IEC_PIN_CLK, false))
+	if(timeoutWait(IEC_PIN_CLK, released))
 	{
 		debugPrint("false");
 		return false;
@@ -381,7 +375,7 @@ boolean  IEC::undoTurnAround(void)
 	debugPrintf("\r\nundoTurnAround:");
 
 	// wait until the computer releases the clock line
-	if(timeoutWait(IEC_PIN_CLK, true))
+	if(timeoutWait(IEC_PIN_CLK, pulled))
 	{
 		debugPrint("false");
 		return false;
