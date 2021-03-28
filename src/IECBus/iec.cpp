@@ -14,8 +14,8 @@ boolean  IEC::init()
 {
 	// make sure the output states are initially LOW
 	pull(IEC_PIN_ATN);
-	pull(IEC_PIN_DATA);
 	pull(IEC_PIN_CLK);
+	pull(IEC_PIN_DATA);
 	//pull(IEC_PIN_SRQ);
 
 //#ifdef RESET_C64
