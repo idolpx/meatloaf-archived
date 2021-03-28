@@ -34,11 +34,11 @@
 
 #if defined(ESP32)
 // ESP32 GPIO to C64 IEC Serial Port
-#define IEC_PIN_ATN          39    // IO39 CMD
-#define IEC_PIN_CLK        27    // IO27 CKIN
-#define IEC_PIN_DATA         32    // IO32 CKOUT
-//#define IEC_PIN_SRQ         26    // IO26 INT
-//#define IEC_PIN_RESET       21    // IO15
+#define IEC_PIN_ATN          22      // PROC
+#define IEC_PIN_CLK          27      // CKI
+#define IEC_PIN_DATA         32      // CKO
+//#define IEC_PIN_SRQ         26      // INT
+//#define IEC_PIN_RESET       D8      // IO15
 #elif defined(ESP8266)
 // ESP8266 GPIO to C64 IEC Serial Port
 #define IEC_PIN_ATN          D5    // IO14
