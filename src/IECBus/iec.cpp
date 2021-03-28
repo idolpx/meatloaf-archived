@@ -91,7 +91,7 @@ byte  IEC::receiveByte(void)
 
 	// Wait for talker ready
 	if(timeoutWait(IEC_PIN_CLK, released))
-		return 0;
+		return -1; // return error because timeout
 
 	// Say we're ready
 	// STEP 2: READY FOR DATA
@@ -136,7 +136,7 @@ byte  IEC::receiveByte(void)
 
 		// but still wait for clk
 		if(timeoutWait(IEC_PIN_CLK, pulled))
-			return 0;
+			return -1;
 	}
 
 	// Sample ATN and set flag to indicate SELECT or DATA mode
@@ -172,14 +172,14 @@ byte  IEC::receiveByte(void)
 
 		// wait for bit to be ready to read
 		if(timeoutWait(IEC_PIN_CLK, released))
-			return 0;
+			return -1;
 
 		// get bit
 		data or_eq (status(IEC_PIN_DATA) == released ? (1 << 7) : 0);
 
 		// wait for talker to finish sending bit
 		if(timeoutWait(IEC_PIN_CLK, pulled))
-			return 0;
+			return -1;
 	}
 
 	// STEP 4: FRAME HANDSHAKE
@@ -265,10 +265,10 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 		if(timeoutWait(IEC_PIN_DATA, released))
 			return false;
 	}
-	//else
-	//{
+	else
+	{
 		delayMicroseconds(TIMING_NO_EOI);		
-	//}
+	}
 
 	// STEP 3: SENDING THE BITS
 	// The talker has eight bits to send.  They will go out without handshake; in other words, 
@@ -298,7 +298,7 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 		// tell listner to wait
 		pull(IEC_PIN_CLK);
 
-		// set data
+		// set bit
 		(data bitand 1) ? release(IEC_PIN_DATA) : pull(IEC_PIN_DATA);
 		delayMicroseconds(TIMING_BIT);
 
@@ -306,17 +306,17 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_BIT);
 
-		data >>= 1;
+		data >>= 1; // get next bit
 	}
+
+	pull(IEC_PIN_CLK);	// pull clock cause we're done
+	release(IEC_PIN_DATA); // release data because we're done
 
 	// STEP 4: FRAME HANDSHAKE
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
 	// and  the  Data  line  is  false.    The  listener  must  acknowledge  receiving  the  byte  OK  by pulling the Data 
 	// line to true. The talker is now watching the Data line.  If the listener doesn't pull the  Data  line  true  within  
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
-
-	pull(IEC_PIN_CLK);
-	release(IEC_PIN_DATA);
 
 	// Wait for listener to accept data
 	if(timeoutWait(IEC_PIN_DATA, pulled))
@@ -343,12 +343,29 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 // IEC turnaround
 boolean  IEC::turnAround(void)
 {
+	/*
+	TURNAROUND
+	An unusual sequence takes place following ATN if the computer wishes the remote device to
+	become a talker. This will usually take place only after a Talk command has been sent.
+	Immediately after ATN is released, the selected device will be behaving like a listener. After all, it's
+	been listening during the ATN cycle, and the computer
+	has been a talker. At this instant, we have "wrong way" logic; the device is holding down the Data
+	line, and the computer is holding the Clock line. We must turn this around. Here's the sequence:
+	the computer quickly realizes what's going on, and pulls the Data line to true (it's already there), as
+	well as releasing the Clock line to false. The device waits for this: when it sees the Clock line go
+	true [sic], it releases the Data line (which stays true anyway since the computer is now holding it down)
+	and then pulls down the Clock line. We're now in our starting position, with the talker (that's the
+	device) holding the Clock true, and the listener (the computer) holding the Data line true. The
+	computer watches for this state; only when it has gone through the cycle correctly will it be ready
+	to receive data. And data will be signalled, of course, with the usual sequence: the talker releases
+	the Clock line to signal that it's ready to send.
+	*/
 	debugPrintf("\r\nturnAround: ");
 
 	// Wait until clock is released
 	if(timeoutWait(IEC_PIN_CLK, released))
 	{
-		debugPrint("false");
+		debugPrint("timeout");
 		return false;
 	}
 		
@@ -358,7 +375,7 @@ boolean  IEC::turnAround(void)
 	pull(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
-	debugPrint("true");
+	debugPrint("complete");
 	return true;
 } // turnAround
 
@@ -377,11 +394,11 @@ boolean  IEC::undoTurnAround(void)
 	// wait until the computer releases the clock line
 	if(timeoutWait(IEC_PIN_CLK, pulled))
 	{
-		debugPrint("false");
+		debugPrint("timeout");
 		return false;
 	}
 
-	debugPrint("true");
+	debugPrint("complete");
 	return true;
 } // undoTurnAround
 
@@ -394,8 +411,26 @@ boolean  IEC::undoTurnAround(void)
 
 // This function checks and deals with atn signal commands
 //
-// If a command is recieved, the atn_cmd.string is saved in atn_cmd.
+// If a command is recieved, the atn_cmd.string is saved in atn_cmd. Only commands
+// for *this* device are dealt with.
 //
+/** from Derogee's "IEC Disected"
+ * ATN SEQUENCES
+ * When ATN is pulled true, everybody stops what they are doing. The processor will quickly pull the
+ * Clock line true (it's going to send soon), so it may be hard to notice that all other devices release the
+ * Clock line. At the same time, the processor releases the Data line to false, but all other devices are
+ * getting ready to listen and will each pull Data to true. They had better do this within one
+ * millisecond (1000 microseconds), since the processor is watching and may sound an alarm ("device
+ * not available") if it doesn't see this take place. Under normal circumstances, transmission now
+ * takes place as previously described. The computer is sending commands rather than data, but the
+ * characters are exchanged with exactly the same timing and handshakes as before. All devices
+ * receive the commands, but only the specified device acts upon it. This results in a curious
+ * situation: you can send a command to a nonexistent device (try "OPEN 6,6") - and the computer
+ * will not know that there is a problem, since it receives valid handshakes from the other devices.
+ * The computer will notice a problem when you try to send or receive data from the nonexistent
+ * device, since the unselected devices will have dropped off when ATN ceased, leaving you with
+ * nobody to talk to.
+ */
 // Return value, see IEC::ATNCheck definition.
 IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 {
@@ -440,25 +475,10 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 	delayMicroseconds(1);
 #endif
 
-	// ATN SEQUENCES
-	// When ATN is pulled true, everybody stops what they are doing. The processor will quickly 
-	// pull the Clock line true (it's going to send soon), so it may be hard to notice that all other devices 
-	// release the Clock line.  At the same time, the processor releases the Data line to false, but all other 
-	// devices are getting  ready  to  listen  and  will  each  pull  Data  to true.    They  had  better  do  
-	// this  within  one millisecond (1000 microseconds), since the processor is watching and may sound an 
-	// alarm ("device not  available")  if  it  doesn't  see  this  take  place.     Under  normal  circumstances,  
-	// transmission  now takes place as previously described.  The computer is sending commands rather than data, 
-	// but the characters  are  exchanged  with  exactly  the  same  timing  and  handshakes  as  before.    
-	// All  devices receive  the  commands,  but  only  the  specified  device  acts  upon  it.    This  results  
-	// in  a  curious situation:  you  can  send  a  command  to  a  nonexistent device  (try  "OPEN  6,6")  -  
-	// and  the  computer will  not  know  that  there  is  a  problem,  since  it  receives  valid  handshakes  
-	// from  the  other  devices. The  computer  will  notice  a  problem  when  you  try  to send  or  receive  
-	// data  from  the  nonexistent device,  since  the  unselected  devices  will  have  dropped  off  when  ATN  
-	// ceased,  leaving  you  with nobody to talk to.
-
 	if(status(IEC_PIN_ATN) == pulled) {
 
-		// Attention line is active, go to listener mode and get message.
+		// Attention line is pulled, go to listener mode and get message.
+		// Being fast with the next two lines here is CRITICAL!
 		pull(IEC_PIN_DATA);
 		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_ATN_PREDELAY);
@@ -481,7 +501,7 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 			cc = (ATNCommand)(c bitand ATN_CODE_LISTEN);
 			if(cc == ATN_CODE_LISTEN)
 			{
-				atn_cmd.device = c ^ ATN_CODE_LISTEN; // device specified
+				atn_cmd.device = c ^ ATN_CODE_LISTEN; // device specified, '^' = XOR
 			} 
 			else
 			{
@@ -606,27 +626,30 @@ IEC::ATNCheck  IEC::deviceListen(ATNCmd& atn_cmd)
 	return ATN_IDLE;
 }
 
-IEC::ATNCheck  IEC::deviceUnListen(ATNCmd& atn_cmd)
-{
+// IEC::ATNCheck  IEC::deviceUnListen(ATNCmd& atn_cmd)
+// {
 
-}
+// }
 
 IEC::ATNCheck  IEC::deviceTalk(ATNCmd& atn_cmd)
 {
-	byte i=0;
+	byte i = 0;
 	ATNCommand c;
 
 	// Okay, we will talk soon
 	debugPrintf("(40 TALK) (%.2d DEVICE)", atn_cmd.device);
 	debugPrintf("\r\ncheckATN: %.2X (%.2X SECOND) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
 
-	while(status(IEC_PIN_ATN) == pulled) {
-		if(status(IEC_PIN_CLK) == released) {
+	while(status(IEC_PIN_ATN) == pulled) 
+	{
+		if(status(IEC_PIN_CLK) == released) 
+		{
 			c = (ATNCommand)receive();
 			if(m_state bitand errorFlag)
 				return ATN_ERROR;
 
-			if(i >= ATN_CMD_MAX_LENGTH) {
+			if(i >= ATN_CMD_MAX_LENGTH) 
+			{
 				// Buffer is going to overflow, this is an error condition
 				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
 				return ATN_ERROR;
@@ -644,16 +667,16 @@ IEC::ATNCheck  IEC::deviceTalk(ATNCmd& atn_cmd)
 	return ATN_CMD_TALK;
 }
 
-IEC::ATNCheck  IEC::deviceUnTalk(ATNCmd& atn_cmd)
-{
+// IEC::ATNCheck  IEC::deviceUnTalk(ATNCmd& atn_cmd)
+// {
 
-}
+// }
 
-//boolean  IEC::checkRESET()
-//{
-//	return readRESET();
-//	return false;
-//} // checkRESET
+// boolean  IEC::checkRESET()
+// {
+// 	return readRESET();
+// 	return false;
+// } // checkRESET
 
 
 // IEC_receive receives a byte
@@ -670,6 +693,9 @@ byte  IEC::receive()
 //
 boolean  IEC::send(byte data)
 {
+#ifdef DATA_STREAM
+	Debug_printf("%.2X ", data);
+#endif	
 	return sendByte(data, false);
 } // send
 
