@@ -1,4 +1,4 @@
-// Pi1541 - A Commodore 1541 disk drive emulator
+// Pi1541 - A Commodore 64/128 multi-device emulator
 // Copyright(C) 2018 Stephen White
 //
 // This file is part of Pi1541.

@@ -1,4 +1,4 @@
-// Meatloaf - A Commodore 1541 disk drive emulator
+// Meatloaf - A Commodore 64/128 multi-device emulator
 // https://github.com/idolpx/meatloaf
 // Copyright(C) 2020 James Johnston
 //
@@ -56,8 +56,6 @@ bool iecBus::init()
 #endif	
 	set_pin_mode(IEC_PIN_SRQ, INPUT);
 
-
-
 	m_state = noFlags;
 
 	return true;
@@ -68,9 +66,9 @@ bool iecBus::timeoutWait(int pin, IECline state)
 {
 	uint16_t t = 0;
 	
-#if defined(ESP8266)
-	ESP.wdtFeed();
-#endif	
+// #if defined(ESP8266)
+// 	ESP.wdtFeed();
+// #endif	
 	while(t < TIMEOUT) {
 
 		delayMicroseconds(3); // The aim is to make the loop at least 3 us
@@ -181,7 +179,6 @@ int iecBus::receiveByte(void)
 			Debug_println("receiveByte: talker should pull clk to continue EOI");
 			return -1;
 		}
-			
 	}
 
 	// STEP 3: SENDING THE BITS (We are listener now)
@@ -203,11 +200,11 @@ int iecBus::receiveByte(void)
 	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
 
 	// Get the bits, sampling on clock rising edge, logic 0,0V to logic 1,5V:
-#if defined(ESP8266)
-	ESP.wdtFeed();
-#endif
-       int data = 0;
-       set_pin_mode(IEC_PIN_DATA, INPUT);
+// #if defined(ESP8266)
+// 	ESP.wdtFeed();
+// #endif
+	int data = 0;
+	set_pin_mode(IEC_PIN_DATA, INPUT);
 	for (n = 0; n < 8; n++)
 	{
 		data >>= 1;
@@ -338,12 +335,12 @@ bool iecBus::sendByte(int data, bool signalEOI)
 	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
 
 	// Send the bits, sampling on clock rising edge, logic 0,0V to logic 1,5V:
-#if defined(ESP8266)
-	ESP.wdtFeed();
-#endif	
-       set_pin_mode(IEC_PIN_DATA, OUTPUT);
-       for (int n = 0; n < 8; n++)
-       {
+// #if defined(ESP8266)
+// 	ESP.wdtFeed();
+// #endif	
+	set_pin_mode(IEC_PIN_DATA, OUTPUT);
+	for (int n = 0; n < 8; n++)
+	{
 		// tell listener to wait
 		pull(IEC_PIN_CLK);
 
@@ -525,14 +522,16 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_ATN_PREDELAY);
 
-		// Get first ATN byte, it is either LISTEN or TALK
-		ATNCommand c = (ATNCommand)receive();
-		Debug_printf("\r\ncheckATN: %.2X ", c);
-		if (m_state bitand errorFlag)
-		{
-			Debug_printf("\r\ncheckATN: get first ATN byte");
-			return ATN_ERROR;
-		}
+		// // Get first ATN byte, it is either LISTEN or TALK
+		// ATNCommand c = (ATNCommand)receive();
+		// Debug_printf("\r\ncheckATN: %.2X ", c);
+		// if (m_state bitand errorFlag)
+		// {
+		// 	Debug_printf("\r\ncheckATN: get first ATN byte");
+		// 	return ATN_ERROR;
+		// }
+
+		ATNCommand c = ATN_CODE_UNLISTEN;
 
 		atn_cmd.code = c;
 
