@@ -1,3 +1,20 @@
+// Meatloaf - A Commodore 1541 disk drive emulator
+// https://github.com/idolpx/meatloaf
+// Copyright(C) 2020 James Johnston
+//
+// Meatloaf is free software : you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Meatloaf is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
+
 #include "device_db.h"
 
 DeviceDB::DeviceDB(FS* fileSystem)
@@ -72,7 +89,7 @@ bool DeviceDB::check()
     File f_database = m_fileSystem->open(database, "r+");
     if(!f_database)
     {
-        debugPrintf("\r\nDeviceDB::init unsable to open DB: %s", database.c_str());
+        Debug_printf("\r\nDeviceDB::init unsable to open DB: %s", database.c_str());
         return false;
     }
     else
@@ -84,7 +101,7 @@ bool DeviceDB::check()
             offset = i * RECORD_SIZE;
             if (f_database.seek( offset, SeekSet ))
             {
-                debugPrintf("\r\nDeviceDB::init seek: %d, %.4X\r\n", i, offset);
+                Debug_printf("\r\nDeviceDB::init seek: %d, %.4X\r\n", i, offset);
 
                 // Parse JSON object
                 DeserializationError error = deserializeJson(m_device, f_database);
@@ -94,7 +111,7 @@ bool DeviceDB::check()
                 }
                 else
                 {
-                    debugPrintln(m_device.as<String>().c_str());
+                    Debug_println(m_device.as<String>().c_str());
                 }
             }
         }
@@ -121,7 +138,7 @@ bool DeviceDB::select(byte new_device)
     // Select new record
     offset = new_device * RECORD_SIZE;
     f_database.seek( offset, SeekSet );
-    debugPrintf("\r\nDeviceDB::select seek: %d, %.4X", new_device, offset);
+    Debug_printf("\r\nDeviceDB::select seek: %d, %.4X", new_device, offset);
 
     // Parse JSON object
     DeserializationError error = deserializeJson(m_device, f_database);
@@ -147,7 +164,7 @@ bool DeviceDB::save()
         File f_database = m_fileSystem->open(database, "r+");
 
         offset = device * RECORD_SIZE;
-        debugPrintf("\r\nDeviceDB::select m_dirty: %d, %.4X", device, offset);
+        Debug_printf("\r\nDeviceDB::select m_dirty: %d, %.4X", device, offset);
         f_database.seek( offset, SeekSet );
     #if defined(ESP32)
         f_database.write((const uint8_t *)m_device.as<String>().c_str(),strlen(m_device.as<String>().c_str()));

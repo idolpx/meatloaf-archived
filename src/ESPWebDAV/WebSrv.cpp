@@ -1,3 +1,20 @@
+// Meatloaf - A Commodore 1541 disk drive emulator
+// https://github.com/idolpx/meatloaf
+// Copyright(C) 2020 James Johnston
+//
+// Meatloaf is free software : you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Meatloaf is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
+
 #include "ESPWebDAV.h"
 
 // Sections are copied from ESP8266Webserver
@@ -161,7 +178,7 @@ bool ESPWebDAV::parseRequest() {
 
 	method = req.substring(0, addr_start);
 	uri = urlDecode(req.substring(addr_start + 1, addr_end));
-	// debugPrint(F("method: "); debugPrint(method); debugPrint(" url: ")); debugPrintln(uri);
+	// Debug_print(F("method: "); Debug_print(method); Debug_print(" url: ")); Debug_println(uri);
 	
 	// parse and finish all headers
 	String headerName;
@@ -180,7 +197,7 @@ bool ESPWebDAV::parseRequest() {
 		
 		headerName = req.substring(0, headerDiv);
 		headerValue = req.substring(headerDiv + 2);
-		// debugPrint(F("\t"); debugPrint(headerName); debugPrint(": ")); debugPrintln(headerValue);
+		// Debug_print(F("\t"); Debug_print(headerName); Debug_print(": ")); Debug_println(headerValue);
 		
 		if(headerName.equalsIgnoreCase(F("Host")))
 			hostHeader = headerValue;

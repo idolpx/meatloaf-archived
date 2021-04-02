@@ -1,36 +1,26 @@
+// Meatloaf - A Commodore 1541 disk drive emulator
+// https://github.com/idolpx/meatloaf
+// Copyright(C) 2020 James Johnston
+//
+// Meatloaf is free software : you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Meatloaf is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
+
 #if defined(ESP8266)
-//
-// Title        : UNO2IEC - interface implementation, arduino side.
-// Author       : Lars Wadefalk
-// Version      : 0.1
-// Target MCU   : Arduino Uno AtMega328(H, 5V) at 16 MHz, 2KB SRAM, 32KB flash, 1KB EEPROM.
-//
-// CREDITS:
-// --------
-// The UNO2IEC application is inspired by Lars Pontoppidan's MMC2IEC project.
-// It has been ported to C++.
-// The MMC2IEC application is inspired from Jan Derogee's 1541-III project for
-// PIC: http://jderogee.tripod.com/
-// This code is a complete reimplementation though, which includes some new
-// features and excludes others.
-//
-// DESCRIPTION:
-// This "interface" class is the main driving logic for the IEC command handling.
-//
-// Commands from the IEC communication are interpreted, and the appropriate data
-// from either Native, D64, T64, M2I, x00 image formats is sent back.
-//
-// DISCLAIMER:
-// The author is in no way responsible for any problems or damage caused by
-// using this code. Use at your own risk.
-//
-// LICENSE:
-// This code is distributed under the GNU Public License
-// which can be found at http://www.gnu.org/licenses/gpl.txt
-//
+
 
 //#include "global_defines.h"
 //#include "debug.h"
+
 #include "interface.h"
 
 using namespace CBM;
@@ -43,49 +33,50 @@ namespace
 
 } // unnamed namespace
 
-Interface::Interface(IEC &iec, FS *fileSystem)
+iecDevice::iecDevice(iecBus &iec, FS *fileSystem)
 	: m_iec(iec)
 	  // NOTE: Householding with RAM bytes: We use the middle of serial buffer for the ATNCmd buffer info.
 	  // This is ok and won't be overwritten by actual serial data from the host, this is because when this ATNCmd data is in use
 	  // only a few bytes of the actual serial data will be used in the buffer.
 	  ,
-	  m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])), m_device(fileSystem)
+	  m_atn_cmd(*reinterpret_cast<iecBus::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])), m_device(fileSystem)
 //,  m_jsonHTTPBuffer(1024)
 {
 	m_fileSystem = fileSystem;
 	reset();
 } // ctor
 
-bool Interface::begin()
+bool iecDevice::begin()
 {
 	m_device.init(String(DEVICE_DB));
 	//m_device.check();
 }
 
-void Interface::reset(void)
+void iecDevice::reset(void)
 {
 	m_openState = O_NOTHING;
 	m_queuedError = ErrIntro;
 } // reset
 
-void Interface::sendStatus(void)
+void iecDevice::sendStatus(void)
 {
-	byte i, readResult;
+	int i, readResult;
 
 	String status = String("00, OK, 00, 08");
 
-	debugPrintf("\r\nsendStatus: ");
+	Debug_printf("\r\nsendStatus: ");
 	// Length does not include the CR, write all but the last one should be with EOI.
-	for (i = 0; i < readResult - 2; ++i)
+	for(i = 0; i < readResult - 2; ++i)
 		m_iec.send(status[i]);
 
-	// ...and last byte in string as with EOI marker.
+	// ...and last int in string as with EOI marker.
 	m_iec.sendEOI(status[i]);
 } // sendStatus
 
-void Interface::sendDeviceInfo()
+
+void iecDevice::sendDeviceInfo()
 {
-	debugPrintf("\r\nsendDeviceInfo:\r\n");
+	Debug_printf("\r\nsendDeviceInfo:\r\n");
 
 	// Reset basic memory pointer:
 	uint16_t basicPtr = C64_BASIC_START;
@@ -100,7 +91,7 @@ void Interface::sendDeviceInfo()
 	// Send load address
 	m_iec.send(C64_BASIC_START bitand 0xff);
 	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-	debugPrintln("");
+	Debug_println("");
 
 	// Send List HEADER
 	sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
@@ -163,9 +154,9 @@ void Interface::sendDeviceInfo()
 	// ledON();
 } // sendDeviceInfo
 
-void Interface::sendDeviceStatus()
+void iecDevice::sendDeviceStatus()
 {
-	debugPrintf("\r\nsendDeviceStatus:\r\n");
+	Debug_printf("\r\nsendDeviceStatus:\r\n");
 
 	// Reset basic memory pointer:
 	uint16_t basicPtr = C64_BASIC_START;
@@ -173,7 +164,7 @@ void Interface::sendDeviceStatus()
 	// Send load address
 	m_iec.send(C64_BASIC_START bitand 0xff);
 	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-	debugPrintln("");
+	Debug_println("");
 
 	// Send List HEADER
 	sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
@@ -194,7 +185,8 @@ void Interface::sendDeviceStatus()
 	ledON();
 } // sendDeviceStatus
 
-byte Interface::loop(void)
+
+void iecDevice::loop(void)
 {
 	//#ifdef HAS_RESET_LINE
 	//	if(m_iec.checkRESET()) {
@@ -208,79 +200,90 @@ byte Interface::loop(void)
 	// Wait for it to get out of reset.
 	//while (m_iec.checkRESET())
 	//{
-	//	debugPrintln("ATN_RESET");
+	//	Debug_println("ATN_RESET");
 	//}
 
-	//	noInterrupts();
-	IEC::ATNCheck retATN = m_iec.checkATN(m_atn_cmd);
-	//	interrupts();
+	iecBus::ATNCheck ATN = m_iec.checkATN(m_atn_cmd);
 
-	if (retATN == IEC::ATN_ERROR)
+	if(ATN == iecBus::ATN_ERROR)
 	{
-		//debugPrintf("\r\n[ERROR]");
+		//Debug_printf("\r\n[ERROR]");
 		reset();
-		retATN == IEC::ATN_IDLE;
+		ATN = iecBus::ATN_IDLE;
 	}
 	// Did anything happen from the host side?
-	else if (retATN not_eq IEC::ATN_IDLE)
+	else if(ATN not_eq iecBus::ATN_IDLE)
 	{
-
-		switch (m_atn_cmd.command)
+		switch( m_atn_cmd.command ) 
 		{
-		case IEC::ATN_CODE_OPEN:
-			if (m_atn_cmd.channel == 0)
-				debugPrintf("\r\n[OPEN] LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
-			if (m_atn_cmd.channel == 1)
-				debugPrintf("\r\n[OPEN] SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+			case iecBus::ATN_CODE_OPEN:
+				if ( m_atn_cmd.channel == READ_CHANNEL )
+				{
+					Debug_printf("\r\niecDevice::loop: [OPEN] LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+				}
+				if ( m_atn_cmd.channel == WRITE_CHANNEL )
+				{
+					Debug_printf("\r\niecDevice::loop: [OPEN] SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);	
+				}
 
-			// Open either file or prg for reading, writing or single line command on the command channel.
-			// In any case we just issue an 'OPEN' to the host and let it process.
-			// Note: Some of the host response handling is done LATER, since we will get a TALK or LISTEN after this.
-			// Also, simply issuing the request to the host and not waiting for any response here makes us more
-			// responsive to the CBM here, when the DATA with TALK or LISTEN comes in the next sequence.
-			handleATNCmdCodeOpen(m_atn_cmd);
-			break;
+				// Open either file or prg for reading, writing or single line command on the command channel.
+				// In any case we just issue an 'OPEN' to the host and let it process.
+				// Note: Some of the host response handling is done LATER, since we will get a TALK or LISTEN after this.
+				// Also, simply issuing the request to the host and not waiting for any response here makes us more
+				// responsive to the CBM here, when the DATA with TALK or LISTEN comes in the next sequence.
+				handleATNCmdCodeOpen(m_atn_cmd);
+				break;
 
-		case IEC::ATN_CODE_DATA: // data channel opened
-			debugPrintf("\r\n[DATA] ");
-			if (retATN == IEC::ATN_CMD_TALK)
-			{
-				// when the CMD channel is read (status), we first need to issue the host request. The data channel is opened directly.
-				if (m_atn_cmd.channel == CMD_CHANNEL)
-					handleATNCmdCodeOpen(m_atn_cmd);		 // This is typically an empty command,
-				handleATNCmdCodeDataTalk(m_atn_cmd.channel); // ...but we do expect a response from PC that we can send back to CBM.
-			}
-			else if (retATN == IEC::ATN_CMD_LISTEN)
-				handleATNCmdCodeDataListen();
-			else if (retATN == IEC::ATN_CMD)	 // Here we are sending a command to PC and executing it, but not sending response
-				handleATNCmdCodeOpen(m_atn_cmd); // back to CBM, the result code of the command is however buffered on the PC side.
-			break;
+			case iecBus::ATN_CODE_DATA:  // data channel opened
+				Debug_printf("\r\niecDevice::loop: [DATA] ");
+				if(ATN == iecBus::ATN_CMD_TALK) 
+				{
+					 // when the CMD channel is read (status), we first need to issue the host request. The data channel is opened directly.
+					if(m_atn_cmd.channel == CMD_CHANNEL)
+					{
+						handleATNCmdCodeOpen(m_atn_cmd); // This is typically an empty command,	
+					}
+					
+					handleATNCmdCodeDataTalk(m_atn_cmd.channel); // Process TALK command
+				}
+				else if(ATN == iecBus::ATN_CMD_LISTEN)
+				{
+					handleATNCmdCodeDataListen(); // Process LISTEN command
+				}
+				else if(ATN == iecBus::ATN_CMD) // Here we are sending a command to PC and executing it, but not sending response
+				{
+					handleATNCmdCodeOpen(m_atn_cmd);	// back to CBM, the result code of the command is however buffered on the PC side.
+				}
+				break;
 
-		case IEC::ATN_CODE_CLOSE:
-			debugPrintf("\r\n[CLOSE] ");
-			// handle close with host.
-			handleATNCmdClose();
-			break;
+			case iecBus::ATN_CODE_CLOSE:
+				Debug_printf("\r\niecDevice::loop: [CLOSE] ");
+				// handle close with host.
+				handleATNCmdClose();
+				break;
 
-		case IEC::ATN_CODE_LISTEN:
-			debugPrintf("\r\n[LISTEN] ");
-			break;
-		case IEC::ATN_CODE_TALK:
-			debugPrintf("\r\n[TALK] ");
-			break;
-		case IEC::ATN_CODE_UNLISTEN:
-			debugPrintf("\r\n[UNLISTEN] ");
-			break;
-		case IEC::ATN_CODE_UNTALK:
-			debugPrintf("\r\n[UNTALK] ");
-			break;
+			case iecBus::ATN_CODE_LISTEN:
+				Debug_printf("\r\n[LISTEN] ");
+				break;
+
+			case iecBus::ATN_CODE_TALK:
+				Debug_printf("\r\n[TALK] ");
+				break;
+
+			case iecBus::ATN_CODE_UNLISTEN:
+				Debug_printf("\r\n[UNLISTEN] ");
+				break;
+				
+			case iecBus::ATN_CODE_UNTALK:
+				Debug_printf("\r\n[UNTALK] ");
+				break;
 		} // switch
 	}	  // IEC not idle
 
-	return retATN;
 } // handler
 
-void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
+
+void iecDevice::handleATNCmdCodeOpen(iecBus::ATNCmd& atn_cmd)
 {
 	m_device.select(atn_cmd.device);
 	m_filename = String((char *)atn_cmd.str);
@@ -300,14 +303,14 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	else if (local_file.isDirectory())
 	{
 		// Enter directory
-		debugPrintf("\r\nchangeDir: [%s] >", m_filename.c_str());
+		Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
 		m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
 		m_openState = O_DIR;
 	}
 	else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
 	{
 		// Mount image file
-		debugPrintf("\r\nmount: [%s] >", m_filename.c_str());
+		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.image(m_filename);
 
 		m_openState = O_DIR;
@@ -315,7 +318,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	else if (m_filename.startsWith(F("HTTP://")))
 	{
 		// Mount url
-		debugPrintf("\r\nmount: [%s] >", m_filename.c_str());
+		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.partition(0);
 		m_device.url(m_filename.substring(7).c_str());
 		m_device.path("/");
@@ -330,19 +333,19 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			if (m_device.image().length())
 			{
 				// Unmount image file
-				//debugPrintf("\r\nunmount: [%s] <", m_device.image().c_str());
+				//Debug_printf("\r\nunmount: [%s] <", m_device.image().c_str());
 				m_device.image("");
 			}
 			else if (m_device.url().length() && m_device.path() == "/")
 			{
 				// Unmount url
-				//debugPrintf("\r\nunmount: [%s] <", m_device.url().c_str());
+				//Debug_printf("\r\nunmount: [%s] <", m_device.url().c_str());
 				m_device.url("");
 			}
 			else
 			{
 				// Go back a directory
-				//debugPrintf("\r\nchangeDir: [%s] <", m_filename.c_str());
+				//Debug_printf("\r\nchangeDir: [%s] <", m_filename.c_str());
 				m_device.path(m_device.path().substring(0, m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1));
 
 				if (!m_device.path().length())
@@ -363,13 +366,13 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
 			{
 				// Mount image file
-				//debugPrintf("\r\nmount: [%s] >", m_filename.c_str());
+				//Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 				m_device.image(m_filename.substring(3));
 			}
 			else
 			{
 				// Enter directory
-				//debugPrintf("\r\nchangeDir: [%s] >", m_filename.c_str());
+				//Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
 				m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
 			}
 		}
@@ -402,29 +405,28 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_atn_cmd.strLen = 0;
 	}
 
-	//debugPrintf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
+	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
 	Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
 } // handleATNCmdCodeOpen
 
-void Interface::handleATNCmdCodeDataTalk(byte chan)
+
+void iecDevice::handleATNCmdCodeDataTalk(int chan)
 {
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
 
-	debugPrintf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
+	Debug_printf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
 
-	if (chan == CMD_CHANNEL)
-	{
+	if(chan == CMD_CHANNEL) {
 		// Send status message
 		sendStatus();
 		// go back to OK state, we have dispatched the error to IEC host now.
 		m_queuedError = ErrOK;
 	}
-	else
-	{
+	else {
 
-		//debugPrintf("\r\nm_openState: %d", m_openState);
+		//Debug_printf("\r\nm_openState: %d", m_openState);
 
 		switch (m_openState)
 		{
@@ -483,17 +485,18 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 
 } // handleATNCmdCodeDataTalk
 
-void Interface::handleATNCmdCodeDataListen()
+
+void iecDevice::handleATNCmdCodeDataListen()
 {
-	byte lengthOrResult;
-	boolean wasSuccess = false;
+	int lengthOrResult = 0;
+	bool wasSuccess = false;
 
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
 
 	serCmdIOBuf[0] = 0;
 
-	debugPrintf("\r\nhandleATNCmdCodeDataListen: %s", serCmdIOBuf);
+	Debug_printf("\r\nhandleATNCmdCodeDataListen: %s", serCmdIOBuf);
 
 	if (not lengthOrResult or '>' not_eq serCmdIOBuf[0])
 	{
@@ -524,22 +527,24 @@ void Interface::handleATNCmdCodeDataListen()
 	}
 } // handleATNCmdCodeDataListen
 
-void Interface::handleATNCmdClose()
+
+void iecDevice::handleATNCmdClose()
 {
-	debugPrintf("\r\nhandleATNCmdClose: Success!");
+	Debug_printf("\r\nhandleATNCmdClose: Success!");
 
 	//Serial.printf("\r\nIEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str());
-	debugPrintf("\r\n=================================\r\n\r\n");
+	Debug_printf("\r\n=================================\r\n\r\n");
 
 	m_filename = "";
 } // handleATNCmdClose
 
+
 // send single basic line, including heading basic pointer and terminating zero.
-uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...)
+uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, const char* format, ...)
 {
 	// Format our string
 	va_list args;
-	va_start(args, format);
+  	va_start(args, format);
 	char text[vsnprintf(NULL, 0, format, args) + 1];
 	vsnprintf(text, sizeof text, format, args);
 	va_end(args);
@@ -547,15 +552,15 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *fo
 	return sendLine(basicPtr, blocks, text);
 }
 
-uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
+uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, char* text)
 {
-	byte i;
+	int i;
 	uint16_t b_cnt = 0;
 
-	debugPrintf("%d %s ", blocks, text);
+	Debug_printf("%d %s ", blocks, text);
 
 	// Get text length
-	byte len = strlen(text);
+	int len = strlen(text);
 
 	// Increment next line pointer
 	basicPtr += len + 5;
@@ -575,16 +580,17 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 	// Finish line
 	m_iec.send(0);
 
-	debugPrintln("");
-
+	Debug_println("");
+	
 	b_cnt += (len + 5);
 
 	return b_cnt;
 } // sendLine
 
-uint16_t Interface::sendHeader(uint16_t &basicPtr)
+
+uint16_t iecDevice::sendHeader(uint16_t &basicPtr)
 {
-	uint16_t byte_count;
+	uint16_t byte_count = 0;
 
 	// Send List HEADER
 	// "      MEAT LOAF 64      "
@@ -610,9 +616,9 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr)
 	return byte_count;
 }
 
-void Interface::sendListing()
+void iecDevice::sendListing()
 {
-	debugPrintf("\r\nsendListing:\r\n");
+	Debug_printf("\r\nsendListing:\r\n");
 
 	uint16_t byte_count = 0;
 	String extension = "DIR";
@@ -624,7 +630,7 @@ void Interface::sendListing()
 	m_iec.send(C64_BASIC_START bitand 0xff);
 	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
 	byte_count += 2;
-	debugPrintln("");
+	Debug_println("");
 
 	byte_count += sendHeader(basicPtr);
 
@@ -674,7 +680,7 @@ void Interface::sendListing()
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", dir.fileName().c_str(), space_cnt, "", extension.c_str());
 		}
 
-		//debugPrintf(" (%d, %d)\r\n", space_cnt, byte_count);
+		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
 		toggleLED(true);
 	}
 
@@ -684,12 +690,13 @@ void Interface::sendListing()
 	m_iec.send(0);
 	m_iec.sendEOI(0);
 
-	debugPrintf("\r\nBytes Sent: %d\r\n", byte_count);
+	Debug_printf("\r\nsendListing: %d Bytes Sent\r\n", byte_count);
 
 	ledON();
 } // sendListing
 
-uint16_t Interface::sendFooter(uint16_t &basicPtr)
+
+uint16_t iecDevice::sendFooter(uint16_t &basicPtr)
 {
 	// Send List FOOTER
 	// #if defined(USE_LITTLEFS)
@@ -699,10 +706,11 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr)
 	// #elif defined(USE_SPIFFS)
 	// 	return sendLine(basicPtr, 00, "UNKNOWN BLOCKS FREE.");
 	// #endif
-	//debugPrintln("");
+	//Debug_println("");
 }
 
-void Interface::sendFile()
+
+void iecDevice::sendFile()
 {
 	uint16_t i = 0;
 	bool success = true;
@@ -731,7 +739,7 @@ void Interface::sendFile()
 			Dir dir = m_fileSystem->openDir(m_device.path());
 			while (dir.next() && dir.isDirectory())
 			{
-				debugPrintf("\r\nsendFile: %s", dir.fileName().c_str());
+				Debug_printf("\r\nsendFile: %s", dir.fileName().c_str());
 			}
 			if (dir.isFile())
 				m_filename = dir.fileName();
@@ -743,7 +751,7 @@ void Interface::sendFile()
 
 	if (!file.available())
 	{
-		debugPrintf("\r\nsendFile: %s (File Not Found)\r\n", inFile.c_str());
+		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", inFile.c_str());
 		m_iec.sendFNF();
 	}
 	else
@@ -785,6 +793,8 @@ void Interface::sendFile()
 			if (i % 50 == 0)
 				toggleLED(true);
 
+			//printProgress(len, i);
+			Debug_printf("progress: %d %d", len, i);
 		}
 		file.close();
 #ifdef DATA_STREAM
@@ -795,9 +805,9 @@ void Interface::sendFile()
 
 		if (!success || i != len)
 		{
-			//bool s1 = m_iec.readATN();
-			//bool s2 = m_iec.readCLOCK();
-			//bool s3 = m_iec.readDATA();
+			//bool s1 = m_iec.status(IEC_PIN_ATN);
+			//bool s2 = m_iec.status(IEC_PIN_CLK);
+			//bool s3 = m_iec.status(IEC_PIN_DATA);
 
 			//Serial.printf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
 			Serial.println("Transfer failed!");
@@ -805,18 +815,18 @@ void Interface::sendFile()
 	}
 } // sendFile
 
-void Interface::saveFile()
+void iecDevice::saveFile()
 {
 	String outFile = String(m_device.path() + m_filename);
 	byte b;
 
-	debugPrintf("\r\nsaveFile: %s", outFile.c_str());
+	Debug_printf("\r\nsaveFile: %s", outFile.c_str());
 
 	File file = m_fileSystem->open(outFile, "w");
 	//	noInterrupts();
 	if (!file.available())
 	{
-		debugPrintf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
+		Debug_printf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
 	}
 	else
 	{
@@ -825,7 +835,7 @@ void Interface::saveFile()
 		do
 		{
 			b = m_iec.receive();
-			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
+			done = (m_iec.state() bitand iecBus::eoiFlag) or (m_iec.state() bitand iecBus::errorFlag);
 
 			file.write(b);
 		} while (not done);
@@ -834,9 +844,9 @@ void Interface::saveFile()
 	//	interrupts();
 } // saveFile
 
-void Interface::sendListingHTTP()
+void iecDevice::sendListingHTTP()
 {
-	debugPrintf("\r\nsendListingHTTP: ");
+	Debug_printf("\r\nsendListingHTTP: ");
 
 	uint16_t byte_count = 0;
 
@@ -851,22 +861,22 @@ void Interface::sendListingHTTP()
 	client.setTimeout(10000);
 	if (!client.begin(url))
 	{
-		debugPrintln(F("\r\nConnection failed"));
+		Debug_println(F("\r\nConnection failed"));
 		m_iec.sendFNF();
 		return;
 	}
 	client.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-	debugPrintf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
+	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
 	int httpCode = client.POST(post_data);	 //Send the request
 	WiFiClient payload = client.getStream(); //Get the response payload as Stream
 	//String payload = client.getString();    //Get the response payload as String
 
-	debugPrintf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
-	if (httpCode != 200)
+	Debug_printf("HTTP Status: %d\r\n", httpCode);   //Print HTTP return code
+	if(httpCode != 200)
 	{
-		debugPrintln(F("Error"));
+		Debug_println("Error");
 		m_iec.sendFNF();
 		return;
 	}
@@ -881,7 +891,7 @@ void Interface::sendListingHTTP()
 	m_iec.send(C64_BASIC_START bitand 0xff);
 	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
 	byte_count += 2;
-	debugPrintln("");
+	Debug_println("");
 
 	do
 	{
@@ -904,28 +914,28 @@ void Interface::sendListingHTTP()
 	m_iec.send(0);
 	m_iec.sendEOI(0);
 
-	debugPrintf("\r\nBytes Sent: %d\r\n", byte_count);
+	Debug_printf("\r\nsendListingHTTP: %d Bytes Sent\r\n", byte_count);
 
 	client.end(); //Close connection
 
 	ledON();
 } // sendListingHTTP
 
-void Interface::sendFileHTTP()
+void iecDevice::sendFileHTTP()
 {
 	uint16_t i = 0;
 	bool success = true;
 
 	uint16_t bi = 0;
 	char b[1];
-	byte ba[9];
+	int ba[9];
 
 	ba[8] = '\0';
 
 	// Update device database
 	m_device.save();
 
-	debugPrintf("\r\nsendFileHTTP: ");
+	Debug_printf("\r\nsendFileHTTP: ");
 
 	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
 	String url("http://" + m_device.url() + "/api/");
@@ -938,20 +948,20 @@ void Interface::sendFileHTTP()
 	client.setTimeout(10000);
 	if (!client.begin(url))
 	{
-		debugPrintln(F("\r\nConnection failed"));
+		Debug_println(F("\r\nConnection failed"));
 		m_iec.sendFNF();
 		return;
 	}
 	client.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-	debugPrintf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
+	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
 	int httpCode = client.POST(post_data); //Send the request
 	WiFiClient file = client.getStream();  //Get the response payload as Stream
 
 	if (!file.available())
 	{
-		debugPrintf("\r\nsendFileHTTP: %s (File Not Found)\r\n", url.c_str());
+		Debug_printf("\r\nsendFileHTTP: %s (File Not Found)\r\n", url.c_str());
 		m_iec.sendFNF();
 	}
 	else
@@ -994,6 +1004,7 @@ void Interface::sendFileHTTP()
 			if (i % 50 == 0)
 				toggleLED(true);
 
+			printProgress(len, i);
 		}
 		client.end();
 #ifdef DATA_STREAM
@@ -1008,8 +1019,8 @@ void Interface::sendFileHTTP()
 			//bool s2 = m_iec.readCLOCK();
 			//bool s3 = m_iec.readDATA();
 
-			//debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
-			debugPrintln("Transfer failed!");
+			//Debug_printf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			Debug_println("Transfer failed!");
 		}
 	}
 }
@@ -1089,7 +1100,7 @@ void Interface::sendStatus(void)
 
     String status = String("00, OK, 00, 08");
 
-    debugPrintf("\r\nsendStatus: ");
+    Debug_printf("\r\nsendStatus: ");
     // Length does not include the CR, write all but the last one should be with EOI.
     for (i = 0; i < readResult - 2; ++i)
         m_iec.send(status[i]);
@@ -1100,7 +1111,7 @@ void Interface::sendStatus(void)
 
 void Interface::sendDeviceInfo()
 {
-    debugPrintf("\r\nsendDeviceInfo:\r\n");
+    Debug_printf("\r\nsendDeviceInfo:\r\n");
 
     // Reset basic memory pointer:
     uint16_t basicPtr = C64_BASIC_START;
@@ -1115,7 +1126,7 @@ void Interface::sendDeviceInfo()
     // Send load address
     m_iec.send(C64_BASIC_START bitand 0xff);
     m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-    debugPrintln("");
+    Debug_println("");
 
     // Send List HEADER
     sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
@@ -1180,7 +1191,7 @@ void Interface::sendDeviceInfo()
 
 void Interface::sendDeviceStatus()
 {
-    debugPrintf("\r\nsendDeviceStatus:\r\n");
+    Debug_printf("\r\nsendDeviceStatus:\r\n");
 
     // Reset basic memory pointer:
     uint16_t basicPtr = C64_BASIC_START;
@@ -1188,7 +1199,7 @@ void Interface::sendDeviceStatus()
     // Send load address
     m_iec.send(C64_BASIC_START bitand 0xff);
     m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-    debugPrintln("");
+    Debug_println("");
 
     // Send List HEADER
     sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
@@ -1223,7 +1234,7 @@ byte Interface::loop(void)
     // Wait for it to get out of reset.
     //while (m_iec.checkRESET())
     //{
-    //    debugPrintln("ATN_RESET");
+    //    Debug_println("ATN_RESET");
     //}
 
     //	noInterrupts();
@@ -1232,7 +1243,7 @@ byte Interface::loop(void)
 
     if (retATN == IEC::ATN_ERROR)
     {
-        //debugPrintf("\r\n[ERROR]");
+        //Debug_printf("\r\n[ERROR]");
         reset();
         retATN == IEC::ATN_IDLE;
     }
@@ -1244,9 +1255,9 @@ byte Interface::loop(void)
         {
         case IEC::ATN_CODE_OPEN:
             if (m_atn_cmd.channel == 0)
-                debugPrintf("\r\n[OPEN] LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+                Debug_printf("\r\n[OPEN] LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
             if (m_atn_cmd.channel == 1)
-                debugPrintf("\r\n[OPEN] SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+                Debug_printf("\r\n[OPEN] SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
 
             // Open either file or prg for reading, writing or single line command on the command channel.
             // In any case we just issue an 'OPEN' to the host and let it process.
@@ -1257,7 +1268,7 @@ byte Interface::loop(void)
             break;
 
         case IEC::ATN_CODE_DATA: // data channel opened
-            debugPrintf("\r\n[DATA] ");
+            Debug_printf("\r\n[DATA] ");
             if (retATN == IEC::ATN_CMD_TALK)
             {
                 // when the CMD channel is read (status), we first need to issue the host request. The data channel is opened directly.
@@ -1272,22 +1283,22 @@ byte Interface::loop(void)
             break;
 
         case IEC::ATN_CODE_CLOSE:
-            debugPrintf("\r\n[CLOSE] ");
+            Debug_printf("\r\n[CLOSE] ");
             // handle close with host.
             handleATNCmdClose();
             break;
 
         case IEC::ATN_CODE_LISTEN:
-            debugPrintf("\r\n[LISTEN] ");
+            Debug_printf("\r\n[LISTEN] ");
             break;
         case IEC::ATN_CODE_TALK:
-            debugPrintf("\r\n[TALK] ");
+            Debug_printf("\r\n[TALK] ");
             break;
         case IEC::ATN_CODE_UNLISTEN:
-            debugPrintf("\r\n[UNLISTEN] ");
+            Debug_printf("\r\n[UNLISTEN] ");
             break;
         case IEC::ATN_CODE_UNTALK:
-            debugPrintf("\r\n[UNTALK] ");
+            Debug_printf("\r\n[UNTALK] ");
             break;
         } // switch
 	}	  // IEC not idle
@@ -1319,14 +1330,14 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
     else if (local_file.isDirectory())
     {
         // Enter directory
-        debugPrintf("\r\nchangeDir: [%s] >", m_filename.c_str());
+        Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
         m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
         m_openState = O_DIR;
     }
     else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
     {
         // Mount image file
-        debugPrintf("\r\nmount: [%s] >", m_filename.c_str());
+        Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
         m_device.image(m_filename);
 
         m_openState = O_DIR;
@@ -1334,7 +1345,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
     else if (m_filename.startsWith(F("HTTP://")))
     {
         // Mount url
-        debugPrintf("\r\nmount: [%s] >", m_filename.c_str());
+        Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
         m_device.partition(0);
         m_device.url(m_filename.substring(7).c_str());
         m_device.path("/");
@@ -1349,19 +1360,19 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
             if (m_device.image().length())
             {
                 // Unmount image file
-                //debugPrintf("\r\nunmount: [%s] <", m_device.image().c_str());
+                //Debug_printf("\r\nunmount: [%s] <", m_device.image().c_str());
                 m_device.image("");
             }
             else if (m_device.url().length() && m_device.path() == "/")
             {
                 // Unmount url
-                //debugPrintf("\r\nunmount: [%s] <", m_device.url().c_str());
+                //Debug_printf("\r\nunmount: [%s] <", m_device.url().c_str());
                 m_device.url("");
             }
             else
             {
                 // Go back a directory
-                //debugPrintf("\r\nchangeDir: [%s] <", m_filename.c_str());
+                //Debug_printf("\r\nchangeDir: [%s] <", m_filename.c_str());
                 m_device.path(m_device.path().substring(0, m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1));
 
                 if (!m_device.path().length())
@@ -1382,13 +1393,13 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
             if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
             {
                 // Mount image file
-                //debugPrintf("\r\nmount: [%s] >", m_filename.c_str());
+                //Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
                 m_device.image(m_filename.substring(3));
             }
             else
             {
                 // Enter directory
-                //debugPrintf("\r\nchangeDir: [%s] >", m_filename.c_str());
+                //Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
                 m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
             }
         }
@@ -1421,7 +1432,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
         m_atn_cmd.strLen = 0;
     }
 
-    //debugPrintf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
+    //Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
     Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
 } // handleATNCmdCodeOpen
@@ -1431,7 +1442,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
     // process response into m_queuedError.
     // Response: ><code in binary><CR>
 
-    debugPrintf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
+    Debug_printf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
 
     if (chan == CMD_CHANNEL)
     {
@@ -1443,7 +1454,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
     else
     {
 
-        //debugPrintf("\r\nm_openState: %d", m_openState);
+        //Debug_printf("\r\nm_openState: %d", m_openState);
 
         switch (m_openState)
         {
@@ -1512,7 +1523,7 @@ void Interface::handleATNCmdCodeDataListen()
 
     serCmdIOBuf[0] = 0;
 
-    debugPrintf("\r\nhandleATNCmdCodeDataListen: %s", serCmdIOBuf);
+    Debug_printf("\r\nhandleATNCmdCodeDataListen: %s", serCmdIOBuf);
 
     if (not lengthOrResult or '>' not_eq serCmdIOBuf[0])
     {
@@ -1545,10 +1556,10 @@ void Interface::handleATNCmdCodeDataListen()
 
 void Interface::handleATNCmdClose()
 {
-    debugPrintf("\r\nhandleATNCmdClose: Success!");
+    Debug_printf("\r\nhandleATNCmdClose: Success!");
 
     //Serial.printf("\r\nIEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str());
-    debugPrintf("\r\n=================================\r\n\r\n");
+    Debug_printf("\r\n=================================\r\n\r\n");
 
     m_filename = "";
 } // handleATNCmdClose
@@ -1571,7 +1582,7 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
     byte i;
     uint16_t b_cnt = 0;
 
-    debugPrintf("%d %s ", blocks, text);
+    Debug_printf("%d %s ", blocks, text);
 
     // Get text length
     byte len = strlen(text);
@@ -1594,7 +1605,7 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
     // Finish line
     m_iec.send(0);
 
-    debugPrintln("");
+    Debug_println("");
 
     b_cnt += (len + 5);
 
@@ -1631,7 +1642,7 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr)
 
 void Interface::sendListing()
 {
-    debugPrintf("\r\nsendListing:\r\n");
+    Debug_printf("\r\nsendListing:\r\n");
 
     uint16_t byte_count = 0;
     String extension = "DIR";
@@ -1643,7 +1654,7 @@ void Interface::sendListing()
     m_iec.send(C64_BASIC_START bitand 0xff);
     m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
     byte_count += 2;
-    debugPrintln("");
+    Debug_println("");
 
     byte_count += sendHeader(basicPtr);
 
@@ -1696,7 +1707,7 @@ void Interface::sendListing()
             byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", file.name(), space_cnt, "", extension.c_str());
         }
 
-        //debugPrintf(" (%d, %d)\r\n", space_cnt, byte_count);
+        //Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
         toggleLED(true);
 		file = dir.openNextFile();
 	}
@@ -1707,7 +1718,7 @@ void Interface::sendListing()
     m_iec.send(0);
     m_iec.sendEOI(0);
 
-    debugPrintf("\r\nBytes Sent: %d\r\n", byte_count);
+    Debug_printf("\r\nBytes Sent: %d\r\n", byte_count);
 
     ledON();
 } // sendListing
@@ -1722,7 +1733,7 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr)
 #elif defined(USE_SPIFFS)
     return sendLine(basicPtr, 00, "UNKNOWN BLOCKS FREE.");
 #endif
-    //debugPrintln("");
+    //Debug_println("");
 }
 
 void Interface::sendFile()
@@ -1752,7 +1763,7 @@ void Interface::sendFile()
 
 			while (file && file.isDirectory())
             {
-                debugPrintf("\r\nsendFile: %s", file.name());
+                Debug_printf("\r\nsendFile: %s", file.name());
 				file = dir.openNextFile();
 			}
             // if (dir.isFile())
@@ -1765,14 +1776,14 @@ void Interface::sendFile()
 
     if (!file.available())
     {
-        debugPrintf("\r\nsendFile: %s (File Not Found)\r\n", inFile.c_str());
+        Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", inFile.c_str());
         m_iec.sendFNF();
     }
     else
     {
         size_t len = file.size();
 
-        debugPrintf("\r\nsendFile: [%s] (%d bytes)\r\n=================================\r\n", inFile.c_str(), len);
+        Debug_printf("\r\nsendFile: [%s] (%d bytes)\r\n=================================\r\n", inFile.c_str(), len);
         for (i = 0; success and i < len; ++i)
         { // End if sending to CBM fails.
             success = file.readBytes(b, 1);
@@ -1794,7 +1805,7 @@ void Interface::sendFile()
             bi++;
             if (bi == 8)
             {
-                debugPrintf(" %s\r\n", ba);
+                Debug_printf(" %s\r\n", ba);
                 bi = 0;
             }
 #endif
@@ -1806,8 +1817,8 @@ void Interface::sendFile()
             printProgress(len, i);
         }
         file.close();
-        debugPrintln("");
-        debugPrintf("%d bytes sent\r\n", i);
+        Debug_println("");
+        Debug_printf("%d bytes sent\r\n", i);
         ledON();
 
         if (!success)
@@ -1816,8 +1827,8 @@ void Interface::sendFile()
             //bool s2 = m_iec.readCLOCK();
             //bool s3 = m_iec.readDATA();
 
-            //debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
-			debugPrintln("Transfer failed!");
+            //Debug_printf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			Debug_println("Transfer failed!");
         }
     }
 } // sendFile
@@ -1827,13 +1838,13 @@ void Interface::saveFile()
     String outFile = String(m_device.path() + m_filename);
     byte b;
 
-    debugPrintf("\r\nsaveFile: %s", outFile.c_str());
+    Debug_printf("\r\nsaveFile: %s", outFile.c_str());
 
     File file = m_fileSystem->open(outFile, "w");
     //	noInterrupts();
     if (!file.available())
     {
-        debugPrintf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
+        Debug_printf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
     }
     else
     {
@@ -1853,7 +1864,7 @@ void Interface::saveFile()
 
 void Interface::sendListingHTTP()
 {
-    debugPrintf("\r\nsendListingHTTP: ");
+    Debug_printf("\r\nsendListingHTTP: ");
 
     uint16_t byte_count = 0;
 
@@ -1868,22 +1879,22 @@ void Interface::sendListingHTTP()
     client.setTimeout(10000);
     if (!client.begin(url))
     {
-        debugPrintln(F("\r\nConnection failed"));
+        Debug_println(F("\r\nConnection failed"));
         m_iec.sendFNF();
         return;
     }
     client.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    debugPrintf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
+    Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
 	int httpCode = client.POST(post_data);	 //Send the request
 	WiFiClient payload = client.getStream(); //Get the response payload as Stream
     //String payload = client.getString();    //Get the response payload as String
 
-    debugPrintf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
+    Debug_printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
     if (httpCode != 200)
     {
-        debugPrintln(F("Error"));
+        Debug_println(F("Error"));
         m_iec.sendFNF();
         return;
     }
@@ -1898,7 +1909,7 @@ void Interface::sendListingHTTP()
     m_iec.send(C64_BASIC_START bitand 0xff);
     m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
     byte_count += 2;
-    debugPrintln("");
+    Debug_println("");
 
     do
     {
@@ -1921,7 +1932,7 @@ void Interface::sendListingHTTP()
     m_iec.send(0);
     m_iec.sendEOI(0);
 
-    debugPrintf("\r\nBytes Sent: %d\r\n", byte_count);
+    Debug_printf("\r\nBytes Sent: %d\r\n", byte_count);
 
     client.end(); //Close connection
 
@@ -1939,7 +1950,7 @@ void Interface::sendFileHTTP()
 
     ba[8] = '\0';
 
-    debugPrintf("\r\nsendFileHTTP: ");
+    Debug_printf("\r\nsendFileHTTP: ");
 
     String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
     String url("http://" + m_device.url() + "/api/");
@@ -1952,27 +1963,27 @@ void Interface::sendFileHTTP()
     client.setTimeout(10000);
     if (!client.begin(url))
     {
-        debugPrintln(F("\r\nConnection failed"));
+        Debug_println(F("\r\nConnection failed"));
         m_iec.sendFNF();
         return;
     }
     client.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    debugPrintf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
+    Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
     int httpCode = client.POST(post_data); //Send the request
     WiFiClient file = client.getStream();  //Get the response payload as Stream
 
     if (!file.available())
     {
-        debugPrintf("\r\nsendFileHTTP: %s (File Not Found)\r\n", url.c_str());
+        Debug_printf("\r\nsendFileHTTP: %s (File Not Found)\r\n", url.c_str());
         m_iec.sendFNF();
     }
     else
     {
         size_t len = client.getSize();
 
-        debugPrintf("\r\nsendFileHTTP: %d bytes\r\n=================================\r\n", len);
+        Debug_printf("\r\nsendFileHTTP: %d bytes\r\n=================================\r\n", len);
         for (i = 0; success and i < len; ++i)
         { // End if sending to CBM fails.
             success = file.readBytes(b, 1);
@@ -1994,7 +2005,7 @@ void Interface::sendFileHTTP()
             bi++;
             if (bi == 8)
             {
-                debugPrintf(" %s\r\n", ba);
+                Debug_printf(" %s\r\n", ba);
                 bi = 0;
             }
 #endif
@@ -2006,8 +2017,8 @@ void Interface::sendFileHTTP()
             printProgress(len, i);
         }
         client.end();
-        debugPrintln("");
-        debugPrintf("%d bytes sent\r\n", i);
+        Debug_println("");
+        Debug_printf("%d bytes sent\r\n", i);
         ledON();
 
         if (!success)
@@ -2016,8 +2027,8 @@ void Interface::sendFileHTTP()
             //bool s2 = m_iec.readCLOCK();
             //bool s3 = m_iec.readDATA();
 
-            //debugPrintf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
-			debugPrintln("Transfer failed!");
+            //Debug_printf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
+			Debug_println("Transfer failed!");
         }
     }
 }

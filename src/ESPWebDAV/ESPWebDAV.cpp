@@ -1,6 +1,19 @@
-// WebDAV server using ESP8266 and SD card filesystem
-// Targeting Windows 7 Explorer WebDav
-
+// Meatloaf - A Commodore 1541 disk drive emulator
+// https://github.com/idolpx/meatloaf
+// Copyright(C) 2020 James Johnston
+//
+// Meatloaf is free software : you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Meatloaf is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(ESP32)
 #include <WiFi.h>
@@ -89,7 +102,7 @@ void ESPWebDAV::handleNotFound() {
 
 	sendHeader(F("Allow"), F("OPTIONS,MKCOL,POST,PUT"));
 	send("404 Not Found", "text/plain", message);
-	debugPrintln(F("404 Not Found"));
+	Debug_println(F("404 Not Found"));
 }
 
 
@@ -97,7 +110,7 @@ void ESPWebDAV::handleNotFound() {
 // ------------------------
 void ESPWebDAV::handleReject(String rejectMessage)	{
 // ------------------------
-	debugPrint(F("Rejecting request: ")); debugPrintln(rejectMessage);
+	Debug_print(F("Rejecting request: ")); Debug_println(rejectMessage);
 
 	// handle options
 	if(method .equals(F("OPTIONS")))
@@ -161,9 +174,9 @@ void ESPWebDAV::handleRequest(String blank)	{
 		tFile.close();
 	}
 
-	debugPrint(F("\r\nm: ")); debugPrint(method);
-	debugPrint(F(" r: ")); debugPrint(resource);
-	debugPrint(F(" u: ")); debugPrintln(uri);
+	Debug_print(F("\r\nm: ")); Debug_print(method);
+	Debug_print(F(" r: ")); Debug_print(resource);
+	Debug_print(F(" u: ")); Debug_println(uri);
 
 	// add header that gets sent everytime
 	sendHeader(F("DAV"), F("2"));
@@ -217,7 +230,7 @@ void ESPWebDAV::handleRequest(String blank)	{
 // ------------------------
 void ESPWebDAV::handleOptions(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("Processing OPTION"));
+	Debug_println(F("Processing OPTION"));
 	sendHeader(F("Allow"), F("PROPFIND,GET,DELETE,PUT,COPY,MOVE"));
 	send("200 OK", NULL, "");
 }
@@ -227,7 +240,7 @@ void ESPWebDAV::handleOptions(ResourceType resource)	{
 // ------------------------
 void ESPWebDAV::handleLock(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("Processing LOCK"));
+	Debug_println(F("Processing LOCK"));
 	
 	// does URI refer to an existing resource
 	if(resource == RESOURCE_NONE)
@@ -263,7 +276,7 @@ void ESPWebDAV::handleLock(ResourceType resource)	{
 // ------------------------
 void ESPWebDAV::handleUnlock(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("Processing UNLOCK"));
+	Debug_println(F("Processing UNLOCK"));
 	sendHeader(F("Allow"), F("PROPPATCH,PROPFIND,OPTIONS,DELETE,UNLOCK,COPY,LOCK,MOVE,HEAD,POST,PUT,GET"));
 	sendHeader(F("Lock-Token"), F("urn:uuid:26e57cb3-834d-191a-00de-000042bdecf9"));
 	send("204 No Content", NULL, "");
@@ -274,7 +287,7 @@ void ESPWebDAV::handleUnlock(ResourceType resource)	{
 // ------------------------
 void ESPWebDAV::handlePropPatch(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("PROPPATCH forwarding to PROPFIND"));
+	Debug_println(F("PROPPATCH forwarding to PROPFIND"));
 	handleProp(resource);
 }
 
@@ -283,7 +296,7 @@ void ESPWebDAV::handlePropPatch(ResourceType resource)	{
 // ------------------------
 void ESPWebDAV::handleProp(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("Processing PROPFIND"));
+	Debug_println(F("Processing PROPFIND"));
 	// check depth header
 	DepthType depth = DEPTH_NONE;
 	if(depthHeader .equals(F("1")))
@@ -291,7 +304,7 @@ void ESPWebDAV::handleProp(ResourceType resource)	{
 	else if(depthHeader .equals(F("infinity")))
 		depth = DEPTH_ALL;
 	
-	debugPrint(F("Depth: ")); debugPrintln(depth);
+	Debug_print(F("Depth: ")); Debug_println(depth);
 
 	// does URI refer to an existing resource
 	if(resource == RESOURCE_NONE)
@@ -385,13 +398,13 @@ void ESPWebDAV::sendPropResponse(boolean recursing, File *curFile)	{
 // ------------------------
 void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 // ------------------------
-	debugPrintln(F("Processing GET"));
+	Debug_println(F("Processing GET"));
 
 	// does URI refer to an existing file resource
 	if(resource != RESOURCE_FILE)
 		return handleNotFound();
 
-	long tStart = millis(); // used in debugPrint below
+	long tStart = millis(); // used in Debug_print below
 	uint8_t buf[1460];
 	File rFile = m_fileSystem->open(uri.c_str(), "r");
 
@@ -417,7 +430,7 @@ void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 	}
 
 	rFile.close();
-	debugPrint(F("File ")); debugPrint(fileSize); debugPrint(F(" bytes sent in: ")); debugPrint((millis() - tStart)/1000); debugPrintln(F(" sec"));
+	Debug_print(F("File ")); Debug_print(fileSize); Debug_print(F(" bytes sent in: ")); Debug_print((millis() - tStart)/1000); Debug_println(F(" sec"));
 }
 
 
@@ -426,7 +439,7 @@ void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 // ------------------------
 void ESPWebDAV::handlePut(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("Processing Put"));
+	Debug_println(F("Processing Put"));
 
 	// does URI refer to a directory
 	if(resource == RESOURCE_DIR)
@@ -443,7 +456,7 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 	}
 
 	// file is created/open for writing at this point
-	debugPrint(uri); debugPrintln(F(" - ready for data"));
+	Debug_print(uri); Debug_println(F(" - ready for data"));
 	// did server send any data in put
 	size_t contentLen = contentLengthHeader.toInt();
 
@@ -481,7 +494,7 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 #endif
 
 		nFile.close();
-		debugPrint(F("File ")); debugPrint(contentLen - numRemaining); debugPrint(F(" bytes stored in: ")); debugPrint((millis() - tStart)/1000); debugPrintln(F(" sec"));
+		Debug_print(F("File ")); Debug_print(contentLen - numRemaining); Debug_print(F(" bytes stored in: ")); Debug_print((millis() - tStart)/1000); Debug_println(F(" sec"));
 	}
 
 	if(resource == RESOURCE_NONE)
@@ -504,14 +517,14 @@ void ESPWebDAV::handleWriteError(String message, File *wFile)	{
 	m_fileSystem->remove(uri.c_str());
 	// send error
 	send("500 Internal Server Error", "text/plain", message);
-	debugPrintln(message);
+	Debug_println(message);
 }
 
 
 // ------------------------
 void ESPWebDAV::handleDirectoryCreate(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("Processing MKCOL"));
+	Debug_println(F("Processing MKCOL"));
 	
 	// does URI refer to anything
 	if(resource != RESOURCE_NONE)
@@ -527,11 +540,11 @@ void ESPWebDAV::handleDirectoryCreate(ResourceType resource)	{
 	if (!m_fileSystem->mkdir(uri.c_str())) {
 		// send error
 		send("500 Internal Server Error", "text/plain", "Unable to create directory");
-		debugPrintln(F("Unable to create directory"));
+		Debug_println(F("Unable to create directory"));
 		return;
 	}
 
-	debugPrint(uri);	debugPrintln(F(" directory created"));
+	Debug_print(uri);	Debug_println(F(" directory created"));
 	sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
 	send("201 Created", NULL, "");
 }
@@ -541,7 +554,7 @@ void ESPWebDAV::handleDirectoryCreate(ResourceType resource)	{
 // ------------------------
 void ESPWebDAV::handleMove(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("Processing MOVE"));
+	Debug_println(F("Processing MOVE"));
 	
 	// does URI refer to anything
 	if(resource == RESOURCE_NONE)
@@ -562,17 +575,17 @@ void ESPWebDAV::handleMove(ResourceType resource)	{
 	}
 //#endif
 
-	debugPrint(F("Move destination: ")); debugPrintln(dest);
+	Debug_print(F("Move destination: ")); Debug_println(dest);
 
 	// move file or directory
 	if ( !m_fileSystem->rename(uri.c_str(), dest.c_str())	) {
 		// send error
 		send("500 Internal Server Error", "text/plain", "Unable to move");
-		debugPrintln(F("Unable to move file/directory"));
+		Debug_println(F("Unable to move file/directory"));
 		return;
 	}
 
-	debugPrintln(F("Move successful"));
+	Debug_println(F("Move successful"));
 	sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
 	send("201 Created", NULL, "");
 }
@@ -611,7 +624,7 @@ int ESPWebDAV::deleteRecursive(String path) {
 // ------------------------
 void ESPWebDAV::handleDelete(ResourceType resource)	{
 // ------------------------
-	debugPrintln(F("Processing DELETE"));
+	Debug_println(F("Processing DELETE"));
 	
 	// does URI refer to anything
 	if(resource == RESOURCE_NONE)
@@ -622,11 +635,11 @@ void ESPWebDAV::handleDelete(ResourceType resource)	{
 	if(!retVal)	{
 		// send error
 		send("500 Internal Server Error", "text/plain", "Unable to delete");
-		debugPrintln(F("Unable to delete file/directory"));
+		Debug_println(F("Unable to delete file/directory"));
 		return;
 	}
 
-	debugPrint(F("Delete successful: ")); debugPrintln(retVal);
+	Debug_print(F("Delete successful: ")); Debug_println(retVal);
 	sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
 	send("200 OK", NULL, "");
 }
