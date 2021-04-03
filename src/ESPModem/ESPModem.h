@@ -1,31 +1,3 @@
-/*
-   WiFi SIXFOUR - A virtual WiFi modem based on the ESP 8266 chipset
-   Copyright (C) 2016 Paul Rickards <rickards@gmail.com>
-   Added EEPROM read/write, status/help pages, busy answering of incoming calls
-   uses the readily available Sparkfun ESP8266 WiFi Shield which has 5v level
-   shifters and 3.3v voltage regulation present-- easily connect to a C64
-   https://www.sparkfun.com/products/13287
-
-   based on
-   ESP8266 based virtual modem
-   Copyright (C) 2016 Jussi Salin <salinjus@gmail.com>
-
-   https://github.com/jsalin/esp8266_modem
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #ifndef ESPMODEM_H
 #define ESPMODEM_H
 

@@ -76,12 +76,12 @@ public:
 	
 	typedef struct _tagATNCMD 
 	{
-		int code;
-		int command;
-		int channel;
-		int device;
-		int str[ATN_CMD_MAX_LENGTH];
-		int strLen;
+		byte code;
+		byte command;
+		byte channel;
+		byte device;
+		byte str[ATN_CMD_MAX_LENGTH];
+		byte strLen;
 	} ATNCmd;
 
 	iecBus();
@@ -98,7 +98,7 @@ public:
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
 //	bool checkRESET();
 
-	// Sends a int. The communication must be in the correct state: a load command
+	// Sends a byte. The communication must be in the correct state: a load command
 	// must just have been recieved. If something is not OK, FALSE is returned.
 	bool send(byte data);
 
@@ -108,14 +108,14 @@ public:
 	// A special send command that informs file not found condition
 	bool sendFNF();
 
-	// Recieves a int
-	int receive();
+	// Recieves a byte
+	byte receive();
 
 	// Enabled Device Bit Mask
 	uint32_t enabledDevices;
-	bool isDeviceEnabled(const int deviceNumber);
-	void enableDevice(const int deviceNumber);
-	void disableDevice(const int deviceNumber);
+	bool isDeviceEnabled(const byte deviceNumber);
+	void enableDevice(const byte deviceNumber);
+	void disableDevice(const byte deviceNumber);
 
 	IECState state() const;
 
@@ -155,13 +155,6 @@ private:
 
 	inline IECline status(int pin)
 	{
-		#ifdef TWO_IO_PINS
-		if (pin == IEC_PIN_CLK)
-			pin = IEC_PIN_CLK_IN;
-		else if (pin == IEC_PIN_DATA)
-			pin = IEC_PIN_DATA_IN;
-		#endif
-		
 		// To be able to read line we must be set to input, not driving.
 		set_pin_mode(pin, INPUT);
 		return espDigitalRead(pin) ? released : pulled;
@@ -189,11 +182,11 @@ private:
 			GPC(pin) = (GPC(pin) & (0xF << GPCI)) | (1 << GPCD); //SOURCE(GPIO) | DRIVER(OPEN_DRAIN) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
 		}
 #elif defined(ESP32)
-		return digitalRead(pin);
+			pinMode( pin, mode );
 #endif
 	}
 
-	inline void set_bit(uint8_t pin, uint8_t val) {
+	inline void ICACHE_RAM_ATTR espDigitalWrite(uint8_t pin, uint8_t val) {
 #if defined(ESP8266)
 		if(val) GPOS = (1 << pin);
 		else GPOC = (1 << pin);
@@ -202,25 +195,18 @@ private:
 #endif
 	}
 
-
-	inline void set_pin_mode(uint8_t pin, uint8_t mode) {
-#if defined(ESP8266)		
-		if(mode == OUTPUT){
-			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
-			GPC(pin) = (GPC(pin) & (0xF << GPCI)); //SOURCE(GPIO) | DRIVER(NORMAL) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
-			GPES = (1 << pin); //Enable
-		} else if(mode == INPUT){
-			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
-			GPEC = (1 << pin); //Disable
-			GPC(pin) = (GPC(pin) & (0xF << GPCI)) | (1 << GPCD); //SOURCE(GPIO) | DRIVER(OPEN_DRAIN) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
-		}
+	inline int ICACHE_RAM_ATTR espDigitalRead(uint8_t pin) {
+		int val = -1;
+#if defined(ESP8266)
+		val = GPIP(pin);
 #elif defined(ESP32)
-		pinMode( pin, mode );
+		val = digitalRead(pin);
 #endif
+		return val;
 	}
 
 	// communication must be reset
-	int m_state;
+	byte m_state;
 };
 
 #endif

@@ -43,12 +43,11 @@ bool  iecBus::init()
 	pull(IEC_PIN_ATN);
 	pull(IEC_PIN_CLK);
 	pull(IEC_PIN_DATA);
-	pull(IEC_PIN_SRQ);
+	//pull(IEC_PIN_SRQ);
 
-	// TODO:
-	//#ifdef RESET_C64
-	//	release(IEC_PIN_RESET);	// only early C64's could be reset by a slave going high.
-	//#endif
+//#ifdef RESET_C64
+//	release(IEC_PIN_RESET);	// only early C64's could be reset by a slave going high.
+//#endif
 
 	// initial pin modes in GPIO
 	set_pin_mode(IEC_PIN_ATN, INPUT);
@@ -146,10 +145,9 @@ byte iecBus::receiveByte(void)
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
 	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
 	// without  the Clock line going to true, it has a special task to perform: note EOI.
-	int n = 0;
-	while ((status(IEC_PIN_CLK) == released) && (n < 20))
-	{
-		delayMicroseconds(10); // this loop should cycle in about 10 us...
+	byte n = 0;
+	while(status(IEC_PIN_CLK) == released && (n < 20)) {
+		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
 
@@ -487,31 +485,31 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 	release(pin);
 	delayMicroseconds(1000);
 
-	//pin = IEC_PIN_CLK;
+	pin = IEC_PIN_CLOCK;
 	pull(pin);
 	delayMicroseconds(20); // 20
 	release(pin);
 	delayMicroseconds(1);
 
-	//pin = IEC_PIN_DATA;
+	pin = IEC_PIN_DATA;
 	pull(pin);
 	delayMicroseconds(50); // 50
 	release(pin);
 	delayMicroseconds(1);
 
-	//pin = IEC_PIN_SRQ;
+	pin = IEC_PIN_SRQ;
 	pull(pin);
 	delayMicroseconds(60); // 60
 	release(pin);
 	delayMicroseconds(1);
 
-	//pin = IEC_PIN_ATN;
+	pin = IEC_PIN_ATN;
 	pull(pin);
 	delayMicroseconds(100); // 100
 	release(pin);
 	delayMicroseconds(1);
 
-	//pin = IEC_PIN_CLK;
+	pin = IEC_PIN_CLOCK;
 	pull(pin);
 	delayMicroseconds(200); // 200
 	release(pin);
@@ -652,7 +650,7 @@ iecBus::ATNCheck iecBus::listen(ATNCmd &atn_cmd)
 
 iecBus::ATNCheck iecBus::talk(ATNCmd &atn_cmd)
 {
-	int i = 0;
+	byte i = 0;
 	ATNCommand c;
 
 	// Okay, we will talk soon
@@ -738,7 +736,7 @@ iecBus::ATNCheck iecBus::receiveCommand(ATNCmd &atn_cmd)
 //
 byte iecBus::receive()
 {
-	int data;
+	byte data;
 	data = receiveByte();
 	return data;
 } // receive
@@ -750,7 +748,7 @@ bool  iecBus::send(byte data)
 {
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
-#endif
+#endif	
 	return sendByte(data, false);
 } // send
 
