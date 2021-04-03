@@ -38,7 +38,7 @@ String statusMessage;
 bool initFailed = false;
 
 static iecBus iec;
-static Interface drive(iec, fileSystem);
+static iecDevice drive(iec, fileSystem);
 
 // Drive drive;
 // DiskImage diskImage;
@@ -351,7 +351,7 @@ void loop()
 //   if (strcmp_P(arg, "init"))
 //   {
 // 	  iec.init();
-// 	  Serial.printf_P("IEC Interface initialized\r\n");
+// 	  Serial.printf_P("IEC iecDevice initialized\r\n");
 //   }
 
 // }

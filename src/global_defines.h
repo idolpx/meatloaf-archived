@@ -102,7 +102,7 @@ inline static void ledOFF()
 }
 
 // Enable this for verbose logging of IEC and CBM interfaces.
-// #define DEBUG // define in platformio.ini
+#define DEBUG // define in platformio.ini
 
 #ifdef DEBUG
 #define Debug_print(...) Serial.print(__VA_ARGS__)
