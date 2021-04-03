@@ -66,9 +66,9 @@ bool iecBus::timeoutWait(int pin, IECline state)
 {
 	uint16_t t = 0;
 	
-// #if defined(ESP8266)
-// 	ESP.wdtFeed();
-// #endif	
+#if defined(ESP8266)
+	ESP.wdtFeed();
+#endif	
 	while(t < TIMEOUT) {
 
 		delayMicroseconds(3); // The aim is to make the loop at least 3 us
@@ -145,7 +145,7 @@ int iecBus::receiveByte(void)
 	int n = 0;
 	while ((status(IEC_PIN_CLK) == released) && (n < 20))
 	{
-		delayMicroseconds(10);  // this loop should cycle in about 10 us...
+		delayMicroseconds(10); // this loop should cycle in about 10 us...
 		n++;
 	}
 
@@ -200,9 +200,9 @@ int iecBus::receiveByte(void)
 	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
 
 	// Get the bits, sampling on clock rising edge, logic 0,0V to logic 1,5V:
-// #if defined(ESP8266)
-// 	ESP.wdtFeed();
-// #endif
+#if defined(ESP8266)
+	ESP.wdtFeed();
+#endif
 	int data = 0;
 	set_pin_mode(IEC_PIN_DATA, INPUT);
 	for (n = 0; n < 8; n++)
@@ -335,9 +335,9 @@ bool iecBus::sendByte(int data, bool signalEOI)
 	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
 
 	// Send the bits, sampling on clock rising edge, logic 0,0V to logic 1,5V:
-// #if defined(ESP8266)
-// 	ESP.wdtFeed();
-// #endif	
+#if defined(ESP8266)
+	ESP.wdtFeed();
+#endif	
 	set_pin_mode(IEC_PIN_DATA, OUTPUT);
 	for (int n = 0; n < 8; n++)
 	{
@@ -522,16 +522,14 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_ATN_PREDELAY);
 
-		// // Get first ATN byte, it is either LISTEN or TALK
-		// ATNCommand c = (ATNCommand)receive();
-		// Debug_printf("\r\ncheckATN: %.2X ", c);
-		// if (m_state bitand errorFlag)
-		// {
-		// 	Debug_printf("\r\ncheckATN: get first ATN byte");
-		// 	return ATN_ERROR;
-		// }
-
-		ATNCommand c = ATN_CODE_UNLISTEN;
+		// Get first ATN byte, it is either LISTEN or TALK
+		ATNCommand c = (ATNCommand)receive();
+		Debug_printf("\r\ncheckATN: %.2X ", c);
+		if (m_state bitand errorFlag)
+		{
+			Debug_printf("\r\ncheckATN: get first ATN byte");
+			return ATN_ERROR;
+		}
 
 		atn_cmd.code = c;
 
