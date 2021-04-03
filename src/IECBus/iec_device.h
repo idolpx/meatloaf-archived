@@ -63,7 +63,7 @@ public:
 	bool begin();
 
 	// The handler returns the current IEC state, see the iec.hpp for possible states.
-	byte loop(void);
+	void loop(void);
 
 	// Keeping the system date and time as set on a specific moment. The millis() will then keep the elapsed time since
 	// moment the time was set.
@@ -95,7 +95,7 @@ private:
 	// handler helpers.
 	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
 	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(byte chan);
+	void handleATNCmdCodeDataTalk(int chan);
 	void handleATNCmdClose(void);
 
 	void handleDeviceCommand(iecBus::ATNCmd &cmd);
@@ -140,23 +140,13 @@ private:
 #include "device_db.h"
 #include "helpers.h"
 
-// enum  fsType {
-// 	IS_FAIL = 0xFF, 	// IFail: SD card or fat not ok
-// 	IS_NATIVE = 0,		// Regular file system file state
-// 	IS_D64 = 1,
-// 	IS_T64 = 2,
-// 	IS_M2I = 3,
-// 	IS_PRG = 4,
-// };
-
-enum OpenState
-{
-	O_NOTHING,		// Nothing to send / File not found error
-	O_INFO,			// User issued a reload sd card
-	O_FILE,			// A program file is opened
-	O_DIR,			// A listing is requested
-	O_FILE_ERR,		// Incorrect file format opened
-	O_SAVE_REPLACE, // Save-with-replace is requested
+enum OpenState {
+	O_NOTHING,			// Nothing to send / File not found error
+	O_INFO,				// User issued a reload sd card
+	O_FILE,				// A program file is opened
+	O_DIR,				// A listing is requested
+	O_FILE_ERR,			// Incorrect file format opened
+	O_SAVE_REPLACE,		// Save-with-replace is requested
 	O_DEVICE_INFO,
 	O_DEVICE_STATUS
 };
@@ -185,8 +175,8 @@ private:
 	void sendListing(void);
 	void sendListingHTTP(void);
 	uint16_t sendHeader(uint16_t &basicPtr);
-	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
-	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...);
+	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char* text);
+	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char* format, ...);
 	uint16_t sendFooter(uint16_t &basicPtr);
 	void sendFile(void);
 	void sendFileHTTP(void);
@@ -196,7 +186,7 @@ private:
 	// handler helpers.
 	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
 	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(byte chan);
+	void handleATNCmdCodeDataTalk(int chan);
 	void handleATNCmdClose(void);
 
 	void handleDeviceCommand(iecBus::ATNCmd &cmd);
@@ -206,8 +196,8 @@ private:
 	iecBus& m_iec;
 
 	// This var is set after an open command and determines what to send next
-	byte m_openState; // see OpenState
-	byte m_queuedError;
+	int m_openState;			// see OpenState
+	int m_queuedError;
 
 	// atn command buffer struct
 	iecBus::ATNCmd& m_atn_cmd;

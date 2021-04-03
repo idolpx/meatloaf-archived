@@ -1,3 +1,20 @@
+// Meatloaf - A Commodore 64/128 multi-device emulator
+// https://github.com/idolpx/meatloaf
+// Copyright(C) 2020 James Johnston
+//
+// Meatloaf is free software : you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Meatloaf is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
+
 #ifndef GLOBAL_DEFINES_H
 #define GLOBAL_DEFINES_H
 
@@ -32,31 +49,45 @@
 #define MAX_CMD_LENGTH       256   // Maximum length for AT command
 #define TX_BUF_SIZE          256   // Buffer where to read from serial before writing to TCP
 
+
+// #define SPLIT_LINES
+
 #if defined(ESP32)
 // ESP32 GPIO to C64 IEC Serial Port
-#define IEC_PIN_ATN          22      // PROC
-#define IEC_PIN_CLK          27      // CKI
-#define IEC_PIN_DATA         32      // CKO
-//#define IEC_PIN_SRQ         26      // INT
-//#define IEC_PIN_RESET       D8      // IO15
+#define IEC_PIN_ATN     22      // PROC
+#define IEC_PIN_SRQ     26      // INT
+
+#ifndef SPLIT_LINES
+#define IEC_PIN_CLK     27      // CKI
+#define IEC_PIN_DATA    32      // CKO
+#else
+#define IEC_PIN_CLK_IN  27      // CKI
+#define IEC_PIN_CLK     32      // CKO
+#define IEC_PIN_DATA_IN 21      // DI
+#define IEC_PIN_DATA    33      // DO
+#endif
+//#define IEC_PIN_RESET   D8      // IO15
 #elif defined(ESP8266)
 // ESP8266 GPIO to C64 IEC Serial Port
 #define IEC_PIN_ATN          D5    // IO14
 #define IEC_PIN_CLK          D6    // IO12
 #define IEC_PIN_DATA         D7    // IO13
-//#define IEC_PIN_SRQ         D0    // IO16
+#define IEC_PIN_SRQ          D4    // IO2
 //#define IEC_PIN_RESET       D8    // IO15
 #endif
 
 // IEC protocol timing consts:
-#define TIMING_BIT           60    // bit clock hi/lo time     (us)
-#define TIMING_NO_EOI        20    // delay before bits        (us)
-#define TIMING_EOI_WAIT      200   // delay to signal EOI      (us)
-#define TIMING_EOI_THRESH    20    // threshold for EOI detect (*10 us approx)
-#define TIMING_STABLE_WAIT   20    // line stabilization       (us)
-#define TIMING_ATN_PREDELAY  50    // delay required in atn    (us)
-#define TIMING_ATN_DELAY     100   // delay required after atn (us)
-#define TIMING_FNF_DELAY     100   // delay after fnf?         (us)
+#define TIMING_BIT          60  // bit clock hi/lo time     (us)
+#define TIMING_NO_EOI       5   // delay before bits        (us)
+#define TIMING_EOI_WAIT     200 // delay to signal EOI      (us)
+#define TIMING_EOI_THRESH   20  // threshold for EOI detect (*10 us approx)
+#define TIMING_STABLE_WAIT  20  // line stabilization       (us)
+#define TIMING_ATN_PREDELAY 50  // delay required in atn    (us)
+#define TIMING_ATN_DELAY    100 // delay required after atn (us)
+#define TIMING_FNF_DELAY    100 // delay after fnf?         (us)
+
+// See timeoutWait
+#define TIMEOUT 65500
 
 // Version 0.5 equivalent timings: 70, 5, 200, 20, 20, 50, 100, 100
 
@@ -66,9 +97,6 @@
 // to work stable on my (Larsp)'s DTV at 700000 < F_CPU < 9000000
 // using a 32 MB MMC card
 //
-
-// See timeoutWait
-#define TIMEOUT 65500
 
 #define LED_PIN LED_BUILTIN // IO2
 #define LED_ON LOW

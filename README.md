@@ -1,6 +1,6 @@
 # Meatloaf64
 
-Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive simulator device
+A Commodore 64/128 multi-device emulator
 
 ![meatloaf64-device](docs/meatloaf64-device.jpg)
 
@@ -13,7 +13,7 @@ Code is based on and inspired by the following:
 * Ardyesp's ESPWebDAV (https://github.com/ardyesp/ESPWebDAV)
 
 
-To setup your own MeatLoaf64 server check out this code.
+To setup your own Meatloaf server check out this code.
 (https://github.com/idolpx/meatloaf-svr)
 
 
