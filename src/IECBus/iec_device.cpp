@@ -31,7 +31,7 @@
 
 //#include "global_defines.h"
 //#include "debug.h"
-#include "interface.h"
+#include "iec_device.h"
 
 using namespace CBM;
 
@@ -1046,7 +1046,7 @@ void Interface::sendFileHTTP()
 
 //#include "global_defines.h"
 //#include "debug.h"
-#include "interface.h"
+#include "iec_device.h"
 
 using namespace CBM;
 

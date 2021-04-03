@@ -19,7 +19,7 @@
 //#include "SerialCommand.h"
 
 #include "IECBus/iec.h"
-#include "IECBus/interface.h"
+#include "IECBus/iec_device.h"
 #include "ESPModem/ESPModem.h"
 #include "ESPWebDAV/ESPWebDAV.h"
 
