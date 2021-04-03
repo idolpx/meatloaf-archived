@@ -105,13 +105,13 @@ inline static void ledOFF()
 // #define DEBUG // define in platformio.ini
 
 #ifdef DEBUG
-#define debugPrint(...) Serial.print(__VA_ARGS__)
-#define debugPrintln(...) Serial.println(__VA_ARGS__)
-#define debugPrintf(...) Serial.printf(__VA_ARGS__)
+#define Debug_print(...) Serial.print(__VA_ARGS__)
+#define Debug_println(...) Serial.println(__VA_ARGS__)
+#define Debug_printf(...) Serial.printf(__VA_ARGS__)
 #else
-#define debugPrint(...)
-#define debugPrintln(...)
-#define debugPrintf(...)
+#define Debug_print(...)
+#define Debug_println(...)
+#define Debug_printf(...)
 #endif
 
 // Enable this to show the data stream while loading

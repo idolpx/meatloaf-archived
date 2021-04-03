@@ -47,7 +47,7 @@ enum OpenState
 class Interface
 {
 public:
-	Interface(IEC &iec, FS *fileSystem);
+	Interface(iecBus &iec, FS *fileSystem);
 	virtual ~Interface() {}
 
 	bool begin();
@@ -83,23 +83,23 @@ private:
 	void saveFile(void);
 
 	// handler helpers.
-	void handleATNCmdCodeOpen(IEC::ATNCmd &cmd);
+	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
 	void handleATNCmdCodeDataListen(void);
 	void handleATNCmdCodeDataTalk(byte chan);
 	void handleATNCmdClose(void);
 
-	void handleDeviceCommand(IEC::ATNCmd &cmd);
-	void handleMeatLoafCommand(IEC::ATNCmd &cmd);
+	void handleDeviceCommand(iecBus::ATNCmd &cmd);
+	void handleMeatLoafCommand(iecBus::ATNCmd &cmd);
 
 	// our iec low level driver:
-	IEC &m_iec;
+	iecBus &m_iec;
 
 	// This var is set after an open command and determines what to send next
 	byte m_openState; // see OpenState
 	byte m_queuedError;
 
 	// atn command buffer struct
-	IEC::ATNCmd &m_atn_cmd;
+	iecBus::ATNCmd &m_atn_cmd;
 
 	FS *m_fileSystem;
 	StaticJsonDocument<256> m_jsonHTTP;
@@ -157,7 +157,7 @@ enum OpenState
 class Interface
 {
 public:
-	Interface(IEC &iec, FS *fileSystem);
+	Interface(iecBus &iec, FS *fileSystem);
 	virtual ~Interface() {}
 
 	bool begin();
@@ -193,23 +193,23 @@ private:
 	void saveFile(void);
 
 	// handler helpers.
-	void handleATNCmdCodeOpen(IEC::ATNCmd &cmd);
+	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
 	void handleATNCmdCodeDataListen(void);
 	void handleATNCmdCodeDataTalk(byte chan);
 	void handleATNCmdClose(void);
 
-	void handleDeviceCommand(IEC::ATNCmd &cmd);
-	void handleMeatLoafCommand(IEC::ATNCmd &cmd);
+	void handleDeviceCommand(iecBus::ATNCmd &cmd);
+	void handleMeatLoafCommand(iecBus::ATNCmd &cmd);
 
 	// our iec low level driver:
-	IEC &m_iec;
+	iecBus &m_iec;
 
 	// This var is set after an open command and determines what to send next
 	byte m_openState; // see OpenState
 	byte m_queuedError;
 
 	// atn command buffer struct
-	IEC::ATNCmd &m_atn_cmd;
+	iecBus::ATNCmd &m_atn_cmd;
 
 	FS *m_fileSystem;
 	StaticJsonDocument<256> m_jsonHTTP;

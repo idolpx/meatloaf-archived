@@ -161,7 +161,7 @@ bool ESPWebDAV::parseRequest() {
 
 	method = req.substring(0, addr_start);
 	uri = urlDecode(req.substring(addr_start + 1, addr_end));
-	// debugPrint(F("method: "); debugPrint(method); debugPrint(" url: ")); debugPrintln(uri);
+	// Debug_print(F("method: "); Debug_print(method); Debug_print(" url: ")); Debug_println(uri);
 	
 	// parse and finish all headers
 	String headerName;
@@ -180,7 +180,7 @@ bool ESPWebDAV::parseRequest() {
 		
 		headerName = req.substring(0, headerDiv);
 		headerValue = req.substring(headerDiv + 2);
-		// debugPrint(F("\t"); debugPrint(headerName); debugPrint(": ")); debugPrintln(headerValue);
+		// Debug_print(F("\t"); Debug_print(headerName); Debug_print(": ")); Debug_println(headerValue);
 		
 		if(headerName.equalsIgnoreCase(F("Host")))
 			hostHeader = headerValue;
