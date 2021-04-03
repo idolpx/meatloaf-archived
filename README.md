@@ -1,6 +1,6 @@
 # Meatloaf
 
-Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive simulator device
+A Commodore 64/128 multi-device emulator
 
 ![meatloaf64-device](docs/meatloaf64-device.jpg)
 
