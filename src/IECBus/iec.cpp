@@ -563,31 +563,36 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 			atn_cmd.channel = c bitand 0x0F; // lower nibble is the channel
 		}
 
-		if ( cc == ATN_CODE_LISTEN && isDeviceEnabled(atn_cmd.device) )
+		if (isDeviceEnabled(atn_cmd.device))
 		{
-			ret = listen(atn_cmd);
-		}
-		else if ( cc == ATN_CODE_TALK && isDeviceEnabled(atn_cmd.device) )
-		{
-			ret = talk(atn_cmd);
-		}
-		else 
-		{
-			// Either the message is not for us or insignificant, like unlisten.
-			delayMicroseconds(TIMING_ATN_DELAY);
-			release(IEC_PIN_DATA);
-			release(IEC_PIN_CLK);
+			if (cc == ATN_CODE_LISTEN) // 0x20 LISTEN + device number (0-30)
+			{
+				ret = listen(atn_cmd);
+			}
+			else if (cc == ATN_CODE_TALK) // 0x40 TALK + device number (0-30)
+			{
+				ret = talk(atn_cmd);
+			}
+			else
+			{
+				// Either the message is not for us or insignificant, like unlisten.
+				delayMicroseconds(TIMING_ATN_DELAY);
+				release(IEC_PIN_DATA);
+				release(IEC_PIN_CLK);
 
-			if ( cc == ATN_CODE_UNTALK )
-				Debug_printf("UNTALK");
-			if ( cc == ATN_CODE_UNLISTEN )
-				Debug_printf("UNLISTEN");
-			
-			Debug_printf(" (%.2d DEVICE)", atn_cmd.device);			
+				if (cc == ATN_CODE_UNLISTEN) // 3F UNLISTEN
+				{
+					Debug_printf("(UNLISTEN)", cc);
+				}
+				if (cc == ATN_CODE_UNTALK) // 5F UNTALK
+				{	
+					Debug_printf("(UNTALK)", cc);
+				}
 
-			// Wait for ATN to release and quit
-			while(status(IEC_PIN_ATN) == pulled);
-			Debug_printf("\r\ncheckATN: ATN Released\r\n");
+				// Wait for ATN to release and quit
+				while(status(IEC_PIN_ATN) == released);
+				Debug_printf("\r\ncheckATN: ATN Released\r\n");
+			}
 		}
 
 		// some delay is required before more ATN business can take place.
