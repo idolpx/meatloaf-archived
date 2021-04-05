@@ -32,8 +32,6 @@ char serCmdIOBuf[MAX_BYTES_PER_REQUEST];
 
 } // unnamed namespace
 
-#if defined(ESP8266)
-
 iecDevice::iecDevice(iecBus &iec, FS *fileSystem)
 	: m_iec(iec)
 	  // NOTE: Householding with RAM bytes: We use the middle of serial buffer for the ATNCmd buffer info.
@@ -51,7 +49,7 @@ bool iecDevice::begin()
 {
 	m_device.init(String(DEVICE_DB));
 	//m_device.check();
-}
+} // begin
 
 void iecDevice::reset(void)
 {
@@ -64,6 +62,7 @@ void iecDevice::sendStatus(void)
 	byte i, readResult;
 
 	String status = String("00, OK, 00, 08");
+	readResult = status.length();
 
 	Debug_printf("\r\nsendStatus: ");
 	// Length does not include the CR, write all but the last one should be with EOI.
@@ -432,11 +431,11 @@ void iecDevice::handleATNCmdCodeDataTalk(byte chan)
 
 		case O_FILE:
 			// Send program file
-			if (m_device.url().length())
-			{
-				sendFileHTTP();
-			}
-			else
+			// if (m_device.url().length())
+			// {
+			// 	sendFileHTTP();
+			// }
+			// else
 			{
 				sendFile();
 			}
@@ -444,11 +443,11 @@ void iecDevice::handleATNCmdCodeDataTalk(byte chan)
 
 		case O_DIR:
 			// Send listing
-			if (m_device.url().length())
-			{
-				sendListingHTTP();
-			}
-			else
+			// if (m_device.url().length())
+			// {
+			// 	sendListingHTTP();
+			// }
+			// else
 			{
 				sendListing();
 			}
@@ -620,54 +619,54 @@ void iecDevice::sendListing()
 	byte_count += sendHeader(basicPtr);
 
 	// Send List ITEMS
-	//sendLine(1, "\"THIS IS A FILE\"     PRG", basicPtr);
-	//sendLine(5, "\"THIS IS A FILE 2\"   PRG", basicPtr);
+	byte_count += sendLine(basicPtr, 1, "\"THIS IS A FILE\"     PRG");
+	byte_count += sendLine(basicPtr, 5, "\"THIS IS A FILE 2\"   PRG");
 
-	Dir dir = m_fileSystem->openDir(m_device.path());
-	while (dir.next())
-	{
-		uint16_t block_cnt = dir.fileSize() / 256;
-		byte block_spc = 3;
-		if (block_cnt > 9)
-			block_spc--;
-		if (block_cnt > 99)
-			block_spc--;
-		if (block_cnt > 999)
-			block_spc--;
+	// Dir dir = m_fileSystem->openDir(m_device.path());
+	// while (dir.next())
+	// {
+	// 	uint16_t block_cnt = dir.fileSize() / 256;
+	// 	byte block_spc = 3;
+	// 	if (block_cnt > 9)
+	// 		block_spc--;
+	// 	if (block_cnt > 99)
+	// 		block_spc--;
+	// 	if (block_cnt > 999)
+	// 		block_spc--;
 
-		byte space_cnt = 21 - (dir.fileName().length() + 5);
-		if (space_cnt > 21)
-			space_cnt = 0;
+	// 	byte space_cnt = 21 - (dir.fileName().length() + 5);
+	// 	if (space_cnt > 21)
+	// 		space_cnt = 0;
 
-		if (dir.fileSize())
-		{
-			block_cnt = dir.fileSize() / 256;
+	// 	if (dir.fileSize())
+	// 	{
+	// 		block_cnt = dir.fileSize() / 256;
 
-			uint8_t ext_pos = dir.fileName().lastIndexOf(".") + 1;
-			if (ext_pos && ext_pos != dir.fileName().length())
-			{
-				extension = dir.fileName().substring(ext_pos);
-				extension.toUpperCase();
-			}
-			else
-			{
-				extension = "PRG";
-			}
-		}
-		else
-		{
-			extension = "DIR";
-		}
+	// 		uint8_t ext_pos = dir.fileName().lastIndexOf(".") + 1;
+	// 		if (ext_pos && ext_pos != dir.fileName().length())
+	// 		{
+	// 			extension = dir.fileName().substring(ext_pos);
+	// 			extension.toUpperCase();
+	// 		}
+	// 		else
+	// 		{
+	// 			extension = "PRG";
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		extension = "DIR";
+	// 	}
 
-		// Don't show hidden folders or files
-		if (!dir.fileName().startsWith("."))
-		{
-			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", dir.fileName().c_str(), space_cnt, "", extension.c_str());
-		}
+	// 	// Don't show hidden folders or files
+	// 	if (!dir.fileName().startsWith("."))
+	// 	{
+	// 		byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", dir.fileName().c_str(), space_cnt, "", extension.c_str());
+	// 	}
 
-		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
-		toggleLED(true);
-	}
+	// 	//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
+	// 	toggleLED(true);
+	// }
 
 	byte_count += sendFooter(basicPtr);
 
@@ -1004,6 +1003,3 @@ void iecDevice::sendFileHTTP()
 		}
 	}
 }
-#elif defined(ESP32)
-
-#endif

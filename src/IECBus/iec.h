@@ -149,8 +149,7 @@ private:
 	inline void release(int pin)
 	{
 		// releasing line can set to input mode, which won't drive the bus - simple way to mimic open collector
-		set_pin_mode(pin, OUTPUT);
-		espDigitalWrite(pin, HIGH);
+		set_pin_mode(pin, INPUT);
 	}
 
 	inline IECline status(int pin)
@@ -162,15 +161,15 @@ private:
 
 	inline int get_bit(int pin)
        {
-		return digitalRead(pin);
+		return espDigitalRead(pin);
 	}
 
 	inline void set_bit(int pin, int bit)
 	{
-		return digitalWrite(pin, bit);
+		return espDigitalWrite(pin, bit);
 	}
 
-	inline void set_pin_mode(uint8_t pin, uint8_t mode) {
+	inline void set_pin_mode(int pin, int mode) {
 #if defined(ESP8266)		
 		if(mode == OUTPUT){
 			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
@@ -186,7 +185,7 @@ private:
 #endif
 	}
 
-	inline void ICACHE_RAM_ATTR espDigitalWrite(uint8_t pin, uint8_t val) {
+	inline void ICACHE_RAM_ATTR espDigitalWrite(int pin, int val) {
 #if defined(ESP8266)
 		if(val) GPOS = (1 << pin);
 		else GPOC = (1 << pin);
@@ -195,7 +194,7 @@ private:
 #endif
 	}
 
-	inline int ICACHE_RAM_ATTR espDigitalRead(uint8_t pin) {
+	inline int ICACHE_RAM_ATTR espDigitalRead(int pin) {
 		int val = -1;
 #if defined(ESP8266)
 		val = GPIP(pin);

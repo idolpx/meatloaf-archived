@@ -43,7 +43,7 @@ bool  iecBus::init()
 	pull(IEC_PIN_ATN);
 	pull(IEC_PIN_CLK);
 	pull(IEC_PIN_DATA);
-	//pull(IEC_PIN_SRQ);
+	pull(IEC_PIN_SRQ);
 
 //#ifdef RESET_C64
 //	release(IEC_PIN_RESET);	// only early C64's could be reset by a slave going high.
@@ -51,11 +51,10 @@ bool  iecBus::init()
 
 	// initial pin modes in GPIO
 	set_pin_mode(IEC_PIN_ATN, INPUT);
-	//set_pin_mode(IEC_PIN_SRQ, INPUT);
-#ifndef SPLIT_LINES
 	set_pin_mode(IEC_PIN_CLK, INPUT);
-	set_pin_mode(IEC_PIN_DATA, INPUT);
-#else
+	set_pin_mode(IEC_PIN_DATA, INPUT);	
+	set_pin_mode(IEC_PIN_SRQ, INPUT);
+#ifdef SPLIT_LINES
 	set_pin_mode(IEC_PIN_CLK_IN, INPUT);
 	set_pin_mode(IEC_PIN_DATA_IN, INPUT);
 #endif
@@ -99,7 +98,7 @@ byte iecBus::timeoutWait(byte pin, IECline state)
 	// Note: The while above is without timeout. If ATN is held low forever,
 	//       the CBM is out in the woods and needs a reset anyways.
 
-	Debug_printf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d]", pin, state, t, m_state);
+	Debug_printf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d] ", pin, state, t, m_state);
 	return true;
 } // timeoutWait
 
@@ -270,6 +269,8 @@ byte iecBus::receiveByte(void)
 // it might holdback for quite a while; there's no time limit. 
 bool iecBus::sendByte(byte data, bool signalEOI)
 {
+	m_state = noFlags;
+
 	// Say we're ready
 	release(IEC_PIN_CLK);
 
@@ -280,7 +281,10 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
 	// to  accept  data.  What  happens  next  is  variable. 
 	if (timeoutWait(IEC_PIN_DATA, released))
-		return false;
+	{
+		Debug_printf("sendByte: wait for listener to be ready\r\n");
+		return -1;
+	}
 
 	// Either  the  talker  will pull the 
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
@@ -302,16 +306,24 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common 
 		// transmission sequence.
 
+		m_state or_eq eoiFlag; // or_eq, |=
+
 		// Signal eoi by waiting 200 us
 		delayMicroseconds(TIMING_EOI_WAIT);
 
 		// get eoi acknowledge: pull
 		if (timeoutWait(IEC_PIN_DATA, pulled))
-			return false;
+		{
+			Debug_printf("sendByte: wait for listener acknowledge EOI (data pull)\r\n");
+			return -1;
+		}
 
 		// get eoi acknowledge: release
 		if (timeoutWait(IEC_PIN_DATA, released))
-			return false;
+		{
+			Debug_printf("sendByte: wait for listener acknowledge EOI (data release)\r\n");
+			return -1;
+		}
 	}
 	else
 	{
@@ -369,7 +381,10 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 
 	// Wait for listener to accept data
 	if (timeoutWait(IEC_PIN_DATA, pulled))
-		return false;
+	{
+		Debug_printf("sendByte: wait for listener to accept data\r\n");
+		return -1;
+	}
 
 	// STEP 5: START OVER (We are talker now)
 	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
@@ -377,13 +392,13 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
 	// the Clock and Data lines are released to false and transmission stops. 
 
-	if(m_state bitand eoiFlag)
-	{
-		// EOI Received
-		delayMicroseconds(TIMING_STABLE_WAIT);
-		release(IEC_PIN_CLK);
-		release(IEC_PIN_DATA);
-	}
+	// if(m_state bitand eoiFlag)
+	// {
+	// 	// EOI Received
+	// 	delayMicroseconds(TIMING_STABLE_WAIT);
+	// 	release(IEC_PIN_CLK);
+	// 	release(IEC_PIN_DATA);
+	// }
 
 	return true;
 } // sendByte
@@ -485,7 +500,7 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 	release(pin);
 	delayMicroseconds(1000);
 
-	pin = IEC_PIN_CLOCK;
+	pin = IEC_PIN_CLK;
 	pull(pin);
 	delayMicroseconds(20); // 20
 	release(pin);
@@ -509,7 +524,7 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 	release(pin);
 	delayMicroseconds(1);
 
-	pin = IEC_PIN_CLOCK;
+	pin = IEC_PIN_CLK;
 	pull(pin);
 	delayMicroseconds(200); // 200
 	release(pin);
