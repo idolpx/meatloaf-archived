@@ -35,7 +35,7 @@ To Do
 * Complete CBM DOS support
 * Extend CBM DOS with device specific features
 * Support all different CBM file, disk, tape, cart media image files from local flash file system
-* Add support for Fast Loaders
+* Add support for Fast Loaders & JiffyDOS
 * Port all code to ESP32 IDF
 * Add SD card interface
 * Add Cassette tape interface
