@@ -6,15 +6,22 @@ Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive multi-device emulator
 
 [Here is a video showing it in action.](https://youtu.be/q6IYi3TIGNI)
 
+[Hit me up on Discord if you have any questions!](https://discord.gg/FwJUe8kQpS)
+
 Code is based on and inspired by the following:
-* Paul Rickard's ESP8266 Modem (https://github.com/RolandJuno/esp8266_modem) 
-* Lars Wadefalk's UNO2IEC (https://github.com/Larswad/uno2iec)
+
 * Steve White's Pi1541 (https://github.com/pi1541/Pi1541)
+* Lars Wadefalk's UNO2IEC (https://github.com/Larswad/uno2iec) & SD2IEC (https://github.com/Larswad/sd2iec_mega2560)
+* Paul Rickard's ESP8266 Modem (https://github.com/RolandJuno/esp8266_modem)
 * Ardyesp's ESPWebDAV (https://github.com/ardyesp/ESPWebDAV)
 
 
 To setup your own MeatLoaf64 server check out this code.
 (https://github.com/idolpx/meatloaf-svr)
+
+I'm now working to bring this functionality to the [#FujiNet](https://github.com/FujiNetWIFI/fujinet-platformio) project too!
+They had the same idea but for Atari 8bit machines and are much further along than I am.
+I'm working with them to add CBM support to their device.
 
 
 Key Features
