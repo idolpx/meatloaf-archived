@@ -16,7 +16,7 @@ Code is based on and inspired by the following:
 * Ardyesp's ESPWebDAV (https://github.com/ardyesp/ESPWebDAV)
 
 
-To setup your own MeatLoaf64 server check out this code.
+To setup your own Meatloaf server check out this code.
 (https://github.com/idolpx/meatloaf-svr)
 
 I'm now working to bring this functionality to the [#FujiNet](https://github.com/FujiNetWIFI/fujinet-platformio) project too!
