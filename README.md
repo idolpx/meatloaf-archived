@@ -1,5 +1,5 @@
 # Meatloaf
-[![discord chat](docs/discor.sm.png)](https://discord.gg/FwJUe8kQpS)
+[![discord chat](docs/discord.sm.svg)](https://discord.gg/FwJUe8kQpS)
 
 Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive multi-device emulator
 
@@ -7,6 +7,10 @@ Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive multi-device emulator
 
 [Here is a video showing it in action.](https://youtu.be/q6IYi3TIGNI)
 
+
+It's easy to wire up too.  (No need for the level shifter)<br/>
+You can also leave off the edge card connector if you you just want to try out the drive emulation functionality.
+![meatloaf64-wiring](docs/meatloaf64-wiring.png)
 
 Code is based on and inspired by the following:
 
