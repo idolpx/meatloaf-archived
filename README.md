@@ -1,4 +1,5 @@
 # Meatloaf
+[![discord chat](docs/discor.sm.svg)](https://discord.gg/FwJUe8kQpS)
 
 Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive multi-device emulator
 
@@ -6,7 +7,6 @@ Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive multi-device emulator
 
 [Here is a video showing it in action.](https://youtu.be/q6IYi3TIGNI)
 
-[Hit me up on Discord if you have any questions!](https://discord.gg/FwJUe8kQpS)
 
 Code is based on and inspired by the following:
 
