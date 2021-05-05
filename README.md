@@ -1,5 +1,5 @@
 # Meatloaf
-[![discord chat](docs/discord.sm.svg)](https://discord.gg/FwJUe8kQpS)
+[![discord chat](docs/discord.sm.png)](https://discord.gg/FwJUe8kQpS)
 
 Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive multi-device emulator
 
