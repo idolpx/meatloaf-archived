@@ -631,7 +631,7 @@ void iecDevice::sendListing()
 	Debug_printf("\r\nsendListing:\r\n");
 
 	uint16_t byte_count = 0;
-	std::string extension = "DIR";
+	String extension = "DIR";
 
 	// Reset basic memory pointer:
 	uint16_t basicPtr = C64_BASIC_START;
@@ -645,54 +645,54 @@ void iecDevice::sendListing()
 	byte_count += sendHeader(basicPtr);
 
 	// Send List ITEMS
-	byte_count += sendLine(basicPtr, 1, "\"THIS IS A FILE\"     PRG");
-	byte_count += sendLine(basicPtr, 5, "\"THIS IS A FILE 2\"   PRG");
+	//byte_count += sendLine(basicPtr, 1, "\"THIS IS A FILE\"     PRG");
+	//byte_count += sendLine(basicPtr, 5, "\"THIS IS A FILE 2\"   PRG");
 
-	// Dir dir = m_fileSystem->openDir(m_device.path());
-	// while (dir.next())
-	// {
-	// 	uint16_t block_cnt = dir.fileSize() / 256;
-	// 	byte block_spc = 3;
-	// 	if (block_cnt > 9)
-	// 		block_spc--;
-	// 	if (block_cnt > 99)
-	// 		block_spc--;
-	// 	if (block_cnt > 999)
-	// 		block_spc--;
+	Dir dir = m_fileSystem->openDir(m_device.path());
+	while (dir.next())
+	{
+		uint16_t block_cnt = dir.fileSize() / 256;
+		byte block_spc = 3;
+		if (block_cnt > 9)
+			block_spc--;
+		if (block_cnt > 99)
+			block_spc--;
+		if (block_cnt > 999)
+			block_spc--;
 
-	// 	byte space_cnt = 21 - (dir.fileName().length() + 5);
-	// 	if (space_cnt > 21)
-	// 		space_cnt = 0;
+		byte space_cnt = 21 - (dir.fileName().length() + 5);
+		if (space_cnt > 21)
+			space_cnt = 0;
 
-	// 	if (dir.fileSize())
-	// 	{
-	// 		block_cnt = dir.fileSize() / 256;
+		if (dir.fileSize())
+		{
+			block_cnt = dir.fileSize() / 256;
 
-	// 		uint8_t ext_pos = dir.fileName().lastIndexOf(".") + 1;
-	// 		if (ext_pos && ext_pos != dir.fileName().length())
-	// 		{
-	// 			extension = dir.fileName().substring(ext_pos);
-	// 			extension.toUpperCase();
-	// 		}
-	// 		else
-	// 		{
-	// 			extension = "PRG";
-	// 		}
-	// 	}
-	// 	else
-	// 	{
-	// 		extension = "DIR";
-	// 	}
+			uint8_t ext_pos = dir.fileName().lastIndexOf(".") + 1;
+			if (ext_pos && ext_pos != dir.fileName().length())
+			{
+				extension = dir.fileName().substring(ext_pos);
+				extension.toUpperCase();
+			}
+			else
+			{
+				extension = "PRG";
+			}
+		}
+		else
+		{
+			extension = "DIR";
+		}
 
-	// 	// Don't show hidden folders or files
-	// 	if (!dir.fileName().startsWith("."))
-	// 	{
-	// 		byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", dir.fileName().c_str(), space_cnt, "", extension.c_str());
-	// 	}
+		// Don't show hidden folders or files
+		if (!dir.fileName().startsWith("."))
+		{
+			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", dir.fileName().c_str(), space_cnt, "", extension.c_str());
+		}
 
-	// 	//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
-	// 	toggleLED(true);
-	// }
+		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
+		toggleLED(true);
+	}
 
 	byte_count += sendFooter(basicPtr);
 
@@ -802,14 +802,15 @@ void iecDevice::sendFile()
 
 #ifdef DATA_STREAM
 				// Show ASCII Data
-				if (b[0] < 32 || b[0] == 127) 
+				if (b[0] < 32 || b[0] >= 127) 
 					b[0] = 46;
 
 				ba[bi++] = b[0];
 
 				if(bi == 8)
 				{
-					Debug_printf(" %s\r\n", ba);
+					size_t t = (i * 100) / len;
+					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
 					bi = 0;
 				}
 #endif
@@ -946,6 +947,7 @@ void iecDevice::sendFileHTTP(void)
 	bool success = true;
 
 	uint16_t bi = 0;
+	uint16_t load_address = 0;
 	char b[1];
 	byte ba[9];
 
@@ -987,57 +989,66 @@ void iecDevice::sendFileHTTP(void)
 	{
 		size_t len = client.getSize();
 
-#ifdef DATA_STREAM
-		Serial.printf("\r\nsendFileHTTP: %d bytes\r\n=================================\r\n", len);
-#endif
-		for (i = 0; success and i < len; ++i)
+		// Get file load address
+		file.readBytes(b, 1);
+		success = m_iec.send(b[0]);
+		load_address = *b & 0x00FF; // low byte
+		file.readBytes(b, 1);
+		success = m_iec.send(b[0]);
+		load_address = load_address | *b << 8;  // high byte
+		// fseek(file, 0, SEEK_SET);
+
+		Debug_printf("\r\nsendFileHTTP: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_filename.c_str(), load_address, len);
+		for (i = 2; success and i < len; ++i)
 		{ // End if sending to CBM fails.
 			success = file.readBytes(b, 1);
-			if (i == len - 1)
+			if (success)
 			{
-				success = m_iec.sendEOI(b[0]); // indicate end of file.
-			}
-			else
-			{
-				success = m_iec.send(b[0]);
-			}
+#ifdef DATA_STREAM
+				if (bi == 0)
+				{
+					Debug_printf(":%.4X ", load_address);
+					load_address += 8;
+				}
+#endif
+				if (i == len - 1)
+				{
+					success = m_iec.sendEOI(b[0]); // indicate end of file.
+				}
+				else
+				{
+					success = m_iec.send(b[0]);
+				}
 
 #ifdef DATA_STREAM
-			// Show ASCII Data
-			Serial.printf("%.2X ", b[0]);
+				// Show ASCII Data
+				if (b[0] < 32 || b[0] >= 127) 
+					b[0] = 46;
 
-			if (b[0] < 32 || b[0] >= 127)
-				b[0] = 46;
+				ba[bi++] = b[0];
 
-			ba[bi] = b[0];
-			bi++;
-			if (bi == 8 || i == len)
-			{
-				size_t t = (i * 100) / len;
-				Serial.printf(" %s (%d %d%%)\r\n", ba, i, t);
-				bi = 0;
-			}
+				if(bi == 8)
+				{
+					size_t t = (i * 100) / len;
+					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
+					bi = 0;
+				}
 #endif
-
-			// Toggle LED
-			if (i % 50 == 0)
-				toggleLED(true);
-
+				// Toggle LED
+				if (i % 50 == 0)
+				{
+					toggleLED(true);
+				}
+			}
 		}
 		client.end();
-#ifdef DATA_STREAM
-		Serial.println("");
-		Serial.printf("%d of %d bytes sent\r\n", i, len);
-#endif
+		Debug_println("");
+		Debug_printf("%d of %d bytes sent\r\n", i, len);
+
 		ledON();
 
 		if (!success || i != len)
 		{
-			//bool s1 = m_iec.readATN();
-			//bool s2 = m_iec.readCLOCK();
-			//bool s3 = m_iec.readDATA();
-
-			//Debug_printf("Transfer failed! %d, %d, %d\r\n", s1, s2, s3);
 			Debug_println("Transfer failed!");
 		}
 	}
