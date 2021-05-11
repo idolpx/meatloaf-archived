@@ -57,7 +57,7 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 //     check_atn
 // };
 // statemachine state = statemachine::none;
-//int state_int;
+//uint8_t state_int;
 //String state_string;
 
 // ------------------------
@@ -292,7 +292,7 @@ void loop()
 
 // void process_command()
 // {
-//   int aNumber;
+//   uint8_t aNumber;
 //   char *arg;
 
 //   Serial.println("We're in process_command");

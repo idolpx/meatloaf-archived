@@ -74,7 +74,7 @@ bool iecBus::init()
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-int iecBus::receiveByte(void)
+uint8_t iecBus::receiveByte(void)
 {
 	m_state = noFlags;
 
@@ -107,7 +107,7 @@ int iecBus::receiveByte(void)
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
 	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
 	// without  the Clock line going to true, it has a special task to perform: note EOI.
-	int n = 0;
+	uint8_t n = 0;
 	while ((status(IEC_PIN_CLK) == released) && (n < 20))
 	{
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
@@ -169,7 +169,7 @@ int iecBus::receiveByte(void)
 #if defined(ESP8266)
 	ESP.wdtFeed();
 #endif
-	int data = 0;
+	uint8_t data = 0;
 	set_pin_mode(IEC_PIN_DATA, INPUT);
 	for (n = 0; n < 8; n++)
 	{
@@ -231,7 +231,7 @@ int iecBus::receiveByte(void)
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-bool iecBus::sendByte(int data, bool signalEOI)
+bool iecBus::sendByte(uint8_t data, bool signalEOI)
 {
 	// Say we're ready
 	release(IEC_PIN_CLK);
@@ -314,7 +314,7 @@ bool iecBus::sendByte(int data, bool signalEOI)
 	ESP.wdtFeed();
 #endif	
 	set_pin_mode(IEC_PIN_DATA, OUTPUT);
-	for (int n = 0; n < 8; n++)
+	for (uint8_t n = 0; n < 8; n++)
 	{
 		// tell listener to wait
 		pull(IEC_PIN_CLK);
@@ -420,11 +420,9 @@ bool iecBus::undoTurnAround(void)
 } // undoTurnAround
 
 // timeoutWait returns true if timed out
-bool iecBus::timeoutWait(int pin, IECline state)
+bool iecBus::timeoutWait(uint8_t pin, IECline state)
 {
-#if defined(ESP8266)
-	ESP.wdtFeed();
-#endif	
+	
 	uint16_t t = 0;
 
 	while(t < TIMEOUT) 
@@ -437,6 +435,10 @@ bool iecBus::timeoutWait(int pin, IECline state)
 		}
 		delayMicroseconds(1); // The aim is to make the loop at least 3 us
 		t++;
+
+#if defined(ESP8266)
+		ESP.wdtFeed();
+#endif		
 	}
 
 	// If down here, we have had a timeout.
@@ -490,7 +492,7 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 	ATNCheck ret = ATN_IDLE;
 
 #ifdef DEBUG_TIMING
-	int pin = IEC_PIN_ATN;
+	uint8_t pin = IEC_PIN_ATN;
 	pull(pin);
 	delayMicroseconds(1000); // 1000
 	release(pin);
@@ -601,7 +603,7 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 				}
 
 				// Wait for ATN to release and quit
-				while(status(IEC_PIN_ATN) == released);
+				while(status(IEC_PIN_ATN) == pulled);
 				Debug_printf("\r\ncheckATN: ATN Released\r\n");
 			}
 		}
@@ -659,8 +661,8 @@ iecBus::ATNCheck iecBus::listen(ATNCmd &atn_cmd)
 
 iecBus::ATNCheck iecBus::talk(ATNCmd &atn_cmd)
 {
-	int i = 0;
-	int c;
+	uint8_t i = 0;
+	uint8_t c;
 
 	// Okay, we will talk soon
 	Debug_printf("(40 TALK) (%.2d DEVICE)", atn_cmd.device);
@@ -697,8 +699,8 @@ iecBus::ATNCheck iecBus::talk(ATNCmd &atn_cmd)
 
 iecBus::ATNCheck iecBus::receiveCommand(ATNCmd &atn_cmd)
 {
-	int i = 0;
-	int c;
+	uint8_t i = 0;
+	uint8_t c;
 
 	// Some other command. Record the cmd string until UNLISTEN is sent
 	while(status(IEC_PIN_ATN) == released)
@@ -743,9 +745,9 @@ iecBus::ATNCheck iecBus::receiveCommand(ATNCmd &atn_cmd)
 
 // IEC_receive receives a byte
 //
-int iecBus::receive()
+uint8_t iecBus::receive()
 {
-	int data;
+	uint8_t data;
 	data = receiveByte();
 	return data;
 } // receive
@@ -753,7 +755,7 @@ int iecBus::receive()
 
 // IEC_send sends a byte
 //
-bool iecBus::send(int data)
+bool iecBus::send(uint8_t data)
 {
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
@@ -764,7 +766,7 @@ bool iecBus::send(int data)
 
 // Same as IEC_send, but indicating that this is the last byte.
 //
-bool iecBus::sendEOI(int data)
+bool iecBus::sendEOI(uint8_t data)
 {
 	Debug_printf("\r\nEOI Sent!");
 	if (sendByte(data, true))
@@ -799,7 +801,7 @@ bool iecBus::sendFNF()
 } // sendFNF
 
 
-bool iecBus::isDeviceEnabled(const int deviceNumber)
+bool iecBus::isDeviceEnabled(const uint8_t deviceNumber)
 {
 	return (enabledDevices & (1 << deviceNumber));
 } // isDeviceEnabled

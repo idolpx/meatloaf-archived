@@ -63,7 +63,7 @@ void iecDevice::reset(void)
 
 void iecDevice::sendStatus(void)
 {
-	int i, readResult;
+	uint8_t i, readResult;
 	
 	std::string status("00, OK, 00, 08");
 	readResult = status.length();
@@ -418,7 +418,7 @@ void iecDevice::handleATNCmdCodeOpen(iecBus::ATNCmd &atn_cmd)
 } // handleATNCmdCodeOpen
 
 
-void iecDevice::handleATNCmdCodeDataTalk(int chan)
+void iecDevice::handleATNCmdCodeDataTalk(uint8_t chan)
 {
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
@@ -498,7 +498,7 @@ void iecDevice::handleATNCmdCodeDataTalk(int chan)
 
 void iecDevice::handleATNCmdCodeDataListen()
 {
-	int lengthOrResult = 0;
+	uint8_t lengthOrResult = 0;
 	bool wasSuccess = false;
 
 	// process response into m_queuedError.
@@ -564,13 +564,13 @@ uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, const char* fo
 
 uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, char* text)
 {
-	int i;
+	uint8_t i;
 	uint16_t b_cnt = 0;
 
 	Debug_printf("%d %s ", blocks, text);
 
 	// Get text length
-	int len = strlen(text);
+	uint8_t len = strlen(text);
 
 	// Increment next line pointer
 	basicPtr += len + 5;
@@ -888,7 +888,7 @@ void iecDevice::sendListingHTTP(void)
 
 	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
-	int httpCode = client.POST(post_data);	 //Send the request
+	uint8_t httpCode = client.POST(post_data);	 //Send the request
 	WiFiClient payload = client.getStream(); //Get the response payload as Stream
 	//String payload = client.getString();    //Get the response payload as String
 
@@ -975,7 +975,7 @@ void iecDevice::sendFileHTTP(void)
 
 	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
-	int httpCode = client.POST(post_data); //Send the request
+	uint8_t httpCode = client.POST(post_data); //Send the request
 	WiFiClient file = client.getStream();  //Get the response payload as Stream
 
 	if (!file.available())

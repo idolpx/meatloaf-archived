@@ -4,13 +4,13 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-#define PRODUCT_ID "MEAT LOAF 64"
+#define PRODUCT_ID "MEATLOAF CBM"
 #define FW_VERSION "20200923.01" // Dynamically set at compile time in "platformio.ini"
-//#define UPDATE_URL      "http://c64.idolpx.com/fw/?p=MeatLoaf64&d={{DEVICE_ID}}&a="
-#define UPDATE_URL "http://c64.idolpx.com/fw/meatloaf64.4MB.bin"
-//#define UPDATE_URL      "http://c64.idolpx.com/fw/meatloaf64.16MB.bin"
+//#define UPDATE_URL      "http://meatloaf.cc/fw/?p=meatloaf&d={{DEVICE_ID}}&a="
+#define UPDATE_URL "http://meatloaf.cc/fw/meatloaf.4MB.bin"
+//#define UPDATE_URL      "http://meatloaf.cc/fw/meatloaf.16MB.bin"
 #define DEVICE_DB "/.sys/devices.db"
-#define HOSTNAME "MeatLoaf64"
+#define HOSTNAME "meatloaf"
 #define SERVER_PORT 80   // WebDAV Server Port
 #define LISTEN_PORT 6400 // Listen to this if not connected. Set to zero to disable.
 
@@ -128,7 +128,7 @@ inline static void ledOFF()
 
 // Enable this to show the data stream while loading
 // Make sure device baud rate and monitor_speed = 921600
-//#define DATA_STREAM
+#define DATA_STREAM
 
 // This should be defined if the RESET line is soldered in the IEC DIN connector. When defined it will give the
 // arduino to go into a reset state and wait for the CBM to become ready for communication.

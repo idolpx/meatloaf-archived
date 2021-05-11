@@ -7,7 +7,7 @@ String urlencode(String str)
     char code0;
     char code1;
     char code2;
-    for (int i =0; i < str.length(); i++){
+    for (uint8_t i =0; i < str.length(); i++){
       c=str.charAt(i);
       if (c == ' '){
         encodedString+= '+';
@@ -41,7 +41,7 @@ String urldecode(String str)
     char c;
     char code0;
     char code1;
-    for (int i =0; i < str.length(); i++){
+    for (uint8_t i =0; i < str.length(); i++){
         c=str.charAt(i);
       if (c == '+'){
         encodedString+=' ';  
@@ -82,7 +82,7 @@ String ipToString ( IPAddress ip )
 {
     String res = "";
 
-    for ( int i = 0; i < 3; i++ )
+    for ( uint8_t i = 0; i < 3; i++ )
     {
         res += String ( ( ip >> ( 8 * i ) ) & 0xFF ) + ".";
     }

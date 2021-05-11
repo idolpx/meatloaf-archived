@@ -86,7 +86,7 @@ private:
 	// handler helpers.
 	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
 	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(int chan);
+	void handleATNCmdCodeDataTalk(uint8_t chan);
 	void handleATNCmdClose(void);
 
 	void handleDeviceCommand(iecBus::ATNCmd &cmd);
@@ -187,7 +187,7 @@ private:
 	// handler helpers.
 	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
 	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(int chan);
+	void handleATNCmdCodeDataTalk(uint8_t chan);
 	void handleATNCmdClose(void);
 
 	void handleDeviceCommand(iecBus::ATNCmd &cmd);
@@ -197,8 +197,8 @@ private:
 	iecBus& m_iec;
 
 	// This var is set after an open command and determines what to send next
-	int m_openState; // see OpenState
-	int m_queuedError;
+	uint8_t m_openState; // see OpenState
+	uint8_t m_queuedError;
 
 	// atn command buffer struct
 	iecBus::ATNCmd& m_atn_cmd;

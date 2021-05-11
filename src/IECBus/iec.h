@@ -56,7 +56,7 @@ public:
 
 	// IEC ATN commands:
 	enum ATNCommand 
-       {
+    {
 		ATN_CODE_GLOBAL = 0x00,     // 0x00 + cmd (global command)
 		ATN_CODE_LISTEN = 0x20,     // 0x20 + device_id (LISTEN)
 		ATN_CODE_UNLISTEN = 0x3F,   // 0x3F (UNLISTEN)
@@ -75,12 +75,12 @@ public:
 	
 	typedef struct _tagATNCMD 
 	{
-		int code;
-		int command;
-		int channel;
-		int device;
+		uint8_t code;
+		uint8_t command;
+		uint8_t channel;
+		uint8_t device;
 		char str[ATN_CMD_MAX_LENGTH];
-		int strLen;
+		uint8_t strLen;
 	} ATNCmd;
 
 	iecBus();
@@ -99,22 +99,22 @@ public:
 
 	// Sends a byte. The communication must be in the correct state: a load command
 	// must just have been recieved. If something is not OK, FALSE is returned.
-	bool send(int data);
+	bool send(uint8_t data);
 
 	// Same as IEC_send, but indicating that this is the last byte.
-	bool sendEOI(int data);
+	bool sendEOI(uint8_t data);
 
 	// A special send command that informs file not found condition
-	bool sendFNF();
+	bool sendFNF(void);
 
 	// Recieves a byte
-	int receive();
+	uint8_t receive(void);
 
 	// Enabled Device Bit Mask
 	uint32_t enabledDevices;
-	bool isDeviceEnabled(const int deviceNumber);
-	void enableDevice(const int deviceNumber);
-	void disableDevice(const int deviceNumber);
+	bool isDeviceEnabled(const uint8_t deviceNumber);
+	void enableDevice(const uint8_t deviceNumber);
+	void disableDevice(const uint8_t deviceNumber);
 
 	IECState state() const;
 
@@ -131,34 +131,29 @@ private:
 
 	ATNCheck receiveCommand(ATNCmd& atn_cmd);
 	
-	int receiveByte(void);
-	bool sendByte(int data, bool signalEOI);
-	bool timeoutWait(int iecPIN, IECline lineStatus);
+	uint8_t receiveByte(void);
+	bool sendByte(uint8_t data, bool signalEOI);
+	bool timeoutWait(uint8_t iecPIN, IECline lineStatus);
 	bool turnAround(void);
 	bool undoTurnAround(void);
 
 	// true => PULL => DIGI_LOW
-	inline void pull(int pin)
+	inline void pull(uint8_t pin)
 	{
 		set_pin_mode(pin, OUTPUT);
 		espDigitalWrite(pin, LOW);
 	}
 
 	// false => RELEASE => DIGI_HIGH
-	inline void release(int pin)
+	inline void release(uint8_t pin)
 	{
-		// releasing line can set to input mode, which won't drive the bus - simple way to mimic open collector
-		set_pin_mode(pin, INPUT);
+		set_pin_mode(pin, OUTPUT);
+		espDigitalWrite(pin, HIGH);
 	}
 
-	inline IECline status(int pin)
+	inline IECline status(uint8_t pin)
 	{
-		#ifdef SPLIT_LINES
-			if (pin == IEC_PIN_CLK)
-				pin = IEC_PIN_CLK_IN;
-			else if (pin == IEC_PIN_DATA)
-				pin = IEC_PIN_DATA_IN;
-		#else
+		#ifndef SPLIT_LINES
 			// To be able to read line we must be set to input, not driving.
 			set_pin_mode(pin, INPUT);
 		#endif
@@ -166,17 +161,17 @@ private:
 		return espDigitalRead(pin) ? released : pulled;
 	}
 
-	inline int get_bit(int pin)
+	inline uint8_t get_bit(uint8_t pin)
        {
 		return espDigitalRead(pin);
 	}
 
-	inline void set_bit(int pin, int bit)
+	inline void set_bit(uint8_t pin, uint8_t bit)
 	{
 		return espDigitalWrite(pin, bit);
 	}
 
-	inline void set_pin_mode(int pin, int mode) {
+	inline void set_pin_mode(uint8_t pin, uint8_t mode) {
 #if defined(ESP8266)		
 		if(mode == OUTPUT){
 			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
@@ -192,7 +187,7 @@ private:
 #endif
 	}
 
-	inline void ICACHE_RAM_ATTR espDigitalWrite(int pin, int val) {
+	inline void ICACHE_RAM_ATTR espDigitalWrite(uint8_t pin, uint8_t val) {
 #if defined(ESP8266)
 		if(val) GPOS = (1 << pin);
 		else GPOC = (1 << pin);
@@ -201,8 +196,8 @@ private:
 #endif
 	}
 
-	inline int ICACHE_RAM_ATTR espDigitalRead(int pin) {
-		int val = -1;
+	inline uint8_t ICACHE_RAM_ATTR espDigitalRead(uint8_t pin) {
+		uint8_t val = -1;
 #if defined(ESP8266)
 		val = GPIP(pin);
 #elif defined(ESP32)
@@ -212,7 +207,7 @@ private:
 	}
 
 	// communication must be reset
-	int m_state;
+	uint8_t m_state;
 };
 
 #endif

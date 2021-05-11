@@ -516,7 +516,7 @@ void ESPModem::setup() {
   }
 
   Serial.begin(bauds[serialspeed]);
-	Serial.print(F("Starting Virtual Modem: %d"));
+	Serial.print(F("Starting Virtual Modem: "));
   Serial.println(bauds[serialspeed]);
 
 //   char c;

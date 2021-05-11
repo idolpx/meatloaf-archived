@@ -64,7 +64,7 @@ SerialCommand::SerialCommand(SoftwareSerial &_SoftSer)
 //
 void SerialCommand::clearBuffer()
 {
-	for (int i=0; i<SERIALCOMMANDBUFFER; i++) 
+	for (uint8_t i=0; i<SERIALCOMMANDBUFFER; i++) 
 	{
 		buffer[i]='\0';
 	}
@@ -92,7 +92,7 @@ void SerialCommand::readSerial()
 	while ((usingSoftwareSerial==0 && Serial.available() > 0) || (usingSoftwareSerial==1 && SoftSerial->available() > 0) )
 	#endif
 	{
-		int i; 
+		uint8_t i; 
 		boolean matched; 
 		if (usingSoftwareSerial==0) {
 			// Hardware serial port
