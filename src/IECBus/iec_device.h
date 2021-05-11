@@ -63,16 +63,7 @@ public:
 	bool begin();
 
 	// The handler returns the current IEC state, see the iec.hpp for possible states.
-	byte loop(void);
-
-	// Keeping the system date and time as set on a specific moment. The millis() will then keep the elapsed time since
-	// moment the time was set.
-	void setDateTime(word year, byte month, byte day, byte hour, byte minute, byte second);
-
-	// retrieve the date and time as strings. Current time will be updated according to the elapsed millis before formatting.
-	// String will be of format "yyyymmdd hhmmss", if timeOnly is true only the time part will be returned as
-	// "hhmmss", this fits the TIME$ variable of cbm basic 2.0 and later.
-	char *dateTimeString(char *dest, bool timeOnly);
+	void service(void);
 
 private:
 	void reset(void);
@@ -95,7 +86,7 @@ private:
 	// handler helpers.
 	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
 	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(byte chan);
+	void handleATNCmdCodeDataTalk(int chan);
 	void handleATNCmdClose(void);
 
 	void handleDeviceCommand(iecBus::ATNCmd &cmd);
@@ -114,7 +105,7 @@ private:
 	FS *m_fileSystem;
 	StaticJsonDocument<256> m_jsonHTTP;
 	String m_lineBuffer;
-	//DynamicJsonDocument m_jsonHTTPBuffer;
+	DynamicJsonDocument m_jsonHTTPBuffer;
 
 	DeviceDB m_device;
 	String m_filename;
@@ -196,7 +187,7 @@ private:
 	// handler helpers.
 	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
 	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(byte chan);
+	void handleATNCmdCodeDataTalk(int chan);
 	void handleATNCmdClose(void);
 
 	void handleDeviceCommand(iecBus::ATNCmd &cmd);
@@ -206,8 +197,8 @@ private:
 	iecBus& m_iec;
 
 	// This var is set after an open command and determines what to send next
-	byte m_openState; // see OpenState
-	byte m_queuedError;
+	int m_openState; // see OpenState
+	int m_queuedError;
 
 	// atn command buffer struct
 	iecBus::ATNCmd& m_atn_cmd;

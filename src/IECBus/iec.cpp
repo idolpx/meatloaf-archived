@@ -26,9 +26,8 @@ iecBus::iecBus() : m_state(noFlags)
 {
 } // ctor
 
-// Set all IEC_signal lines in the correct mode
-//
-bool  iecBus::init()
+// Set all IEC_signal lines in the correct mode for power up state
+bool iecBus::init()
 {
 	// the I/O signaling method used by this low level driver uses two states:
 	// PULL state is pin set to GPIO_MODE_OUTPUT with the output driving DIGI_LOW (0V)
@@ -64,43 +63,7 @@ bool  iecBus::init()
 	return true;
 } // init
 
-// timeoutWait returns true if timed out
-byte iecBus::timeoutWait(byte pin, IECline state)
-{
-#if defined(ESP8266)
-	ESP.wdtFeed();
-#endif	
-	uint16_t t = 0;
-	while(t < TIMEOUT) {
 
-		delayMicroseconds(3); // The aim is to make the loop at least 3 us
-
-		// Check the waiting condition:
-		if(status(pin) == state)
-		{
-			// Got it!  Continue!
-			return false;
-		}
-
-		t++;
-	}
-
-	// If down here, we have had a timeout.
-	// Release lines and go to inactive state with error flag
-	release(IEC_PIN_CLK);
-	release(IEC_PIN_DATA);
-
-	m_state = errorFlag;
-
-	// Wait for ATN release, problem might have occured during attention
-	while(status(IEC_PIN_ATN) == pulled);
-
-	// Note: The while above is without timeout. If ATN is held low forever,
-	//       the CBM is out in the woods and needs a reset anyways.
-
-	Debug_printf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d] ", pin, state, t, m_state);
-	return true;
-} // timeoutWait
 
 // (Jim Butterfield - Compute! July 1983 - "HOW THE VIC/64 SERIAL BUS WORKS")
 // STEP 1: READY TO SEND (We are listener now)
@@ -111,7 +74,7 @@ byte iecBus::timeoutWait(byte pin, IECline state)
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-byte iecBus::receiveByte(void)
+int iecBus::receiveByte(void)
 {
 	m_state = noFlags;
 
@@ -144,8 +107,9 @@ byte iecBus::receiveByte(void)
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
 	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
 	// without  the Clock line going to true, it has a special task to perform: note EOI.
-	byte n = 0;
-	while(status(IEC_PIN_CLK) == released && (n < 20)) {
+	int n = 0;
+	while ((status(IEC_PIN_CLK) == released) && (n < 20))
+	{
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
@@ -205,7 +169,7 @@ byte iecBus::receiveByte(void)
 #if defined(ESP8266)
 	ESP.wdtFeed();
 #endif
-	byte data = 0;
+	int data = 0;
 	set_pin_mode(IEC_PIN_DATA, INPUT);
 	for (n = 0; n < 8; n++)
 	{
@@ -244,7 +208,7 @@ byte iecBus::receiveByte(void)
 	// and  the listener is holding the Data line true. We're ready for step 1; we may send another character - unless EOI has 
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
 	// the Clock and Data lines are released to false and transmission stops.
-	// NOTE: This does not seem to hold true for the listener. Listener remains pulling data after EOI
+	// NOTE: This does not seem to hold true for the listener. Listener remains pulling data after EOI (James Johnston)
 
 	// if(m_state bitand eoiFlag)
 	// {
@@ -267,10 +231,8 @@ byte iecBus::receiveByte(void)
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-bool iecBus::sendByte(byte data, bool signalEOI)
+bool iecBus::sendByte(int data, bool signalEOI)
 {
-	m_state = noFlags;
-
 	// Say we're ready
 	release(IEC_PIN_CLK);
 
@@ -290,7 +252,7 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
 	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
 	// without  the Clock line going to true, it has a special task to perform: note EOI.
-	if (signalEOI)
+	if (signalEOI == true)
 	{
 		// INTERMISSION: EOI (We are talker now)
 		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the 
@@ -305,8 +267,6 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 		// it will pull the Clock line  true,  and  transmission  will  continue.  At  this point,  the  Clock  
 		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common 
 		// transmission sequence.
-
-		m_state or_eq eoiFlag; // or_eq, |=
 
 		// Signal eoi by waiting 200 us
 		delayMicroseconds(TIMING_EOI_WAIT);
@@ -347,6 +307,7 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 	// false, it grabs the bit from the Data line and puts it away.  It then waits for the clock line to go true, in order 
 	// to prepare for the next bit. When the talker figures the data has been held for a sufficient  length  of  time,  it  
 	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
+	// NOTE: delay between bits needs to be 75us minimum from my observations (James Johnston)
 
 	// Send the bits, sampling on clock rising edge, logic 0,0V to logic 1,5V:
 #if defined(ESP8266)
@@ -371,7 +332,6 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 
 	pull(IEC_PIN_CLK);	// pull clock cause we're done
 	release(IEC_PIN_DATA); // release data because we're done
-	delayMicroseconds(TIMING_STABLE_WAIT);
 
 	// STEP 4: FRAME HANDSHAKE (We are talker now)
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
@@ -392,13 +352,13 @@ bool iecBus::sendByte(byte data, bool signalEOI)
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
 	// the Clock and Data lines are released to false and transmission stops. 
 
-	// if(m_state bitand eoiFlag)
-	// {
-	// 	// EOI Received
-	// 	delayMicroseconds(TIMING_STABLE_WAIT);
-	// 	release(IEC_PIN_CLK);
-	// 	release(IEC_PIN_DATA);
-	// }
+	if (signalEOI == true)
+	{
+		// EOI Sent
+		delayMicroseconds(TIMING_STABLE_WAIT);
+		release(IEC_PIN_CLK);
+		release(IEC_PIN_DATA);
+	}
 
 	return true;
 } // sendByte
@@ -459,6 +419,42 @@ bool iecBus::undoTurnAround(void)
 	return true;
 } // undoTurnAround
 
+// timeoutWait returns true if timed out
+bool iecBus::timeoutWait(int pin, IECline state)
+{
+#if defined(ESP8266)
+	ESP.wdtFeed();
+#endif	
+	uint16_t t = 0;
+
+	while(t < TIMEOUT) 
+	{
+		// Check the waiting condition:
+		if(status(pin) == state)
+		{
+			// Got it!  Continue!
+			return false;
+		}
+		delayMicroseconds(1); // The aim is to make the loop at least 3 us
+		t++;
+	}
+
+	// If down here, we have had a timeout.
+	// Release lines and go to inactive state with error flag
+	release(IEC_PIN_CLK);
+	release(IEC_PIN_DATA);
+
+	m_state = errorFlag;
+
+	// Wait for ATN release, problem might have occured during attention
+	while(status(IEC_PIN_ATN) == pulled);
+
+	// Note: The while above is without timeout. If ATN is held low forever,
+	//       the CBM is out in the woods and needs a reset anyways.
+
+	Debug_printf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d] ", pin, state, t, m_state);
+	return true;
+} // timeoutWait
 
 /******************************************************************************
  *                                                                             *
@@ -615,8 +611,6 @@ iecBus::ATNCheck iecBus::checkATN(ATNCmd &atn_cmd)
 	}
 	// else
 	// {
-	// // 	Debug_printf("\r\ncheckATN: Not Selected\r\n");
-
 	// 	// No ATN, keep lines in a released state.
 	// 	release(IEC_PIN_DATA);
 	// 	release(IEC_PIN_CLK);
@@ -665,8 +659,8 @@ iecBus::ATNCheck iecBus::listen(ATNCmd &atn_cmd)
 
 iecBus::ATNCheck iecBus::talk(ATNCmd &atn_cmd)
 {
-	byte i = 0;
-	ATNCommand c;
+	int i = 0;
+	int c;
 
 	// Okay, we will talk soon
 	Debug_printf("(40 TALK) (%.2d DEVICE)", atn_cmd.device);
@@ -676,7 +670,7 @@ iecBus::ATNCheck iecBus::talk(ATNCmd &atn_cmd)
 	{
 		if(status(IEC_PIN_CLK) == released) 
 		{
-			c = (ATNCommand)receive();
+			c = receive();
 			if (m_state bitand errorFlag)
 				return ATN_ERROR;
 
@@ -704,13 +698,13 @@ iecBus::ATNCheck iecBus::talk(ATNCmd &atn_cmd)
 iecBus::ATNCheck iecBus::receiveCommand(ATNCmd &atn_cmd)
 {
 	int i = 0;
-	ATNCommand c;
+	int c;
 
 	// Some other command. Record the cmd string until UNLISTEN is sent
-	while(status(IEC_PIN_ATN) == released) 
+	while(status(IEC_PIN_ATN) == released)
 	{
 		// Let's get the command!
-		c = (ATNCommand)receive();
+		c = receive();
 
 		if (m_state bitand errorFlag)
 		{
@@ -749,9 +743,9 @@ iecBus::ATNCheck iecBus::receiveCommand(ATNCmd &atn_cmd)
 
 // IEC_receive receives a byte
 //
-byte iecBus::receive()
+int iecBus::receive()
 {
-	byte data;
+	int data;
 	data = receiveByte();
 	return data;
 } // receive
@@ -759,18 +753,18 @@ byte iecBus::receive()
 
 // IEC_send sends a byte
 //
-bool  iecBus::send(byte data)
+bool iecBus::send(int data)
 {
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
-#endif	
+#endif
 	return sendByte(data, false);
 } // send
 
 
 // Same as IEC_send, but indicating that this is the last byte.
 //
-bool  iecBus::sendEOI(byte data)
+bool iecBus::sendEOI(int data)
 {
 	Debug_printf("\r\nEOI Sent!");
 	if (sendByte(data, true))
@@ -805,7 +799,7 @@ bool iecBus::sendFNF()
 } // sendFNF
 
 
-bool iecBus::isDeviceEnabled(const byte deviceNumber)
+bool iecBus::isDeviceEnabled(const int deviceNumber)
 {
 	return (enabledDevices & (1 << deviceNumber));
 } // isDeviceEnabled

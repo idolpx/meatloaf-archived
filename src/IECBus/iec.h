@@ -22,7 +22,6 @@
 #define IECBUS_H
 
 #include <Arduino.h>
-//#include "global_defines.h"
 #include "global_defines.h"
 #include "cbmdefines.h"
 #include "Petscii.h"
@@ -76,12 +75,12 @@ public:
 	
 	typedef struct _tagATNCMD 
 	{
-		byte code;
-		byte command;
-		byte channel;
-		byte device;
-		byte str[ATN_CMD_MAX_LENGTH];
-		byte strLen;
+		int code;
+		int command;
+		int channel;
+		int device;
+		char str[ATN_CMD_MAX_LENGTH];
+		int strLen;
 	} ATNCmd;
 
 	iecBus();
@@ -94,28 +93,28 @@ public:
 	// the message is recieved and stored in atn_cmd.
 	ATNCheck checkATN(ATNCmd& atn_cmd);
 
-	// Checks if CBM is sending a reset (setting the RESET line high). This is typicall
+	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
 //	bool checkRESET();
 
 	// Sends a byte. The communication must be in the correct state: a load command
 	// must just have been recieved. If something is not OK, FALSE is returned.
-	bool send(byte data);
+	bool send(int data);
 
 	// Same as IEC_send, but indicating that this is the last byte.
-	bool sendEOI(byte data);
+	bool sendEOI(int data);
 
 	// A special send command that informs file not found condition
 	bool sendFNF();
 
 	// Recieves a byte
-	byte receive();
+	int receive();
 
 	// Enabled Device Bit Mask
 	uint32_t enabledDevices;
-	bool isDeviceEnabled(const byte deviceNumber);
-	void enableDevice(const byte deviceNumber);
-	void disableDevice(const byte deviceNumber);
+	bool isDeviceEnabled(const int deviceNumber);
+	void enableDevice(const int deviceNumber);
+	void disableDevice(const int deviceNumber);
 
 	IECState state() const;
 
@@ -131,10 +130,10 @@ private:
 //	ATNCheck open(ATNCmd& atn_cmd);              // 0xF0 + channel		Open, channel
 
 	ATNCheck receiveCommand(ATNCmd& atn_cmd);
-
-	byte receiveByte(void);
-	bool sendByte(byte data, bool signalEOI);
-	byte timeoutWait(byte iecPIN, IECline lineStatus);
+	
+	int receiveByte(void);
+	bool sendByte(int data, bool signalEOI);
+	bool timeoutWait(int iecPIN, IECline lineStatus);
 	bool turnAround(void);
 	bool undoTurnAround(void);
 
@@ -154,8 +153,16 @@ private:
 
 	inline IECline status(int pin)
 	{
-		// To be able to read line we must be set to input, not driving.
-		set_pin_mode(pin, INPUT);
+		#ifdef SPLIT_LINES
+			if (pin == IEC_PIN_CLK)
+				pin = IEC_PIN_CLK_IN;
+			else if (pin == IEC_PIN_DATA)
+				pin = IEC_PIN_DATA_IN;
+		#else
+			// To be able to read line we must be set to input, not driving.
+			set_pin_mode(pin, INPUT);
+		#endif
+
 		return espDigitalRead(pin) ? released : pulled;
 	}
 
@@ -205,7 +212,7 @@ private:
 	}
 
 	// communication must be reset
-	byte m_state;
+	int m_state;
 };
 
 #endif
