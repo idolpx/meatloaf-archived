@@ -32,11 +32,13 @@
 #include <LittleFS.h>
 #endif
 
-#include "global_defines.h"
+#include "../../include/global_defines.h"
+#include "../../include/cbmdefines.h"
+#include "../../include/petscii.h"
+
 #include "MemoryInfo.h"
 #include "iec.h"
-#include "cbmdefines.h"
-#include "Petscii.h"
+
 #include "device_db.h"
 #include "helpers.h"
 
@@ -123,11 +125,13 @@ private:
 #include <LittleFS.h>
 #endif
 
-#include "global_defines.h"
+#include "../../include/global_defines.h"
+#include "../../include/cbmdefines.h"
+#include "../../include/petscii.h"
+
 #include "MemoryInfo.h"
 #include "iec.h"
-#include "cbmdefines.h"
-#include "Petscii.h"
+
 #include "device_db.h"
 #include "helpers.h"
 

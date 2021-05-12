@@ -14,14 +14,14 @@
 #include <ESP8266mDNS.h>
 #endif
 
-#include "global_defines.h"
-#include "fs_config.h"
+#include "../../include/global_defines.h"
+#include "../../include/fs_config.h"
 //#include "SerialCommand.h"
 
-#include "IECBus/iec.h"
-#include "IECBus/iec_device.h"
-#include "ESPModem/ESPModem.h"
-#include "ESPWebDAV/ESPWebDAV.h"
+#include "iec.h"
+#include "iec_device.h"
+#include "ESPModem.h"
+#include "ESPWebDAV.h"
 
 //void ICACHE_RAM_ATTR isrCheckATN();
 

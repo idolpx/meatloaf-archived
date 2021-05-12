@@ -6,7 +6,7 @@
 
 #include <FS.h>
 
-#include "global_defines.h"
+#include "../../include/global_defines.h"
 
 // constants for WebServer
 #define CONTENT_LENGTH_UNKNOWN ((size_t) -1)

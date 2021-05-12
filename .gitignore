@@ -4,3 +4,6 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+meatloaf.srctrlbm
+meatloaf.srctrldb
+meatloaf.srctrlprj

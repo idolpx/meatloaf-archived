@@ -22,9 +22,9 @@
 #define IECBUS_H
 
 #include <Arduino.h>
-#include "global_defines.h"
-#include "cbmdefines.h"
-#include "Petscii.h"
+#include "../../include/global_defines.h"
+#include "../../include/cbmdefines.h"
+#include "../../include/petscii.h"
 
 class iecBus
 {
