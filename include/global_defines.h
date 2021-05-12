@@ -2,7 +2,6 @@
 #define GLOBAL_DEFINES_H
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 
 #define PRODUCT_ID "MEATLOAF CBM"
 #define FW_VERSION "20200923.01" // Dynamically set at compile time in "platformio.ini"
@@ -74,6 +73,8 @@
 // to work stable on my (Larsp)'s DTV at 700000 < F_CPU < 9000000
 // using a 32 MB MMC card
 //
+
+#define	ATN_CMD_MAX_LENGTH 	40
 
 // See timeoutWait
 #define TIMEOUT 65500

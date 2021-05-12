@@ -14,7 +14,7 @@
 #include <WiFiServer.h>
 #include <EEPROM.h>
 
-#include "global_defines.h"
+#include "../../include/global_defines.h"
 
 //***************************************************************************
 // Global data section.                                                     *
@@ -190,6 +190,7 @@ public:
      Arduino main loop function
     */
     void setup();
+    void start();
     void loop();
 };
 

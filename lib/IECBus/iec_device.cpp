@@ -18,29 +18,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
-#include <string.h>
+#include "iec_device.h"
 
 //#include "global_defines.h"
 //#include "debug.h"
-#include "iec_device.h"
+
+#include <string.h>
 
 using namespace CBM;
 
-namespace
-{
-
-// Buffer for incoming and outgoing serial bytes and other stuff.
-char serCmdIOBuf[MAX_BYTES_PER_REQUEST];
-
-} // unnamed namespace
-
 iecDevice::iecDevice(iecBus &iec, FS *fileSystem)
-	: m_iec(iec)
-	  // NOTE: Householding with RAM bytes: We use the middle of serial buffer for the ATNCmd buffer info.
-	  // This is ok and won't be overwritten by actual serial data from the host, this is because when this ATNCmd data is in use
-	  // only a few bytes of the actual serial data will be used in the buffer.
-	  ,
-	  m_atn_cmd(*reinterpret_cast<iecBus::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])), m_device(fileSystem),  
+	: m_iec(iec),
+	  m_device(fileSystem),  
 	  m_jsonHTTPBuffer(1024)
 {
 	m_fileSystem = fileSystem;
@@ -83,7 +72,7 @@ void iecDevice::sendDeviceInfo()
 	Debug_printf("\r\nsendDeviceInfo:\r\n");
 
 	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
+	uint16_t basicPtr = PET_BASIC_START;
 
 	// #if defined(USE_LITTLEFS)
 	FSInfo64 fs_info;
@@ -93,8 +82,8 @@ void iecDevice::sendDeviceInfo()
 	dtostrf(getFragmentation(), 3, 2, floatBuffer);
 
 	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	m_iec.send(PET_BASIC_START bitand 0xff);
+	m_iec.send((PET_BASIC_START >> 8) bitand 0xff);
 	Debug_println("");
 
 	// Send List HEADER
@@ -163,11 +152,11 @@ void iecDevice::sendDeviceStatus()
 	Debug_printf("\r\nsendDeviceStatus:\r\n");
 
 	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
+	uint16_t basicPtr = PET_BASIC_START;
 
 	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	m_iec.send(PET_BASIC_START bitand 0xff);
+	m_iec.send((PET_BASIC_START >> 8) bitand 0xff);
 	Debug_println("");
 
 	// Send List HEADER
@@ -208,92 +197,81 @@ void iecDevice::service(void)
 	// }
 
 	//	noInterrupts();
-	iecBus::ATNCheck ATN = m_iec.checkATN(m_atn_cmd);
+	IEC.service();
 	//	interrupts();
 
-	if (ATN == iecBus::ATN_ERROR)
+	switch (IEC.ATN.command)
 	{
-		//Debug_printf("\r\n[ERROR]");
-		reset();
-		ATN = iecBus::ATN_IDLE;
-	}
-	// Did anything happen from the host side?
-	else if (ATN not_eq iecBus::ATN_IDLE)
-	{
+		case ATN_COMMAND_OPEN:
+			if ( IEC.ATN.channel == READ_CHANNEL )
+			{
+				Debug_printf("\r\niecDevice::service: [OPEN] LOAD \"%s\",%d ", IEC.ATN.data, IEC.ATN.device_id);
+			}
+			if ( IEC.ATN.channel == WRITE_CHANNEL )
+			{
+				Debug_printf("\r\niecDevice::service: [OPEN] SAVE \"%s\",%d ", IEC.ATN.data, IEC.ATN.device_id);	
+			}
 
-		switch (m_atn_cmd.command)
-		{
-			case iecBus::ATN_CODE_OPEN:
-				if ( m_atn_cmd.channel == READ_CHANNEL )
+			// Open either file or prg for reading, writing or single line command on the command channel.
+			// In any case we just issue an 'OPEN' to the host and let it process.
+			// Note: Some of the host response handling is done LATER, since we will get a TALK or LISTEN after this.
+			// Also, simply issuing the request to the host and not waiting for any response here makes us more
+			// responsive to the CBM here, when the DATA with TALK or LISTEN comes in the next sequence.
+			_open();
+			break;
+
+		case ATN_COMMAND_DATA:  // data channel opened
+			Debug_printf("\r\niecDevice::service: [DATA] ");
+			if(IEC.ATN.mode == ATN_TALK) 
+			{
+				// when the CMD channel is read (status), we first need to issue the host request. The data channel is opened directly.
+				if(IEC.ATN.channel == CMD_CHANNEL)
 				{
-					Debug_printf("\r\niecDevice::service: [OPEN] LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+					_open(); // This is typically an empty command,	
 				}
-				if ( m_atn_cmd.channel == WRITE_CHANNEL )
-				{
-					Debug_printf("\r\niecDevice::service: [OPEN] SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);	
-				}
+				
+				_talk_data(IEC.ATN.channel); // Process TALK command
+			}
+			else if(IEC.ATN.mode == ATN_LISTEN)
+			{
+				_listen_data(); // Process LISTEN command
+			}
+			else if(IEC.ATN.mode == ATN_CMD) // Here we are sending a command to PC and executing it, but not sending response
+			{
+				_open();
+			}
+			break;
 
-				// Open either file or prg for reading, writing or single line command on the command channel.
-				// In any case we just issue an 'OPEN' to the host and let it process.
-				// Note: Some of the host response handling is done LATER, since we will get a TALK or LISTEN after this.
-				// Also, simply issuing the request to the host and not waiting for any response here makes us more
-				// responsive to the CBM here, when the DATA with TALK or LISTEN comes in the next sequence.
-				handleATNCmdCodeOpen(m_atn_cmd);
-				break;
+		case ATN_COMMAND_CLOSE:
+			Debug_printf("\r\niecDevice::service: [CLOSE] ");
+			// handle close with host.
+			_close();
+			break;
 
-			case iecBus::ATN_CODE_DATA:  // data channel opened
-				Debug_printf("\r\niecDevice::service: [DATA] ");
-				if(ATN == iecBus::ATN_CMD_TALK) 
-				{
-					 // when the CMD channel is read (status), we first need to issue the host request. The data channel is opened directly.
-					if(m_atn_cmd.channel == CMD_CHANNEL)
-					{
-						handleATNCmdCodeOpen(m_atn_cmd); // This is typically an empty command,	
-					}
-					
-					handleATNCmdCodeDataTalk(m_atn_cmd.channel); // Process TALK command
-				}
-				else if(ATN == iecBus::ATN_CMD_LISTEN)
-				{
-					handleATNCmdCodeDataListen(); // Process LISTEN command
-				}
-				else if(ATN == iecBus::ATN_CMD) // Here we are sending a command to PC and executing it, but not sending response
-				{
-					handleATNCmdCodeOpen(m_atn_cmd);	// back to CBM, the result code of the command is however buffered on the PC side.
-				}
-				break;
+		case ATN_COMMAND_LISTEN:
+			Debug_printf("\r\niecDevice::service:[LISTEN] ");
+			break;
 
-			case iecBus::ATN_CODE_CLOSE:
-				Debug_printf("\r\niecDevice::service: [CLOSE] ");
-				// handle close with host.
-				handleATNCmdClose();
-				break;
+		case ATN_COMMAND_TALK:
+			Debug_printf("\r\niecDevice::service:[TALK] ");
+			break;
 
-			case iecBus::ATN_CODE_LISTEN:
-				Debug_printf("\r\niecDevice::service:[LISTEN] ");
-				break;
+		case ATN_COMMAND_UNLISTEN:
+			Debug_printf("\r\niecDevice::service:[UNLISTEN] ");
+			break;
 
-			case iecBus::ATN_CODE_TALK:
-				Debug_printf("\r\niecDevice::service:[TALK] ");
-				break;
+		case ATN_COMMAND_UNTALK:
+			Debug_printf("\r\niecDevice::service:[UNTALK] ");
+			break;
 
-			case iecBus::ATN_CODE_UNLISTEN:
-				Debug_printf("\r\niecDevice::service:[UNLISTEN] ");
-				break;
+	} // switch
 
-			case iecBus::ATN_CODE_UNTALK:
-				Debug_printf("\r\niecDevice::service:[UNTALK] ");
-				break;
+} // service
 
-		} // switch
-	}	  // iecBus not idle
-
-} // handler
-
-void iecDevice::handleATNCmdCodeOpen(iecBus::ATNCmd &atn_cmd)
+void iecDevice::_open(void)
 {
-	m_device.select(atn_cmd.device);
-	m_filename = String((char *)atn_cmd.str);
+	m_device.select(IEC.ATN.device_id);
+	m_filename = String((char *)IEC.ATN.data);
 	m_filename.trim();
 	m_filetype = m_filename.substring(m_filename.lastIndexOf(".") + 1);
 	m_filetype.toUpperCase();
@@ -302,7 +280,7 @@ void iecDevice::handleATNCmdCodeOpen(iecBus::ATNCmd &atn_cmd)
 
 	Dir local_file = m_fileSystem->openDir(String(m_device.path() + m_filename));
 
-	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
+	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), ATN.str);
 	if (m_filename.startsWith(F("$")))
 	{
 		m_openState = O_DIR;
@@ -384,7 +362,7 @@ void iecDevice::handleATNCmdCodeOpen(iecBus::ATNCmd &atn_cmd)
 			}
 		}
 
-		if (atn_cmd.channel == 0x00)
+		if (IEC.ATN.channel == READ_CHANNEL)
 		{
 			m_openState = O_DIR;
 		}
@@ -408,22 +386,21 @@ void iecDevice::handleATNCmdCodeOpen(iecBus::ATNCmd &atn_cmd)
 	{
 		m_filename = "$";
 		m_filetype = "";
-		m_atn_cmd.str[0] = '\0';
-		m_atn_cmd.strLen = 0;
+		IEC.ATN.data[0] = '\0';
 	}
 
-	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Debug_printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
+	//Debug_printf("\r\n_open: %d (M_OPENSTATE) [%s]", m_openState, IEC.ATN.str);
+	Debug_printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), IEC.ATN.data);
 
-} // handleATNCmdCodeOpen
+} // _open
 
 
-void iecDevice::handleATNCmdCodeDataTalk(uint8_t chan)
+void iecDevice::_talk_data(uint8_t chan)
 {
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
 
-	Debug_printf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
+	Debug_printf("\r\n_talk_data: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
 
 	if (chan == CMD_CHANNEL)
 	{
@@ -493,60 +470,60 @@ void iecDevice::handleATNCmdCodeDataTalk(uint8_t chan)
 		}
 	}
 
-} // handleATNCmdCodeDataTalk
+} // _talk_data
 
 
-void iecDevice::handleATNCmdCodeDataListen()
+// void iecDevice::_listen_data()
+// {
+// 	uint8_t lengthOrResult = 0;
+// 	bool wasSuccess = false;
+
+// 	// process response into m_queuedError.
+// 	// Response: ><code in binary><CR>
+
+// 	serCmdIOBuf[0] = 0;
+
+// 	Debug_printf("\r\n_listen_data: %s", serCmdIOBuf);
+
+// 	if (not lengthOrResult or '>' not_eq serCmdIOBuf[0])
+// 	{
+// 		// FIXME: Check what the drive does here when things go wrong. FNF is probably not right.
+// 		m_iec.sendFNF();
+// 		strcpy(serCmdIOBuf, "response not sync.");
+// 	}
+// 	else
+// 	{
+// 		if (lengthOrResult = Serial.readBytes(serCmdIOBuf, 2))
+// 		{
+// 			if (2 == lengthOrResult)
+// 			{
+// 				lengthOrResult = serCmdIOBuf[0];
+// 				wasSuccess = true;
+// 			}
+// 			else
+// 			{
+// 				//Log(Error, FAC_IFACE, serCmdIOBuf);
+// 			}
+// 		}
+// 		m_queuedError = wasSuccess ? lengthOrResult : ErrSerialComm;
+
+// 		if (ErrOK == m_queuedError)
+// 			saveFile();
+// //		else // FIXME: Check what the drive does here when saving goes wrong. FNF is probably not right. Dummyread entire buffer from CBM?
+// //			m_iec.sendFNF();
+// 	}
+// } // _listen_data
+
+
+void iecDevice::_close()
 {
-	uint8_t lengthOrResult = 0;
-	bool wasSuccess = false;
-
-	// process response into m_queuedError.
-	// Response: ><code in binary><CR>
-
-	serCmdIOBuf[0] = 0;
-
-	Debug_printf("\r\nhandleATNCmdCodeDataListen: %s", serCmdIOBuf);
-
-	if (not lengthOrResult or '>' not_eq serCmdIOBuf[0])
-	{
-		// FIXME: Check what the drive does here when things go wrong. FNF is probably not right.
-		m_iec.sendFNF();
-		strcpy(serCmdIOBuf, "response not sync.");
-	}
-	else
-	{
-		if (lengthOrResult = Serial.readBytes(serCmdIOBuf, 2))
-		{
-			if (2 == lengthOrResult)
-			{
-				lengthOrResult = serCmdIOBuf[0];
-				wasSuccess = true;
-			}
-			else
-			{
-				//Log(Error, FAC_IFACE, serCmdIOBuf);
-			}
-		}
-		m_queuedError = wasSuccess ? lengthOrResult : ErrSerialComm;
-
-		if (ErrOK == m_queuedError)
-			saveFile();
-//		else // FIXME: Check what the drive does here when saving goes wrong. FNF is probably not right. Dummyread entire buffer from CBM?
-//			m_iec.sendFNF();
-	}
-} // handleATNCmdCodeDataListen
-
-
-void iecDevice::handleATNCmdClose()
-{
-	Debug_printf("\r\nhandleATNCmdClose: Success!");
+	Debug_printf("\r\n_close: Success!");
 
 	//Serial.printf("\r\nIEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str());
 	Debug_printf("\r\n=================================\r\n\r\n");
 
 	m_filename = "";
-} // handleATNCmdClose
+} // _close
 
 
 // send single basic line, including heading basic pointer and terminating zero.
@@ -634,11 +611,11 @@ void iecDevice::sendListing()
 	String extension = "DIR";
 
 	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
+	uint16_t basicPtr = PET_BASIC_START;
 
 	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	m_iec.send(PET_BASIC_START bitand 0xff);
+	m_iec.send((PET_BASIC_START >> 8) bitand 0xff);
 	byte_count += 2;
 	Debug_println("");
 
@@ -769,14 +746,13 @@ void iecDevice::sendFile()
 	{
 		size_t len = file.size();
 
-		// Get file load address
+		// Get file load address and send to CBM
 		file.readBytes(b, 1);
 		success = m_iec.send(b[0]);
 		load_address = *b & 0x00FF; // low byte
 		file.readBytes(b, 1);
 		success = m_iec.send(b[0]);
 		load_address = load_address | *b << 8;  // high byte
-		// fseek(file, 0, SEEK_SET);
 
 		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", inFile.c_str(), load_address, len);
 		for (i = 2; success and i < len; ++i) 
@@ -791,7 +767,7 @@ void iecDevice::sendFile()
 					load_address += 8;
 				}
 #endif
-				if (i == len - 1)
+				if (i == len)
 				{
 					success = m_iec.sendEOI(b[0]); // indicate end of file.
 				}
@@ -854,7 +830,7 @@ void iecDevice::saveFile()
 		do
 		{
 			b = m_iec.receive();
-			done = (m_iec.state() bitand iecBus::eoiFlag) or (m_iec.state() bitand iecBus::errorFlag);
+			done = (m_iec.state() bitand eoiFlag) or (m_iec.state() bitand errorFlag);
 
 			file.write(b);
 		} while (not done);
@@ -905,11 +881,11 @@ void iecDevice::sendListingHTTP(void)
 	m_lineBuffer = payload.readStringUntil('\n');
 
 	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
+	uint16_t basicPtr = PET_BASIC_START;
 
 	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	m_iec.send(PET_BASIC_START bitand 0xff);
+	m_iec.send((PET_BASIC_START >> 8) bitand 0xff);
 	byte_count += 2;
 	Debug_println("");
 
@@ -989,17 +965,16 @@ void iecDevice::sendFileHTTP(void)
 	{
 		size_t len = client.getSize();
 
-		// Get file load address
+		// Get file load address and send to CBM
 		file.readBytes(b, 1);
 		success = m_iec.send(b[0]);
 		load_address = *b & 0x00FF; // low byte
 		file.readBytes(b, 1);
 		success = m_iec.send(b[0]);
 		load_address = load_address | *b << 8;  // high byte
-		// fseek(file, 0, SEEK_SET);
 
 		Debug_printf("\r\nsendFileHTTP: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_filename.c_str(), load_address, len);
-		for (i = 2; success and i < len; ++i)
+		for (i = 2; success and i <= len; ++i)
 		{ // End if sending to CBM fails.
 			success = file.readBytes(b, 1);
 			if (success)
@@ -1011,7 +986,7 @@ void iecDevice::sendFileHTTP(void)
 					load_address += 8;
 				}
 #endif
-				if (i == len - 1)
+				if (i == len)
 				{
 					success = m_iec.sendEOI(b[0]); // indicate end of file.
 				}
@@ -1026,6 +1001,15 @@ void iecDevice::sendFileHTTP(void)
 					b[0] = 46;
 
 				ba[bi++] = b[0];
+
+				if ( i == len )
+				{
+					while ( bi <= 8 )
+					{
+						Debug_printf(" 00");
+						ba[bi++] = 46;
+					}
+				}
 
 				if(bi == 8)
 				{

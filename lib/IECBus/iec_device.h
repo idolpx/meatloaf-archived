@@ -25,6 +25,7 @@
 
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <ArduinoJson.h>
 
 #if defined(USE_SPIFFS)
 #include <SPIFFS.h>
@@ -32,11 +33,15 @@
 #include <LittleFS.h>
 #endif
 
-#include "global_defines.h"
-#include "MemoryInfo.h"
 #include "iec.h"
-#include "cbmdefines.h"
-#include "Petscii.h"
+
+#include "../../include/global_defines.h"
+#include "../../include/cbmdefines.h"
+#include "../../include/petscii.h"
+
+#include "MemoryInfo.h"
+
+
 #include "device_db.h"
 #include "helpers.h"
 
@@ -50,9 +55,6 @@ enum OpenState {
 	O_DEVICE_INFO,
 	O_DEVICE_STATUS
 };
-
-// The base pointer of basic.
-#define C64_BASIC_START 0x0801
 
 class iecDevice
 {
@@ -84,13 +86,13 @@ private:
 	void saveFile(void);
 
 	// handler helpers.
-	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
-	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(uint8_t chan);
-	void handleATNCmdClose(void);
+	void _open(void);
+	void _listen_data(void) {};
+	void _talk_data(uint8_t chan);
+	void _close(void);
 
-	void handleDeviceCommand(iecBus::ATNCmd &cmd);
-	void handleMeatLoafCommand(iecBus::ATNCmd &cmd);
+	void handleDeviceCommand(ATNData &cmd);
+	void handleMeatLoafCommand(ATNData &cmd);
 
 	// our iec low level driver:
 	iecBus &m_iec;
@@ -99,8 +101,6 @@ private:
 	byte m_openState; // see OpenState
 	byte m_queuedError;
 
-	// atn command buffer struct
-	iecBus::ATNCmd &m_atn_cmd;
 
 	FS *m_fileSystem;
 	StaticJsonDocument<256> m_jsonHTTP;
@@ -152,9 +152,6 @@ enum OpenState
 	O_DEVICE_STATUS
 };
 
-// The base pointer of basic.
-#define C64_BASIC_START 0x0801
-
 class iecDevice
 {
 public:
@@ -185,13 +182,13 @@ private:
 	void saveFile(void);
 
 	// handler helpers.
-	void handleATNCmdCodeOpen(iecBus::ATNCmd &cmd);
-	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(uint8_t chan);
-	void handleATNCmdClose(void);
+	void _open(iecBus::ATNData &cmd);
+	void _listen_data(void);
+	void _talk_data(uint8_t chan);
+	void _close(void);
 
-	void handleDeviceCommand(iecBus::ATNCmd &cmd);
-	void handleMeatLoafCommand(iecBus::ATNCmd &cmd);
+	void handleDeviceCommand(iecBus::ATNData &cmd);
+	void handleMeatLoafCommand(iecBus::ATNData &cmd);
 
 	// our iec low level driver:
 	iecBus& m_iec;
@@ -201,7 +198,7 @@ private:
 	uint8_t m_queuedError;
 
 	// atn command buffer struct
-	iecBus::ATNCmd& m_atn_cmd;
+	iecBus::ATNData& IEC.ATN;
 
 	FS *m_fileSystem;
 	StaticJsonDocument<256> m_jsonHTTP;

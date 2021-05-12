@@ -18,10 +18,10 @@
 #include "fs_config.h"
 //#include "SerialCommand.h"
 
-#include "IECBus/iec.h"
-#include "IECBus/iec_device.h"
-#include "ESPModem/ESPModem.h"
-#include "ESPWebDAV/ESPWebDAV.h"
+#include "iec.h"
+#include "iec_device.h"
+#include "ESPModem.h"
+#include "ESPWebDAV.h"
 
 //void ICACHE_RAM_ATTR isrCheckATN();
 
@@ -83,11 +83,16 @@ void setup()
 	// Serial.print (F("IP address: ")); Serial.println(WiFi.localIP());
 	// //Serial.print ("RSSI: "); Serial.println(WiFi.RSSI());
 	// //Serial.print ("Mode: "); Serial.println(WiFi.getPhyMode());
-	// Serial.println("");
 
 	// Setup Modem
-	//	modem.fileSystem = fileSystem;
+	//modem.fileSystem = fileSystem;
 	modem.setup();
+
+	Serial.printf("\r\n\r\n==============================\r\n");
+	Serial.printf("   %s %s\r\n", PRODUCT_ID, FW_VERSION);
+	Serial.println("------------------------------");
+
+	modem.start();
 
 #if defined(ESP8266)
 	// initialize selected file system
@@ -146,7 +151,7 @@ void setup()
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
-		iec.init();
+		iec.setup();
 		Serial.println(F("iecBus Bus Initialized"));
 
 		drive.begin();

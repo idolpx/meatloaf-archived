@@ -22,76 +22,73 @@
 #define IECBUS_H
 
 #include <Arduino.h>
-#include "global_defines.h"
-#include "cbmdefines.h"
-#include "Petscii.h"
+
+#include "../../include/global_defines.h"
+#include "../../include/cbmdefines.h"
+#include "../../include/petscii.h"
+
+enum IECline
+{
+	pulled = true,
+	released = false
+};
+
+enum IECState 
+{
+	noFlags   = 0,
+	eoiFlag   = (1 << 0),   // might be set by iec_receive
+	atnFlag   = (1 << 1),   // might be set by iec_receive
+	errorFlag = (1 << 2)    // If this flag is set, something went wrong and
+};
+
+// Return values for checkATN:
+enum ATNMode 
+{
+	ATN_IDLE = 0,           // Nothing recieved of our concern
+	ATN_CMD = 1,            // A command is recieved
+	ATN_LISTEN = 2,         // A command is recieved and data is coming to us
+	ATN_TALK = 3,           // A command is recieved and we must talk now
+	ATN_ERROR = 4,          // A problem occoured, reset communication
+	ATN_RESET = 5		    // The IEC bus is in a reset state (RESET line).
+};
+
+// IEC ATN commands:
+enum ATNCommand 
+{
+	ATN_COMMAND_GLOBAL = 0x00,     // 0x00 + cmd (global command)
+	ATN_COMMAND_LISTEN = 0x20,     // 0x20 + device_id (LISTEN)
+	ATN_COMMAND_UNLISTEN = 0x3F,   // 0x3F (UNLISTEN)
+	ATN_COMMAND_TALK = 0x40,       // 0x40 + device_id (TALK)
+	ATN_COMMAND_UNTALK = 0x5F,     // 0x5F (UNTALK)
+	ATN_COMMAND_DATA = 0x60,       // 0x60 + channel (SECOND)
+	ATN_COMMAND_CLOSE = 0xE0,  	   // 0xE0 + channel (CLOSE)
+	ATN_COMMAND_OPEN = 0xF0	       // 0xF0 + channel (OPEN)
+};
+
+struct ATNData
+{
+	ATNMode mode;
+	uint8_t code;
+	uint8_t command;
+	uint8_t channel;
+	uint8_t device_id;
+	char data[ATN_CMD_MAX_LENGTH];
+};
 
 class iecBus
 {
 public:
-	enum IECline
-	{
-		pulled = true,
-		released = false
-	};
-
-	enum IECState 
-	{
-		noFlags   = 0,
-		eoiFlag   = (1 << 0),   // might be set by iec_receive
-		atnFlag   = (1 << 1),   // might be set by iec_receive
-		errorFlag = (1 << 2)    // If this flag is set, something went wrong and
-	};
-
-	// Return values for checkATN:
-	enum ATNCheck 
-	{
-		ATN_IDLE = 0,           // Nothing recieved of our concern
-		ATN_CMD = 1,            // A command is recieved
-		ATN_CMD_LISTEN = 2,     // A command is recieved and data is coming to us
-		ATN_CMD_TALK = 3,       // A command is recieved and we must talk now
-		ATN_ERROR = 4,          // A problem occoured, reset communication
-		ATN_RESET = 5		    // The IEC bus is in a reset state (RESET line).
-	};
-
-	// IEC ATN commands:
-	enum ATNCommand 
-    {
-		ATN_CODE_GLOBAL = 0x00,     // 0x00 + cmd (global command)
-		ATN_CODE_LISTEN = 0x20,     // 0x20 + device_id (LISTEN)
-		ATN_CODE_UNLISTEN = 0x3F,   // 0x3F (UNLISTEN)
-		ATN_CODE_TALK = 0x40,	    // 0x40 + device_id (TALK)
-		ATN_CODE_UNTALK = 0x5F,     // 0x5F (UNTALK)
-		ATN_CODE_DATA = 0x60,	    // 0x60 + channel (SECOND)
-		ATN_CODE_CLOSE = 0xE0,  	// 0xE0 + channel (CLOSE)
-		ATN_CODE_OPEN = 0xF0		// 0xF0 + channel (OPEN)
-	};
-
-	// ATN command struct maximum command length:
-	enum 
-	{
-		ATN_CMD_MAX_LENGTH = 40
-	};
-	
-	typedef struct _tagATNCMD 
-	{
-		uint8_t code;
-		uint8_t command;
-		uint8_t channel;
-		uint8_t device;
-		char str[ATN_CMD_MAX_LENGTH];
-		uint8_t strLen;
-	} ATNCmd;
-
-	iecBus();
-	~iecBus(){}
+	ATNData ATN;
 
 	// Initialise iec driver
-	bool init();
+	void setup(void);
 
 	// Checks if CBM is sending an attention message. If this is the case,
-	// the message is recieved and stored in atn_cmd.
-	ATNCheck checkATN(ATNCmd& atn_cmd);
+	// the message is recieved and stored in ATN.
+	void service(void);
+
+	void reset(void);
+    void shutdown(void);
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
@@ -101,6 +98,9 @@ public:
 	// must just have been recieved. If something is not OK, FALSE is returned.
 	bool send(uint8_t data);
 
+	// Sends a string.
+	bool send(uint8_t *data, uint16_t len);
+
 	// Same as IEC_send, but indicating that this is the last byte.
 	bool sendEOI(uint8_t data);
 
@@ -109,6 +109,9 @@ public:
 
 	// Recieves a byte
 	uint8_t receive(void);
+
+	// Receive a string.
+	bool receive(uint8_t *data, uint16_t len);
 
 	// Enabled Device Bit Mask
 	uint32_t enabledDevices;
@@ -121,15 +124,16 @@ public:
 
 private:
 	// IEC Bus Commands
-	ATNCheck listen(ATNCmd& atn_cmd);            // 0x20 + device_id 	Listen, device (0–30)
-//	ATNCheck unlisten(ATNCmd& atn_cmd);          // 0x3F				Unlisten, all devices
-	ATNCheck talk(ATNCmd& atn_cmd);              // 0x40 + device_id 	Talk, device 
-//	ATNCheck untalk(ATNCmd& atn_cmd);            // 0x5F				Untalk, all devices 
-//	ATNCheck reopen(ATNCmd& atn_cmd);            // 0x60 + channel		Reopen, channel (0–15)
-//	ATNCheck close(ATNCmd& atn_cmd);             // 0xE0 + channel		Close, channel
-//	ATNCheck open(ATNCmd& atn_cmd);              // 0xF0 + channel		Open, channel
+//	void global(void) {};            // 0x00 + cmd          Global command to all devices, Not supported on CBM
+	void listen(void);               // 0x20 + device_id 	Listen, device (0–30), Devices 0-3 are reserved
+	void unlisten(void) {};          // 0x3F				Unlisten, all devices
+	void talk(void);                 // 0x40 + device_id 	Talk, device (0-30)
+	void untalk(void) {};            // 0x5F				Untalk, all devices 
+	void data(void) {};              // 0x60 + channel		Open Channel/Data, Secondary Address / Channel (0–15)
+	void close(void) {};             // 0xE0 + channel		Close, Secondary Address / Channel (0–15)
+	void open(void) {};              // 0xF0 + channel		Open, Secondary Address / Channel (0–15)
 
-	ATNCheck receiveCommand(ATNCmd& atn_cmd);
+	void receiveCommand(void);
 	
 	uint8_t receiveByte(void);
 	bool sendByte(uint8_t data, bool signalEOI);
@@ -207,7 +211,9 @@ private:
 	}
 
 	// communication must be reset
-	uint8_t m_state;
+	uint8_t _iec_state;
 };
+
+extern iecBus IEC;
 
 #endif
