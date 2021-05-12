@@ -172,28 +172,26 @@ private:
 	}
 
 	inline void set_pin_mode(uint8_t pin, uint8_t mode) {
+		static uint64_t gpio_pin_modes;
+		uint8_t b_mode = (mode == 1) ? 1 : 0;
+
+		// is this pin mode already set the way we want?
+		if ( ((gpio_pin_modes >> pin) & 1ULL) != b_mode )
+		{
 #if defined(ESP8266)		
-		if(mode == OUTPUT){
-			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
-			GPC(pin) = (GPC(pin) & (0xF << GPCI)); //SOURCE(GPIO) | DRIVER(NORMAL) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
-			GPES = (1 << pin); //Enable
-		} else if(mode == INPUT){
-			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
-			GPEC = (1 << pin); //Disable
-			GPC(pin) = (GPC(pin) & (0xF << GPCI)) | (1 << GPCD); //SOURCE(GPIO) | DRIVER(OPEN_DRAIN) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
-		}
+			if(mode == OUTPUT){
+				GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
+				GPC(pin) = (GPC(pin) & (0xF << GPCI)); //SOURCE(GPIO) | DRIVER(NORMAL) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
+				GPES = (1 << pin); //Enable
+			} else if(mode == INPUT){
+				GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
+				GPEC = (1 << pin); //Disable
+				GPC(pin) = (GPC(pin) & (0xF << GPCI)) | (1 << GPCD); //SOURCE(GPIO) | DRIVER(OPEN_DRAIN) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
+			}
 #elif defined(ESP32)
 			pinMode( pin, mode );
 #endif
-	}
-
-	inline void ICACHE_RAM_ATTR espDigitalWrite(uint8_t pin, uint8_t val) {
-#if defined(ESP8266)
-		if(val) GPOS = (1 << pin);
-		else GPOC = (1 << pin);
-#elif defined(ESP32)
-		digitalWrite(pin, val);
-#endif
+		}
 	}
 
 	inline uint8_t ICACHE_RAM_ATTR espDigitalRead(uint8_t pin) {
