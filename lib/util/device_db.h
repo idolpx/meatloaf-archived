@@ -1,7 +1,8 @@
 #ifndef DEVICE_DB_H
 #define DEVICE_DB_H
 
-#include "global_defines.h"
+#include "../../include/global_defines.h"
+
 #include <ArduinoJson.h>
 
 #if defined(USE_SPIFFS)
