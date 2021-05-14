@@ -16,7 +16,7 @@
 #elif defined USE_LITTLEFS
 #if defined(ESP8266)
 	#include <LittleFS.h>
-	FS* fileSystem = &LittleFS;
+	extern FS* fileSystem = &LittleFS;
 	LittleFSConfig fileSystemConfig = LittleFSConfig();	
 #endif
 #if defined(ESP32)

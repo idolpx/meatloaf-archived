@@ -20,8 +20,8 @@ enum DepthType { DEPTH_NONE, DEPTH_CHILD, DEPTH_ALL };
 class ESPWebDAV	{
 public:
 	bool init(uint8_t serverPort, FS* fileSystem);
-	bool stop();
-	bool isClientWaiting();
+	bool stop(void);
+	bool isClientWaiting(void);
 	void handleClient(String blank = "");
 	void rejectClient(String rejectMessage);
 
@@ -65,7 +65,6 @@ protected:
 	// variables pertaining to current most HTTP request being serviced
 	WiFiServer *server;
 	FS *m_fileSystem;
-
 	WiFiClient 	client;
 	String 		method;
 	String 		uri;

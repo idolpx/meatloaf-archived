@@ -191,7 +191,7 @@ public:
     */
     void setup();
     void start();
-    void loop();
+    void service();
 };
 
 #endif

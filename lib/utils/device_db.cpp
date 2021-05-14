@@ -21,8 +21,8 @@ bool DeviceDB::init(String db_file)
     if( !m_fileSystem->exists(database) )
     {
         // Does folder exist? If not, create it
-        uint8_t index = -1;
-        uint8_t index2;
+        int index = -1;
+        int index2;
         String path;
 
 #if defined(USE_LITTLEFS)
@@ -94,7 +94,7 @@ bool DeviceDB::check()
                 }
                 else
                 {
-                    Debug_println(m_device.as<String>().c_str());
+                    Debug_printf(m_device.as<String>().c_str());
                 }
             }
         }

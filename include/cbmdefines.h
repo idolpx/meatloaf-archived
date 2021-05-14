@@ -24,7 +24,7 @@
 namespace CBM 
 {
 	// The base pointer of basic.
-	#define PET_BASIC_START     0x0801
+	#define C64_BASIC_START     0x0801
 
 	// 1541 RAM and ROM memory map definitions.
 	#define CBM1541_RAM_OFFSET 0

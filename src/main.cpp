@@ -19,7 +19,6 @@
 //#include "SerialCommand.h"
 
 #include "iec.h"
-#include "iec_device.h"
 #include "ESPModem.h"
 #include "ESPWebDAV.h"
 
@@ -38,7 +37,6 @@ String statusMessage;
 bool initFailed = false;
 
 static iecBus iec;
-static iecDevice drive(iec, fileSystem);
 
 // Drive drive;
 // DiskImage diskImage;
@@ -154,7 +152,7 @@ void setup()
 		iec.setup();
 		Serial.println(F("iecBus Bus Initialized"));
 
-		drive.begin();
+		iec.setup();
 		Serial.print(F("Virtual Device(s) Started: [ "));
 		for (byte i = 0; i < 31; i++)
 		{
@@ -164,46 +162,6 @@ void setup()
 			}
 		}
 		Serial.println("]");
-
-		// // Set initial d64 image
-		// Dir disk = fileSystem->openDir("/UTILS/FB64.d64");
-		// if (diskCaddy.Insert(disk, false))
-		// {
-		// 	Debug_printf("Disk Mounted: %s", disk.fileName().c_str());
-		// }
-
-		// 	Serial.println("==================================");
-
-		// 	File testFile = fileSystem->open(DEVICE_DB, "r");
-		// 	if (testFile){
-		// 		Serial.println("Read file content!");
-		// 		/**
-		// 		 * File derivate from Stream so you can use all Stream method
-		// 		 * readBytes, findUntil, parseInt, println etc
-		// 		 */
-		// 		Serial.println(testFile.readString());
-		// 		testFile.close();
-		// 	}else{
-		// 		Serial.println("Problem on read file!");
-		// 	}
-
-		// 	testFile = fileSystem->open(DEVICE_DB, "r");
-		// 	if (testFile){
-		// 		/**
-		// 		 * mode is SeekSet, position is set to offset bytes from the beginning.
-		// 		 * mode is SeekCur, current position is moved by offset bytes.
-		// 		 * mode is SeekEnd, position is set to offset bytes from the end of the file.
-		// 		 * Returns true if position was set successfully.
-		// 		 */
-		// 		Serial.println("Position inside the file at 9 byte!");
-		// 		testFile.seek(9, SeekSet);
-
-		// 		Serial.println("Read file content!");
-		// 		Serial.println(testFile.readStringUntil('\0'));
-		// 		testFile.close();
-		// 	}else{
-		// 		Serial.println("Problem on read file!");
-		// 	}
 	}
 
 	// // Setup callbacks for SerialCommand commands
@@ -232,20 +190,7 @@ void setup()
 void loop()
 {
 	// ------------------------
-	drive.service();
-	// switch ( state )
-	// {
-	//     case statemachine::check_atn:
-	// 		Debug_printf("\r\nstatemachine::atn_falling");
-	// 		if ( drive.loop() == 0 )
-	// 		{
-	// 			state = statemachine::none;
-	// 		}
-	//         break;
-
-	//     default:
-	//         break;
-	// }
+	iec.service();
 
 	if (dav.isClientWaiting())
 	{
@@ -255,12 +200,13 @@ void loop()
 		// call handle if server was initialized properly
 		dav.handleClient();
 	}
+
 #if defined(ESP8266)
 	MDNS.update();
 #endif
 
 	//cli.readSerial();
-	modem.loop();
+	modem.service();
 }
 
 // void isrCheckATN()

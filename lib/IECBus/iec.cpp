@@ -20,7 +20,444 @@
 
 #include "iec.h"
 
+#include <stdarg.h>
+#include <string.h>
+
+#include "../../include/global_defines.h"
+#include "../../include/cbmdefines.h"
+
+#include "utils.h"
+
 using namespace CBM;
+
+
+iecDevice::iecDevice()
+{
+	reset();
+} // ctor
+
+
+void iecDevice::reset(void)
+{
+	_openState = O_NOTHING;
+	_queuedError = ErrIntro;
+} // reset
+
+
+void iecDevice::sendStatus(void)
+{
+	uint8_t i, readResult;
+	
+	std::string status("00, OK, 00, 08");
+	readResult = status.length();
+
+	Debug_printf("\r\nsendStatus: ");
+	// Length does not include the CR, write all but the last one should be with EOI.
+	for (i = 0; i < readResult - 2; ++i)
+		IEC.send(status[i]);
+
+	// ...and last byte in string as with EOI marker.
+	IEC.sendEOI(status[i]);
+} // sendStatus
+
+
+void iecDevice::sendSystemInfo()
+{
+	Debug_printf("\r\nsendSystemInfo:\r\n");
+
+	// Reset basic memory pointer:
+	uint16_t basicPtr = C64_BASIC_START;
+
+	// FSInfo64 fs_info;
+	// m_fileSystem->info64 ( fs_info );
+
+	char floatBuffer[10]; // buffer
+	dtostrf(getFragmentation(), 3, 2, floatBuffer);
+
+	// Send load address
+	IEC.send(C64_BASIC_START bitand 0xff);
+	IEC.send((C64_BASIC_START >> 8) bitand 0xff);
+	Debug_println("");
+
+	// Send List HEADER
+	sendLine(basicPtr, 0, "\x12 %s v%s ", PRODUCT_ID, FW_VERSION);
+
+	// CPU
+	sendLine(basicPtr, 0, "SYSTEM ---");
+	// std::string sdk(esp_get_idf_version());
+	// util_string_toupper(sdk);
+	sendLine(basicPtr, 0, "SDK VER    : %s", ESP.getSdkVersion());
+	// TODO: sendLine(basicPtr, 0, "BOOT VER   : %08X", ESP.getBootVersion());
+	// TODO: sendLine(basicPtr, 0, "BOOT MODE  : %08X", ESP.getBootMode());
+	// TODO: sendLine(basicPtr, 0, "CHIP ID    : %08X", ESP.getChipId());
+	sendLine(basicPtr, 0, "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
+	sendLine(basicPtr, 0, "CYCLES     : %u", ESP.getCycleCount());
+
+	// POWER
+	sendLine(basicPtr, 0, "POWER ---");
+	sendLine(basicPtr, 0, "VOLTAGE    : %d.%d V", ( ESP.getVcc() / 1000 ), ( ESP.getVcc() % 1000 ));
+
+	// RAM
+	sendLine(basicPtr, 0, "RAM SIZE   : %5d B", getTotalMemory());
+	sendLine(basicPtr, 0, "RAM FREE   : %5d B", getTotalAvailableMemory());
+	sendLine(basicPtr, 0, "RAM >BLK   : %5d B", getLargestAvailableBlock());
+	sendLine(basicPtr, 0, "RAM FRAG   : %s %%", floatBuffer);
+
+	// ROM
+	sendLine(basicPtr, 0, "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
+	sendLine(basicPtr, 0, "ROM USED   : %5d B", ESP.getSketchSize());
+	sendLine(basicPtr, 0, "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
+
+	// FLASH
+	sendLine(basicPtr, 0, "STORAGE ---");
+	sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
+	sendLine(basicPtr, 0, "FLASH SPEED: %d MHZ", ( ESP.getFlashChipSpeed() / 1000000 ));
+
+	// // FILE SYSTEM
+	// sendLine(basicPtr, 0, "FILE SYSTEM ---");
+	// sendLine(basicPtr, 0, "TYPE       : %s", FS_TYPE);
+	// sendLine(basicPtr, 0, "SIZE       : %5d B", fs_info.totalBytes);
+	// sendLine(basicPtr, 0, "USED       : %5d B", fs_info.usedBytes);
+	// sendLine(basicPtr, 0, "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
+
+	// NETWORK
+	sendLine(basicPtr, 0, "NETWORK ---");
+	char ip[16];
+	sprintf(ip, "%s", ipToString(WiFi.softAPIP()).c_str());
+	sendLine(basicPtr, 0, "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
+	sendLine(basicPtr, 0, "AP IP      : %s", ip);
+	sprintf(ip, "%s", ipToString(WiFi.localIP()).c_str());
+	sendLine(basicPtr, 0, "STA MAC    : %s", WiFi.macAddress().c_str());
+	sendLine(basicPtr, 0, "STA IP     : %s", ip);
+
+	// End program with two zeros after last line. Last zero goes out as EOI.
+	IEC.send(0);
+	IEC.sendEOI(0);
+
+	ledON();
+} // sendSystemInfo
+
+void iecDevice::sendDeviceStatus()
+{
+	Debug_printf("\r\nsendDeviceStatus:\r\n");
+
+	// Reset basic memory pointer:
+	uint16_t basicPtr = C64_BASIC_START;
+
+	// Send load address
+	IEC.send(C64_BASIC_START bitand 0xff);
+	IEC.send((C64_BASIC_START >> 8) bitand 0xff);
+	Debug_println("");
+
+	// Send List HEADER
+	sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
+
+	// Current Config
+	sendLine(basicPtr, 0, "DEVICE    : %d", IEC.ATN.device_id);
+
+	// End program with two zeros after last line. Last zero goes out as EOI.
+	IEC.send(0);
+	IEC.sendEOI(0);
+
+	ledON();
+} // sendDeviceStatus
+
+
+void iecDevice::_process_command(void)
+{
+
+	switch (IEC.ATN.command)
+	{
+		case ATN_COMMAND_OPEN:
+			if ( IEC.ATN.channel == READ_CHANNEL )
+			{
+				Debug_printf("\r\niecDevice::service: [OPEN] LOAD \"%s\",%d ", IEC.ATN.data, IEC.ATN.device_id);
+			}
+			if ( IEC.ATN.channel == WRITE_CHANNEL )
+			{
+				Debug_printf("\r\niecDevice::service: [OPEN] SAVE \"%s\",%d ", IEC.ATN.data, IEC.ATN.device_id);	
+			}
+
+			// Open either file or prg for reading, writing or single line command on the command channel.
+			// In any case we just issue an 'OPEN' to the host and let it process.
+			// Note: Some of the host response handling is done LATER, since we will get a TALK or LISTEN after this.
+			// Also, simply issuing the request to the host and not waiting for any response here makes us more
+			// responsive to the CBM here, when the DATA with TALK or LISTEN comes in the next sequence.
+			_open();
+			break;
+
+		case ATN_COMMAND_DATA:  // data channel opened
+			Debug_printf("\r\niecDevice::service: [DATA] ");
+			if(IEC.ATN.mode == ATN_TALK) 
+			{
+				// when the CMD channel is read (status), we first need to issue the host request. The data channel is opened directly.
+				if(IEC.ATN.channel == CMD_CHANNEL)
+				{
+					_open(); // This is typically an empty command,	
+				}
+				
+				_talk_data(IEC.ATN.channel); // Process TALK command
+			}
+			else if(IEC.ATN.mode == ATN_LISTEN)
+			{
+				_listen_data(); // Process LISTEN command
+			}
+			else if(IEC.ATN.mode == ATN_CMD) // Here we are sending a command to PC and executing it, but not sending response
+			{
+				_open();
+			}
+			break;
+
+		case ATN_COMMAND_CLOSE:
+			Debug_printf("\r\niecDevice::service: [CLOSE] ");
+			_close();
+			break;
+
+		case ATN_COMMAND_LISTEN:
+			Debug_printf("\r\niecDevice::service:[LISTEN] ");
+			break;
+
+		case ATN_COMMAND_TALK:
+			Debug_printf("\r\niecDevice::service:[TALK] ");
+			break;
+
+		case ATN_COMMAND_UNLISTEN:
+			Debug_printf("\r\niecDevice::service:[UNLISTEN] ");
+			break;
+
+		case ATN_COMMAND_UNTALK:
+			Debug_printf("\r\niecDevice::service:[UNTALK] ");
+			break;
+
+	} // switch
+
+} // handler
+
+
+// send single basic line, including heading basic pointer and terminating zero.
+uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, const char* format, ...)
+{
+	// Format our string
+	va_list args;
+	va_start(args, format);
+	char text[vsnprintf(NULL, 0, format, args) + 1];
+	vsnprintf(text, sizeof text, format, args);
+	va_end(args);
+
+	return sendLine(basicPtr, blocks, text);
+}
+
+uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, char* text)
+{
+	uint8_t i;
+	uint16_t b_cnt = 0;
+
+	Debug_printf("%d %s ", blocks, text);
+
+	// Get text length
+	uint8_t len = strlen(text);
+
+	// Increment next line pointer
+	basicPtr += len + 5;
+
+	// Send that pointer
+	IEC.send(basicPtr bitand 0xFF);
+	IEC.send(basicPtr >> 8);
+
+	// Send blocks
+	IEC.send(blocks bitand 0xFF);
+	IEC.send(blocks >> 8);
+
+	// Send line contents
+	for (i = 0; i < len; i++)
+		IEC.send(text[i]);
+
+	// Finish line
+	IEC.send(0);
+
+	Debug_println("");
+
+	b_cnt += (len + 5);
+
+	return b_cnt;
+} // sendLine
+
+
+uint16_t iecDevice::sendHeader(uint16_t &basicPtr)
+{
+	uint16_t byte_count = 0;
+
+	// Send List HEADER
+	// "      MEAT LOAF 64      "
+	//	uint8_t space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
+	uint8_t space_cnt = 0; //(16 - strlen(FN_VERSION_FULL)) / 2;
+	byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", _device_id);
+
+	return byte_count;
+}
+
+
+
+// Read and process a command frame from SIO
+void iecBus::_bus_process_command(void)
+{
+    // if (_modemDev != nullptr && _modemDev->modemActive)
+    // {
+    //     _modemDev->modemActive = false;
+    //     Debug_println("Modem was active - resetting SIO baud");
+    //     fnUartSIO.set_baudrate(_sioBaud);
+    // }
+
+
+    // Turn on the BUS indicator LED
+    //fnLedManager.set(eLed::LED_BUS, true);
+
+	// find device and pass control
+	for (auto devicep : _daisyChain)
+	{
+		if (ATN.device_id == devicep->_device_id)
+		{
+			toggleLED();
+
+			_activeDev = devicep;
+			// handle command
+			_activeDev-> _process_command();
+		}
+	}
+
+    ledON();
+}
+
+
+
+// IEC Bus Commands
+void iecBus::listen(void)
+{
+	// Okay, we will listen.
+	Debug_printf("(20 LISTEN) (%.2d DEVICE)", ATN.device_id);
+
+
+	if (ATN.command == ATN_COMMAND_DATA) // 0x60 OPEN CHANNEL / DATA + Secondary Address / channel (0-15)
+	{
+		// If this 
+		if (ATN.channel == CMD_CHANNEL)
+		{
+			receiveCommand();
+			return;
+		}
+		else
+		{
+			// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
+			Debug_printf("\r\nlisten: %.2X (DATA) (%.2X COMMAND) (%.2X CHANNEL)", ATN.code, ATN.command, ATN.channel);
+			ATN.mode = ATN_LISTEN;
+			return;
+		}
+	}
+	else if (ATN.command == ATN_COMMAND_OPEN) // 0xF0 OPEN CHANNEL / DATA + Secondary Address / channel (0-15)
+	{
+		Debug_printf("\r\nlisten: %.2X (%.2X OPEN) (%.2X CHANNEL)", ATN.code, ATN.command, ATN.channel);
+		receiveCommand();
+		return;
+	}	
+	else
+	{
+		if (ATN.command == ATN_COMMAND_CLOSE) // 0xE0 CLOSE CHANNEL / DATA + Secondary Address / channel (0-15)
+		{
+			Debug_printf("\r\nlisten: %.2X (%.2X CLOSE) (%.2X CHANNEL)", ATN.code, ATN.command, ATN.channel);
+		}		
+	}
+
+	ATN.mode = ATN_IDLE;
+	return;
+}
+
+void iecBus::talk(void)
+{
+	uint8_t i = 0;
+	uint8_t c;
+
+	// Okay, we will talk soon
+	Debug_printf("(40 TALK) (%.2d DEVICE)", ATN.device_id);
+	Debug_printf("\r\ntalk: %.2X (%.2X SECOND) (%.2X CHANNEL)", ATN.code, ATN.command, ATN.channel);
+
+	while(status(IEC_PIN_ATN) == pulled) 
+	{
+		if(status(IEC_PIN_CLK) == released) 
+		{
+			c = receive();
+			if (_iec_state bitand errorFlag)
+			{
+				ATN.mode = ATN_ERROR;
+				return;
+			}
+
+			if (i >= ATN_CMD_MAX_LENGTH)
+			{
+				// Buffer is going to overflow, this is an error condition
+				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
+				ATN.mode = ATN_ERROR;
+				return;
+			}
+			ATN.data[i++] = c;
+			ATN.data[i] = '\0';
+		}
+	}
+
+	// Now ATN has just been released, do bus turnaround
+	if (not turnAround())
+	{
+		ATN.mode = ATN_ERROR;
+		return;
+	}
+
+	// We have recieved a CMD and we should talk now:
+	ATN.mode = ATN_TALK;
+	return;
+}
+
+void iecBus::receiveCommand(void)
+{
+	uint8_t i = 0;
+	uint8_t c;
+
+	// Some other command. Record the cmd string until UNLISTEN is sent
+	while(status(IEC_PIN_ATN) == released)
+	{
+		// Let's get the command!
+		c = receive();
+
+		if (_iec_state bitand errorFlag)
+		{
+			Debug_printf("\r\nreceiveCommand: receiving LISTEN command");
+			ATN.mode = ATN_ERROR;
+			return;
+		}
+
+		if (i >= ATN_CMD_MAX_LENGTH)
+		{
+			// Buffer is going to overflow, this is an error condition
+			// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
+			Debug_printf("\r\nreceiveCommand: ATN_CMD_MAX_LENGTH");
+			ATN.mode = ATN_ERROR;
+			return;
+		}
+
+		ATN.data[i++] = c;
+		ATN.data[i] = '\0';
+
+		// Is this the end of the command? Was EOI sent?
+		if (_iec_state bitand eoiFlag)
+		{
+			Debug_printf("\r\nreceiveCommand: [%s] + EOI", ATN.data);
+			ATN.mode = ATN_CMD;
+			return;
+		}		
+	}
+
+	ATN.mode = ATN_IDLE;
+	return;
+}
+
 
 // (Jim Butterfield - Compute! July 1983 - "HOW THE VIC/64 SERIAL BUS WORKS")
 // STEP 1: READY TO SEND (We are listener now)
@@ -67,7 +504,7 @@ uint8_t iecBus::receiveByte(void)
 	uint8_t n = 0;
 	while ((status(IEC_PIN_CLK) == released) && (n < 20))
 	{
-		delayMicroseconds(10);  // this loop should cycle in about 10 us...
+		delayMicroseconds(10); // this loop should cycle in about 10 us...
 		n++;
 	}
 
@@ -123,9 +560,6 @@ uint8_t iecBus::receiveByte(void)
 	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
 
 	// Get the bits, sampling on clock rising edge, logic 0,0V to logic 1,5V:
-#if defined(ESP8266)
-	ESP.wdtFeed();
-#endif
 	uint8_t data = 0;
 	set_pin_mode(IEC_PIN_DATA, INPUT);
 	for (n = 0; n < 8; n++)
@@ -267,9 +701,6 @@ bool iecBus::sendByte(uint8_t data, bool signalEOI)
 	// NOTE: delay between bits needs to be 75us minimum from my observations (James Johnston)
 
 	// Send the bits, sampling on clock rising edge, logic 0,0V to logic 1,5V:
-#if defined(ESP8266)
-	ESP.wdtFeed();
-#endif	
 	set_pin_mode(IEC_PIN_DATA, OUTPUT);
 	for (uint8_t n = 0; n < 8; n++)
 	{
@@ -278,10 +709,10 @@ bool iecBus::sendByte(uint8_t data, bool signalEOI)
 
 		// set data bit
 		set_bit(IEC_PIN_DATA, (data & 1));
-		delayMicroseconds(TIMING_BIT);
+		delayMicroseconds(TIMING_BIT);	 // hold data
 
 		// tell listener bit is ready to read
-		release(IEC_PIN_CLK);
+		release(IEC_PIN_CLK);						 // rising edge
 		delayMicroseconds(TIMING_BIT);
 
 		data >>= 1; // get next bit
@@ -379,7 +810,6 @@ bool iecBus::undoTurnAround(void)
 // timeoutWait returns true if timed out
 bool iecBus::timeoutWait(uint8_t pin, IECline state)
 {
-	
 	uint16_t t = 0;
 
 	while(t < TIMEOUT) 
@@ -392,10 +822,6 @@ bool iecBus::timeoutWait(uint8_t pin, IECline state)
 		}
 		delayMicroseconds(1); // The aim is to make the loop at least 3 us
 		t++;
-
-#if defined(ESP8266)
-		ESP.wdtFeed();
-#endif		
 	}
 
 	// If down here, we have had a timeout.
@@ -423,7 +849,7 @@ bool iecBus::timeoutWait(uint8_t pin, IECline state)
 
 // This function checks and deals with atn signal commands
 //
-// If a command is recieved, the ATN.string is saved in ATN. Only commands
+// If a command is recieved, the ATN.dataing is saved in ATN. Only commands
 // for *this* device are dealt with.
 //
 // (Jim Butterfield - Compute! July 1983 - "HOW THE VIC/64 SERIAL BUS WORKS")
@@ -443,6 +869,7 @@ bool iecBus::timeoutWait(uint8_t pin, IECline state)
 // device, since the unselected devices will have dropped off when ATN ceased, leaving you with
 // nobody to talk to.
 
+
 // Set all IEC_signal lines in the correct mode for power up state
 void iecBus::setup()
 {
@@ -455,6 +882,8 @@ void iecBus::setup()
 	// The ATN line is input only for peripherals
 	// The SQR line is output only for peripherals
 
+    Debug_println("IEC SETUP");
+
 	// set up IO states
 	pull(IEC_PIN_ATN);
 	pull(IEC_PIN_CLK);
@@ -466,8 +895,7 @@ void iecBus::setup()
 	set_pin_mode(IEC_PIN_CLK, INPUT);
 	set_pin_mode(IEC_PIN_DATA, INPUT);	
 	set_pin_mode(IEC_PIN_SRQ, INPUT);
-	//set_pin_mode(IEC_PIN_RESET, INPUT);
-
+	set_pin_mode(IEC_PIN_RESET, INPUT);
 
 #ifdef SPLIT_LINES
 	set_pin_mode(IEC_PIN_CLK_OUT, OUTPUT);
@@ -475,7 +903,7 @@ void iecBus::setup()
 #endif
 
 	_iec_state = noFlags;
-} // setup
+}
 
 // Primary IEC serivce loop:
 // Checks if CBM is sending an attention message. If this is the case,
@@ -491,41 +919,50 @@ void iecBus::service()
 	release(pin);
 	delayMicroseconds(1000);
 
-	pin = IEC_PIN_CLK;
+	//pin = IEC_PIN_CLK;
 	pull(pin);
 	delayMicroseconds(20); // 20
 	release(pin);
 	delayMicroseconds(1);
 
-	pin = IEC_PIN_DATA;
+	//pin = IEC_PIN_DATA;
 	pull(pin);
 	delayMicroseconds(50); // 50
 	release(pin);
 	delayMicroseconds(1);
 
-	pin = IEC_PIN_SRQ;
+	//pin = IEC_PIN_SRQ;
 	pull(pin);
 	delayMicroseconds(60); // 60
 	release(pin);
 	delayMicroseconds(1);
 
-	pin = IEC_PIN_ATN;
+	//pin = IEC_PIN_ATN;
 	pull(pin);
 	delayMicroseconds(100); // 100
 	release(pin);
 	delayMicroseconds(1);
 
-	pin = IEC_PIN_CLK;
+	//pin = IEC_PIN_CLK;
 	pull(pin);
 	delayMicroseconds(200); // 200
 	release(pin);
 	delayMicroseconds(1);
 #endif
 
-	// No other devices are on the bus
-	if(status(IEC_PIN_ATN) == pulled && status(IEC_PIN_CLK) == pulled && status(IEC_PIN_DATA) == pulled) 
+	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
+	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
+	if(status(IEC_PIN_RESET) == pulled) 
 	{
-		ATN.mode = ATN_IDLE;
+		if (status(IEC_PIN_ATN) == pulled)
+		{
+			// If RESET & ATN are both pulled then CBM is off
+			ATN.mode = ATN_IDLE;
+			return;
+		}
+		
+		reset();
+		ATN.mode = ATN_RESET;
 		return;
 	}
 
@@ -612,6 +1049,9 @@ void iecBus::service()
 
 		// some delay is required before more ATN business can take place.
 		delayMicroseconds(TIMING_ATN_DELAY);
+
+		// Go process the command
+		_bus_process_command();
 	}
 	// else
 	// {
@@ -619,142 +1059,117 @@ void iecBus::service()
 	// 	release(IEC_PIN_DATA);
 	// 	release(IEC_PIN_CLK);
 	// }
+
+    // // Go check if the modem needs to read data if it's active
+    // if (_modemDev != nullptr && _modemDev->modemActive)
+    // {
+    //     _modemDev->sio_handle_modem();
+    // }
+
+    // // Handle interrupts from network protocols
+    // for (uint8_t i = 0; i < 8; i++)
+    // {
+    //     if (_netDev[i] != nullptr)
+    //         _netDev[i]->sio_poll_interrupt();
+    // }
 } // service
 
-
-// IEC Bus Commands
-void iecBus::listen(void)
+// Reset all devices on the bus
+void iecBus::reset()
 {
-	// Okay, we will listen.
-	Debug_printf("(20 LISTEN) (%.2d DEVICE)", ATN.device_id);
-
-
-	if (ATN.command == ATN_COMMAND_DATA) // 0x60 OPEN CHANNEL / DATA + Secondary Address / channel (0-15)
-	{
-		// If this 
-		if (ATN.channel == CMD_CHANNEL)
-		{
-			receiveCommand();
-			return;
-		}
-		else
-		{
-			// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
-			Debug_printf("\r\nlisten: %.2X (DATA) (%.2X COMMAND) (%.2X CHANNEL)", ATN.code, ATN.command, ATN.channel);
-			ATN.mode = ATN_LISTEN;
-			return;
-		}
-	}
-	else if (ATN.command == ATN_COMMAND_OPEN) // 0xF0 OPEN CHANNEL / DATA + Secondary Address / channel (0-15)
-	{
-		Debug_printf("\r\nlisten: %.2X (%.2X OPEN) (%.2X CHANNEL)", ATN.code, ATN.command, ATN.channel);
-		receiveCommand();
-		return;
-	}	
-	else
-	{
-		if (ATN.command == ATN_COMMAND_CLOSE) // 0xE0 CLOSE CHANNEL / DATA + Secondary Address / channel (0-15)
-		{
-			Debug_printf("\r\nlisten: %.2X (%.2X CLOSE) (%.2X CHANNEL)", ATN.code, ATN.command, ATN.channel);
-		}		
-	}
-
-	ATN.mode = ATN_IDLE;
-	return;
+    for (auto devicep : _daisyChain)
+    {
+        Debug_printf("Resetting device %02x\n",devicep->device_id());
+        devicep->reset();
+    }
+    Debug_printf("All devices reset.\n");
 }
 
-void iecBus::talk(void)
+// Give devices an opportunity to clean up before a reboot
+void iecBus::shutdown()
 {
-	int i = 0;
-	int c;
-
-	// Okay, we will talk soon
-	Debug_printf("(40 TALK) (%.2d DEVICE)", ATN.device_id);
-	Debug_printf("\r\ntalk: %.2X (%.2X SECOND) (%.2X CHANNEL)", ATN.code, ATN.command, ATN.channel);
-
-	while(status(IEC_PIN_ATN) == pulled) 
-	{
-		if(status(IEC_PIN_CLK) == released) 
-		{
-			c = receive();
-			if (_iec_state bitand errorFlag)
-			{
-				ATN.mode = ATN_ERROR;
-				return;
-			}
-
-			if (i >= ATN_CMD_MAX_LENGTH)
-			{
-				// Buffer is going to overflow, this is an error condition
-				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-				ATN.mode = ATN_ERROR;
-				return;
-			}
-			ATN.data[i++] = c;
-			ATN.data[i] = '\0';
-		}
-	}
-
-	// Now ATN has just been released, do bus turnaround
-	if (not turnAround())
-	{
-		ATN.mode = ATN_ERROR;
-		return;
-	}
-
-	// We have recieved a CMD and we should talk now:
-	ATN.mode = ATN_TALK;
-	return;
+    for (auto devicep : _daisyChain)
+    {
+        Debug_printf("Shutting down device %02x\n",devicep->device_id());
+        devicep->shutdown();
+    }
+    Debug_printf("All devices shut down.\n");
 }
 
-void iecBus::receiveCommand(void)
+// Should avoid using this as it requires counting through the list
+uint8_t iecBus::numDevices()
 {
-	int i = 0;
-	int c;
+    uint8_t i = 0;
+    for (auto devicep : _daisyChain)
+        i++;
+    return i;
+}
 
-	// Some other command. Record the cmd string until UNLISTEN is sent
-	while(status(IEC_PIN_ATN) == released)
-	{
-		// Let's get the command!
-		c = receive();
+// Add device to IEC bus
+void iecBus::addDevice(iecDevice *pDevice, uint8_t device_id)
+{
+    // if (device_id == DEVICEID_FUJINET)
+    // {
+    //     _fujiDev = (iecFuji *)pDevice;
+    // }
+    // else if (device_id == DEVICEID_RS232)
+    // {
+    //     _modemDev = (iecModem *)pDevice;
+    // }
+    // else if (device_id >= DEVICEID_FN_NETWORK && device_id <= DEVICEID_FN_NETWORK_LAST)
+    // {
+    //     _netDev[device_id - DEVICEID_FN_NETWORK] = (iecNetwork *)pDevice;
+    // }
+    // else if (device_id == DEVICEID_MIDI)
+    // {
+    //     _midiDev = (iecMIDIMaze *)pDevice;
+    // }
+    // else if (device_id == DEVICEID_CASSETTE)
+    // {
+    //     _cassetteDev = (iecCassette *)pDevice;
+    // }
+    // else if (device_id == DEVICEID_CPM)
+    // {
+    //     _cpmDev = (iecCPM *)pDevice;
+    // }
+    // else if (device_id == DEVICEID_PRINTER && device_id <= DEVICEID_PRINTER_LAST)
+    // {
+    //     _printerdev = (iecPrinter *)pDevice;
+    // }
 
-		if (_iec_state bitand errorFlag)
-		{
-			Debug_printf("\r\nreceiveCommand: receiving LISTEN command");
-			ATN.mode = ATN_ERROR;
-			return;
-		}
+    pDevice->_device_id = device_id;
 
-		if (i >= ATN_CMD_MAX_LENGTH)
-		{
-			// Buffer is going to overflow, this is an error condition
-			// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-			Debug_printf("\r\nreceiveCommand: ATN_CMD_MAX_LENGTH");
-			ATN.mode = ATN_ERROR;
-			return;
-		}
+    _daisyChain.push_front(pDevice);
+}
 
-		ATN.data[i++] = c;
-		ATN.data[i] = '\0';
+// Removes device from the SIO bus.
+// Note that the destructor is called on the device!
+void iecBus::remDevice(iecDevice *p)
+{
+    _daisyChain.remove(p);
+}
 
-		// Is this the end of the command? Was EOI sent?
-		if (_iec_state bitand eoiFlag)
-		{
-			Debug_printf("\r\nreceiveCommand: [%s] + EOI", ATN.data);
-			ATN.mode = ATN_CMD;
-			return;
-		}		
-	}
+iecDevice *iecBus::deviceById(uint8_t device_id)
+{
+    for (auto devicep : _daisyChain)
+    {
+        if (devicep->_device_id == device_id)
+            return devicep;
+    }
+    return nullptr;
+}
 
-	ATN.mode = ATN_IDLE;
-	return;
+void iecBus::changeDeviceId(iecDevice *p, uint8_t device_id)
+{
+    for (auto devicep : _daisyChain)
+    {
+        if (devicep == p)
+            devicep->_device_id = device_id;
+    }
 }
 
 
-// bool iecBus::checkRESET()
-// {
-// 	return readRESET();
-// } // checkRESET
+
 
 
 // IEC_receive receives a byte
@@ -777,6 +1192,16 @@ bool iecBus::send(uint8_t data)
 	return sendByte(data, false);
 } // send
 
+bool iecBus::send(uint8_t *data, uint16_t len)
+{
+    for (uint16_t i = 0; i < len; i++)
+	{
+		if (!send(data[i]))
+			return false;
+	}
+	return true;
+}
+
 
 // Same as IEC_send, but indicating that this is the last byte.
 //
@@ -785,8 +1210,6 @@ bool iecBus::sendEOI(uint8_t data)
 	Debug_printf("\r\nEOI Sent!");
 	if (sendByte(data, true))
 	{
-		//Debug_printf("true");
-
 		// As we have just send last byte, turn bus back around
 		if (undoTurnAround())
 		{
@@ -794,7 +1217,6 @@ bool iecBus::sendEOI(uint8_t data)
 		}
 	}
 
-	//Debug_printf("false");
 	return false;
 } // sendEOI
 
@@ -820,6 +1242,17 @@ bool iecBus::isDeviceEnabled(const uint8_t deviceNumber)
 	return (enabledDevices & (1 << deviceNumber));
 } // isDeviceEnabled
 
+void iecBus::enableDevice(const uint8_t deviceNumber)
+{
+	enabledDevices ^= (-1 ^ enabledDevices) & (1UL << deviceNumber);
+	return;
+} // enableDevice
+
+void iecBus::disableDevice(const uint8_t deviceNumber)
+{
+	enabledDevices &= ~(1UL << deviceNumber);
+	return;
+} // disableDevice
 
 IECState iecBus::state() const
 {

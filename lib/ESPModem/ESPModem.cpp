@@ -1186,9 +1186,9 @@ void ESPModem::handleFlowControl() {
 }
 
 /**
-   Arduino main loop function
+   Main service loop function
 */
-void ESPModem::loop()
+void ESPModem::service()
 {
   // Check flow control
   handleFlowControl();
