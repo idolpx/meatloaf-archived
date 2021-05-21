@@ -26,10 +26,6 @@
 
 using namespace CBM;
 
-iecDisk::iecDisk(void)
-{
-	reset();
-} // ctor
 
 
 void iecDisk::sendStatus(void)
@@ -629,11 +625,11 @@ void iecDisk::sendListingHTTP(void)
 
 	std::string user_agent = std::string(PRODUCT_ID) + " [" + std::string(FW_VERSION) + "]";
 	std::string url = "http://" + _url + "/api/";
-	std::string post_data = "p=" + urlencode(_path.c_str()) + "&i=" + urlencode(_image.c_str()) + "&f=" + urlencode(_filename.c_str());
+	std::string post_data = "p=" + urlencode(_path) + "&i=" + urlencode(_image) + "&f=" + urlencode(_filename);
 
 	// Connect to HTTP server
 	HTTPClient client;
-	client.setUserAgent(user_agent.c_str());
+	client.setUserAgent(String(user_agent.c_str()));
 	// client.setFollowRedirects(true);
 	client.setTimeout(10000);
 	if (!client.begin(url.c_str()))
@@ -717,7 +713,7 @@ void iecDisk::sendFileHTTP(void)
 
 	std::string user_agent = std::string(PRODUCT_ID) + " [" + std::string(FW_VERSION) + "]";
 	std::string url = "http://" + _url + "/api/";
-	std::string post_data = "p=" + urlencode(_path.c_str()).c_str() + "&i=" + urlencode(_image.c_str()).c_str() + "&f=" + urlencode(_filename.c_str()).c_str();
+	std::string post_data = "p=" + urlencode(_path) + "&i=" + urlencode(_image) + "&f=" + urlencode(_filename);
 
 	// Connect to HTTP server
 	HTTPClient client;

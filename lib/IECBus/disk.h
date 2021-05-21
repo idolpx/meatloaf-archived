@@ -33,7 +33,8 @@
 
 #include "iec.h"
 #include "utils.h"
-#include "../media/media.h"
+#include "helpers.h"
+#include "media.h"
 
 class iecDisk : public iecDevice
 {

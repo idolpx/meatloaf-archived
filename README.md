@@ -62,3 +62,4 @@ References
 
 * https://www.pagetable.com/?p=1018
 * http://www.zimmers.net/anonftp/pub/cbm/programming/serial-bus.pdf
+* https://vice-emu.sourceforge.io/vice_17.html#SEC329

@@ -14,11 +14,15 @@
 #include <ESP8266mDNS.h>
 #endif
 
-#include "global_defines.h"
-#include "fs_config.h"
+#include "../../include/global_defines.h"
+#include "../../include/fs_config.h"
 //#include "SerialCommand.h"
 
 #include "iec.h"
+<<<<<<< HEAD
+=======
+#include "iec_device.h"
+>>>>>>> eb7b088dc0249e039619faad9e3c79b2aad432fa
 #include "ESPModem.h"
 #include "ESPWebDAV.h"
 
