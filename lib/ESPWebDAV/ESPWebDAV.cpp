@@ -25,7 +25,7 @@ String sha1(String payloadStr){
 // https://www.mischianti.org/2020/11/09/web-server-with-esp8266-and-esp32-manage-security-and-authentication-4/
     const char *payload = payloadStr.c_str();
  
-    int size = 20;
+    uint8_t size = 20;
  
     byte shaResult[size];
  
@@ -56,7 +56,7 @@ String sha1(String payloadStr){
 #endif
 
 // ------------------------
-bool ESPWebDAV::init(int serverPort, FS* fileSystem) {
+bool ESPWebDAV::init(uint8_t serverPort, FS* fileSystem) {
 // ------------------------
 	m_fileSystem = fileSystem;
 
@@ -146,7 +146,7 @@ void ESPWebDAV::handleRequest(String blank)	{
 		}
 		else
 		{
-			int extPos = uri.lastIndexOf(".");
+			uint8_t extPos = uri.lastIndexOf(".");
 			String ext = uri.substring(extPos);
 			String filename = uri.substring(0, 31 - ext.length());	
 			uri = filename + ext;
@@ -245,8 +245,8 @@ void ESPWebDAV::handleLock(ResourceType resource)	{
 
 	buf[contentLen] = 0;
 	String inXML = String((char*) buf);
-	int startIdx = inXML .indexOf(F("<D:href>"));
-	int endIdx = inXML .indexOf(F("</D:href>"));
+	uint8_t startIdx = inXML .indexOf(F("<D:href>"));
+	uint8_t endIdx = inXML .indexOf(F("</D:href>"));
 	if(startIdx < 0 || endIdx < 0)
 		return handleNotFound();
 		
@@ -411,7 +411,7 @@ void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 		// send the file
 		while(rFile.available())	{
 			// SD read speed ~ 17sec for 4.5MB file
-			int numRead = rFile.read(buf, sizeof(buf));
+			uint8_t numRead = rFile.read(buf, sizeof(buf));
 			client.write(buf, numRead);
 		}
 	}
@@ -578,8 +578,8 @@ void ESPWebDAV::handleMove(ResourceType resource)	{
 }
 
 
-int ESPWebDAV::deleteRecursive(String path) {
-	static int iCount;
+uint8_t ESPWebDAV::deleteRecursive(String path) {
+	static uint8_t iCount;
 	File file = m_fileSystem->open(path, "r");
 	bool isDir = file.isDirectory();
 	file.close();

@@ -15,7 +15,7 @@
 #endif
 
 #include "../../include/global_defines.h"
-#include "fs_config.h"
+#include "../../include/fs_config.h"
 //#include "SerialCommand.h"
 
 #include "iec.h"
@@ -57,7 +57,7 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 //     check_atn
 // };
 // statemachine state = statemachine::none;
-//int state_int;
+//uint8_t state_int;
 //String state_string;
 
 // ------------------------
@@ -86,8 +86,14 @@ void setup()
 	// Serial.println("");
 
 	// Setup Modem
-	//	modem.fileSystem = fileSystem;
+	//modem.fileSystem = fileSystem;
 	modem.setup();
+
+	Serial.printf("\r\n\r\n==============================\r\n");
+	Serial.printf("   %s %s\r\n", PRODUCT_ID, FW_VERSION);
+	Serial.println("------------------------------");
+
+	modem.start();
 
 #if defined(ESP8266)
 	// initialize selected file system
@@ -250,12 +256,13 @@ void loop()
 		// call handle if server was initialized properly
 		dav.handleClient();
 	}
+
 #if defined(ESP8266)
 	MDNS.update();
 #endif
 
 	//cli.readSerial();
-	modem.loop();
+	modem.service();
 }
 
 // void isrCheckATN()
@@ -292,7 +299,7 @@ void loop()
 
 // void process_command()
 // {
-//   int aNumber;
+//   uint8_t aNumber;
 //   char *arg;
 
 //   Serial.println("We're in process_command");

@@ -89,7 +89,7 @@ class SerialCommand
 	private:
 		char inChar;          // A character read from the serial stream 
 		char buffer[SERIALCOMMANDBUFFER];   // Buffer of stored characters while waiting for terminator character
-		int  bufPos;                        // Current position in the buffer
+		uint8_t  bufPos;                        // Current position in the buffer
 		char delim[MAXDELIMETER];           // null-terminated list of character to be used as delimeters for tokenizing (default " ")
 		char term;                          // Character that signals end of command (default '\r')
 		char *token;                        // Returned token from the command buffer as returned by strtok_r
@@ -98,10 +98,10 @@ class SerialCommand
 			char command[SERIALCOMMANDBUFFER];
 			void (*function)();
 		} SerialCommandCallback;            // Data structure to hold Command/Handler function key-value pairs
-		int numCommand;
+		uint8_t numCommand;
 		SerialCommandCallback CommandList[MAXSERIALCOMMANDS];   // Actual definition for command/handler array
 		void (*defaultHandler)();           // Pointer to the default handler function 
-		int usingSoftwareSerial;            // Used as boolean to see if we're using SoftwareSerial object or not
+		uint8_t usingSoftwareSerial;            // Used as boolean to see if we're using SoftwareSerial object or not
 		#ifndef SERIALCOMMAND_HARDWAREONLY 
 		SoftwareSerial *SoftSerial;         // Pointer to a user-created SoftwareSerial object
 		#endif
