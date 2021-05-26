@@ -68,7 +68,7 @@
     #define IEC_PIN_CLK          D6    // IO12  INPUT/OUTPUT
     #define IEC_PIN_DATA         D7    // IO13  INPUT/OUTPUT
     #define IEC_PIN_SRQ          D1    // IO5   INPUT/OUTPUT
-    #define IEC_PIN_RESET        D2    // IO4   INPUT
+    #define IEC_PIN_RESET        D2    // IO4   INPUT/OUTPUT
 #elif defined(ESP32)
     // ESP32 GPIO to C64 IEC Serial Port
     #define IEC_PIN_ATN          22      // PROC
