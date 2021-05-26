@@ -48,12 +48,6 @@ public:
 		ATN_CODE_OPEN = 0xF0	  // 0xF0 + channel (OPEN)
 	};
 
-	// ATN command struct maximum command length:
-	enum
-	{
-		ATN_CMD_MAX_LENGTH = 40
-	};
-
 	typedef struct _tagATNCMD
 	{
 		byte code;

@@ -164,7 +164,7 @@ void setup()
 		// Dir disk = fileSystem->openDir("/UTILS/FB64.d64");
 		// if (diskCaddy.Insert(disk, false))
 		// {
-		// 	debugPrintf("Disk Mounted: %s", disk.fileName().c_str());
+		// 	Debug_printf("Disk Mounted: %s", disk.fileName().c_str());
 		// }
 
 		// 	Serial.println("==================================");
@@ -231,7 +231,7 @@ void loop()
 	// switch ( state )
 	// {
 	//     case statemachine::check_atn:
-	// 		debugPrintf("\r\nstatemachine::atn_falling");
+	// 		Debug_printf("\r\nstatemachine::atn_falling");
 	// 		if ( drive.loop() == 0 )
 	// 		{
 	// 			state = statemachine::none;
@@ -334,11 +334,11 @@ void loop()
 // 		//Serial.print(dir.fileName());
 // 		if(dir.fileSize()) {
 // 			File f = dir.openFile("r");
-// 			debugPrintf("%s\t%d\r\n", dir.fileName().c_str(), (f.size()/256));
+// 			Debug_printf("%s\t%d\r\n", dir.fileName().c_str(), (f.size()/256));
 // 		}
 // 		else
 // 		{
-// 			debugPrintf("%s\r\n", dir.fileName().c_str());
+// 			Debug_printf("%s\r\n", dir.fileName().c_str());
 // 		}
 // 	}
 // }
@@ -364,12 +364,12 @@ void loop()
 // 	File file = fileSystem->open(filename, "r");
 // 	if (!file.available())
 // 	{
-// 		debugPrintf("\r\nFile Not Found: %s\r\n", filename);
+// 		Debug_printf("\r\nFile Not Found: %s\r\n", filename);
 // 	}
 // 	else
 // 	{
 // 		size_t len = file.size();
-// 		debugPrintf("\r\n[%s] (%d bytes)\r\n================================\r\n", filename, len);
+// 		Debug_printf("\r\n[%s] (%d bytes)\r\n================================\r\n", filename, len);
 // 		for(i = 0; i < len; i++) {
 // 			file.readBytes(b, sizeof(b));
 // 			Serial.print(b);

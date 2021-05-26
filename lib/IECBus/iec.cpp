@@ -72,7 +72,7 @@ byte  IEC::timeoutWait(byte iecPIN, IECline lineStatus)
 	// Note: The while above is without timeout. If ATN is held low forever,
 	//       the CBM is out in the woods and needs a reset anyways.
 
-	debugPrintf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d]", iecPIN, lineStatus, t, m_state);
+	Debug_printf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d]", iecPIN, lineStatus, t, m_state);
 	return true;
 } // timeoutWait
 
@@ -360,12 +360,12 @@ boolean  IEC::turnAround(void)
 	to receive data. And data will be signalled, of course, with the usual sequence: the talker releases
 	the Clock line to signal that it's ready to send.
 	*/
-	debugPrintf("\r\nturnAround: ");
+	Debug_printf("\r\nturnAround: ");
 
 	// Wait until clock is released
 	if(timeoutWait(IEC_PIN_CLK, released))
 	{
-		debugPrint("timeout");
+		Debug_print("timeout");
 		return false;
 	}
 		
@@ -375,7 +375,7 @@ boolean  IEC::turnAround(void)
 	pull(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
-	debugPrint("complete");
+	Debug_print("complete");
 	return true;
 } // turnAround
 
@@ -389,16 +389,16 @@ boolean  IEC::undoTurnAround(void)
 	release(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
-	debugPrintf("\r\nundoTurnAround:");
+	Debug_printf("\r\nundoTurnAround:");
 
 	// wait until the computer releases the clock line
 	if(timeoutWait(IEC_PIN_CLK, pulled))
 	{
-		debugPrint("timeout");
+		Debug_print("timeout");
 		return false;
 	}
 
-	debugPrint("complete");
+	Debug_print("complete");
 	return true;
 } // undoTurnAround
 
@@ -485,10 +485,10 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 
 		// Get first ATN byte, it is either LISTEN or TALK
 		ATNCommand c = (ATNCommand)receive();
-		debugPrintf("\r\ncheckATN: %.2X ", c);
+		Debug_printf("\r\ncheckATN: %.2X ", c);
 		if(m_state bitand errorFlag)
 		{
-			debugPrintf("\r\nm_state bitand errorFlag 0");
+			Debug_printf("\r\nm_state bitand errorFlag 0");
 			return ATN_ERROR;
 		}
 
@@ -513,7 +513,7 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 			c = (ATNCommand)receive();
 			if(m_state bitand errorFlag)
 			{
-				debugPrintf("\r\nm_state bitand errorFlag 1");
+				Debug_printf("\r\nm_state bitand errorFlag 1");
 				return ATN_ERROR;
 			}
 			
@@ -538,15 +538,15 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 			release(IEC_PIN_CLK);
 
 			if ( cc == ATN_CODE_UNTALK )
-				debugPrint("UNTALK");
+				Debug_print("UNTALK");
 			if ( cc == ATN_CODE_UNLISTEN )
-				debugPrint("UNLISTEN");
+				Debug_print("UNLISTEN");
 			
-			debugPrintf(" (%.2d DEVICE)", atn_cmd.device);			
+			Debug_printf(" (%.2d DEVICE)", atn_cmd.device);			
 
 			// Wait for ATN to release and quit
 			while(status(IEC_PIN_ATN) == pulled);
-			debugPrintf("\r\ncheckATN: ATN Released\r\n");
+			Debug_printf("\r\ncheckATN: ATN Released\r\n");
 		}
 
 		// some delay is required before more ATN business can take place.
@@ -570,14 +570,14 @@ IEC::ATNCheck  IEC::deviceListen(ATNCmd& atn_cmd)
 	ATNCommand c;
 
 	// Okay, we will listen.
-	debugPrintf("(20 LISTEN) (%.2d DEVICE)", atn_cmd.device);
+	Debug_printf("(20 LISTEN) (%.2d DEVICE)", atn_cmd.device);
 
 	// If the command is DATA and it is not to expect just a small command on the command channel, then
 	// we're into something more heavy. Otherwise read it all out right here until UNLISTEN is received.
 	if(atn_cmd.command == ATN_CODE_DATA and atn_cmd.channel not_eq CMD_CHANNEL) 
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
-		debugPrintf("\r\ncheckATN: %.2X (DATA)      (%.2X COMMAND) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
+		Debug_printf("\r\ncheckATN: %.2X (DATA)      (%.2X COMMAND) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
 		return ATN_CMD_LISTEN;
 	}
 	else if(atn_cmd.command not_eq ATN_CODE_UNLISTEN)
@@ -586,11 +586,11 @@ IEC::ATNCheck  IEC::deviceListen(ATNCmd& atn_cmd)
 
 		if(atn_cmd.command == ATN_CODE_OPEN) 
 		{
-			debugPrintf("\r\ncheckATN: %.2X (%.2X OPEN) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
+			Debug_printf("\r\ncheckATN: %.2X (%.2X OPEN) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
 		}
 		else if(atn_cmd.command == ATN_CODE_CLOSE) 
 		{
-			debugPrintf("\r\ncheckATN: %.2X (%.2X CLOSE) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
+			Debug_printf("\r\ncheckATN: %.2X (%.2X CLOSE) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
 		}
 
 		// Some other command. Record the cmd string until UNLISTEN is sent
@@ -599,15 +599,15 @@ IEC::ATNCheck  IEC::deviceListen(ATNCmd& atn_cmd)
 			c = (ATNCommand)receive();
 			if(m_state bitand errorFlag)
 			{
-				debugPrintf("\r\nm_state bitand errorFlag 2");
+				Debug_printf("\r\nm_state bitand errorFlag 2");
 				return ATN_ERROR;
 			}
 				
 
 			if((m_state bitand atnFlag) and (ATN_CODE_UNLISTEN == c)) 
 			{
-				debugPrintf(" [%s]", atn_cmd.str);
-				debugPrintf("\r\ncheckATN: %.2X (UNLISTEN)", c);
+				Debug_printf(" [%s]", atn_cmd.str);
+				Debug_printf("\r\ncheckATN: %.2X (UNLISTEN)", c);
 				break;
 			}
 
@@ -615,7 +615,7 @@ IEC::ATNCheck  IEC::deviceListen(ATNCmd& atn_cmd)
 			{
 				// Buffer is going to overflow, this is an error condition
 				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-				debugPrintf("\r\nATN_CMD_MAX_LENGTH");
+				Debug_printf("\r\nATN_CMD_MAX_LENGTH");
 				return ATN_ERROR;
 			}
 			atn_cmd.str[i++] = c;
@@ -637,8 +637,8 @@ IEC::ATNCheck  IEC::deviceTalk(ATNCmd& atn_cmd)
 	ATNCommand c;
 
 	// Okay, we will talk soon
-	debugPrintf("(40 TALK) (%.2d DEVICE)", atn_cmd.device);
-	debugPrintf("\r\ncheckATN: %.2X (%.2X SECOND) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
+	Debug_printf("(40 TALK) (%.2d DEVICE)", atn_cmd.device);
+	Debug_printf("\r\ncheckATN: %.2X (%.2X SECOND) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
 
 	while(status(IEC_PIN_ATN) == pulled) 
 	{
@@ -704,9 +704,9 @@ boolean  IEC::send(byte data)
 //
 boolean  IEC::sendEOI(byte data)
 {
-	debugPrintf("\r\nEOI Sent!");
+	Debug_printf("\r\nEOI Sent!");
 	if(sendByte(data, true)) {
-		//debugPrint("true");
+		//Debug_print("true");
 
 		// As we have just send last byte, turn bus back around
 		if(undoTurnAround())
@@ -715,7 +715,7 @@ boolean  IEC::sendEOI(byte data)
 		}
 	}
 
-	//debugPrint("false");
+	//Debug_print("false");
 	return false;
 } // sendEOI
 
@@ -731,7 +731,7 @@ boolean  IEC::sendFNF()
 	// Hold back a little...
 	delayMicroseconds(TIMING_FNF_DELAY);
 
-	debugPrintf("\r\nsendFNF: true");
+	Debug_printf("\r\nsendFNF: true");
 	return true;
 } // sendFNF
 
