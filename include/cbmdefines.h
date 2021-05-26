@@ -102,7 +102,7 @@ namespace CBM
         ErrNotImplemented = 98,         // The command or specific operation is not yet implemented in this device.
 	ErrUnknownError = 99,
 	ErrCount
-} IOErrorMessage;
+	} IOErrorMessage;
 
 } // namespace CBM
 
