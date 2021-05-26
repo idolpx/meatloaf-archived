@@ -2,9 +2,6 @@
 // https://github.com/idolpx/meatloaf
 // Copyright(C) 2020 James Johnston
 //
-// This file is part of Meatloaf but adapted for use in the FujiNet project
-// https://github.com/FujiNetWIFI/fujinet-platformio
-// 
 // Meatloaf is free software : you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
