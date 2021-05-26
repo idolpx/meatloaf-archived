@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
-#include <ArduinoJson.h>
 
 #if defined(ESP32)
 #include <WiFi.h>
@@ -25,14 +24,44 @@
 #include <ESP8266mDNS.h>
 #endif
 
-#include "../../include/global_defines.h"
-#include "../../include/fs_config.h"
-//#include "SerialCommand.h"
+#include "global_defines.h"
+
+// Setup FileSystem Object
+#if defined(USE_SPIFFS)
+	#if defined(ESP32)
+		#include <SPIFFS.h>
+	#endif
+	#include <FS.h>
+	FS* fileSystem = &SPIFFS;
+	
+	#if defined(ESP8266)
+		SPIFFSConfig fileSystemConfig = SPIFFSConfig();
+	#endif
+#elif defined USE_LITTLEFS
+	#if defined(ESP8266)
+		#include <LittleFS.h>
+		FS* fileSystem = &LittleFS;
+		LittleFSConfig fileSystemConfig = LittleFSConfig();	
+	#endif
+	#if defined(ESP32)
+		#include <LITTLEFS.h>
+		FS* fileSystem = &LITTLEFS;
+	#endif
+#elif defined USE_SDFS
+	#include <SDFS.h>
+	#define CHIP_SELECT_PIN	15
+	#define SPI_SETTINGS SPI_FULL_SPEED
+	FS* fileSystem = &SDFS;
+	SDFSConfig fileSystemConfig = SDFSConfig();	
+#else
+	#error Please select a filesystem first by uncommenting one of the "#define USE_xxx" lines at the beginning of the sketch.
+#endif
 
 #include "iec.h"
 #include "iec_device.h"
 #include "ESPModem.h"
 #include "ESPWebDAV.h"
+//#include "SerialCommand.h"
 
 //void ICACHE_RAM_ATTR isrCheckATN();
 

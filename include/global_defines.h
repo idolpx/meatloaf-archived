@@ -156,6 +156,7 @@ inline static void ledOFF()
 
 // Format storage if a valid file system is not found
 #define AUTO_FORMAT true
+#define FORMAT_LITTLEFS_IF_FAILED true
 
 #if defined USE_SPIFFS
 #define FS_TYPE "SPIFFS"
