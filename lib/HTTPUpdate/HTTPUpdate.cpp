@@ -17,7 +17,7 @@ void HTTPUpdate::checkForUpdates() {
 
   HTTPClient httpClient;
   httpClient.begin( fwVersionURL );
-  uint8_t httpCode = httpClient.GET();
+  int httpCode = httpClient.GET();
   if( httpCode == 200 ) {
     String newFWVersion = httpClient.getString();
 

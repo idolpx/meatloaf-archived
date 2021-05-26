@@ -19,9 +19,9 @@ enum DepthType { DEPTH_NONE, DEPTH_CHILD, DEPTH_ALL };
 
 class ESPWebDAV	{
 public:
-	bool init(uint8_t serverPort, FS* fileSystem);
-	bool stop(void);
-	bool isClientWaiting(void);
+	bool init(int serverPort, FS* fileSystem);
+	bool stop();
+	bool isClientWaiting();
 	void handleClient(String blank = "");
 	void rejectClient(String rejectMessage);
 
@@ -45,7 +45,7 @@ protected:
 	void handleMove(ResourceType resource);
 	void handleDelete(ResourceType resource);
 
-	uint8_t deleteRecursive(String path);
+	int deleteRecursive(String path);
 
 	// Sections are copied from ESP8266Webserver
 	String getMimeType(String path);
@@ -65,6 +65,7 @@ protected:
 	// variables pertaining to current most HTTP request being serviced
 	WiFiServer *server;
 	FS *m_fileSystem;
+
 	WiFiClient 	client;
 	String 		method;
 	String 		uri;

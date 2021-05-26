@@ -1,31 +1,5 @@
 #include "helpers.h"
 
-
-unsigned char h2int(char c)
-{
-    if (c >= '0' && c <='9'){
-        return((unsigned char)c - '0');
-    }
-    if (c >= 'a' && c <='f'){
-        return((unsigned char)c - 'a' + 10);
-    }
-    if (c >= 'A' && c <='F'){
-        return((unsigned char)c - 'A' + 10);
-    }
-    return(0);
-}
-
-void printProgress(uint16_t total, uint16_t current)
-{
-    if ( current == 0 )
-        Serial.println("");
-
-    uint16_t percentage = (current / total) * 100;
-    if ( percentage % 10 != 0 )       
-        Serial.printf("[%-10s] %d, %d, %d\r\n", "=", percentage, current, total);
-
-}
-
 String urlencode(String str)
 {
     String encodedString="";
@@ -33,7 +7,7 @@ String urlencode(String str)
     char code0;
     char code1;
     char code2;
-    for (uint8_t i =0; i < str.length(); i++){
+    for (int i =0; i < str.length(); i++){
       c=str.charAt(i);
       if (c == ' '){
         encodedString+= '+';
@@ -67,7 +41,7 @@ String urldecode(String str)
     char c;
     char code0;
     char code1;
-    for (uint8_t i =0; i < str.length(); i++){
+    for (int i =0; i < str.length(); i++){
         c=str.charAt(i);
       if (c == '+'){
         encodedString+=' ';  
@@ -89,12 +63,26 @@ String urldecode(String str)
    return encodedString;
 }
 
+unsigned char h2int(char c)
+{
+    if (c >= '0' && c <='9'){
+        return((unsigned char)c - '0');
+    }
+    if (c >= 'a' && c <='f'){
+        return((unsigned char)c - 'a' + 10);
+    }
+    if (c >= 'A' && c <='F'){
+        return((unsigned char)c - 'A' + 10);
+    }
+    return(0);
+}
+
 /** IP to String? */
 String ipToString ( IPAddress ip )
 {
     String res = "";
 
-    for ( uint8_t i = 0; i < 3; i++ )
+    for ( int i = 0; i < 3; i++ )
     {
         res += String ( ( ip >> ( 8 * i ) ) & 0xFF ) + ".";
     }
@@ -121,4 +109,15 @@ String formatBytes ( size_t bytes )
     {
         return String ( bytes / 1024.0 / 1024.0 / 1024.0 ) + " GB";
     }
+}
+
+void printProgress(uint16_t total, uint16_t current)
+{
+    if ( current == 0 )
+        Serial.println("");
+
+    uint16_t percentage = (current / total) * 100;
+    if ( percentage % 10 != 0 )       
+        Serial.printf("[%-10s] %d, %d, %d\r\n", "=", percentage, current, total);
+
 }

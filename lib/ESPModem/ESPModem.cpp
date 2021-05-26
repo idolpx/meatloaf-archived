@@ -488,8 +488,7 @@ void ESPModem::storeSpeedDial(byte num, String location) {
 /**
    Arduino main init function
 */
-void ESPModem::setup() 
-{
+void ESPModem::setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH); // off
 //  pinMode(SWITCH_PIN, INPUT);
@@ -510,21 +509,15 @@ void ESPModem::setup()
 
   readSettings();
   // Fetch baud rate from EEPROM
-  //serialspeed = 11; 
-  serialspeed = EEPROM.read(BAUD_ADDRESS);
+  serialspeed = 11; //EEPROM.read(BAUD_ADDRESS);
   // Check if it's out of bounds-- we have to be able to talk
   if (serialspeed < 0 || serialspeed > sizeof(bauds)) {
     serialspeed = 2; // 2400
   }
 
   Serial.begin(bauds[serialspeed]);
-}
-
-void ESPModem::start() 
-{
-	Serial.print(F("Starting Virtual Modem @ "));
-  Serial.print(bauds[serialspeed]);
-  Serial.println(F("bps"));
+	Serial.print(F("Starting Virtual Modem: %d"));
+  Serial.println(bauds[serialspeed]);
 
 //   char c;
 //   //unsigned long startMillis = millis();
@@ -553,7 +546,7 @@ void ESPModem::start()
   if (tcpServerPort > 0)
     tcpServer.begin();
 
-  //sendResult(Result_OK);
+  sendResult(Result_OK);
   //tcpServer(tcpServerPort); // can't start tcpServer inside a function-- must live outside
 }
 
@@ -1186,9 +1179,9 @@ void ESPModem::handleFlowControl() {
 }
 
 /**
-   Main service loop function
+   Arduino main loop function
 */
-void ESPModem::service()
+void ESPModem::loop()
 {
   // Check flow control
   handleFlowControl();

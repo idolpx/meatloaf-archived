@@ -2,7 +2,6 @@
 #define DEVICE_DB_H
 
 #include "../../include/global_defines.h"
-
 #include <ArduinoJson.h>
 
 #if defined(USE_SPIFFS)
@@ -42,7 +41,7 @@ public:
 
 private:
     bool m_dirty;
-    FS* m_fileSystem;
+    FS *m_fileSystem;
     StaticJsonDocument<256> m_device;
 };
 

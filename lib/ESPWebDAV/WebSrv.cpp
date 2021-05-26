@@ -39,8 +39,8 @@ String ESPWebDAV::urlDecode(const String& text)	{
 // ------------------------
 	String decoded = "";
 	char temp[] = "0x00";
-	uint8_t len = text.length();
-	uint8_t i = 0;
+	unsigned int len = text.length();
+	unsigned int i = 0;
 	while (i < len)	{
 		char decodedChar;
 		char encodedChar = text.charAt(i++);
@@ -68,7 +68,7 @@ String ESPWebDAV::urlDecode(const String& text)	{
 String ESPWebDAV::urlToUri(String url)	{
 // ------------------------
 	if(url.startsWith("http://"))	{
-		uint8_t uriStart = url.indexOf('/', 7);
+		int uriStart = url.indexOf('/', 7);
 		return url.substring(uriStart);
 	}
 	else
@@ -153,15 +153,15 @@ bool ESPWebDAV::parseRequest() {
 	
 	// First line of HTTP request looks like "GET /path HTTP/1.1"
 	// Retrieve the "/path" part by finding the spaces
-	uint8_t addr_start = req.indexOf(' ');
-	uint8_t addr_end = req.indexOf(' ', addr_start + 1);
+	int addr_start = req.indexOf(' ');
+	int addr_end = req.indexOf(' ', addr_start + 1);
 	if (addr_start == -1 || addr_end == -1) {
 		return false;
 	}
 
 	method = req.substring(0, addr_start);
 	uri = urlDecode(req.substring(addr_start + 1, addr_end));
-	// Debug_print(F("method: "); Debug_print(method); Debug_print(" url: ")); Debug_println(uri);
+	// debugPrint(F("method: "); debugPrint(method); debugPrint(" url: ")); debugPrintln(uri);
 	
 	// parse and finish all headers
 	String headerName;
@@ -174,13 +174,13 @@ bool ESPWebDAV::parseRequest() {
 			// no more headers
 			break;
 			
-		uint8_t headerDiv = req.indexOf(':');
+		int headerDiv = req.indexOf(':');
 		if (headerDiv == -1)
 			break;
 		
 		headerName = req.substring(0, headerDiv);
 		headerValue = req.substring(headerDiv + 2);
-		// Debug_print(F("\t"); Debug_print(headerName); Debug_print(": ")); Debug_println(headerValue);
+		// debugPrint(F("\t"); debugPrint(headerName); debugPrint(": ")); debugPrintln(headerValue);
 		
 		if(headerName.equalsIgnoreCase(F("Host")))
 			hostHeader = headerValue;
@@ -313,7 +313,7 @@ void ESPWebDAV::setContentLength(size_t len)	{
 // ------------------------
 size_t ESPWebDAV::readBytesWithTimeout(uint8_t *buf, size_t bufSize) {
 // ------------------------
-	uint8_t timeout_ms = HTTP_MAX_POST_WAIT;
+	int timeout_ms = HTTP_MAX_POST_WAIT;
 	size_t numAvailable = 0;
 	while(!(numAvailable = client.available()) && client.connected() && timeout_ms--) 
 		delay(1);
@@ -328,7 +328,7 @@ size_t ESPWebDAV::readBytesWithTimeout(uint8_t *buf, size_t bufSize) {
 // ------------------------
 size_t ESPWebDAV::readBytesWithTimeout(uint8_t *buf, size_t bufSize, size_t numToRead) {
 // ------------------------
-	uint8_t timeout_ms = HTTP_MAX_POST_WAIT;
+	int timeout_ms = HTTP_MAX_POST_WAIT;
 	size_t numAvailable = 0;
 	
 	while(((numAvailable = client.available()) < numToRead) && client.connected() && timeout_ms--) 

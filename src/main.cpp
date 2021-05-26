@@ -15,14 +15,11 @@
 #endif
 
 #include "../../include/global_defines.h"
-#include "../../include/fs_config.h"
+#include "fs_config.h"
 //#include "SerialCommand.h"
 
 #include "iec.h"
-<<<<<<< HEAD
-=======
 #include "iec_device.h"
->>>>>>> eb7b088dc0249e039619faad9e3c79b2aad432fa
 #include "ESPModem.h"
 #include "ESPWebDAV.h"
 
@@ -40,7 +37,8 @@ ESPWebDAV dav;
 String statusMessage;
 bool initFailed = false;
 
-static iecBus iec;
+static IEC iec;
+static Interface drive(iec, fileSystem);
 
 // Drive drive;
 // DiskImage diskImage;
@@ -59,7 +57,7 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 //     check_atn
 // };
 // statemachine state = statemachine::none;
-//uint8_t state_int;
+//int state_int;
 //String state_string;
 
 // ------------------------
@@ -85,16 +83,11 @@ void setup()
 	// Serial.print (F("IP address: ")); Serial.println(WiFi.localIP());
 	// //Serial.print ("RSSI: "); Serial.println(WiFi.RSSI());
 	// //Serial.print ("Mode: "); Serial.println(WiFi.getPhyMode());
+	// Serial.println("");
 
 	// Setup Modem
-	//modem.fileSystem = fileSystem;
+	//	modem.fileSystem = fileSystem;
 	modem.setup();
-
-	Serial.printf("\r\n\r\n==============================\r\n");
-	Serial.printf("   %s %s\r\n", PRODUCT_ID, FW_VERSION);
-	Serial.println("------------------------------");
-
-	modem.start();
 
 #if defined(ESP8266)
 	// initialize selected file system
@@ -153,10 +146,10 @@ void setup()
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
-		iec.setup();
-		Serial.println(F("iecBus Bus Initialized"));
+		iec.init();
+		Serial.println(F("IEC Bus Initialized"));
 
-		iec.setup();
+		drive.begin();
 		Serial.print(F("Virtual Device(s) Started: [ "));
 		for (byte i = 0; i < 31; i++)
 		{
@@ -166,6 +159,46 @@ void setup()
 			}
 		}
 		Serial.println("]");
+
+		// // Set initial d64 image
+		// Dir disk = fileSystem->openDir("/UTILS/FB64.d64");
+		// if (diskCaddy.Insert(disk, false))
+		// {
+		// 	debugPrintf("Disk Mounted: %s", disk.fileName().c_str());
+		// }
+
+		// 	Serial.println("==================================");
+
+		// 	File testFile = fileSystem->open(DEVICE_DB, "r");
+		// 	if (testFile){
+		// 		Serial.println("Read file content!");
+		// 		/**
+		// 		 * File derivate from Stream so you can use all Stream method
+		// 		 * readBytes, findUntil, parseInt, println etc
+		// 		 */
+		// 		Serial.println(testFile.readString());
+		// 		testFile.close();
+		// 	}else{
+		// 		Serial.println("Problem on read file!");
+		// 	}
+
+		// 	testFile = fileSystem->open(DEVICE_DB, "r");
+		// 	if (testFile){
+		// 		/**
+		// 		 * mode is SeekSet, position is set to offset bytes from the beginning.
+		// 		 * mode is SeekCur, current position is moved by offset bytes.
+		// 		 * mode is SeekEnd, position is set to offset bytes from the end of the file.
+		// 		 * Returns true if position was set successfully.
+		// 		 */
+		// 		Serial.println("Position inside the file at 9 byte!");
+		// 		testFile.seek(9, SeekSet);
+
+		// 		Serial.println("Read file content!");
+		// 		Serial.println(testFile.readStringUntil('\0'));
+		// 		testFile.close();
+		// 	}else{
+		// 		Serial.println("Problem on read file!");
+		// 	}
 	}
 
 	// // Setup callbacks for SerialCommand commands
@@ -194,7 +227,20 @@ void setup()
 void loop()
 {
 	// ------------------------
-	iec.service();
+	drive.loop();
+	// switch ( state )
+	// {
+	//     case statemachine::check_atn:
+	// 		debugPrintf("\r\nstatemachine::atn_falling");
+	// 		if ( drive.loop() == 0 )
+	// 		{
+	// 			state = statemachine::none;
+	// 		}
+	//         break;
+
+	//     default:
+	//         break;
+	// }
 
 	if (dav.isClientWaiting())
 	{
@@ -204,13 +250,12 @@ void loop()
 		// call handle if server was initialized properly
 		dav.handleClient();
 	}
-
 #if defined(ESP8266)
 	MDNS.update();
 #endif
 
 	//cli.readSerial();
-	modem.service();
+	modem.loop();
 }
 
 // void isrCheckATN()
@@ -247,7 +292,7 @@ void loop()
 
 // void process_command()
 // {
-//   uint8_t aNumber;
+//   int aNumber;
 //   char *arg;
 
 //   Serial.println("We're in process_command");
@@ -289,11 +334,11 @@ void loop()
 // 		//Serial.print(dir.fileName());
 // 		if(dir.fileSize()) {
 // 			File f = dir.openFile("r");
-// 			Debug_printf("%s\t%d\r\n", dir.fileName().c_str(), (f.size()/256));
+// 			debugPrintf("%s\t%d\r\n", dir.fileName().c_str(), (f.size()/256));
 // 		}
 // 		else
 // 		{
-// 			Debug_printf("%s\r\n", dir.fileName().c_str());
+// 			debugPrintf("%s\r\n", dir.fileName().c_str());
 // 		}
 // 	}
 // }
@@ -306,7 +351,7 @@ void loop()
 //   if (strcmp_P(arg, "init"))
 //   {
 // 	  iec.init();
-// 	  Serial.printf_P("IEC iecDevice initialized\r\n");
+// 	  Serial.printf_P("IEC Interface initialized\r\n");
 //   }
 
 // }
@@ -319,12 +364,12 @@ void loop()
 // 	File file = fileSystem->open(filename, "r");
 // 	if (!file.available())
 // 	{
-// 		Debug_printf("\r\nFile Not Found: %s\r\n", filename);
+// 		debugPrintf("\r\nFile Not Found: %s\r\n", filename);
 // 	}
 // 	else
 // 	{
 // 		size_t len = file.size();
-// 		Debug_printf("\r\n[%s] (%d bytes)\r\n================================\r\n", filename, len);
+// 		debugPrintf("\r\n[%s] (%d bytes)\r\n================================\r\n", filename, len);
 // 		for(i = 0; i < len; i++) {
 // 			file.readBytes(b, sizeof(b));
 // 			Serial.print(b);

@@ -72,7 +72,7 @@ bool DeviceDB::check()
     File f_database = m_fileSystem->open(database, "r+");
     if(!f_database)
     {
-        Debug_printf("\r\nDeviceDB::init unsable to open DB: %s", database.c_str());
+        debugPrintf("\r\nDeviceDB::init unsable to open DB: %s", database.c_str());
         return false;
     }
     else
@@ -84,7 +84,7 @@ bool DeviceDB::check()
             offset = i * RECORD_SIZE;
             if (f_database.seek( offset, SeekSet ))
             {
-                Debug_printf("\r\nDeviceDB::init seek: %d, %.4X\r\n", i, offset);
+                debugPrintf("\r\nDeviceDB::init seek: %d, %.4X\r\n", i, offset);
 
                 // Parse JSON object
                 DeserializationError error = deserializeJson(m_device, f_database);
@@ -94,7 +94,7 @@ bool DeviceDB::check()
                 }
                 else
                 {
-                    Debug_printf(m_device.as<String>().c_str());
+                    debugPrintln(m_device.as<String>().c_str());
                 }
             }
         }
@@ -121,7 +121,7 @@ bool DeviceDB::select(byte new_device)
     // Select new record
     offset = new_device * RECORD_SIZE;
     f_database.seek( offset, SeekSet );
-    Debug_printf("\r\nDeviceDB::select seek: %d, %.4X", new_device, offset);
+    debugPrintf("\r\nDeviceDB::select seek: %d, %.4X", new_device, offset);
 
     // Parse JSON object
     DeserializationError error = deserializeJson(m_device, f_database);
@@ -147,7 +147,7 @@ bool DeviceDB::save()
         File f_database = m_fileSystem->open(database, "r+");
 
         offset = device * RECORD_SIZE;
-        Debug_printf("\r\nDeviceDB::select m_dirty: %d, %.4X", device, offset);
+        debugPrintf("\r\nDeviceDB::select m_dirty: %d, %.4X", device, offset);
         f_database.seek( offset, SeekSet );
     #if defined(ESP32)
         f_database.write((const uint8_t *)m_device.as<String>().c_str(),strlen(m_device.as<String>().c_str()));

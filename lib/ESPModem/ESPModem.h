@@ -190,8 +190,7 @@ public:
      Arduino main loop function
     */
     void setup();
-    void start();
-    void service();
+    void loop();
 };
 
 #endif
