@@ -166,7 +166,7 @@ void Interface::sendDeviceStatus()
 
 	// Current Config
 	sendLine(basicPtr, 0, "DEVICE    : %d", m_device.device());
-	sendLine(basicPtr, 0, "DRIVE     : %d", m_device.drive());
+	sendLine(basicPtr, 0, "MEDIA     : %d", m_device.media());
 	sendLine(basicPtr, 0, "PARTITION : %d", m_device.partition());
 	sendLine(basicPtr, 0, "URL       : %s", m_device.url().c_str());
 	sendLine(basicPtr, 0, "PATH      : %s", m_device.path().c_str());
@@ -389,7 +389,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 
 	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
+	Serial.printf("\r\n$IEC: DEVICE[%d] MEDIA[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.media(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
 } // handleATNCmdCodeOpen
 
@@ -967,25 +967,26 @@ void Interface::sendFileHTTP()
 
 		Debug_printf("\r\nsendFileHTTP: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_filename.c_str(), load_address, len);
 		for (i = 2; success and i < len; ++i)
-		{ // End if sending to CBM fails.
+		{ 
+			// End if sending to CBM fails.
 			success = file.readBytes(b, 1);
 			if (success)
 			{
 #ifdef DATA_STREAM
 				if (bi == 0)
-        {
+        		{
 					Debug_printf(":%.4X ", load_address);
 					load_address += 8;
-	}
+				}
 #endif
-            if (i == len - 1)
-            {
-                success = m_iec.sendEOI(b[0]); // indicate end of file.
-            }
-            else
-            {
-                success = m_iec.send(b[0]);
-            }
+				if (i == len - 1)
+				{
+					success = m_iec.sendEOI(b[0]); // indicate end of file.
+				}
+				else
+				{
+					success = m_iec.send(b[0]);
+				}
 
 #ifdef DATA_STREAM
             // Show ASCII Data
@@ -995,17 +996,17 @@ void Interface::sendFileHTTP()
 				ba[bi++] = b[0];
 
 				if(bi == 8)
-            {
+            	{
 					size_t t = (i * 100) / len;
 					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
-                bi = 0;
-            }
+                	bi = 0;
+            	}
 #endif
-            // Toggle LED
-            if (i % 50 == 0)
-    {
-        ledToggle(true);
-            }
+				// Toggle LED
+				if (i % 50 == 0)
+				{
+					ledToggle(true);
+				}
             }
         }
         client.end();
