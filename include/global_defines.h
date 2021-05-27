@@ -120,8 +120,9 @@ inline static void ledOFF()
     digitalWrite(LED_PIN, LED_OFF);
 }
 
-// Enable this for verbose logging of IEC and CBM interfaces.
-#define DEBUG // define in platformio.ini
+// Enable this for verbose logging of IEC interface
+// May cause ?LOAD ERROR
+//#define DEBUG
 
 #ifdef DEBUG
 #define Debug_print(...) Serial.print(__VA_ARGS__)
@@ -138,7 +139,8 @@ inline static void ledOFF()
 
 // Enable this to show the data stream while loading
 // Make sure device baud rate and monitor_speed = 921600
-#define DATA_STREAM
+// May cause ?LOAD ERROR
+//#define DATA_STREAM
 
 // Select the FileSystem in PLATFORMIO.INI file
 //#define USE_SPIFFS
