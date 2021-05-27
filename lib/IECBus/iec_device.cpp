@@ -937,17 +937,18 @@ void Interface::sendFileHTTP()
 	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
 	String url;
 	String post_data;
-	if ( m_device.image().length() )
+	//if ( m_device.image().length() )
 	{
 		url = m_device.url() + "/api/";
 		post_data = "p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename);
 	}
-	else
-	{
-		url = m_device.url() + m_device.path() + m_filename;
-	}
+	// else
+	// {
+	// 	url = m_device.url() + m_device.path() + m_filename;
+	// }
 
 	// Connect to HTTP server
+	uint8_t httpCode = 0;
 	HTTPClient client;
 	client.setUserAgent(user_agent);
 	// client.setFollowRedirects(true);
@@ -960,17 +961,16 @@ void Interface::sendFileHTTP()
 		return;
 	}
 
-
 	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
 	if ( post_data.length() )
 	{
 		client.addHeader("Content-Type", "application/x-www-form-urlencoded");
-		uint8_t httpCode = client.POST(post_data); //Send the request
+		httpCode = client.POST(post_data); //Send the request
 	}
 	else
 	{
-		uint8_t httpCode = client.GET(); //Send the request
+		httpCode = client.GET(); //Send the request
 	}
 	WiFiClient file = client.getStream();  //Get the response payload as Stream
 
