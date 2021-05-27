@@ -12,12 +12,13 @@ It's easy to wire up too.  (No need for the level shifter as shown in the circui
 You can also leave off the edge card connector if you you just want to try out the drive emulation functionality.
 ![meatloaf64-wiring](docs/meatloaf64-wiring.png)
 
-Code is based on and inspired by the following:
-
-* Steve White's Pi1541 (https://github.com/pi1541/Pi1541)
-* Lars Wadefalk's UNO2IEC (https://github.com/Larswad/uno2iec) & SD2IEC (https://github.com/Larswad/sd2iec_mega2560)
-* Paul Rickard's ESP8266 Modem (https://github.com/RolandJuno/esp8266_modem)
-* Ardyesp's ESPWebDAV (https://github.com/ardyesp/ESPWebDAV)
+Components
+----------
+* 1 × ESP8266 (Wemos D1 MINI, NODEMCU, etc)
+* 1 × 6 PIN DIN Male Plug
+* 1 × 6 Core 26AWG Wire Cable (12" or better)
+* 1 × 24 PIN (2x12) 805 Series 3.96mm Pitch PCB Slot Solder Card Edge Connectors
+* 1 × Small Proto Board 
 
 
 To setup your own Meatloaf server check out this code.
@@ -63,3 +64,12 @@ References
 * https://www.pagetable.com/?p=1018
 * http://www.zimmers.net/anonftp/pub/cbm/programming/serial-bus.pdf
 * https://vice-emu.sourceforge.io/vice_17.html#SEC329
+
+
+Code is based on and inspired by the following:
+
+* Steve White's Pi1541 (https://github.com/pi1541/Pi1541)
+* Lars Wadefalk's UNO2IEC (https://github.com/Larswad/uno2iec)
+* Ingo Korb's SD2IEC (https://sd2iec.de/)
+* Paul Rickard's ESP8266 Modem (https://github.com/RolandJuno/esp8266_modem)
+* Ardyesp's ESPWebDAV (https://github.com/ardyesp/ESPWebDAV)
