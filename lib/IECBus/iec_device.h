@@ -51,9 +51,6 @@ enum OpenState
 	O_DEVICE_STATUS
 };
 
-// The base pointer of basic.
-#define C64_BASIC_START 0x0801
-
 class Interface
 {
 public:

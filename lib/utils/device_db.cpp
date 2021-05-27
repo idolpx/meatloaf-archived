@@ -205,7 +205,7 @@ String DeviceDB::path()
 }
 void DeviceDB::path(String path)
 {
-    path.replace(F("//"), F("/"));
+    path.replace(F("///"), F("/"));
     if ( path == NULL)
         path = "/";
     m_device["path"] = path;

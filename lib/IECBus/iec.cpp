@@ -30,26 +30,22 @@ IEC::IEC() :
 boolean  IEC::init()
 {
 	// make sure the output states are initially LOW
-	pull(IEC_PIN_ATN);
-	pull(IEC_PIN_CLK);
-	pull(IEC_PIN_DATA);
-	//pull(IEC_PIN_SRQ);
-
-//#ifdef RESET_C64
-//	release(IEC_PIN_RESET);	// only early C64's could be reset by a slave going high.
-//#endif
+	release(IEC_PIN_ATN);
+	release(IEC_PIN_CLK);
+	release(IEC_PIN_DATA);
+	release(IEC_PIN_SRQ);
 
 	// initial pin modes in GPIO
 	pinMode(IEC_PIN_ATN, INPUT);
 	pinMode(IEC_PIN_CLK, INPUT);
-	pinMode(IEC_PIN_DATA, INPUT);
-	//pinMode(IEC_PIN_SRQ, INPUT);
+	pinMode(IEC_PIN_DATA, INPUT);	
+	pinMode(IEC_PIN_SRQ, INPUT);
+	pinMode(IEC_PIN_RESET, INPUT);
 
-
-	// Set port low, we don't need internal pullup
-	// and DDR input such that we release all signals
-	// IEC_PORT and_eq compl(IEC_BIT_ATN bitor IEC_BIT_CLOCK bitor IEC_BIT_DATA);
-	// IEC_DDR and_eq compl(IEC_BIT_ATN bitor IEC_BIT_CLOCK bitor IEC_BIT_DATA);
+#ifdef SPLIT_LINES
+	pinMode(IEC_PIN_CLK_OUT, OUTPUT);
+	pinMode(IEC_PIN_DATA_OUT, OUTPUT);
+#endif
 
 	m_state = noFlags;
 
@@ -115,7 +111,7 @@ byte  IEC::receiveByte(void)
 	// When  the  listener  is  ready  to  listen,  it  releases  the  Data  
 	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
 	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
-	// to  accept  data.  What  happens  next  is  variable.     
+	// to  accept  data.  What  happens  next  is  variable.
 	release(IEC_PIN_DATA);
 
 	// Either  the  talker  will pull the 
@@ -128,8 +124,8 @@ byte  IEC::receiveByte(void)
 		n++;
 	}
 
-	if(n >= TIMING_EOI_THRESH) {
-
+	if(n >= TIMING_EOI_THRESH) 
+	{
 		// INTERMISSION: EOI
 		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the 
 		// listener knows  that  the  talker  is  trying  to  signal  EOI.    EOI,  which  formally  
@@ -309,7 +305,8 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 #if defined(ESP8266)
 	ESP.wdtFeed();
 #endif	
-	for(byte n = 0; n < 8; n++) {
+	for(byte n = 0; n < 8; n++) 
+	{
 		// FIXME: Here check whether data pin goes low, if so end (enter cleanup)!
 
 		// tell listner to wait
@@ -345,13 +342,13 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
 	// the Clock and Data lines are released to false and transmission stops. 
 
-//	if(m_state bitand eoiFlag)
-//	{
-//		// EOI Received
-//		delayMicroseconds(TIMING_STABLE_WAIT);
-//		release(IEC_PIN_CLK);
-//		release(IEC_PIN_DATA);
-//	}
+	// if(signalEOI)
+	// {
+	// 	// EOI Received
+	// 	delayMicroseconds(TIMING_STABLE_WAIT);
+	// 	release(IEC_PIN_CLK);
+	// 	release(IEC_PIN_DATA);
+	// }
 
 	return true;
 } // sendByte
@@ -451,7 +448,6 @@ boolean  IEC::undoTurnAround(void)
 // Return value, see IEC::ATNCheck definition.
 IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 {
-	ATNCheck ret = ATN_IDLE;
 	byte i = 0;
 
 #ifdef DEBUG_TIMING
@@ -509,8 +505,8 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 	{
 		// Attention line is pulled, go to listener mode and get message.
 		// Being fast with the next two lines here is CRITICAL!
-		pull(IEC_PIN_DATA);
 		release(IEC_PIN_CLK);
+		pull(IEC_PIN_DATA);
 		delayMicroseconds(TIMING_ATN_PREDELAY);
 
 		// Get first ATN byte, it is either LISTEN or TALK
@@ -527,7 +523,7 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 		ATNCommand cc = c;
 		if(c != ATN_CODE_UNTALK && c != ATN_CODE_UNLISTEN)
 		{
-			// Is this a Listen or Talk command
+			// Is this a Listen or Talk command?
 			cc = (ATNCommand)(c bitand ATN_CODE_LISTEN);
 			if(cc == ATN_CODE_LISTEN)
 			{
@@ -539,45 +535,47 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 				atn_cmd.device = c ^ ATN_CODE_TALK; // device specified
 			}
 
-			// Get the first cmd byte, the atn_cmd.code
-			c = (ATNCommand)receive();
-			if(m_state bitand errorFlag)
+			// Is this command for us?
+			if ( isDeviceEnabled(atn_cmd.device) )
 			{
-				Debug_printf("\r\nm_state bitand errorFlag 1");
-				return ATN_ERROR;
+				// Get the first cmd byte, the atn_cmd.code
+				c = (ATNCommand)receive();
+				if(m_state bitand errorFlag)
+				{
+					Debug_printf("\r\nm_state bitand errorFlag 1");
+					return ATN_ERROR;
+				}
+				
+				atn_cmd.code = c;
+				atn_cmd.command = c bitand 0xF0; // upper nibble, the command itself
+				atn_cmd.channel = c bitand 0x0F; // lower nibble is the channel
+
+				if ( cc == ATN_CODE_LISTEN )
+				{
+					return deviceListen(atn_cmd);
+				}
+				else if ( cc == ATN_CODE_TALK )
+				{
+					return deviceTalk(atn_cmd);
+				}				
 			}
-			
-			atn_cmd.code = c;
-			atn_cmd.command = c bitand 0xF0; // upper nibble, the command itself
-			atn_cmd.channel = c bitand 0x0F; // lower nibble is the channel			
 		}
 
-		if ( cc == ATN_CODE_LISTEN && isDeviceEnabled(atn_cmd.device) )
-		{
-			ret = deviceListen(atn_cmd);
-		}
-		else if ( cc == ATN_CODE_TALK && isDeviceEnabled(atn_cmd.device) )
-		{
-			ret = deviceTalk(atn_cmd);
-		}
-		else 
-		{
-			// Either the message is not for us or insignificant, like unlisten.
-			delayMicroseconds(TIMING_ATN_DELAY);
-			release(IEC_PIN_DATA);
-			release(IEC_PIN_CLK);
+		// Either the message is not for us or insignificant
+		delayMicroseconds(TIMING_ATN_DELAY);
+		release(IEC_PIN_CLK);
+		release(IEC_PIN_DATA);
+		
+		if ( cc == ATN_CODE_UNTALK )
+			Debug_print("UNTALK");
+		if ( cc == ATN_CODE_UNLISTEN )
+			Debug_print("UNLISTEN");
+		
+		Debug_printf(" (%.2d DEVICE)", atn_cmd.device);			
 
-			if ( cc == ATN_CODE_UNTALK )
-				Debug_print("UNTALK");
-			if ( cc == ATN_CODE_UNLISTEN )
-				Debug_print("UNLISTEN");
-			
-			Debug_printf(" (%.2d DEVICE)", atn_cmd.device);			
-
-			// Wait for ATN to release and quit
-			while(status(IEC_PIN_ATN) == pulled);
-			Debug_printf("\r\ncheckATN: ATN Released\r\n");
-		}
+		// Wait for ATN to release and quit
+		while(status(IEC_PIN_ATN) == pulled);
+		Debug_printf("\r\ncheckATN: ATN Released\r\n");
 
 		// some delay is required before more ATN business can take place.
 		delayMicroseconds(TIMING_ATN_DELAY);
@@ -587,11 +585,11 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 	else 
 	{
 		// No ATN, keep lines in a released state.
-		release(IEC_PIN_DATA);
 		release(IEC_PIN_CLK);
+		release(IEC_PIN_DATA);
 	}
 
-	return ret;
+	return ATN_IDLE;
 } // checkATN
 
 IEC::ATNCheck  IEC::deviceListen(ATNCmd& atn_cmd)

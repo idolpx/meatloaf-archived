@@ -136,7 +136,6 @@ private:
 	// false => RELEASE => DIGI_HIGH
 	inline void release(int pinNumber)
 	{
-		// releasing line can set to input mode, which won't drive the bus - simple way to mimic open collector
 		espPinMode(pinNumber, OUTPUT);
 		espDigitalWrite(pinNumber, HIGH);
 	}
