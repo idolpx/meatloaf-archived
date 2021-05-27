@@ -32,6 +32,7 @@
 
 //#define DEVICE_MASK 0b01111111111111111111111111110000 //  Devices 4-30 are enabled by default
 #define DEVICE_MASK   0b00000000000000000000111100000000 //  Devices 8-11
+//#define DEVICE_MASK   0b00000000000000000000111000000000 //  Devices 9-11
 #define IMAGE_TYPES   "D64|D71|D80|D81|D82|D8B|G64|X64|Z64|TAP|T64|TCRT|CRT|D1M|D2M|D4M|DHD|HDD|DNP|DFI|M2I|NIB"
 #define FILE_TYPES    "C64|PRG|P00|SEQ|S00|USR|U00|REL|R00"
 #define ARCHIVE_TYPES "ZIP|7Z|RAR"
@@ -80,7 +81,7 @@
 
 // IEC protocol timing consts:
 #define TIMING_BIT           70    // bit clock hi/lo time     (us)
-#define TIMING_NO_EOI        5     // delay before bits        (us)
+#define TIMING_NO_EOI        20    // delay before bits        (us)
 #define TIMING_EOI_WAIT      200   // delay to signal EOI      (us)
 #define TIMING_EOI_THRESH    20    // threshold for EOI detect (*10 us approx)
 #define TIMING_STABLE_WAIT   20    // line stabilization       (us)
@@ -88,26 +89,17 @@
 #define TIMING_ATN_DELAY     100   // delay required after atn (us)
 #define TIMING_FNF_DELAY     100   // delay after fnf?         (us)
 
-// Version 0.5 equivalent timings: 70, 5, 200, 20, 20, 50, 100, 100
-
-// TIMING TESTING:
-//
-// The consts: 70,20,200,20,20,50,100,100 has been tested without debug print
-// to work stable on my (Larsp)'s DTV at 700000 < F_CPU < 9000000
-// using a 32 MB MMC card
-//
-
-#define	ATN_CMD_MAX_LENGTH 	40
-
 // See timeoutWait
 #define TIMEOUT 65500
+
+#define	ATN_CMD_MAX_LENGTH 	40
 
 #define LED_PIN LED_BUILTIN // IO2
 #define LED_ON LOW
 #define LED_OFF HIGH
 #define LED_TIME 15 // #ms between toggle
 
-static void toggleLED(bool now = false)
+static void ledToggle(bool now = false)
 {
     static uint8_t ledTime = 0;
 

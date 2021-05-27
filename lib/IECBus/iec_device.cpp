@@ -661,7 +661,7 @@ void Interface::sendListing()
 		}
 
 		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
-		toggleLED(true);
+		ledToggle(true);
 	}
 
 	byte_count += sendFooter(basicPtr);
@@ -785,7 +785,7 @@ void Interface::sendFile()
 			// Toggle LED
 			if (i % 50 == 0)
 				{
-				toggleLED(true);
+				ledToggle(true);
 				}
 			}
 		}
@@ -892,7 +892,7 @@ void Interface::sendListingHTTP()
 		}
 
 		byte_count += sendLine(basicPtr, m_jsonHTTP["blocks"], "%s", urldecode(m_jsonHTTP["line"].as<String>()).c_str());
-		toggleLED(true);
+		ledToggle(true);
 		m_lineBuffer = payload.readStringUntil('\n');
 		//Serial.printf("\r\nlinebuffer: %d %s", m_lineBuffer.length(), m_lineBuffer.c_str());
 	} while (m_lineBuffer.length() > 1);
@@ -1004,7 +1004,7 @@ void Interface::sendFileHTTP()
             // Toggle LED
             if (i % 50 == 0)
     {
-        toggleLED(true);
+        ledToggle(true);
             }
             }
         }
