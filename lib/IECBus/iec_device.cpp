@@ -17,7 +17,9 @@
 
 //#include "../../include/global_defines.h"
 //#include "debug.h"
+
 #include "iec_device.h"
+#include "iec.h"
 
 using namespace CBM;
 
@@ -788,6 +790,12 @@ void Interface::sendFile()
 				ledToggle(true);
 				}
 			}
+
+			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
+			{
+				success = true;
+				break;
+			}
 		}
 		file.close();
 		Debug_println("");
@@ -797,7 +805,7 @@ void Interface::sendFile()
 
 		if (!success || i != len)
 		{
-			Debug_println("sendFile: Transfer failed!");
+			Debug_println("sendFile: Transfer aborted!");
 		}
 	}
 } // sendFile
@@ -1008,6 +1016,12 @@ void Interface::sendFileHTTP()
 					ledToggle(true);
 				}
             }
+
+			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
+			{
+				success = true;
+				break;
+			}
         }
         client.end();
         Debug_println("");
@@ -1017,7 +1031,7 @@ void Interface::sendFileHTTP()
 
 		if (!success || i != len)
         {
-			Debug_println("Transfer failed!");
+			Debug_println("Transfer aborted!");
         }
     }
 }

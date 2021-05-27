@@ -110,22 +110,6 @@ public:
 
 	IECState state() const;
 
-private:
-	// IEC Bus Commands
-	ATNCheck deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
-	ATNCheck deviceUnListen(ATNCmd &atn_cmd); // 0x3F 				Unlisten, all devices
-	ATNCheck deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
-	ATNCheck deviceUnTalk(ATNCmd &atn_cmd);	  // 0x5F 				Untalk, all devices
-	ATNCheck deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
-	ATNCheck deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
-	ATNCheck deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
-
-	byte timeoutWait(byte iecPIN, IECline lineStatus);
-	byte receiveByte(void);
-	boolean sendByte(byte data, boolean signalEOI);
-	boolean turnAround(void);
-	boolean undoTurnAround(void);
-
 	// true => PULL => DIGI_LOW
 	inline void pull(int pinNumber)
 	{
@@ -146,6 +130,23 @@ private:
 		espPinMode(pinNumber, INPUT);
 		return espDigitalRead(pinNumber) ? released : pulled;
 	}
+
+private:
+	// IEC Bus Commands
+	ATNCheck deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
+	ATNCheck deviceUnListen(ATNCmd &atn_cmd); // 0x3F 				Unlisten, all devices
+	ATNCheck deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
+	ATNCheck deviceUnTalk(ATNCmd &atn_cmd);	  // 0x5F 				Untalk, all devices
+	ATNCheck deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
+	ATNCheck deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
+	ATNCheck deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
+
+	byte timeoutWait(byte iecPIN, IECline lineStatus);
+	byte receiveByte(void);
+	boolean sendByte(byte data, boolean signalEOI);
+	boolean turnAround(void);
+	boolean undoTurnAround(void);
+
 
 	inline void ICACHE_RAM_ATTR espPinMode(uint8_t pin, uint8_t mode) {
 #if defined(ESP8266)		
