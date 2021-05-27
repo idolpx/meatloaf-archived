@@ -300,14 +300,22 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else if (m_filename.startsWith(F("HTTP://")))
 	{
+		uint8_t lpos = 0;
+
 		// Mount url
 		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.partition(0);
-		m_device.url(m_filename.substring(7).c_str());
-		m_device.path("/");
+		lpos = m_filename.indexOf("/", 7);
+		m_device.url(m_filename.substring(0, lpos).c_str());
+		m_device.path(m_filename.substring(lpos, m_filename.lastIndexOf("/") + 1).c_str());
+		m_filename = m_filename.substring(m_filename.lastIndexOf("/") + 1);
 		m_device.image("");
 
 		m_openState = O_DIR;
+		if (m_filename.length())
+		{
+			m_openState = O_FILE;
+		}
 	}
 	else if (m_filename.startsWith(F("CD")))
 	{
@@ -838,7 +846,7 @@ void Interface::sendListingHTTP()
 	uint16_t byte_count = 0;
 
 	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
-	String url("http://" + m_device.url() + "/api/");
+	String url(m_device.url() + "/api/");
 	String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
 
 	// Connect to HTTP server
@@ -846,6 +854,7 @@ void Interface::sendListingHTTP()
 	client.setUserAgent(user_agent);
 	// client.setFollowRedirects(true);
 	client.setTimeout(10000);
+	url.toLowerCase();
 	if (!client.begin(url))
 	{
 		Debug_println(F("\r\nConnection failed"));
@@ -926,25 +935,43 @@ void Interface::sendFileHTTP()
 	Debug_printf("\r\nsendFileHTTP: ");
 
 	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
-	String url("http://" + m_device.url() + "/api/");
-	String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
+	String url;
+	String post_data;
+	if ( m_device.image().length() )
+	{
+		url = m_device.url() + "/api/";
+		post_data = "p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename);
+	}
+	else
+	{
+		url = m_device.url() + m_device.path() + m_filename;
+	}
 
 	// Connect to HTTP server
 	HTTPClient client;
 	client.setUserAgent(user_agent);
 	// client.setFollowRedirects(true);
 	client.setTimeout(10000);
+	url.toLowerCase();
 	if (!client.begin(url))
 	{
 		Debug_println(F("\r\nConnection failed"));
 		m_iec.sendFNF();
 		return;
 	}
-	client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
 
 	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
-	uint8_t httpCode = client.POST(post_data); //Send the request
+	if ( post_data.length() )
+	{
+		client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+		uint8_t httpCode = client.POST(post_data); //Send the request
+	}
+	else
+	{
+		uint8_t httpCode = client.GET(); //Send the request
+	}
 	WiFiClient file = client.getStream();  //Get the response payload as Stream
 
 	if (!file.available())
