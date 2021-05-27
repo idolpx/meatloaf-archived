@@ -27,8 +27,8 @@ public:
 
     byte device();
     void device(byte device);
-    byte drive();
-    void drive(byte drive);
+    byte media();
+    void media(byte media);
     byte partition();
     void partition(byte partition);
     String url();

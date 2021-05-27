@@ -174,13 +174,13 @@ void DeviceDB::device(byte device)
     }
 }
 
-byte DeviceDB::drive()
+byte DeviceDB::media()
 {
-    return m_device["drive"];
+    return m_device["media"];
 }
-void DeviceDB::drive(byte drive)
+void DeviceDB::media(byte media)
 {
-    m_device["drive"] = drive;
+    m_device["media"] = media;
 }
 byte DeviceDB::partition()
 {
