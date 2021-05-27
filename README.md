@@ -34,7 +34,7 @@ Key Features
 * WiFi modem for connecting to telnet BBSs
 * Can mount device's flash file system via WebDAV to edit contents
 * IEC Bus interface for loading data directly from flash memory or via HTTP
-* Can be configured to simulate multiple IEC devices (IDs 4-30)
+* Can be configured to emulate multiple IEC devices (IDs 4-30)
 * Each device's configuration is switched out and persisted on access (hidden folder ".sys")
 * Firmware can be updated via HTTP
 
