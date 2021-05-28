@@ -35,7 +35,8 @@ class LittleOStream: public MOstream {
     void close() override;
     bool open() override;
     ~LittleOStream() {
-        close();
+        if(m_isOpen)
+            close();
     }
 
     // MOstream methods
@@ -53,7 +54,8 @@ class LittleIStream: public MIstream {
     void close() override;
     bool open() override;
     ~LittleIStream() {
-        close();
+        if(m_isOpen)
+            close();
     }
 
     // MIstream methods

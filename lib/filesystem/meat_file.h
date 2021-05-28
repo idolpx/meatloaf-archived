@@ -21,7 +21,7 @@ public:
     virtual bool open() = 0;
     virtual ~MStream() = 0;
     bool isOpen();
-private:
+protected:
     bool m_isOpen;
 };
 
