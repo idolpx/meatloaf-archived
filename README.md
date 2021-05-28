@@ -21,9 +21,11 @@ or<br/>
 * 1 x [ESP32 Dev Board](https://www.aliexpress.com/item/32883116057.html)<br/>
 This one has 16MB Flash, 8MB PSRAM, Micro SD with I2C & TFT Port!<br/>
 
-Other components
+Virtual Drive - IEC Serial Port (minimal build)
 * 1 × [6 PIN DIN Male Plug](https://www.aliexpress.com/item/33058840658.html)
 * 1 × [6 Core 26AWG Wire Cable](https://www.aliexpress.com/item/1005002313534749.html) (12" or better, I got extra)
+
+Virtual Modem - User Port (optional)
 * 1 × [24 PIN (2x12) 805 Series 3.96mm Pitch PCB Slot Solder Card Edge Connector](https://www.aliexpress.com/item/4000246156457.html)
 * 1 × [5x7cm Proto Board](https://www.aliexpress.com/item/4000285110600.html)
 
