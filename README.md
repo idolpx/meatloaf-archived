@@ -14,11 +14,18 @@ You can also leave off the edge card connector if you you just want to try out t
 
 Components
 ----------
-* 1 × ESP8266 (Wemos D1 MINI, NODEMCU, etc)
-* 1 × 6 PIN DIN Male Plug
-* 1 × 6 Core 26AWG Wire Cable (12" or better)
-* 1 × 24 PIN (2x12) 805 Series 3.96mm Pitch PCB Slot Solder Card Edge Connectors
-* 1 × Small Proto Board 
+Microcontroller
+* 1 × [ESP8266 Dev Board](https://www.aliexpress.com/item/32992487136.html) (Wemos D1 MINI, NODEMCU, etc)<br/>
+I like this 16MB version.<br/>
+or<br/>
+* 1 x [ESP32 Dev Board](https://www.aliexpress.com/item/32883116057.html)<br/>
+This one has 16MB Flash, 8MB PSRAM, Micro SD with I2C & TFT Port!<br/>
+
+Other components
+* 1 × [6 PIN DIN Male Plug](https://www.aliexpress.com/item/33058840658.html)
+* 1 × [6 Core 26AWG Wire Cable](https://www.aliexpress.com/item/1005002313534749.html) (12" or better, I got extra)
+* 1 × [24 PIN (2x12) 805 Series 3.96mm Pitch PCB Slot Solder Card Edge Connector](https://www.aliexpress.com/item/4000246156457.html)
+* 1 × [5x7cm Proto Board](https://www.aliexpress.com/item/4000285110600.html)
 
 
 To setup your own Meatloaf server check out this code.
