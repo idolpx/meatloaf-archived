@@ -157,7 +157,7 @@ void ESPWebDAV::handleRequest(String blank)	{
 	// does uri refer to a file or directory or a null?
 	MFile* mFile = new LittleFile(uri);
 
-	if (mFile != nullptr && mFile->exists()) {
+	if (mFile->exists()) {
 		resource = mFile->isDirectory() ? RESOURCE_DIR : RESOURCE_FILE;
 	}
 	delete mFile;
@@ -316,8 +316,8 @@ void ESPWebDAV::handleProp(ResourceType resource)	{
 
 	if((resource == RESOURCE_DIR) && (depth == DEPTH_CHILD))	{
 		// append children information to message
-		MFile* childFile;
-		while(childFile = baseFile->getNextFileInDir()) { // TODO oc okaman?
+		//MFile* childFile;
+		while(MFile* childFile = baseFile->getNextFileInDir()) {
 			yield();
 			sendPropResponse(true, childFile);
 			delete childFile;
@@ -440,21 +440,20 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 	if(resource == RESOURCE_DIR)
 		return handleNotFound();
 
-	//File nFile;
 	MFile* mFile;
 	MOstream* mOStream;
 
 	sendHeader(F("Allow"), F("PROPFIND,OPTIONS,DELETE,COPY,MOVE,HEAD,POST,PUT,GET"));
 
 	// if file does not exist, create it
-	if(resource == RESOURCE_NONE)	{
+	//if(resource == RESOURCE_NONE)	{
 		mFile = new LittleFile(uri.c_str());
 		mOStream = mFile->outputStream();
 
 		//nFile = m_fileSystem->open(uri.c_str(), "w+");
 		if(!mOStream)
 			return handleWriteError(F("Unable to create a new file"), mOStream, mFile);
-	}
+	//}
 
 	// file is created/open for writing at this point
 	Debug_print(uri); Debug_println(F(" - ready for data"));

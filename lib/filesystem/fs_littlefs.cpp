@@ -41,7 +41,7 @@ MOstream* LittleFile::outputStream()
 
 time_t LittleFile::getLastWrite()
 {
-    
+    // TODO!
 }
 
 time_t LittleFile::getCreationTime()
@@ -61,7 +61,7 @@ bool LittleFile::rewindDirectory()
 
 MFile* LittleFile::getNextFileInDir()
 {
-    
+    // TODO!   
 }
 
 bool LittleFile::mkDir()
@@ -168,5 +168,5 @@ bool LittleFile::rename(const char* dest) {
 
     };
     size_t LittleIStream::read(uint8_t* buf, size_t size) {
-
+        // TODO!
     };
