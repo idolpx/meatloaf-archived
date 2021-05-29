@@ -164,7 +164,7 @@ void setup()
 		Serial.println(F("Flash File System started"));
 
 		// start the WebDAV server
-		if (!dav.init(SERVER_PORT, fileSystem))
+		if (!dav.init(SERVER_PORT))
 		{
 			Serial.println(F("ERROR: WebDAV Server failed"));
 			initFailed = true;

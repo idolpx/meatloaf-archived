@@ -20,7 +20,7 @@ bool LittleFile::isFile()
 
 bool LittleFile::isDirectory()
 {
-    
+    // TODO!
 }
 
 MIstream* LittleFile::inputStream()
@@ -66,12 +66,34 @@ MFile* LittleFile::getNextFileInDir()
 
 bool LittleFile::mkDir()
 {
-    
+    // TODO!   
 }
 
 bool LittleFile::mkDirs()
 {
     
+}
+
+bool LittleFile::exists()
+{
+    // TODO!
+}
+
+size_t LittleFile::size() {
+    // TODO!
+}
+
+bool LittleFile::remove() {
+    // TODO!
+    // musi obslugiwac usuwanie plikow i katalogow!
+}
+
+bool LittleFile::truncate(size_t size) {
+    // TODO!
+}
+
+bool LittleFile::rename(const char* dest) {
+    // TODO!
 }
 
 /********************************************************
@@ -88,10 +110,12 @@ bool LittleFile::mkDirs()
 
     };
     void LittleOStream::close() {
+        if(isOpen()) {
 
+        }
     };
     bool LittleOStream::open() {
-
+        // remember to set m_isOpen if succesful
     };
     // LittleOStream::~LittleOStream(
 
@@ -119,10 +143,12 @@ bool LittleFile::mkDirs()
 
     };
     void LittleIStream::close() {
-
+        if(isOpen()) {
+            
+        }
     };
     bool LittleIStream::open() {
-
+        // remember to set m_isOpen if succesful
     };
     // LittleIStream::~LittleIStream(
 
@@ -130,7 +156,7 @@ bool LittleFile::mkDirs()
 
     // MIstream methods
     int LittleIStream::available() {
-
+        // TODO!
     };
     int LittleIStream::read() {
 

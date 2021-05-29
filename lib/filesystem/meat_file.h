@@ -19,7 +19,7 @@ public:
     virtual size_t position() const = 0;
     virtual void close() = 0;
     virtual bool open() = 0;
-    virtual ~MStream() = 0;
+    virtual ~MStream() {};
     bool isOpen();
 protected:
     bool m_isOpen;
@@ -68,7 +68,12 @@ public:
     virtual MFile* getNextFileInDir() = 0 ;
     virtual bool mkDir() = 0 ;
     virtual bool mkDirs() = 0 ;
-
+    virtual bool exists() = 0;
+    virtual size_t size() = 0;
+    virtual bool remove() = 0;
+    virtual bool truncate(size_t size) = 0;
+    virtual bool rename(const char* dest) = 0;
+    virtual ~MFile() {};
 protected:
     String m_path;
 

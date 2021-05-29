@@ -25,6 +25,11 @@ public:
     MFile* getNextFileInDir() override ;
     bool mkDir() override ;
     bool mkDirs() override ;
+    bool exists() override ;
+    size_t size() override ;
+    bool remove() override ;
+    bool truncate(size_t size) override;
+    bool rename(const char* dest);
 };
 
 class LittleOStream: public MOstream {
@@ -35,7 +40,7 @@ class LittleOStream: public MOstream {
     void close() override;
     bool open() override;
     ~LittleOStream() {
-        if(m_isOpen)
+        if(isOpen())
             close();
     }
 
@@ -54,7 +59,7 @@ class LittleIStream: public MIstream {
     void close() override;
     bool open() override;
     ~LittleIStream() {
-        if(m_isOpen)
+        if(isOpen())
             close();
     }
 

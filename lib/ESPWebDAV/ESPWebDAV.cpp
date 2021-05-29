@@ -16,6 +16,8 @@
 
 #include "ESPWebDAV.h"
 
+#include "../filesystem/fs_littlefs.h"
+
 // define cal constants
 const char *months[] PROGMEM = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 const char *wdays[] PROGMEM = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
@@ -56,10 +58,8 @@ String sha1(String payloadStr){
 #endif
 
 // ------------------------
-bool ESPWebDAV::init(uint8_t serverPort, FS* fileSystem) {
+bool ESPWebDAV::init(uint8_t serverPort) {
 // ------------------------
-	m_fileSystem = fileSystem;
-
 	// start the wifi server
 	server = new WiFiServer(serverPort);
 	server->begin();
@@ -155,11 +155,12 @@ void ESPWebDAV::handleRequest(String blank)	{
 //#endif
 
 	// does uri refer to a file or directory or a null?
-	if (m_fileSystem->exists(uri.c_str())) {
-		File tFile= m_fileSystem->open(uri.c_str(), "r");
-		resource = tFile.isDirectory() ? RESOURCE_DIR : RESOURCE_FILE;
-		tFile.close();
+	MFile* mFile = new LittleFile(uri);
+
+	if (mFile != nullptr && mFile->exists()) {
+		resource = mFile->isDirectory() ? RESOURCE_DIR : RESOURCE_FILE;
 	}
+	delete mFile;
 
 	Debug_print(F("\r\nm: ")); Debug_print(method);
 	Debug_print(F(" r: ")); Debug_print(resource);
@@ -308,27 +309,30 @@ void ESPWebDAV::handleProp(ResourceType resource)	{
 	sendContent(F("<D:multistatus xmlns:D=\"DAV:\">"));
 
 	// open this resource
-	File baseFile = m_fileSystem->open(uri.c_str(), "r");
-	sendPropResponse(false, &baseFile);
+	//File baseFile = m_fileSystem->open(uri.c_str(), "r");
+	
+	MFile* baseFile = new LittleFile(uri.c_str());
+	sendPropResponse(false, baseFile);
 
 	if((resource == RESOURCE_DIR) && (depth == DEPTH_CHILD))	{
 		// append children information to message
-		File childFile;
-		while(childFile = baseFile.openNextFile()) {
+		MFile* childFile;
+		while(childFile = baseFile->getNextFileInDir()) { // TODO oc okaman?
 			yield();
-			sendPropResponse(true, &childFile);
-			childFile.close();
+			sendPropResponse(true, childFile);
+			delete childFile;
 		}
 	}
 
-	baseFile.close();
+	delete baseFile;
+
 	sendContent(F("</D:multistatus>"));
 }
 
 
 
 // ------------------------
-void ESPWebDAV::sendPropResponse(boolean recursing, File *curFile)	{
+void ESPWebDAV::sendPropResponse(boolean recursing, MFile *curFile)	{
 // ------------------------
 	char buf[255];
 
@@ -393,10 +397,12 @@ void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 
 	long tStart = millis(); // used in Debug_print below
 	uint8_t buf[1460];
-	File rFile = m_fileSystem->open(uri.c_str(), "r");
+
+	MFile* mFile = new LittleFile(uri.c_str());
+	MIstream* mIstream = mFile->inputStream();
 
 	sendHeader(F("Allow"), F("PROPFIND,OPTIONS,DELETE,COPY,MOVE,HEAD,POST,PUT,GET"));
-	size_t fileSize = rFile.size();
+	size_t fileSize = mFile->size();
 	setContentLength(fileSize);
 	String contentType = getMimeType(uri);
 	if(uri.endsWith(".gz") && contentType != F("application/x-gzip") && contentType != F("application/octet-stream"))
@@ -409,14 +415,16 @@ void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 		//client.setNoDelay(1);
 
 		// send the file
-		while(rFile.available())	{
+		while(mIstream->available())	{
 			// SD read speed ~ 17sec for 4.5MB file
-			uint8_t numRead = rFile.read(buf, sizeof(buf));
+			uint8_t numRead = mIstream->read(buf, sizeof(buf));
 			client.write(buf, numRead);
 		}
 	}
 
-	rFile.close();
+	delete mIstream; // should close
+	delete mFile;
+
 	Debug_print(F("File ")); Debug_print(fileSize); Debug_print(F(" bytes sent in: ")); Debug_print((millis() - tStart)/1000); Debug_println(F(" sec"));
 }
 
@@ -432,14 +440,20 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 	if(resource == RESOURCE_DIR)
 		return handleNotFound();
 
-	File nFile;
+	//File nFile;
+	MFile* mFile;
+	MOstream* mOStream;
+
 	sendHeader(F("Allow"), F("PROPFIND,OPTIONS,DELETE,COPY,MOVE,HEAD,POST,PUT,GET"));
 
 	// if file does not exist, create it
 	if(resource == RESOURCE_NONE)	{
-		nFile = m_fileSystem->open(uri.c_str(), "w+");
-		if(!nFile)
-			return handleWriteError(F("Unable to create a new file"), &nFile);
+		mFile = new LittleFile(uri.c_str());
+		mOStream = mFile->outputStream();
+
+		//nFile = m_fileSystem->open(uri.c_str(), "w+");
+		if(!mOStream)
+			return handleWriteError(F("Unable to create a new file"), mOStream, mFile);
 	}
 
 	// file is created/open for writing at this point
@@ -463,8 +477,8 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 				break;
 
 			// store whole buffer into file regardless of numRead
-			if (!nFile.write(buf, sizeof(buf)))
-				return handleWriteError(F("Write data failed"), &nFile);
+			if (!mOStream->write(buf, sizeof(buf)))
+				return handleWriteError(F("Write data failed"), mOStream, mFile);
 
 			// reduce the number outstanding
 			numRemaining -= numRead;
@@ -472,15 +486,14 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 
 		// detect timeout condition
 		if(numRemaining)
-			return handleWriteError(F("Timed out waiting for data"), &nFile);
+			return handleWriteError(F("Timed out waiting for data"), mOStream, mFile);
 
 #if defined(ESP8266)
 		// truncate the file to right length
-		if(!nFile.truncate(contentLen))
-			return handleWriteError(F("Unable to truncate the file"), &nFile);
+		if(!mFile->truncate(contentLen))
+			return handleWriteError(F("Unable to truncate the file"), mOStream, mFile);
 #endif
 
-		nFile.close();
 		Debug_print(F("File ")); Debug_print(contentLen - numRemaining); Debug_print(F(" bytes stored in: ")); Debug_print((millis() - tStart)/1000); Debug_println(F(" sec"));
 	}
 
@@ -489,19 +502,20 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 	else
 		send("200 OK", NULL, "");
 
-	nFile.close();
+	delete mFile;
+	delete mOStream; // closes automatically
 }
 
 
 
 
 // ------------------------
-void ESPWebDAV::handleWriteError(String message, File *wFile)	{
+void ESPWebDAV::handleWriteError(String message, MOstream *wStream, MFile *mFile)	{
 // ------------------------
 	// close this file
-	wFile->close();
+	wStream->close();
 	// delete the file being written
-	m_fileSystem->remove(uri.c_str());
+	mFile->remove();
 	// send error
 	send("500 Internal Server Error", "text/plain", message);
 	Debug_println(message);
@@ -524,13 +538,16 @@ void ESPWebDAV::handleDirectoryCreate(ResourceType resource)	{
 //#endif
 
 	// create directory
-	if (!m_fileSystem->mkdir(uri.c_str())) {
+	LittleFile* mFile = new LittleFile(uri.c_str());
+
+	if (!mFile->mkDir()) {
 		// send error
 		send("500 Internal Server Error", "text/plain", "Unable to create directory");
 		Debug_println(F("Unable to create directory"));
 		return;
 	}
 
+	delete mFile;
 	Debug_print(uri);	Debug_println(F(" directory created"));
 	sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
 	send("201 Created", NULL, "");
@@ -565,45 +582,57 @@ void ESPWebDAV::handleMove(ResourceType resource)	{
 	Debug_print(F("Move destination: ")); Debug_println(dest);
 
 	// move file or directory
-	if ( !m_fileSystem->rename(uri.c_str(), dest.c_str())	) {
+	MFile* mFile = new LittleFile(uri.c_str());
+
+	if ( !mFile->rename(dest.c_str())	) {
 		// send error
 		send("500 Internal Server Error", "text/plain", "Unable to move");
 		Debug_println(F("Unable to move file/directory"));
-		return;
+		delete mFile;
 	}
-
-	Debug_println(F("Move successful"));
-	sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
-	send("201 Created", NULL, "");
+	else {
+		Debug_println(F("Move successful"));
+		sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
+		send("201 Created", NULL, "");
+		delete mFile;
+	}
 }
 
 
-uint8_t ESPWebDAV::deleteRecursive(String path) {
+uint8_t ESPWebDAV::deleteRecursive(const char* path) {
 	static uint8_t iCount;
-	File file = m_fileSystem->open(path, "r");
-	bool isDir = file.isDirectory();
-	file.close();
+
+	MFile* mFile = new LittleFile(path);
+	//File file = m_fileSystem->open(path, "r");
+	//bool isDir = file.isDirectory();
+	//file.close();
 
 	// If it's a plain file, delete it
-	if (!isDir) {
-		m_fileSystem->remove(path);
+	if (!mFile->isDirectory()) {
+		mFile->remove();
 		iCount++;
+		delete mFile;
 
 		return iCount;
 	}
 
 #if defined(ESP8266)
 	// Otherwise delete its contents first
-	Dir dir = m_fileSystem->openDir(path);
+	//Dir dir = m_fileSystem->openDir(path);
+	MFile* mDir = new LittleFile(path);
 
-	while (dir.next()) {
-		deleteRecursive(path + '/' + dir.fileName());
+	while (MFile* entry = mDir->getNextFileInDir()) {
+		deleteRecursive(entry->path());
+		delete entry;
 	}
+
+	delete mDir;
 #endif
 
 	// Then delete the folder itself
-	m_fileSystem->rmdir(path);
+	mFile->remove();
 	iCount++;
+	delete mFile;
 
 	return iCount;
 }

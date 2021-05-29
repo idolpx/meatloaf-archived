@@ -4,8 +4,9 @@
 #include <ESP8266WiFi.h>
 #endif
 
-#include <FS.h>
+//#include <FS.h>
 
+#include "../filesystem/meat_file.h"
 #include "../../include/global_defines.h"
 
 // constants for WebServer
@@ -19,7 +20,7 @@ enum DepthType { DEPTH_NONE, DEPTH_CHILD, DEPTH_ALL };
 
 class ESPWebDAV	{
 public:
-	bool init(uint8_t serverPort, FS* fileSystem);
+	bool init(uint8_t serverPort);
 	bool stop(void);
 	bool isClientWaiting(void);
 	void handleClient(String blank = "");
@@ -37,15 +38,15 @@ protected:
 	void handleUnlock(ResourceType resource);
 	void handlePropPatch(ResourceType resource);
 	void handleProp(ResourceType resource);
-	void sendPropResponse(boolean recursing, File *curFile);
+	void sendPropResponse(boolean recursing, MFile *curFile);
 	void handleGet(ResourceType resource, bool isGet);
 	void handlePut(ResourceType resource);
-	void handleWriteError(String message, File *wFile);
+	void handleWriteError(String message, MOstream *wFile, MFile *mFile);
 	void handleDirectoryCreate(ResourceType resource);
 	void handleMove(ResourceType resource);
 	void handleDelete(ResourceType resource);
 
-	uint8_t deleteRecursive(String path);
+	uint8_t deleteRecursive(const char* path);
 
 	// Sections are copied from ESP8266Webserver
 	String getMimeType(String path);
@@ -64,7 +65,7 @@ protected:
 	
 	// variables pertaining to current most HTTP request being serviced
 	WiFiServer *server;
-	FS *m_fileSystem;
+	MFileSystem *m_fileSystem;
 	WiFiClient 	client;
 	String 		method;
 	String 		uri;
