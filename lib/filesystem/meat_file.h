@@ -94,6 +94,8 @@ public:
     MFileSystem(char* prefix);
     bool services(String name);
     virtual MFile* create(String path) = 0;
+    bool mount();
+    bool umount();
 };
 
 

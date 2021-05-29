@@ -502,7 +502,8 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 		send("200 OK", NULL, "");
 
 	delete mFile;
-	delete mOStream; // closes automatically
+	if(mOStream)
+		delete mOStream; // closes automatically
 }
 
 
@@ -512,9 +513,11 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 void ESPWebDAV::handleWriteError(String message, MOstream *wStream, MFile *mFile)	{
 // ------------------------
 	// close this file
-	wStream->close();
+	if(wStream)
+		delete wStream; // also closes
 	// delete the file being written
 	mFile->remove();
+	delete mFile;
 	// send error
 	send("500 Internal Server Error", "text/plain", message);
 	Debug_println(message);
@@ -543,13 +546,13 @@ void ESPWebDAV::handleDirectoryCreate(ResourceType resource)	{
 		// send error
 		send("500 Internal Server Error", "text/plain", "Unable to create directory");
 		Debug_println(F("Unable to create directory"));
-		return;
 	}
-
+	else {
+		Debug_print(uri);	Debug_println(F(" directory created"));
+		sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
+		send("201 Created", NULL, "");
+	}
 	delete mFile;
-	Debug_print(uri);	Debug_println(F(" directory created"));
-	sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
-	send("201 Created", NULL, "");
 }
 
 
@@ -587,14 +590,13 @@ void ESPWebDAV::handleMove(ResourceType resource)	{
 		// send error
 		send("500 Internal Server Error", "text/plain", "Unable to move");
 		Debug_println(F("Unable to move file/directory"));
-		delete mFile;
 	}
 	else {
 		Debug_println(F("Move successful"));
 		sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
 		send("201 Created", NULL, "");
-		delete mFile;
 	}
+	delete mFile;
 }
 
 
@@ -602,9 +604,6 @@ uint8_t ESPWebDAV::deleteRecursive(const char* path) {
 	static uint8_t iCount;
 
 	MFile* mFile = new LittleFile(path);
-	//File file = m_fileSystem->open(path, "r");
-	//bool isDir = file.isDirectory();
-	//file.close();
 
 	// If it's a plain file, delete it
 	if (!mFile->isDirectory()) {
