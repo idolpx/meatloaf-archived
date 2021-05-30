@@ -1,6 +1,6 @@
 // #include "fs_smb.h"
 
-// MFile* SMBFileSystem::create(String path)
+// MFile* SMBFileSystem::file(String path)
 // {
 //     return new SMBFile(path);
 // }

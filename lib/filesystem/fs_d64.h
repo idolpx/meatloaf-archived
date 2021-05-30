@@ -6,7 +6,7 @@
 // class D64FileSystem: public MFileSystem 
 // {
 //     bool services(String name);
-//     MFile* create(String path) override;
+//     MFile* file(String path) override;
 // };
 
 // class D64File: public MFile

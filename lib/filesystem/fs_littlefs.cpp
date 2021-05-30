@@ -7,10 +7,9 @@
 
 lfs_t LittleFileSystem::lfs;
 
-
-MFile* LittleFileSystem::create(String path)
+MFile* LittleFileSystem::file(String path)
 {
-    return new LittleFile(path); // dodamy globalne struktury littlefs
+    return new LittleFile(path);
 }
 
 bool LittleFileSystem::mount()
@@ -38,44 +37,43 @@ bool LittleFileSystem::umount()
 }
 
 bool LittleFileSystem::_tryMount() {
-        if (_mounted) {
-            lfs_unmount(&lfs);
-            _mounted = false;
-        }
-        memset(&lfs, 0, sizeof(lfs));
-        int rc = lfs_mount(&lfs, &_lfs_cfg);
-        if (rc==0) {
-            _mounted = true;
-        }
-        return _mounted;
+    if (_mounted) {
+        lfs_unmount(&lfs);
+        _mounted = false;
+    }
+    memset(&lfs, 0, sizeof(lfs));
+    int rc = lfs_mount(&lfs, &_lfs_cfg);
+    if (rc==0) {
+        _mounted = true;
+    }
+    return _mounted;
 }
 
 bool LittleFileSystem::format() {
-        if (_size == 0) {
-            DEBUGV("lfs size is zero\n");
-            return false;
-        }
+    if (_size == 0) {
+        DEBUGV("lfs size is zero\n");
+        return false;
+    }
 
-        bool wasMounted = _mounted;
-        if (_mounted) {
-            lfs_unmount(&lfs);
-            _mounted = false;
-        }
+    bool wasMounted = _mounted;
+    if (_mounted) {
+        lfs_unmount(&lfs);
+        _mounted = false;
+    }
 
-        memset(&lfs, 0, sizeof(lfs));
-        int rc = lfs_format(&lfs, &_lfs_cfg);
-        if (rc != 0) {
-            DEBUGV("lfs_format: rc=%d\n", rc);
-            return false;
-        }
+    memset(&lfs, 0, sizeof(lfs));
+    int rc = lfs_format(&lfs, &_lfs_cfg);
+    if (rc != 0) {
+        DEBUGV("lfs_format: rc=%d\n", rc);
+        return false;
+    }
 
-        if (wasMounted) {
-            return _tryMount();
-        }
+    if (wasMounted) {
+        return _tryMount();
+    }
 
-        return true;
+    return true;
 }
-
 
 int LittleFileSystem::lfs_flash_read(const struct lfs_config *c,
     lfs_block_t block, lfs_off_t off, void *dst, lfs_size_t size) {

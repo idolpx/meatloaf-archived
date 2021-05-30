@@ -11,9 +11,9 @@
 class LittleFileSystem: public MFileSystem 
 {
     bool services(String name);
-    MFile* create(String path) override;
-    bool mount();
-    bool umount();
+    MFile* file(String path) override;
+    bool mount() override;
+    bool umount() override;
 
 
 public:
@@ -48,16 +48,7 @@ public:
         umount();
     }
 
-
     static lfs_t lfs;
-    lfs_config  _lfs_cfg;
-
-    uint32_t _start;
-    uint32_t _size;
-    uint32_t _pageSize;
-    uint32_t _blockSize;
-    uint32_t _maxOpenFds;
-    bool _mounted;
 
 private:
     static int lfs_flash_read(const struct lfs_config *c, lfs_block_t block,
@@ -69,7 +60,20 @@ private:
 
     bool format();
     bool _tryMount();
+
+    lfs_config  _lfs_cfg;
+
+    uint32_t _start;
+    uint32_t _size;
+    uint32_t _pageSize;
+    uint32_t _blockSize;
+    uint32_t _maxOpenFds;
+    bool _mounted;
 };
+
+
+
+
 
 
 /********************************************************
@@ -129,6 +133,11 @@ protected:
     std::shared_ptr<lfs_file_t>  lfsFile;
 
 };
+
+
+
+
+
 
 /********************************************************
  * MStreams

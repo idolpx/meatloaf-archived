@@ -5,7 +5,7 @@
 
 // class SMBFileSystem: public MFileSystem
 // {
-//     MFile* create(String path) override;
+//     MFile* file(String path) override;
 // };
 
 // class SMBFile: public MFile

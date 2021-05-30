@@ -25,6 +25,7 @@
 #endif
 
 #include "global_defines.h"
+#include "meat_file.h"
 
 // Setup FileSystem Object
 #if defined(USE_SPIFFS)
@@ -146,7 +147,7 @@ void setup()
 #endif
 
 #if defined(ESP8266)
-	if (!fileSystem->begin())
+	if (!fileSystem->begin() && MFSOwner::mount("/"))
 #elif defined(ESP32) && defined(USE_LITTLEFS)
 	if (!LITTLEFS.begin()) // not sure why pointer is not working
 #else

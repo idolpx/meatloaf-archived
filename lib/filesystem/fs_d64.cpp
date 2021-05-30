@@ -5,7 +5,7 @@
 //     return name.endsWith(".d64");
 // }
 
-// MFile* D64FileSystem::create(String path)
+// MFile* D64FileSystem::file(String path)
 // {
 //     return new D64File(path);
 // }

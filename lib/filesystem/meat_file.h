@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include "FS.h"
 
-#define FS_COUNT 2
+#define FS_COUNT 1
 
 /********************************************************
  * Universal streams
@@ -93,9 +93,9 @@ protected:
 public:
     MFileSystem(char* prefix);
     bool services(String name);
-    virtual MFile* create(String path) = 0;
-    bool mount();
-    bool umount();
+    virtual MFile* file(String path) = 0;
+    virtual bool mount() = 0;
+    virtual bool umount() = 0;
 };
 
 
@@ -108,6 +108,8 @@ class MFSOwner {
 
 public:
     static MFile* File(String name);
+    static bool mount(String name);
+    static bool umount(String name);
 };
 
 #endif
