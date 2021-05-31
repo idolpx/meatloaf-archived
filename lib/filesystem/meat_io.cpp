@@ -1,9 +1,9 @@
-#include "meat_file.h"
+#include "meat_io.h"
 #include "fs_smb.h"
 #include "fs_d64.h"
 #include "fs_littlefs.h"
 #include "flash_hal.h"
-
+#include "MIOException.h"
 /********************************************************
  * MFSOwner implementations
  ********************************************************/
@@ -15,17 +15,18 @@ MFileSystem* MFSOwner::availableFS[FS_COUNT] = { littleFS, /*new D64FileSystem("
 MFile* MFSOwner::File(String name) {
     uint i = 0;
     for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
-        if(fs->services(name)) {
-            return fs->file(name);
+        if(fs->handles(name)) {
+            return fs->getFile(name);
         }
     }
+    
     return nullptr;
 }
 
 bool MFSOwner::mount(String name) {
     uint i = 0;
     for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
-        if(fs->services(name)) {
+        if(fs->handles(name)) {
             return fs->mount();
         }
     }
@@ -35,7 +36,7 @@ bool MFSOwner::mount(String name) {
 bool MFSOwner::umount(String name) {
     uint i = 0;
     for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
-        if(fs->services(name)) {
+        if(fs->handles(name)) {
             return fs->umount();
         }
     }
@@ -49,12 +50,12 @@ bool MFSOwner::umount(String name) {
 
 MFileSystem::MFileSystem(char* prefix)
 {
-    m_prefix = prefix;
+    protocol = prefix;
 }
 
-bool MFileSystem::services(String name) 
+bool MFileSystem::handles(String path) 
 {
-    return name.startsWith(m_prefix);
+    return path.startsWith(protocol);
 }
 
 /********************************************************

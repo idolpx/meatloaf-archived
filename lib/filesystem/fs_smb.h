@@ -1,7 +1,7 @@
 // #ifndef MEATFILE_DEFINES_SMBFS_H
 // #define MEATFILE_DEFINES_SMBFS_H
 
-// #include "meat_file.h"
+// #include "meat_io.h"
 
 // class SMBFileSystem: public MFileSystem
 // {
@@ -23,7 +23,6 @@
 //     bool rewindDirectory() override ;
 //     MFile* getNextFileInDir() override ;
 //     bool mkDir() override ;
-//     bool mkDirs() override ;
 // };
 
 

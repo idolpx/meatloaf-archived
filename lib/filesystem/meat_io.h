@@ -21,9 +21,22 @@ public:
     virtual bool open() = 0;
     virtual ~MStream() {};
     bool isOpen();
+
 protected:
     bool m_isOpen;
 };
+
+// template <class T>
+// class MFileStream: public MStream {
+//     std::unique_ptr<T> file;
+
+// protected:
+//     T* getFile() {
+//         return file.get();
+//     }
+// public:
+//     MFileStream(std::shared_ptr<T> f): file(f) {};
+// };
 
 class MIstream: public MStream {
 public:
@@ -67,7 +80,6 @@ public:
     virtual bool rewindDirectory() = 0 ;
     virtual MFile* getNextFileInDir() = 0 ;
     virtual bool mkDir() = 0 ;
-    virtual bool mkDirs() = 0 ;
     virtual bool exists() = 0;
     virtual size_t size() = 0;
     virtual bool remove() = 0;
@@ -76,8 +88,6 @@ public:
     virtual ~MFile() {};
 protected:
     String m_path;
-
-private:
     bool m_isNull;
 };
 
@@ -87,15 +97,19 @@ private:
  ********************************************************/
 
 class MFileSystem {
-protected:
-    char* m_prefix;
-
 public:
     MFileSystem(char* prefix);
-    bool services(String name);
-    virtual MFile* file(String path) = 0;
+    bool handles(String path);
     virtual bool mount() = 0;
     virtual bool umount() = 0;
+    virtual MFile* getFile(String path) = 0;
+    bool isMounted() {
+        return m_isMounted;
+    }
+
+protected:
+    char* protocol;
+    bool m_isMounted;
 };
 
 

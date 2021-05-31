@@ -1,7 +1,7 @@
 #ifndef MEATFILE_DEFINES_FSLITTLE_H
 #define MEATFILE_DEFINES_FSLITTLE_H
 
-#include "meat_file.h"
+#include "meat_io.h"
 #include "../lib/littlefs/lfs.h"
 
 /********************************************************
@@ -10,18 +10,17 @@
 
 class LittleFileSystem: public MFileSystem 
 {
-    bool services(String name);
-    MFile* file(String path) override;
+    //bool handles(String name);
+    MFile* getFile(String path) override;
     bool mount() override;
     bool umount() override;
 
 
 public:
     LittleFileSystem(char* prefix, uint32_t start, uint32_t size, uint32_t pageSize, uint32_t blockSize, uint32_t maxOpenFds)
-        : MFileSystem(prefix), _start(start) , _size(size) , _pageSize(pageSize) , _blockSize(blockSize) , _maxOpenFds(maxOpenFds),
-            _mounted(false) 
+        : MFileSystem(prefix), _start(start) , _size(size) , _pageSize(pageSize) , _blockSize(blockSize) , _maxOpenFds(maxOpenFds)
     {
-        memset(&lfs, 0, sizeof(lfs));
+        memset(&lfsStruct, 0, sizeof(lfsStruct));
         memset(&_lfs_cfg, 0, sizeof(_lfs_cfg));
         _lfs_cfg.context = (void*) this;
         _lfs_cfg.read = lfs_flash_read;
@@ -41,6 +40,7 @@ public:
         _lfs_cfg.name_max = 0;
         _lfs_cfg.file_max = 0;
         _lfs_cfg.attr_max = 0;
+        m_isMounted = false;
     }
 
     ~LittleFileSystem()
@@ -48,7 +48,7 @@ public:
         umount();
     }
 
-    static lfs_t lfs;
+    static lfs_t lfsStruct;
 
 private:
     static int lfs_flash_read(const struct lfs_config *c, lfs_block_t block,
@@ -68,7 +68,6 @@ private:
     uint32_t _pageSize;
     uint32_t _blockSize;
     uint32_t _maxOpenFds;
-    bool _mounted;
 };
 
 
@@ -82,8 +81,14 @@ private:
 
 class LittleFile: public MFile
 {
+friend class LittleOStream;
+friend class LittleIStream;
+
 public:
-    LittleFile(String path) : MFile(path) {};
+    LittleFile(String path) : MFile(path) {
+        if(!pathValid(path.c_str()))
+            m_isNull = true;
+    };
 
     bool isFile() override;
     bool isDirectory() override;
@@ -95,13 +100,34 @@ public:
     bool rewindDirectory() override ;
     MFile* getNextFileInDir() override ;
     bool mkDir() override ;
-    bool mkDirs() override ;
     bool exists() override ;
     size_t size() override ;
     bool remove() override ;
     bool truncate(size_t size) override;
     bool rename(const char* dest);
+
+private:
+    lfs_dir_t dir;
+    bool dirOpened = false;
+    lfs_info _dirent;
+    bool _valid;
+    String _pattern;
+
+    bool pathValid(const char *path);
+    std::shared_ptr<lfs_file_t> obtainHandle(enum lfs_open_flags flags);
+    void disposeHandle(lfs_file_t* handle, enum lfs_open_flags flags);
+    bool openDir(const char *path);
 };
+
+
+class LittleHandle {
+    lfs_file_t handle;
+};
+
+
+/********************************************************
+ * MStreams O
+ ********************************************************/
 
 class LittleOStream: public MOstream {
     // MStream methods
@@ -115,8 +141,7 @@ public:
     void close() override;
     bool open() override;
     ~LittleOStream() {
-        if(isOpen())
-            close();
+        close();
     }
 
     // MOstream methods
@@ -130,18 +155,15 @@ protected:
     }
     String m_path;
 
-    std::shared_ptr<lfs_file_t>  lfsFile;
-
+    std::shared_ptr<lfs_file_t>  lfsFile;    
+    std::shared_ptr<LittleFile> file; 
 };
 
 
-
-
-
-
 /********************************************************
- * MStreams
+ * MStreams I
  ********************************************************/
+
 
 class LittleIStream: public MIstream {
 public:
@@ -155,8 +177,7 @@ public:
     void close() override;
     bool open() override;
     ~LittleIStream() {
-        if(isOpen())
-            close();
+        close();
     }
 
     // MIstream methods
@@ -173,6 +194,7 @@ protected:
     String m_path;
 
     std::shared_ptr<lfs_file_t>  lfsFile;
+    std::shared_ptr<LittleFile> file; 
 
 };
 

@@ -5,9 +5,9 @@
  * MFileSystem implementations
  ********************************************************/
 
-lfs_t LittleFileSystem::lfs;
+lfs_t LittleFileSystem::lfsStruct;
 
-MFile* LittleFileSystem::file(String path)
+MFile* LittleFileSystem::getFile(String path)
 {
     return new LittleFile(path);
 }
@@ -15,38 +15,40 @@ MFile* LittleFileSystem::file(String path)
 bool LittleFileSystem::mount()
 {
     // tresc tej funkcji jest w begin
-        if (_size <= 0) {
-            DEBUGV("LittleFS size is <= zero");
-            return false;
-        }
-        if (_tryMount()) {
-            return true;
-        }
-        if (/*!_cfg._autoFormat ||*/ !format()) {
-            return false;
-        }
-        return _tryMount();
+    if (m_isMounted)
+        return true;
+    if (_size <= 0) {
+        DEBUGV("LittleFS size is <= zero");
+        return false;
+    }
+    if (_tryMount()) {
+        return true;
+    }
+    if (/*!_cfg._autoFormat ||*/ !format()) {
+        return false;
+    }
+    return _tryMount();
 }
 
 bool LittleFileSystem::umount()
 {
-    if (_mounted) {
-        lfs_unmount(&lfs);
+    if (m_isMounted) {
+        lfs_unmount(&lfsStruct);
     }
     return true;
 }
 
 bool LittleFileSystem::_tryMount() {
-    if (_mounted) {
-        lfs_unmount(&lfs);
-        _mounted = false;
+    if (m_isMounted) {
+        lfs_unmount(&lfsStruct);
+        m_isMounted = false;
     }
-    memset(&lfs, 0, sizeof(lfs));
-    int rc = lfs_mount(&lfs, &_lfs_cfg);
+    memset(&lfsStruct, 0, sizeof(lfsStruct));
+    int rc = lfs_mount(&lfsStruct, &_lfs_cfg);
     if (rc==0) {
-        _mounted = true;
+        m_isMounted = true;
     }
-    return _mounted;
+    return m_isMounted;
 }
 
 bool LittleFileSystem::format() {
@@ -55,14 +57,14 @@ bool LittleFileSystem::format() {
         return false;
     }
 
-    bool wasMounted = _mounted;
-    if (_mounted) {
-        lfs_unmount(&lfs);
-        _mounted = false;
+    bool wasMounted = m_isMounted;
+    if (m_isMounted) {
+        lfs_unmount(&lfsStruct);
+        m_isMounted = false;
     }
 
-    memset(&lfs, 0, sizeof(lfs));
-    int rc = lfs_format(&lfs, &_lfs_cfg);
+    memset(&lfsStruct, 0, sizeof(lfsStruct));
+    int rc = lfs_format(&lfsStruct, &_lfs_cfg);
     if (rc != 0) {
         DEBUGV("lfs_format: rc=%d\n", rc);
         return false;
@@ -109,25 +111,43 @@ int LittleFileSystem::lfs_flash_sync(const struct lfs_config *c) {
  * MFile implementations
  ********************************************************/
 
+bool LittleFile::pathValid(const char *path) 
+{
+    while (*path) {
+        const char *slash = strchr(path, '/');
+        if (!slash) {
+            if (strlen(path) >= LFS_NAME_MAX) {
+                // Terminal filename is too long
+                return false;
+            }
+            break;
+        }
+        if ((slash - path) >= LFS_NAME_MAX) {
+            // This subdir name too long
+            return false;
+        }
+        path = slash + 1;
+    }
+    return true;
+}
+
+
 bool LittleFile::isFile()
 {
     lfs_info info;
-    // _fs->getFS() zastępujemy &_lfs
-    int rc = lfs_stat(&LittleFileSystem::lfs, m_path.c_str(), &info);
+    int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
     return (rc == 0) && (info.type == LFS_TYPE_REG);
 }
 
 bool LittleFile::isDirectory()
 {
     lfs_info info;
-    // _fs->getFS() zastępujemy &_lfs
-    int rc = lfs_stat(&LittleFileSystem::lfs, m_path.c_str(), &info);
+    int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
 }
 
 MIstream* LittleFile::inputStream()
 {
-    // return OPENED stream
     MIstream* istream = new LittleIStream(m_path);
     istream->open();   
     return istream;
@@ -135,7 +155,6 @@ MIstream* LittleFile::inputStream()
 
 MOstream* LittleFile::outputStream()
 {
-    // return OPENED stream
     MOstream* ostream = new LittleOStream(m_path);
     ostream->open();   
     return ostream;
@@ -144,9 +163,9 @@ MOstream* LittleFile::outputStream()
 time_t LittleFile::getLastWrite()
 {
     time_t ftime = 0;
-        int rc = lfs_getattr(&LittleFileSystem::lfs, m_path.c_str(), 't', (void *)&ftime, sizeof(ftime));
-        if (rc != sizeof(ftime))
-            ftime = 0; // Error, so clear read value
+    int rc = lfs_getattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 't', (void *)&ftime, sizeof(ftime));
+    if (rc != sizeof(ftime))
+        ftime = 0; // Error, so clear read value
     return ftime;
 }
 
@@ -160,148 +179,390 @@ void LittleFile::setTimeCallback(time_t (*cb)(void))
     
 }
 
-bool LittleFile::rewindDirectory()
-{
-    
-}
-
-MFile* LittleFile::getNextFileInDir()
-{
-    // TODO!   
-}
-
 bool LittleFile::mkDir()
 {
-    // TODO!   
-}
-
-bool LittleFile::mkDirs()
-{
-    
+    if (m_isNull) {
+        return false;
+    }
+    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, m_path.c_str());
+    return (rc==0);
 }
 
 bool LittleFile::exists()
 {
-    // TODO!
+    if (m_isNull) {
+        return false;
+    }
+    lfs_info info;
+    int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
+    return rc == 0;
 }
 
 size_t LittleFile::size() {
-    // TODO!
+    // failure = negative return value
+
+    std::shared_ptr<lfs_file_t> filePtr = obtainHandle(LFS_O_RDONLY);
+    size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, filePtr.get());
+    disposeHandle(filePtr.get(), LFS_O_RDONLY);
+    return size;
 }
 
 bool LittleFile::remove() {
-    // TODO!
     // musi obslugiwac usuwanie plikow i katalogow!
+    int rc = lfs_remove(&LittleFileSystem::lfsStruct, m_path.c_str());
+    if (rc != 0) {
+        DEBUGV("lfs_remove: rc=%d path=`%s`\n", rc, path);
+        return false;
+    }
+    // Now try and remove any empty subdirs this makes, silently
+    char *pathStr = strdup(m_path.c_str());
+    if (pathStr) {
+        char *ptr = strrchr(pathStr, '/');
+        while (ptr) {
+            *ptr = 0;
+            lfs_remove(&LittleFileSystem::lfsStruct, pathStr); // Don't care if fails if there are files left
+            ptr = strrchr(pathStr, '/');
+        }
+        free(pathStr);
+    }
+    return true;
 }
 
 bool LittleFile::truncate(size_t size) {
-    // TODO!
+    std::shared_ptr<lfs_file_t> filePtr = obtainHandle(LFS_O_WRONLY);
+    int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, filePtr.get(), size);
+    disposeHandle(filePtr.get(), LFS_O_WRONLY);
+    if (rc < 0) {
+        DEBUGV("lfs_file_truncate rc=%d\n", rc);
+        return false;
+    }
+    return true;
 }
 
-bool LittleFile::rename(const char* dest) {
-    // TODO!
+bool LittleFile::rename(const char* pathTo) {
+    if (!pathTo || !pathTo[0]) {
+        return false;
+    }
+    int rc = lfs_rename(&LittleFileSystem::lfsStruct, m_path.c_str(), pathTo);
+    if (rc != 0) {
+        DEBUGV("lfs_rename: rc=%d, from=`%s`, to=`%s`\n", rc, pathFrom, pathTo);
+        return false;
+    }
+    return true;
 }
+
+/*
+lfs_open_flags
+
+    LFS_O_RDONLY = 1,         // Open a file as read only
+    LFS_O_WRONLY = 2,         // Open a file as write only
+    LFS_O_RDWR   = 3,         // Open a file as read and write
+    LFS_O_CREAT  = 0x0100,    // Create a file if it does not exist
+    LFS_O_EXCL   = 0x0200,    // Fail if a file already exists
+    LFS_O_TRUNC  = 0x0400,    // Truncate the existing file to zero size
+    LFS_O_APPEND = 0x0800,    // Move to end of file on every write
+
+z lfs.h
+*/
+
+void LittleFile::disposeHandle(lfs_file_t* handle, enum lfs_open_flags flags) {
+    if (handle) {
+        lfs_file_close(&LittleFileSystem::lfsStruct, handle);
+        DEBUGV("lfs_file_close: fd=%p\n", _getFD());
+        // if (timeCallback && (flags & LFS_O_WRONLY)) {
+        //     // If the file opened with O_CREAT, write the creation time attribute
+        //     if (_creation) {
+        //         // int lfs_setattr(lfs_t *lfsStruct, const char *path, uint8_t type, const void *buffer, lfs_size_t size);
+        //         int rc = lfs_setattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 'c', (const void *)&_creation, sizeof(_creation));
+        //         if (rc < 0) {
+        //             DEBUGV("Unable to set creation time on '%s' to %d\n", _name.get(), _creation);
+        //         }
+        //     }
+        //     // Add metadata with last write time
+        //     time_t now = timeCallback();
+        //     int rc = lfs_setattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 't', (const void *)&now, sizeof(now));
+        //     if (rc < 0) {
+        //         DEBUGV("Unable to set last write time on '%s' to %d\n", _name.get(), now);
+        //     }
+        // }
+    }
+}
+
+std::shared_ptr<lfs_file_t> LittleFile::obtainHandle(enum lfs_open_flags flags) {
+    if(m_isNull) {
+        DEBUGV("LittleFile::open() called on null file\n");
+        return nullptr;
+    }
+
+    auto fd = std::make_shared<lfs_file_t>();
+
+    if ((flags & LFS_O_CREAT) && strchr(m_path.c_str(), '/')) {
+        // For file creation, silently make subdirs as needed.  If any fail,
+        // it will be caught by the real file open later on
+        char *pathStr = strdup(m_path.c_str());
+        if (pathStr) {
+            // Make dirs up to the final fnamepart
+            char *ptr = strchr(pathStr, '/');
+            while (ptr) {
+                *ptr = 0;
+                lfs_mkdir(&LittleFileSystem::lfsStruct, pathStr);
+                *ptr = '/';
+                ptr = strchr(ptr+1, '/');
+            }
+        }
+        free(pathStr);
+    }
+
+    // time_t creation = 0;
+    // // if (timeCallback && (flags & LFS_O_CREAT)) {
+    //     // O_CREATE means we *may* make the file, but not if it already exists.
+    //     // See if it exists, and only if not update the creation time
+    //     int rc = lfs_file_open(&LittleFileSystem::lfsStruct, fd.get(), m_path.c_str(), LFS_O_RDONLY);
+
+    // 	if (rc == 0) {
+    //         lfs_file_close(&LittleFileSystem::lfsStruct, fd.get()); // It exists, don't update create time
+    //     } else {
+    //         creation = timeCallback();  // File didn't exist or otherwise, so we're going to create this time
+    //     }
+    // }
+
+    int rc = lfs_file_open(&LittleFileSystem::lfsStruct, fd.get(), m_path.c_str(), flags);
+    if (rc == LFS_ERR_ISDIR) {
+        // To support the SD.openNextFile, a null FD indicates to the LittleFSFile this is just
+        // a directory whose name we are carrying around but which cannot be read or written
+        return nullptr;
+    } else if (rc == 0) {
+        lfs_file_sync(&LittleFileSystem::lfsStruct, fd.get());
+        return fd;
+    } else {
+        DEBUGV("LittleFile::open: unknown return code rc=%d fd=%p path=`%s` openMode=%d accessMode=%d err=%d\n",
+               rc, fd, path, openMode, accessMode, rc);
+        return fd;
+    }    
+}
+
+bool LittleFile::openDir(const char *path) {
+    if (!isDirectory()) {
+        return false;
+    }
+    char *pathStr = strdup(path); // Allow edits on our scratch copy
+    // Get rid of any trailing slashes
+    while (strlen(pathStr) && (pathStr[strlen(pathStr)-1]=='/')) {
+        pathStr[strlen(pathStr)-1] = 0;
+    }
+    // At this point we have a name of "blah/blah/blah" or "blah" or ""
+    // If that references a directory, just open it and we're done.
+    lfs_info info;
+    //auto dir = std::make_shared<lfs_dir_t>();
+    int rc;
+    const char *filter = "";
+    if (!pathStr[0]) {
+        // openDir("") === openDir("/")
+        rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
+        filter = "";
+    } else if (lfs_stat(&LittleFileSystem::lfsStruct, pathStr, &info) >= 0) {
+        if (info.type == LFS_TYPE_DIR) {
+            // Easy peasy, path specifies an existing dir!
+            rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
+	    filter = "";
+        } else {
+            // This is a file, so open the containing dir
+            char *ptr = strrchr(pathStr, '/');
+            if (!ptr) {
+                // No slashes, open the root dir
+                rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
+		        filter = pathStr;
+            } else {
+                // We've got slashes, open the dir one up
+                *ptr = 0; // Remove slash, truncate string
+                rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
+		        filter = ptr + 1;
+            }
+        }
+    } else { 
+        // Name doesn't exist, so use the parent dir of whatever was sent in
+        // This is a file, so open the containing dir
+        char *ptr = strrchr(pathStr, '/');
+        if (!ptr) {
+            // No slashes, open the root dir
+            rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
+	        filter = pathStr;
+        } else {
+            // We've got slashes, open the dir one up
+            *ptr = 0; // Remove slash, truncate string
+            rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
+	        filter = ptr + 1;
+        }
+    }
+    if (rc < 0) {
+        DEBUGV("LittleFSImpl::openDir: path=`%s` err=%d\n", path, rc);
+        free(pathStr);
+        return false;
+    }
+    // Skip the . and .. entries
+    lfs_info dirent;
+    lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
+    lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
+
+    //auto ret = std::make_shared<LittleFSDirImpl>(filter, this, dir, pathStr);
+    free(pathStr);
+    return true;
+}
+
+bool LittleFile::rewindDirectory()
+{
+    _valid = false;
+    int rc = lfs_dir_rewind(&LittleFileSystem::lfsStruct, &dir);
+    // Skip the . and .. entries
+    lfs_info dirent;
+    lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
+    lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
+    return (rc == 0);
+}
+
+MFile* LittleFile::getNextFileInDir()
+{
+    memset(&_dirent, 0, sizeof(_dirent));
+
+    const int n = _pattern.length();
+    bool match;
+    do {
+        _dirent.name[0] = 0;
+        int rc = lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &_dirent);
+        _valid = (rc == 1);
+        match = (!n || !strncmp((const char*) _dirent.name, _pattern.c_str(), n));
+    } while (_valid && !match);
+
+    if(!_valid)
+        return nullptr;
+    else
+        return new LittleFile(String(_dirent.name));
+}
+
+
+
+
 
 /********************************************************
- * MStreams implementations
+ * MOStreams implementations
  ********************************************************/
-    // MStream methods
-    bool LittleOStream::seek(uint32_t pos, SeekMode mode) {
+// MStream methods
+bool LittleOStream::seek(uint32_t pos, SeekMode mode) {
 
-    };
-    bool LittleOStream::seek(uint32_t pos) {
+};
+bool LittleOStream::seek(uint32_t pos) {
 
-    };
-    size_t LittleOStream::position() const {
+};
+size_t LittleOStream::position() const {
+    if(!getLfsFileHandle() || !m_isOpen)
+        return 0;
 
-    };
-    void LittleOStream::close() {
-        if(isOpen()) {
+    return lfs_file_tell(&LittleFileSystem::lfsStruct, getLfsFileHandle());
+};
+void LittleOStream::close() {
+    if(isOpen()) {
+        file.get()->disposeHandle(lfsFile.get(), LFS_O_WRONLY);
+    }
+};
+bool LittleOStream::open() {
+    if(!m_isOpen) {
+        lfsFile = file.get()->obtainHandle(LFS_O_WRONLY);
+        m_isOpen = lfsFile.get() != nullptr;
+    }
+    return m_isOpen;
+};
+// LittleOStream::~LittleOStream(
 
-        }
-    };
-    bool LittleOStream::open() {
-        // remember to set m_isOpen if succesful
-        // kod można ściągnąć z LittleFSImpl::open
-        // tamże otrzymamy file handle, którym wypełnimy lfsFile
-        lfsFile = std::make_shared<lfs_file_t>();
-        
-        m_isOpen = true;
-        return true;
-    };
-    // LittleOStream::~LittleOStream(
+// );
 
-    // );
+// MOstream methods
+size_t LittleOStream::write(uint8_t) {
 
-    // MOstream methods
-    size_t LittleOStream::write(uint8_t) {
+};
 
-    };
-    size_t LittleOStream::write(const uint8_t *buf, size_t size) {
-        if (!isOpen() || !getLfsFileHandle() || !buf) {
-            return 0;
-        }
-        // procki w LittleFS sa nakladka na niskopoziomowe API z lfs.h
-        // więc sa dokladnie na tym poziomie, co ten
-        // musze sie odwolywac do funkcji lfs_*, a nie do funkcji z LittleFS.h
+size_t LittleOStream::write(const uint8_t *buf, size_t size) {
+    if (!isOpen() || !getLfsFileHandle() || !buf) {
+        return 0;
+    }
+    // procki w LittleFS sa nakladka na niskopoziomowe API z lfs.h
+    // więc sa dokladnie na tym poziomie, co ten
+    // musze sie odwolywac do funkcji lfs_*, a nie do funkcji z LittleFS.h
 
-        // ponizszy fs jest inicjalizowany jako drugi arg LittleFSDirImpl
-        //  i jest typu lfs_t
+    // ponizszy fs jest inicjalizowany jako drugi arg LittleFSDirImpl
+    //  i jest typu lfs_t
 
-        int result = lfs_file_write(&LittleFileSystem::lfs, getLfsFileHandle(), (void*) buf, size);
-        if (result < 0) {
-            DEBUGV("lfs_write rc=%d\n", result);
-            return 0;
-        }
-        return result;
-    };
-    void LittleOStream::flush() {
+    int result = lfs_file_write(&LittleFileSystem::lfsStruct, getLfsFileHandle(), (void*) buf, size);
+    if (result < 0) {
+        DEBUGV("lfs_write rc=%d\n", result);
+        return 0;
+    }
+    return result;
+};
+void LittleOStream::flush() {
 
-    };
+};
 
-    // MStream methods
-    bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
 
-    };
-    bool LittleIStream::seek(uint32_t pos) {
+/********************************************************
+ * MIStreams implementations
+ ********************************************************/
+bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
 
-    };
-    size_t LittleIStream::position() const {
+};
+bool LittleIStream::seek(uint32_t pos) {
 
-    };
-    void LittleIStream::close() {
-        if(isOpen()) {
-            
-        }
-    };
-    bool LittleIStream::open() {
-        // remember to set m_isOpen if succesful
+};
 
-        // remember to set m_isOpen if succesful
-        // kod można ściągnąć z LittleFSImpl::open
-        // tamże otrzymamy file handle, którym wypełnimy lfsFile
-        lfsFile = std::make_shared<lfs_file_t>();
+size_t LittleIStream::position() const {
+    if(!getLfsFileHandle() || !m_isOpen)
+        return 0;
+    else
+        return lfs_file_tell(&LittleFileSystem::lfsStruct, getLfsFileHandle());
+};
 
-        m_isOpen = true;
-        return true;
-    };
-    // LittleIStream::~LittleIStream(
+void LittleIStream::close() {
+    if(isOpen()) {
+        file.get()->disposeHandle(lfsFile.get(), LFS_O_RDONLY);
+    }
+};
+bool LittleIStream::open() {
+    if(!m_isOpen) {
+        lfsFile = file.get()->obtainHandle(LFS_O_RDONLY);
+        m_isOpen = lfsFile.get() != nullptr;
+    }
+    return m_isOpen;
+};
+// LittleIStream::~LittleIStream(
 
-    // );
+// );
 
-    // MIstream methods
-    int LittleIStream::available() {
-        // TODO!
-    };
-    int LittleIStream::read() {
+// MIstream methods
+int LittleIStream::available() {
+    if(!getLfsFileHandle() || !m_isOpen)
+        return 0;
 
-    };
-    int LittleIStream::peek() {
+    return lfs_file_size(&LittleFileSystem::lfsStruct, getLfsFileHandle()) - position();
+};
+int LittleIStream::read() {
 
-    };
-    size_t LittleIStream::readBytes(char *buffer, size_t length) {
+};
+int LittleIStream::peek() {
 
-    };
-    size_t LittleIStream::read(uint8_t* buf, size_t size) {
-        // TODO!
-    };
+};
+size_t LittleIStream::readBytes(char *buffer, size_t length) {
+
+};
+size_t LittleIStream::read(uint8_t* buf, size_t size) {
+    if (!m_isOpen || !getLfsFileHandle() | !buf) {
+        return 0;
+    }
+    int result = lfs_file_read(&LittleFileSystem::lfsStruct, getLfsFileHandle(), (void*) buf, size);
+    if (result < 0) {
+        DEBUGV("lfs_read rc=%d\n", result);
+        return 0;
+    }
+
+    return result;
+};
+
+

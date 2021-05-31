@@ -1,7 +1,7 @@
 // #ifndef MEATFILE_DEFINES_FSD64_H
 // #define MEATFILE_DEFINES_FSD64_H
 
-// #include "meat_file.h"
+// #include "meat_io.h"
 
 // class D64FileSystem: public MFileSystem 
 // {
@@ -24,7 +24,6 @@
 //     bool rewindDirectory() override ;
 //     MFile* getNextFileInDir() override ;
 //     bool mkDir() override ;
-//     bool mkDirs() override ;
 // };
 
 // #endif

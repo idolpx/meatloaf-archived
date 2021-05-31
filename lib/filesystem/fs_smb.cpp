@@ -55,8 +55,3 @@
     
 // }
 
-// bool SMBFile::mkDirs()
-// {
-    
-// }
-
