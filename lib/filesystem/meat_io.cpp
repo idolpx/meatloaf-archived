@@ -63,11 +63,11 @@ bool MFileSystem::handles(String path)
  ********************************************************/
 
 MFile::MFile(String path, String name) {
-    // create this instance from path and fileName
+    m_path = path + "/" + name;
 }
 
 MFile::MFile(MFile* path, String name) {
-    // create this instance from MFile and fileName
+    m_path = path->m_path + "/" + name;
 }
 
 bool MFile::operator!=(nullptr_t ptr) {
@@ -75,23 +75,18 @@ bool MFile::operator!=(nullptr_t ptr) {
 }
 
 const char* MFile::name() const {
+    int lastSlash = m_path.lastIndexOf("/");
     // return just the file name
     // TODO!
 }    
 
 const char* MFile::path() const {
-    // return full path
     return m_path.c_str();
 }    
 
 const char* MFile::extension() const {
+    String name = this->name();
+    int lastPeriod = name.lastIndexOf(".");
     // return the file extension
 }    
 
-/********************************************************
- * MStream implementations
- ********************************************************/
-
-bool MStream::isOpen() {
-    return m_isOpen;
-}

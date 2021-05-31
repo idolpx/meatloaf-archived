@@ -199,11 +199,9 @@ bool LittleFile::exists()
 }
 
 size_t LittleFile::size() {
-    // failure = negative return value
-
-    std::shared_ptr<lfs_file_t> filePtr = obtainHandle(LFS_O_RDONLY);
-    size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, filePtr.get());
-    disposeHandle(filePtr.get(), LFS_O_RDONLY);
+    std::unique_ptr<LittleHandle> handle(new LittleHandle());    
+    handle.get()->obtain(LFS_O_RDONLY, m_path);
+    size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile);
     return size;
 }
 
@@ -229,9 +227,8 @@ bool LittleFile::remove() {
 }
 
 bool LittleFile::truncate(size_t size) {
-    std::shared_ptr<lfs_file_t> filePtr = obtainHandle(LFS_O_WRONLY);
-    int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, filePtr.get(), size);
-    disposeHandle(filePtr.get(), LFS_O_WRONLY);
+    std::unique_ptr<LittleHandle> handle(new LittleHandle());    
+    int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile, size);
     if (rc < 0) {
         DEBUGV("lfs_file_truncate rc=%d\n", rc);
         return false;
@@ -249,96 +246,6 @@ bool LittleFile::rename(const char* pathTo) {
         return false;
     }
     return true;
-}
-
-/*
-lfs_open_flags
-
-    LFS_O_RDONLY = 1,         // Open a file as read only
-    LFS_O_WRONLY = 2,         // Open a file as write only
-    LFS_O_RDWR   = 3,         // Open a file as read and write
-    LFS_O_CREAT  = 0x0100,    // Create a file if it does not exist
-    LFS_O_EXCL   = 0x0200,    // Fail if a file already exists
-    LFS_O_TRUNC  = 0x0400,    // Truncate the existing file to zero size
-    LFS_O_APPEND = 0x0800,    // Move to end of file on every write
-
-z lfs.h
-*/
-
-void LittleFile::disposeHandle(lfs_file_t* handle, enum lfs_open_flags flags) {
-    if (handle) {
-        lfs_file_close(&LittleFileSystem::lfsStruct, handle);
-        DEBUGV("lfs_file_close: fd=%p\n", _getFD());
-        // if (timeCallback && (flags & LFS_O_WRONLY)) {
-        //     // If the file opened with O_CREAT, write the creation time attribute
-        //     if (_creation) {
-        //         // int lfs_setattr(lfs_t *lfsStruct, const char *path, uint8_t type, const void *buffer, lfs_size_t size);
-        //         int rc = lfs_setattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 'c', (const void *)&_creation, sizeof(_creation));
-        //         if (rc < 0) {
-        //             DEBUGV("Unable to set creation time on '%s' to %d\n", _name.get(), _creation);
-        //         }
-        //     }
-        //     // Add metadata with last write time
-        //     time_t now = timeCallback();
-        //     int rc = lfs_setattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 't', (const void *)&now, sizeof(now));
-        //     if (rc < 0) {
-        //         DEBUGV("Unable to set last write time on '%s' to %d\n", _name.get(), now);
-        //     }
-        // }
-    }
-}
-
-std::shared_ptr<lfs_file_t> LittleFile::obtainHandle(enum lfs_open_flags flags) {
-    if(m_isNull) {
-        DEBUGV("LittleFile::open() called on null file\n");
-        return nullptr;
-    }
-
-    auto fd = std::make_shared<lfs_file_t>();
-
-    if ((flags & LFS_O_CREAT) && strchr(m_path.c_str(), '/')) {
-        // For file creation, silently make subdirs as needed.  If any fail,
-        // it will be caught by the real file open later on
-        char *pathStr = strdup(m_path.c_str());
-        if (pathStr) {
-            // Make dirs up to the final fnamepart
-            char *ptr = strchr(pathStr, '/');
-            while (ptr) {
-                *ptr = 0;
-                lfs_mkdir(&LittleFileSystem::lfsStruct, pathStr);
-                *ptr = '/';
-                ptr = strchr(ptr+1, '/');
-            }
-        }
-        free(pathStr);
-    }
-
-    // time_t creation = 0;
-    // // if (timeCallback && (flags & LFS_O_CREAT)) {
-    //     // O_CREATE means we *may* make the file, but not if it already exists.
-    //     // See if it exists, and only if not update the creation time
-    //     int rc = lfs_file_open(&LittleFileSystem::lfsStruct, fd.get(), m_path.c_str(), LFS_O_RDONLY);
-
-    // 	if (rc == 0) {
-    //         lfs_file_close(&LittleFileSystem::lfsStruct, fd.get()); // It exists, don't update create time
-    //     } else {
-    //         creation = timeCallback();  // File didn't exist or otherwise, so we're going to create this time
-    //     }
-    // }
-
-    int rc = lfs_file_open(&LittleFileSystem::lfsStruct, fd.get(), m_path.c_str(), flags);
-    if (rc == LFS_ERR_ISDIR) {
-        // To support the SD.openNextFile, a null FD indicates to the LittleFSFile this is just
-        // a directory whose name we are carrying around but which cannot be read or written
-        return nullptr;
-    } else if (rc == 0) {
-        lfs_file_sync(&LittleFileSystem::lfsStruct, fd.get());
-        return fd;
-    } else {
-        DEBUGV("LittleFile::open: unknown return code rc=%d fd=%p path=`%s` openMode=%d accessMode=%d err=%d\n",
-               rc, fd, path, openMode, accessMode, rc);
-        return fd;
-    }    
 }
 
 bool LittleFile::openDir(const char *path) {
@@ -447,33 +354,33 @@ MFile* LittleFile::getNextFileInDir()
  * MOStreams implementations
  ********************************************************/
 // MStream methods
+bool LittleOStream::isOpen() {
+    return handle.get()->rc >= 0;
+}
+
 bool LittleOStream::seek(uint32_t pos, SeekMode mode) {
 
 };
 bool LittleOStream::seek(uint32_t pos) {
 
 };
-size_t LittleOStream::position() const {
-    if(!getLfsFileHandle() || !m_isOpen)
-        return 0;
-
-    return lfs_file_tell(&LittleFileSystem::lfsStruct, getLfsFileHandle());
+size_t LittleOStream::position() {
+    if(!isOpen()) return 0;
+    else return lfs_file_tell(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile);
 };
+
 void LittleOStream::close() {
     if(isOpen()) {
-        file.get()->disposeHandle(lfsFile.get(), LFS_O_WRONLY);
+        handle.get()->dispose();
     }
 };
-bool LittleOStream::open() {
-    if(!m_isOpen) {
-        lfsFile = file.get()->obtainHandle(LFS_O_WRONLY);
-        m_isOpen = lfsFile.get() != nullptr;
-    }
-    return m_isOpen;
-};
-// LittleOStream::~LittleOStream(
 
-// );
+bool LittleOStream::open() {
+    if(!isOpen()) {
+        handle.get()->obtain(LFS_O_WRONLY, m_path);
+    }
+    return isOpen();
+};
 
 // MOstream methods
 size_t LittleOStream::write(uint8_t) {
@@ -481,7 +388,7 @@ size_t LittleOStream::write(uint8_t) {
 };
 
 size_t LittleOStream::write(const uint8_t *buf, size_t size) {
-    if (!isOpen() || !getLfsFileHandle() || !buf) {
+    if (!isOpen() || !buf) {
         return 0;
     }
     // procki w LittleFS sa nakladka na niskopoziomowe API z lfs.h
@@ -491,13 +398,14 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     // ponizszy fs jest inicjalizowany jako drugi arg LittleFSDirImpl
     //  i jest typu lfs_t
 
-    int result = lfs_file_write(&LittleFileSystem::lfsStruct, getLfsFileHandle(), (void*) buf, size);
+    int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile, (void*) buf, size);
     if (result < 0) {
         DEBUGV("lfs_write rc=%d\n", result);
         return 0;
     }
     return result;
 };
+
 void LittleOStream::flush() {
 
 };
@@ -506,6 +414,11 @@ void LittleOStream::flush() {
 /********************************************************
  * MIStreams implementations
  ********************************************************/
+
+bool LittleIStream::isOpen() {
+    return handle.get()->rc >= 0;
+}
+
 bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
 
 };
@@ -513,36 +426,28 @@ bool LittleIStream::seek(uint32_t pos) {
 
 };
 
-size_t LittleIStream::position() const {
-    if(!getLfsFileHandle() || !m_isOpen)
-        return 0;
-    else
-        return lfs_file_tell(&LittleFileSystem::lfsStruct, getLfsFileHandle());
+size_t LittleIStream::position() {
+    if(!isOpen()) return 0;
+    else return lfs_file_tell(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile);
 };
 
 void LittleIStream::close() {
-    if(isOpen()) {
-        file.get()->disposeHandle(lfsFile.get(), LFS_O_RDONLY);
-    }
+    if(isOpen()) handle.get()->dispose();
 };
-bool LittleIStream::open() {
-    if(!m_isOpen) {
-        lfsFile = file.get()->obtainHandle(LFS_O_RDONLY);
-        m_isOpen = lfsFile.get() != nullptr;
-    }
-    return m_isOpen;
-};
-// LittleIStream::~LittleIStream(
 
-// );
+bool LittleIStream::open() {
+    if(!isOpen()) {
+        handle.get()->obtain(LFS_O_RDONLY, m_path);
+    }
+    return isOpen();
+};
 
 // MIstream methods
 int LittleIStream::available() {
-    if(!getLfsFileHandle() || !m_isOpen)
-        return 0;
-
-    return lfs_file_size(&LittleFileSystem::lfsStruct, getLfsFileHandle()) - position();
+    if(!isOpen()) return 0;
+    return lfs_file_size(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile) - position();
 };
+
 int LittleIStream::read() {
 
 };
@@ -553,10 +458,10 @@ size_t LittleIStream::readBytes(char *buffer, size_t length) {
 
 };
 size_t LittleIStream::read(uint8_t* buf, size_t size) {
-    if (!m_isOpen || !getLfsFileHandle() | !buf) {
+    if (!isOpen() | !buf) {
         return 0;
     }
-    int result = lfs_file_read(&LittleFileSystem::lfsStruct, getLfsFileHandle(), (void*) buf, size);
+    int result = lfs_file_read(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile, (void*) buf, size);
     if (result < 0) {
         DEBUGV("lfs_read rc=%d\n", result);
         return 0;
@@ -565,4 +470,95 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
     return result;
 };
 
+
+/********************************************************
+ * LittleHandle implementations
+ ********************************************************/
+
+/*
+lfs_open_flags
+
+    LFS_O_RDONLY = 1,         // Open a file as read only
+    LFS_O_WRONLY = 2,         // Open a file as write only
+    LFS_O_RDWR   = 3,         // Open a file as read and write
+    LFS_O_CREAT  = 0x0100,    // Create a file if it does not exist
+    LFS_O_EXCL   = 0x0200,    // Fail if a file already exists
+    LFS_O_TRUNC  = 0x0400,    // Truncate the existing file to zero size
+    LFS_O_APPEND = 0x0800,    // Move to end of file on every write
+
+z lfs.h
+*/
+
+LittleHandle::~LittleHandle() {
+    dispose();
+}
+
+void LittleHandle::dispose() {
+    if (rc >= 0) {
+        lfs_file_close(&LittleFileSystem::lfsStruct, &lfsFile);
+        DEBUGV("lfs_file_close: fd=%p\n", _getFD());
+        // if (timeCallback && (flags & LFS_O_WRONLY)) {
+        //     // If the file opened with O_CREAT, write the creation time attribute
+        //     if (_creation) {
+        //         // int lfs_setattr(lfs_t *lfsStruct, const char *path, uint8_t type, const void *buffer, lfs_size_t size);
+        //         int rc = lfs_setattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 'c', (const void *)&_creation, sizeof(_creation));
+        //         if (rc < 0) {
+        //             DEBUGV("Unable to set creation time on '%s' to %d\n", _name.get(), _creation);
+        //         }
+        //     }
+        //     // Add metadata with last write time
+        //     time_t now = timeCallback();
+        //     int rc = lfs_setattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 't', (const void *)&now, sizeof(now));
+        //     if (rc < 0) {
+        //         DEBUGV("Unable to set last write time on '%s' to %d\n", _name.get(), now);
+        //     }
+        // }
+        rc = -255;
+    }
+}
+
+void LittleHandle::obtain(enum lfs_open_flags fl, String m_path) {
+    flags = fl;
+
+    if ((flags & LFS_O_CREAT) && strchr(m_path.c_str(), '/')) {
+        // For file creation, silently make subdirs as needed.  If any fail,
+        // it will be caught by the real file open later on
+        char *pathStr = strdup(m_path.c_str());
+        if (pathStr) {
+            // Make dirs up to the final fnamepart
+            char *ptr = strchr(pathStr, '/');
+            while (ptr) {
+                *ptr = 0;
+                lfs_mkdir(&LittleFileSystem::lfsStruct, pathStr);
+                *ptr = '/';
+                ptr = strchr(ptr+1, '/');
+            }
+        }
+        free(pathStr);
+    }
+
+    // time_t creation = 0;
+    // // if (timeCallback && (flags & LFS_O_CREAT)) {
+    //     // O_CREATE means we *may* make the file, but not if it already exists.
+    //     // See if it exists, and only if not update the creation time
+    //     int rc = lfs_file_open(&LittleFileSystem::lfsStruct, fd.get(), m_path.c_str(), LFS_O_RDONLY);
+
+    // 	if (rc == 0) {
+    //         lfs_file_close(&LittleFileSystem::lfsStruct, fd.get()); // It exists, don't update create time
+    //     } else {
+    //         creation = timeCallback();  // File didn't exist or otherwise, so we're going to create this time
+    //     }
+    // }
+
+    rc = lfs_file_open(&LittleFileSystem::lfsStruct, &lfsFile, m_path.c_str(), flags);
+    if (rc == LFS_ERR_ISDIR) {
+        // To support the SD.openNextFile, a null FD indicates to the LittleFSFile this is just
+        // a directory whose name we are carrying around but which cannot be read or written
+    } else if (rc == 0) {
+        lfs_file_sync(&LittleFileSystem::lfsStruct, &lfsFile);
+    } else {
+        DEBUGV("LittleFile::open: unknown return code rc=%d fd=%p path=`%s` openMode=%d accessMode=%d err=%d\n",
+               rc, fd, path, openMode, accessMode, rc);
+    }    
+}
 

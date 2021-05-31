@@ -114,16 +114,25 @@ private:
     String _pattern;
 
     bool pathValid(const char *path);
-    std::shared_ptr<lfs_file_t> obtainHandle(enum lfs_open_flags flags);
-    void disposeHandle(lfs_file_t* handle, enum lfs_open_flags flags);
     bool openDir(const char *path);
 };
 
 
-class LittleHandle {
-    lfs_file_t handle;
-};
+/********************************************************
+ * LittleHandle
+ ********************************************************/
 
+class LittleHandle {
+public:
+    int rc;
+    lfs_file_t lfsFile;
+    void obtain(enum lfs_open_flags flags, String m_path);
+    void dispose();
+    LittleHandle() : rc(-255) {};
+    ~LittleHandle();
+private:
+    enum lfs_open_flags flags;
+};
 
 /********************************************************
  * MStreams O
@@ -134,10 +143,11 @@ class LittleOStream: public MOstream {
 public:
     LittleOStream(String& path) {
         m_path = path;
+        handle = std::unique_ptr<LittleHandle>(new LittleHandle());
     }
     bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
-    size_t position() const override;
+    size_t position() override;
     void close() override;
     bool open() override;
     ~LittleOStream() {
@@ -148,15 +158,13 @@ public:
     size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
     void flush() override;
+    bool isOpen();
 
 protected:
-    lfs_file_t *getLfsFileHandle() const { //_getFD
-        return lfsFile.get();
-    }
     String m_path;
 
-    std::shared_ptr<lfs_file_t>  lfsFile;    
     std::shared_ptr<LittleFile> file; 
+    std::unique_ptr<LittleHandle> handle;    
 };
 
 
@@ -169,11 +177,12 @@ class LittleIStream: public MIstream {
 public:
     LittleIStream(String& path) {
         m_path = path;
+        handle = std::unique_ptr<LittleHandle>(new LittleHandle());
     }
     // MStream methods
     bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
-    size_t position() const override;
+    size_t position() override;
     void close() override;
     bool open() override;
     ~LittleIStream() {
@@ -186,16 +195,17 @@ public:
     int peek() override;
     size_t readBytes(char *buffer, size_t length) override;
     size_t read(uint8_t* buf, size_t size) override;
+    bool isOpen();
 
 protected:
-    lfs_file_t *getLfsFileHandle() const { //_getFD
-        return lfsFile.get();
-    }
     String m_path;
 
-    std::shared_ptr<lfs_file_t>  lfsFile;
     std::shared_ptr<LittleFile> file; 
-
+    std::unique_ptr<LittleHandle> handle;    
 };
 
+
+
 #endif
+
+
