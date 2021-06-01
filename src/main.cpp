@@ -155,37 +155,37 @@ void setup()
 	{
 		// File System failed
 		statusMessage = "Failed to initialize file system";
-		Serial.print(F("ERROR: "));
+		Serial.print("ERROR: ");
 		Serial.println(statusMessage);
 		initFailed = true;
 	}
 	else
 	{
-		Serial.println(F("Flash File System started"));
+		Serial.println("Flash File System started");
 
 		// start the WebDAV server
 		if (!dav.init(SERVER_PORT, fileSystem))
 		{
-			Serial.println(F("ERROR: WebDAV Server failed"));
+			Serial.println("ERROR: WebDAV Server failed");
 			initFailed = true;
 		}
 		else
 		{
-			Serial.println(F("WebDAV server started"));
+			Serial.println("WebDAV server started");
 
 			// mDNS INIT
 			if (MDNS.begin(HOSTNAME))
 			{
 				MDNS.addService("http", "tcp", SERVER_PORT);
-				Serial.println(F("mDNS service started"));
-				Serial.print(F(">>> http://"));
+				Serial.println("mDNS service started");
+				Serial.print(">>> http://");
 				Serial.print(HOSTNAME);
-				Serial.println(F(".local"));
+				Serial.println(".local");
 			}
 			else
 			{
-				Serial.println(F("mDNS service failed to start"));
-				Serial.print(F(">>> http://"));
+				Serial.println("mDNS service failed to start");
+				Serial.print(">>> http://");
 				Serial.println(WiFi.localIP());
 			}
 		}
@@ -193,10 +193,10 @@ void setup()
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
 		iec.init();
-		Serial.println(F("IEC Bus Initialized"));
+		Serial.println("IEC Bus Initialized");
 
 		drive.begin();
-		Serial.print(F("Virtual Device(s) Started: [ "));
+		Serial.print("Virtual Device(s) Started: [ ");
 		for (byte i = 0; i < 31; i++)
 		{
 			if (iec.isDeviceEnabled(i))
@@ -266,7 +266,7 @@ void setup()
 
 	pinMode(LED_PIN, OUTPUT); // Configure the onboard LED for output
 	ledON();
-	Serial.println(F("READY."));
+	Serial.println("READY.");
 }
 
 // ------------------------
