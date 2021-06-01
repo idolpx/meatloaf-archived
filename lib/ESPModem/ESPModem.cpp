@@ -1416,21 +1416,27 @@ bool ESPModem::startWPSConnect() {
 
 #if defined(ESP8266)
 bool updateFirmware() {
+  WiFiClient wifiClient;
+
   Serial.println("Attempting to bake Meat Loaf 64!\r\n");
   ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
 
   ESPhttpUpdate.onEnd(updateEnd);
   ESPhttpUpdate.onProgress(updateProgress);
-  t_httpUpdate_return ret = ESPhttpUpdate.update( UPDATE_URL );
+  t_httpUpdate_return ret = ESPhttpUpdate.update( wifiClient, UPDATE_URL );
   switch(ret) {
+    case HTTP_UPDATE_OK:
+      break;
+
     case HTTP_UPDATE_FAILED:
-      Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+      Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
       break;
 
     case HTTP_UPDATE_NO_UPDATES:
       Serial.println("HTTP_UPDATE_NO_UPDATES");
       break;
   }
+  return true;
 }
 
 void updateProgress(int cur, int total) {

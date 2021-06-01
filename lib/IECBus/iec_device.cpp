@@ -858,12 +858,13 @@ void Interface::sendListingHTTP()
 	String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
 
 	// Connect to HTTP server
+	WiFiClient wifiClient;
 	HTTPClient client;
 	client.setUserAgent(user_agent);
 	// client.setFollowRedirects(true);
 	client.setTimeout(10000);
 	url.toLowerCase();
-	if (!client.begin(url))
+	if (!client.begin(wifiClient, url))
 	{
 		Debug_println(F("\r\nConnection failed"));
 		m_iec.sendFNF();
@@ -957,12 +958,13 @@ void Interface::sendFileHTTP()
 
 	// Connect to HTTP server
 	uint8_t httpCode = 0;
+	WiFiClient wifiClient;
 	HTTPClient client;
 	client.setUserAgent(user_agent);
 	// client.setFollowRedirects(true);
 	client.setTimeout(10000);
 	url.toLowerCase();
-	if (!client.begin(url))
+	if (!client.begin(wifiClient, url))
 	{
 		Debug_println(F("\r\nConnection failed"));
 		m_iec.sendFNF();
@@ -1044,11 +1046,11 @@ void Interface::sendFileHTTP()
 				}
             }
 
-			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
-			{
-				success = true;
-				break;
-			}
+			// if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
+			// {
+			// 	success = true;
+			// 	break;
+			// }
         }
         client.end();
         Debug_println("");
