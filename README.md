@@ -12,12 +12,22 @@ It's easy to wire up too.  (No need for the level shifter as shown in the circui
 You can also leave off the edge card connector if you you just want to try out the drive emulation functionality.
 ![meatloaf64-wiring](docs/meatloaf64-wiring.png)
 
-Code is based on and inspired by the following:
+Components
+----------
+Microcontroller
+* 1 × [ESP8266 Dev Board](https://www.aliexpress.com/item/32992487136.html) (Wemos D1 MINI, NODEMCU, etc)<br/>
+I like this 16MB version.<br/>
+or<br/>
+* 1 x [ESP32 Dev Board](https://www.aliexpress.com/item/32883116057.html)<br/>
+This one has 16MB Flash, 8MB PSRAM, Micro SD with I2C & TFT Port!<br/>
 
-* Steve White's Pi1541 (https://github.com/pi1541/Pi1541)
-* Lars Wadefalk's UNO2IEC (https://github.com/Larswad/uno2iec) & SD2IEC (https://github.com/Larswad/sd2iec_mega2560)
-* Paul Rickard's ESP8266 Modem (https://github.com/RolandJuno/esp8266_modem)
-* Ardyesp's ESPWebDAV (https://github.com/ardyesp/ESPWebDAV)
+Virtual Drive - IEC Serial Port (minimal build)
+* 1 × [6 PIN DIN Male Plug](https://www.aliexpress.com/item/33058840658.html)
+* 1 × [6 Core 26AWG Wire Cable](https://www.aliexpress.com/item/1005002313534749.html) (12" or better, I got extra)
+
+Virtual Modem - User Port (optional)
+* 1 × [24 PIN (2x12) 805 Series 3.96mm Pitch PCB Slot Solder Card Edge Connector](https://www.aliexpress.com/item/4000246156457.html)
+* 1 × [5x7cm Proto Board](https://www.aliexpress.com/item/4000285110600.html)
 
 
 To setup your own Meatloaf server check out this code.
@@ -34,7 +44,7 @@ Key Features
 * WiFi modem for connecting to telnet BBSs
 * Can mount device's flash file system via WebDAV to edit contents
 * IEC Bus interface for loading data directly from flash memory or via HTTP
-* Can be configured to simulate multiple IEC devices (IDs 4-30)
+* Can be configured to emulate multiple IEC devices (IDs 4-30)
 * Each device's configuration is switched out and persisted on access (hidden folder ".sys")
 * Firmware can be updated via HTTP
 
@@ -63,3 +73,12 @@ References
 * https://www.pagetable.com/?p=1018
 * http://www.zimmers.net/anonftp/pub/cbm/programming/serial-bus.pdf
 * https://vice-emu.sourceforge.io/vice_17.html#SEC329
+
+
+Code is based on and inspired by the following:
+
+* Steve White's Pi1541 (https://github.com/pi1541/Pi1541)
+* Lars Wadefalk's UNO2IEC (https://github.com/Larswad/uno2iec)
+* Ingo Korb's SD2IEC (https://sd2iec.de/)
+* Paul Rickard's ESP8266 Modem (https://github.com/RolandJuno/esp8266_modem)
+* Ardyesp's ESPWebDAV (https://github.com/ardyesp/ESPWebDAV)
