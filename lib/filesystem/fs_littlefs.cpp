@@ -1,5 +1,6 @@
 #include "fs_littlefs.h"
 #include "flash_hal.h"
+#include "MIOException.h"
 
 /********************************************************
  * MFileSystem implementations
@@ -9,24 +10,31 @@ lfs_t LittleFileSystem::lfsStruct;
 
 MFile* LittleFileSystem::getFile(String path)
 {
-    return new LittleFile(path);
+    if(m_isMounted)
+        return new LittleFile(path);
+    else
+        return nullptr;
+        //throw IllegalStateException();
 }
 
 bool LittleFileSystem::mount()
 {
-    // tresc tej funkcji jest w begin
     if (m_isMounted)
         return true;
+
     if (_size <= 0) {
         DEBUGV("LittleFS size is <= zero");
         return false;
     }
+
     if (_tryMount()) {
         return true;
     }
+
     if (/*!_cfg._autoFormat ||*/ !format()) {
         return false;
     }
+
     return _tryMount();
 }
 
@@ -199,9 +207,10 @@ bool LittleFile::exists()
 }
 
 size_t LittleFile::size() {
-    std::unique_ptr<LittleHandle> handle(new LittleHandle());    
-    handle.get()->obtain(LFS_O_RDONLY, m_path);
-    size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile);
+//    std::unique_ptr<LittleHandle> handle(new LittleHandle());
+    auto handle = std::make_unique<LittleHandle>();
+    handle->obtain(LFS_O_RDONLY, m_path);
+    size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile);
     return size;
 }
 
@@ -227,8 +236,9 @@ bool LittleFile::remove() {
 }
 
 bool LittleFile::truncate(size_t size) {
-    std::unique_ptr<LittleHandle> handle(new LittleHandle());    
-    int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile, size);
+    std::unique_ptr<LittleHandle> handle(new LittleHandle());  
+    handle->obtain(LFS_O_WRONLY, m_path);
+    int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, &handle->lfsFile, size);
     if (rc < 0) {
         DEBUGV("lfs_file_truncate rc=%d\n", rc);
         return false;
@@ -355,7 +365,7 @@ MFile* LittleFile::getNextFileInDir()
  ********************************************************/
 // MStream methods
 bool LittleOStream::isOpen() {
-    return handle.get()->rc >= 0;
+    return handle->rc >= 0;
 }
 
 bool LittleOStream::seek(uint32_t pos, SeekMode mode) {
@@ -366,18 +376,18 @@ bool LittleOStream::seek(uint32_t pos) {
 };
 size_t LittleOStream::position() {
     if(!isOpen()) return 0;
-    else return lfs_file_tell(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile);
+    else return lfs_file_tell(&LittleFileSystem::lfsStruct, &handle->lfsFile);
 };
 
 void LittleOStream::close() {
     if(isOpen()) {
-        handle.get()->dispose();
+        handle->dispose();
     }
 };
 
 bool LittleOStream::open() {
     if(!isOpen()) {
-        handle.get()->obtain(LFS_O_WRONLY, m_path);
+        handle->obtain(LFS_O_WRONLY, m_path);
     }
     return isOpen();
 };
@@ -398,7 +408,7 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     // ponizszy fs jest inicjalizowany jako drugi arg LittleFSDirImpl
     //  i jest typu lfs_t
 
-    int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile, (void*) buf, size);
+    int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
         DEBUGV("lfs_write rc=%d\n", result);
         return 0;
@@ -416,7 +426,7 @@ void LittleOStream::flush() {
  ********************************************************/
 
 bool LittleIStream::isOpen() {
-    return handle.get()->rc >= 0;
+    return handle->rc >= 0;
 }
 
 bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
@@ -428,16 +438,16 @@ bool LittleIStream::seek(uint32_t pos) {
 
 size_t LittleIStream::position() {
     if(!isOpen()) return 0;
-    else return lfs_file_tell(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile);
+    else return lfs_file_tell(&LittleFileSystem::lfsStruct, &handle->lfsFile);
 };
 
 void LittleIStream::close() {
-    if(isOpen()) handle.get()->dispose();
+    if(isOpen()) handle->dispose();
 };
 
 bool LittleIStream::open() {
     if(!isOpen()) {
-        handle.get()->obtain(LFS_O_RDONLY, m_path);
+        handle->obtain(LFS_O_RDONLY, m_path);
     }
     return isOpen();
 };
@@ -445,7 +455,7 @@ bool LittleIStream::open() {
 // MIstream methods
 int LittleIStream::available() {
     if(!isOpen()) return 0;
-    return lfs_file_size(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile) - position();
+    return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
 };
 
 int LittleIStream::read() {
@@ -461,7 +471,7 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
     if (!isOpen() | !buf) {
         return 0;
     }
-    int result = lfs_file_read(&LittleFileSystem::lfsStruct, &handle.get()->lfsFile, (void*) buf, size);
+    int result = lfs_file_read(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
         DEBUGV("lfs_read rc=%d\n", result);
         return 0;

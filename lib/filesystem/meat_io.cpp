@@ -8,9 +8,9 @@
  * MFSOwner implementations
  ********************************************************/
 
-LittleFileSystem* littleFS = new LittleFileSystem("/",FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5);
+std::shared_ptr<LittleFileSystem> littleFS(new LittleFileSystem("/",FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5));
 
-MFileSystem* MFSOwner::availableFS[FS_COUNT] = { littleFS, /*new D64FileSystem(""), new SMBFileSystem("smb:")*/ };
+MFileSystem* MFSOwner::availableFS[FS_COUNT] = { littleFS.get() };
 
 MFile* MFSOwner::File(String name) {
     uint i = 0;
@@ -62,13 +62,16 @@ bool MFileSystem::handles(String path)
  * MFile implementations
  ********************************************************/
 
-MFile::MFile(String path, String name) {
-    m_path = path + "/" + name;
+MFile::MFile(String path) {
+    if(path.endsWith("/"))
+        path.remove(path.length()-1);
+
+    m_path = path;
 }
 
-MFile::MFile(MFile* path, String name) {
-    m_path = path->m_path + "/" + name;
-}
+MFile::MFile(String path, String name) : MFile(path + "/" + name) {}
+
+MFile::MFile(MFile* path, String name) : MFile(path->m_path + "/" + name) {}
 
 bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
@@ -76,8 +79,7 @@ bool MFile::operator!=(nullptr_t ptr) {
 
 const char* MFile::name() const {
     int lastSlash = m_path.lastIndexOf("/");
-    // return just the file name
-    // TODO!
+    return m_path.substring(lastSlash+1).c_str();
 }    
 
 const char* MFile::path() const {
@@ -87,6 +89,6 @@ const char* MFile::path() const {
 const char* MFile::extension() const {
     String name = this->name();
     int lastPeriod = name.lastIndexOf(".");
-    // return the file extension
+    return m_path.substring(lastPeriod+1).c_str();
 }    
 

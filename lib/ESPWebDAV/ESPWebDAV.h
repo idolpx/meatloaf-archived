@@ -41,7 +41,7 @@ protected:
 	void sendPropResponse(boolean recursing, MFile *curFile);
 	void handleGet(ResourceType resource, bool isGet);
 	void handlePut(ResourceType resource);
-	void handleWriteError(String message, MOstream *wFile, MFile *mFile);
+	void handleWriteError(String message, MFile *mFile);
 	void handleDirectoryCreate(ResourceType resource);
 	void handleMove(ResourceType resource);
 	void handleDelete(ResourceType resource);

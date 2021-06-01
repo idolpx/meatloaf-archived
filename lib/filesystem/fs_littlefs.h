@@ -3,6 +3,7 @@
 
 #include "meat_io.h"
 #include "../lib/littlefs/lfs.h"
+#include "../make_unique.h"
 
 /********************************************************
  * MFileSystem
@@ -10,7 +11,6 @@
 
 class LittleFileSystem: public MFileSystem 
 {
-    //bool handles(String name);
     MFile* getFile(String path) override;
     bool mount() override;
     bool umount() override;
@@ -62,7 +62,6 @@ private:
     bool _tryMount();
 
     lfs_config  _lfs_cfg;
-
     uint32_t _start;
     uint32_t _size;
     uint32_t _pageSize;
@@ -126,10 +125,15 @@ class LittleHandle {
 public:
     int rc;
     lfs_file_t lfsFile;
+
+    LittleHandle() : rc(-255) 
+    {
+        memset(&lfsFile, 0, sizeof(lfsFile));
+    };
+    ~LittleHandle();
     void obtain(enum lfs_open_flags flags, String m_path);
     void dispose();
-    LittleHandle() : rc(-255) {};
-    ~LittleHandle();
+
 private:
     enum lfs_open_flags flags;
 };
@@ -139,11 +143,11 @@ private:
  ********************************************************/
 
 class LittleOStream: public MOstream {
-    // MStream methods
 public:
+    // MStream methods
     LittleOStream(String& path) {
         m_path = path;
-        handle = std::unique_ptr<LittleHandle>(new LittleHandle());
+        handle = std::make_unique<LittleHandle>();
     }
     bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
@@ -163,7 +167,6 @@ public:
 protected:
     String m_path;
 
-    std::shared_ptr<LittleFile> file; 
     std::unique_ptr<LittleHandle> handle;    
 };
 
@@ -177,7 +180,7 @@ class LittleIStream: public MIstream {
 public:
     LittleIStream(String& path) {
         m_path = path;
-        handle = std::unique_ptr<LittleHandle>(new LittleHandle());
+        handle = std::make_unique<LittleHandle>();
     }
     // MStream methods
     bool seek(uint32_t pos, SeekMode mode) override;
@@ -200,12 +203,9 @@ public:
 protected:
     String m_path;
 
-    std::shared_ptr<LittleFile> file; 
     std::unique_ptr<LittleHandle> handle;    
 };
 
 
 
 #endif
-
-

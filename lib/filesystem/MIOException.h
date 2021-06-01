@@ -5,6 +5,9 @@
 
 // truned off by default: https://github.com/platformio/platform-ststm32/issues/402
 
+// PIO_FRAMEWORK_ARDUINO_ENABLE_EXCEPTIONS - whre do I set this?
+// https://github.com/esp8266/Arduino/blob/master/tools/platformio-build.py
+
 struct IOException : public std::exception {
    const char * what () const throw () {
       return "IO";

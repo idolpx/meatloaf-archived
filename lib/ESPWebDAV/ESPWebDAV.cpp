@@ -17,6 +17,7 @@
 #include "ESPWebDAV.h"
 
 #include "../filesystem/fs_littlefs.h"
+#include "../make_unique.h"
 
 // define cal constants
 const char *months[] PROGMEM = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -155,12 +156,11 @@ void ESPWebDAV::handleRequest(String blank)	{
 //#endif
 
 	// does uri refer to a file or directory or a null?
-	MFile* mFile = new LittleFile(uri);
+	auto mFile = std::make_unique<LittleFile>(uri);
 
 	if (mFile->exists()) {
 		resource = mFile->isDirectory() ? RESOURCE_DIR : RESOURCE_FILE;
 	}
-	delete mFile;
 
 	Debug_print(F("\r\nm: ")); Debug_print(method);
 	Debug_print(F(" r: ")); Debug_print(resource);
@@ -309,10 +309,9 @@ void ESPWebDAV::handleProp(ResourceType resource)	{
 	sendContent(F("<D:multistatus xmlns:D=\"DAV:\">"));
 
 	// open this resource
-	//File baseFile = m_fileSystem->open(uri.c_str(), "r");
-	
-	MFile* baseFile = new LittleFile(uri.c_str());
-	sendPropResponse(false, baseFile);
+	auto baseFile = std::make_unique<LittleFile>(uri.c_str());
+
+	sendPropResponse(false, baseFile.get());
 
 	if((resource == RESOURCE_DIR) && (depth == DEPTH_CHILD))	{
 		// append children information to message
@@ -323,8 +322,6 @@ void ESPWebDAV::handleProp(ResourceType resource)	{
 			delete childFile;
 		}
 	}
-
-	delete baseFile;
 
 	sendContent(F("</D:multistatus>"));
 }
@@ -398,8 +395,8 @@ void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 	long tStart = millis(); // used in Debug_print below
 	uint8_t buf[1460];
 
-	MFile* mFile = new LittleFile(uri.c_str());
-	MIstream* mIstream = mFile->inputStream();
+	auto mFile = std::make_unique<LittleFile>(uri.c_str());
+	std::unique_ptr<MIstream> mIstream(mFile->inputStream());
 
 	sendHeader(F("Allow"), F("PROPFIND,OPTIONS,DELETE,COPY,MOVE,HEAD,POST,PUT,GET"));
 	size_t fileSize = mFile->size();
@@ -408,7 +405,7 @@ void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 	if(uri.endsWith(".gz") && contentType != F("application/x-gzip") && contentType != F("application/octet-stream"))
 		sendHeader(F("Content-Encoding"), F("gzip"));
 
-	send("200 OK", contentType.c_str(), "");
+	send("200 OK", contentType.c_str(), "m");
 
 	if(isGet)	{
 		// disable Nagle if buffer size > TCP MTU of 1460
@@ -421,9 +418,6 @@ void ESPWebDAV::handleGet(ResourceType resource, bool isGet)	{
 			client.write(buf, numRead);
 		}
 	}
-
-	delete mIstream; // should close
-	delete mFile;
 
 	Debug_print(F("File ")); Debug_print(fileSize); Debug_print(F(" bytes sent in: ")); Debug_print((millis() - tStart)/1000); Debug_println(F(" sec"));
 }
@@ -440,20 +434,13 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 	if(resource == RESOURCE_DIR)
 		return handleNotFound();
 
-	MFile* mFile;
-	MOstream* mOStream;
-
 	sendHeader(F("Allow"), F("PROPFIND,OPTIONS,DELETE,COPY,MOVE,HEAD,POST,PUT,GET"));
 
-	// if file does not exist, create it
-	//if(resource == RESOURCE_NONE)	{
-		mFile = new LittleFile(uri.c_str());
-		mOStream = mFile->outputStream();
+	auto mFile = std::make_unique<LittleFile>(uri.c_str());
+	std::unique_ptr<MOstream> mOStream(mFile->outputStream());
 
-		//nFile = m_fileSystem->open(uri.c_str(), "w+");
-		if(!mOStream)
-			return handleWriteError(F("Unable to create a new file"), mOStream, mFile);
-	//}
+	if(!mOStream->isOpen())
+		return handleWriteError(F("Unable to create a new file"), mFile.get());
 
 	// file is created/open for writing at this point
 	Debug_print(uri); Debug_println(F(" - ready for data"));
@@ -477,7 +464,7 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 
 			// store whole buffer into file regardless of numRead
 			if (!mOStream->write(buf, sizeof(buf)))
-				return handleWriteError(F("Write data failed"), mOStream, mFile);
+				return handleWriteError(F("Write data failed"), mFile.get());
 
 			// reduce the number outstanding
 			numRemaining -= numRead;
@@ -485,12 +472,12 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 
 		// detect timeout condition
 		if(numRemaining)
-			return handleWriteError(F("Timed out waiting for data"), mOStream, mFile);
+			return handleWriteError(F("Timed out waiting for data"), mFile.get());
 
 #if defined(ESP8266)
 		// truncate the file to right length
 		if(!mFile->truncate(contentLen))
-			return handleWriteError(F("Unable to truncate the file"), mOStream, mFile);
+			return handleWriteError(F("Unable to truncate the file"), mFile.get());
 #endif
 
 		Debug_print(F("File ")); Debug_print(contentLen - numRemaining); Debug_print(F(" bytes stored in: ")); Debug_print((millis() - tStart)/1000); Debug_println(F(" sec"));
@@ -500,25 +487,15 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 		send("201 Created", NULL, "");
 	else
 		send("200 OK", NULL, "");
-
-	delete mFile;
-	if(mOStream)
-		delete mOStream; // closes automatically
 }
 
 
 
 
 // ------------------------
-void ESPWebDAV::handleWriteError(String message, MOstream *wStream, MFile *mFile)	{
+void ESPWebDAV::handleWriteError(String message, MFile *mFile)	{
 // ------------------------
-	// close this file
-	if(wStream)
-		delete wStream; // also closes
-	// delete the file being written
 	mFile->remove();
-	delete mFile;
-	// send error
 	send("500 Internal Server Error", "text/plain", message);
 	Debug_println(message);
 }
@@ -533,14 +510,13 @@ void ESPWebDAV::handleDirectoryCreate(ResourceType resource)	{
 	if(resource != RESOURCE_NONE)
 		return handleNotFound();
 
-//#if defined USE_LITTLEFS	
 	if(uri.endsWith("/")) {
 		uri = uri.substring(0, uri.length()-1);
 	}
-//#endif
 
 	// create directory
-	LittleFile* mFile = new LittleFile(uri.c_str());
+	auto mFile = std::make_unique<LittleFile>(uri.c_str());
+
 
 	if (!mFile->mkDir()) {
 		// send error
@@ -552,7 +528,6 @@ void ESPWebDAV::handleDirectoryCreate(ResourceType resource)	{
 		sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
 		send("201 Created", NULL, "");
 	}
-	delete mFile;
 }
 
 
@@ -584,7 +559,8 @@ void ESPWebDAV::handleMove(ResourceType resource)	{
 	Debug_print(F("Move destination: ")); Debug_println(dest);
 
 	// move file or directory
-	MFile* mFile = new LittleFile(uri.c_str());
+	auto mFile = std::make_unique<LittleFile>(uri.c_str());
+
 
 	if ( !mFile->rename(dest.c_str())	) {
 		// send error
@@ -596,20 +572,18 @@ void ESPWebDAV::handleMove(ResourceType resource)	{
 		sendHeader(F("Allow"), F("OPTIONS,MKCOL,LOCK,POST,PUT"));
 		send("201 Created", NULL, "");
 	}
-	delete mFile;
 }
 
 
 uint8_t ESPWebDAV::deleteRecursive(const char* path) {
 	static uint8_t iCount;
 
-	MFile* mFile = new LittleFile(path);
+	auto mFile = std::make_unique<LittleFile>(path);
 
 	// If it's a plain file, delete it
 	if (!mFile->isDirectory()) {
 		mFile->remove();
 		iCount++;
-		delete mFile;
 
 		return iCount;
 	}
@@ -630,7 +604,6 @@ uint8_t ESPWebDAV::deleteRecursive(const char* path) {
 	// Then delete the folder itself
 	mFile->remove();
 	iCount++;
-	delete mFile;
 
 	return iCount;
 }

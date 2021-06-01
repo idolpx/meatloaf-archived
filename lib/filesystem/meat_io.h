@@ -58,7 +58,7 @@ public:
 class MFile {
 public:
     MFile(nullptr_t null) : m_isNull(true) {};
-    MFile(String path) : m_path(path) {};
+    MFile(String path);
     MFile(String path, String name);
     MFile(MFile* path, String name);
 
