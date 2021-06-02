@@ -19,11 +19,11 @@ framework = arduino
 upload_speed = 921600
 ;upload_port = COM1 ; Windows
 ;upload_port = /dev/ttyUSB0 ; Linux
-;upload_port = /dev/tty.SLAB_USBtoUART ; Mac
+upload_port = /dev/tty.SLAB_USBtoUART ; Mac
 ;monitor_port = COM1 ; Windows
 ;monitor_port = /dev/ttyUSB0 ; Linux
-;monitor_port = /dev/tty.SLAB_USBtoUART ; Mac
-monitor_speed = 2400
+monitor_port = /dev/tty.SLAB_USBtoUART ; Mac
+monitor_speed = 921600
 monitor_filters = default, esp8266_exception_decoder
 lib_deps = 
     ArduinoJson

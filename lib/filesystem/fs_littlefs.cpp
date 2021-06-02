@@ -207,7 +207,6 @@ bool LittleFile::exists()
 }
 
 size_t LittleFile::size() {
-//    std::unique_ptr<LittleHandle> handle(new LittleHandle());
     auto handle = std::make_unique<LittleHandle>();
     handle->obtain(LFS_O_RDONLY, m_path);
     size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile);
@@ -236,7 +235,7 @@ bool LittleFile::remove() {
 }
 
 bool LittleFile::truncate(size_t size) {
-    std::unique_ptr<LittleHandle> handle(new LittleHandle());  
+    auto handle = std::make_unique<LittleHandle>();
     handle->obtain(LFS_O_WRONLY, m_path);
     int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, &handle->lfsFile, size);
     if (rc < 0) {
@@ -258,10 +257,12 @@ bool LittleFile::rename(const char* pathTo) {
     return true;
 }
 
-bool LittleFile::openDir(const char *path) {
-    if (!isDirectory()) {
-        return false;
+void LittleFile::openDir(const char *path) {
+    if (!isDirectory()) { 
+        dirOpened = false;
+        return;
     }
+    
     char *pathStr = strdup(path); // Allow edits on our scratch copy
     // Get rid of any trailing slashes
     while (strlen(pathStr) && (pathStr[strlen(pathStr)-1]=='/')) {
@@ -314,16 +315,18 @@ bool LittleFile::openDir(const char *path) {
     if (rc < 0) {
         DEBUGV("LittleFSImpl::openDir: path=`%s` err=%d\n", path, rc);
         free(pathStr);
-        return false;
+        dirOpened = false;
     }
-    // Skip the . and .. entries
-    lfs_info dirent;
-    lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
-    lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
+    else {
+        // Skip the . and .. entries
+        lfs_info dirent;
+        lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
+        lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
 
-    //auto ret = std::make_shared<LittleFSDirImpl>(filter, this, dir, pathStr);
-    free(pathStr);
-    return true;
+        //auto ret = std::make_shared<LittleFSDirImpl>(filter, this, dir, pathStr);
+        free(pathStr);
+        dirOpened = true;
+    }
 }
 
 bool LittleFile::rewindDirectory()
@@ -339,6 +342,9 @@ bool LittleFile::rewindDirectory()
 
 MFile* LittleFile::getNextFileInDir()
 {
+    if(!dirOpened)
+        openDir(m_path.c_str());
+
     memset(&_dirent, 0, sizeof(_dirent));
 
     const int n = _pattern.length();

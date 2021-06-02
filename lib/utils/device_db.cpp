@@ -1,3 +1,20 @@
+// Meatloaf - A Commodore 64/128 multi-device emulator
+// https://github.com/idolpx/meatloaf
+// Copyright(C) 2020 James Johnston
+//
+// Meatloaf is free software : you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Meatloaf is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
+
 #include "device_db.h"
 
 DeviceDB::DeviceDB(FS* fileSystem)
@@ -53,9 +70,9 @@ bool DeviceDB::init(String db_file)
 #elif defined(ESP8266)
             const char buffer[RECORD_SIZE] = { 0 };
 #endif
-            for(byte i = 0; i < 31; i++) // 22 devices x 2 drives = 44 records x 256 bytes = 11264 total bytes
+            for(byte i = 0; i < 31; i++) // 22 devices x 2 media = 44 records x 256 bytes = 11264 total bytes
             {
-                sprintf( (char *)buffer, "{\"device\":%d,\"drive\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"image\":\"\"}", i );
+                sprintf( (char *)buffer, "{\"device\":%d,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"/\",\"image\":\"\"}", i );
                 f_database.write(buffer, RECORD_SIZE);
                 Serial.printf("Writing Record %d: %s\r\n", i, buffer);                    
             }
@@ -174,13 +191,13 @@ void DeviceDB::device(byte device)
     }
 }
 
-byte DeviceDB::drive()
+byte DeviceDB::media()
 {
-    return m_device["drive"];
+    return m_device["media"];
 }
-void DeviceDB::drive(byte drive)
+void DeviceDB::media(byte media)
 {
-    m_device["drive"] = drive;
+    m_device["media"] = media;
 }
 byte DeviceDB::partition()
 {
@@ -205,7 +222,8 @@ String DeviceDB::path()
 }
 void DeviceDB::path(String path)
 {
-    path.replace(F("///"), F("/"));
+    path.replace("///", "/");
+    path.replace("//", "/");
     if ( path == NULL)
         path = "/";
     m_device["path"] = path;

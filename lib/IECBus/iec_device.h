@@ -33,10 +33,9 @@
 #include "../../include/cbmdefines.h"
 #include "../../include/petscii.h"
 
-#include "MemoryInfo.h"
 #include "iec.h"
-
 #include "device_db.h"
+#include "MemoryInfo.h"
 #include "helpers.h"
 
 enum OpenState

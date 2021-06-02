@@ -31,10 +31,8 @@
 #define LISTEN_PORT 6400 // Listen to this if not connected. Set to zero to disable.
 
 //#define DEVICE_MASK 0b01111111111111111111111111110000 //  Devices 4-30 are enabled by default
-//#define DEVICE_MASK   0b00000000000000000000111100000000 //  Devices 8-11
+#define DEVICE_MASK   0b00000000000000000000111100000000 //  Devices 8-11
 //#define DEVICE_MASK   0b00000000000000000000111000000000 //  Devices 9-11
-#define DEVICE_MASK   0b00000000000000000000110000000000 //  Devices 10-11
-
 #define IMAGE_TYPES   "D64|D71|D80|D81|D82|D8B|G64|X64|Z64|TAP|T64|TCRT|CRT|D1M|D2M|D4M|DHD|HDD|DNP|DFI|M2I|NIB"
 #define FILE_TYPES    "C64|PRG|P00|SEQ|S00|USR|U00|REL|R00"
 #define ARCHIVE_TYPES "ZIP|7Z|RAR"
@@ -83,7 +81,7 @@
 
 // IEC protocol timing consts:
 #define TIMING_BIT           70    // bit clock hi/lo time     (us)
-#define TIMING_NO_EOI        20    // delay before bits        (us)
+#define TIMING_NO_EOI        5     // delay before bits        (us)
 #define TIMING_EOI_WAIT      200   // delay to signal EOI      (us)
 #define TIMING_EOI_THRESH    20    // threshold for EOI detect (*10 us approx)
 #define TIMING_STABLE_WAIT   20    // line stabilization       (us)

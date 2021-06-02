@@ -316,6 +316,7 @@ void ESPWebDAV::handleProp(ResourceType resource)	{
 	if((resource == RESOURCE_DIR) && (depth == DEPTH_CHILD))	{
 		// append children information to message
 		//MFile* childFile;
+
 		while(MFile* childFile = baseFile->getNextFileInDir()) {
 			yield();
 			sendPropResponse(true, childFile);
@@ -463,18 +464,22 @@ void ESPWebDAV::handlePut(ResourceType resource)	{
 				break;
 
 			// store whole buffer into file regardless of numRead
-			if (!mOStream->write(buf, sizeof(buf)))
+			if (!mOStream->write(buf, sizeof(buf))) {
+				mOStream->close();
 				return handleWriteError(F("Write data failed"), mFile.get());
-
+			}
 			// reduce the number outstanding
 			numRemaining -= numRead;
 		}
 
 		// detect timeout condition
-		if(numRemaining)
+		if(numRemaining) {
+			mOStream->close();
 			return handleWriteError(F("Timed out waiting for data"), mFile.get());
+		}
 
 #if defined(ESP8266)
+		mOStream->close(); // probably required to truncate!
 		// truncate the file to right length
 		if(!mFile->truncate(contentLen))
 			return handleWriteError(F("Unable to truncate the file"), mFile.get());
@@ -590,15 +595,12 @@ uint8_t ESPWebDAV::deleteRecursive(const char* path) {
 
 #if defined(ESP8266)
 	// Otherwise delete its contents first
-	//Dir dir = m_fileSystem->openDir(path);
-	MFile* mDir = new LittleFile(path);
+	std::unique_ptr<MFile> dirEntry(mFile->getNextFileInDir());
 
-	while (MFile* entry = mDir->getNextFileInDir()) {
-		deleteRecursive(entry->path());
-		delete entry;
+	while (dirEntry != nullptr) {
+		deleteRecursive(dirEntry->path());
+		dirEntry.reset(mFile->getNextFileInDir());
 	}
-
-	delete mDir;
 #endif
 
 	// Then delete the folder itself

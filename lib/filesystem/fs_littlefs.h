@@ -3,6 +3,7 @@
 
 #include "meat_io.h"
 #include "../lib/littlefs/lfs.h"
+//#include "MIOException.h"
 #include "../make_unique.h"
 
 /********************************************************
@@ -113,7 +114,7 @@ private:
     String _pattern;
 
     bool pathValid(const char *path);
-    bool openDir(const char *path);
+    void openDir(const char *path);
 };
 
 
