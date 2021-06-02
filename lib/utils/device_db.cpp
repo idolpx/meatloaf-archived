@@ -53,9 +53,9 @@ bool DeviceDB::init(String db_file)
 #elif defined(ESP8266)
             const char buffer[RECORD_SIZE] = { 0 };
 #endif
-            for(byte i = 0; i < 31; i++) // 22 devices x 2 drives = 44 records x 256 bytes = 11264 total bytes
+            for(byte i = 0; i < 31; i++) // 22 devices x 2 media = 44 records x 256 bytes = 11264 total bytes
             {
-                sprintf( (char *)buffer, "{\"device\":%d,\"drive\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"image\":\"\"}", i );
+                sprintf( (char *)buffer, "{\"device\":%d,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"/\",\"image\":\"\"}", i );
                 f_database.write(buffer, RECORD_SIZE);
                 Serial.printf("Writing Record %d: %s\r\n", i, buffer);                    
             }
