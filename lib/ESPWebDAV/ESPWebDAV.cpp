@@ -326,7 +326,7 @@ Serial.println(depth);
 	if((resource == RESOURCE_DIR) && (depth == DEPTH_CHILD))	{
 		// append children information to message
 
-Serial.println("inside handleProp - dir XX");
+Serial.print("inside handleProp - list contents of ");
 Serial.println(uri.c_str());
 
 
@@ -347,6 +347,9 @@ Serial.println(uri.c_str());
 void ESPWebDAV::sendPropResponse(boolean recursing, MFile *curFile)	{
 // ------------------------
 	char buf[255];
+
+Serial.println("sendPropResponse - sending proper response ");
+
 
 // String fullResPath = "http://" + hostHeader + uri;
 	String fullResPath = uri;
@@ -393,6 +396,9 @@ void ESPWebDAV::sendPropResponse(boolean recursing, MFile *curFile)	{
 		sendContent(F("</D:getcontenttype>"));
 	}
 	sendContent(F("</D:prop></D:propstat></D:response>"));
+
+	Serial.println("sendPropResponse - sent ");
+
 }
 
 

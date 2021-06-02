@@ -349,17 +349,22 @@ MFile* LittleFile::getNextFileInDir()
 
     const int n = _pattern.length();
     bool match;
-    do {
+    //do {
         _dirent.name[0] = 0;
         int rc = lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &_dirent);
         _valid = (rc == 1);
-        match = (!n || !strncmp((const char*) _dirent.name, _pattern.c_str(), n));
-    } while (_valid && !match);
+
+Serial.print("inside getNextFileInDir - got: ");
+Serial.println(_dirent.name);
+
+
+        //match = (!n || !strncmp((const char*) _dirent.name, _pattern.c_str(), n));
+    //} while (_valid/* && !match*/);
 
     if(!_valid)
         return nullptr;
     else
-        return new LittleFile(String(_dirent.name));
+        return new LittleFile(this->m_isNull+"/"+String(_dirent.name));
 }
 
 
