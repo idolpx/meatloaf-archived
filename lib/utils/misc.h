@@ -15,23 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef HELPERS_H
-#define HELPERS_H
+// #include "../../include/global_defines.h"
+// #include "SerialCommand.h"
 
-#include <Arduino.h>
+// SerialCommand cli;
 
-#if defined(ESP32)
-#include <WiFi.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#endif
+// void LED_on();
+// void LED_off();
+// void SayHello();
+// void process_command();
+// void listDirectory();
+// void iecCommand();
+// void readFile(char *filename);
+// void catFile();
+// void showHelp();
 
-unsigned char h2int(char c);
-void printProgress(uint16_t total, uint16_t current);
-
-String urlencode(String str);
-String urldecode(String str);
-String ipToString ( IPAddress ip );
-String formatBytes ( size_t bytes );
-
-#endif
+// // This gets set as the default handler, and gets called when no other command matches.
+// void unrecognized();

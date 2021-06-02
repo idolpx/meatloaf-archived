@@ -41,6 +41,7 @@ Interface::Interface(IEC &iec, FS *fileSystem)
 //,  m_jsonHTTPBuffer(1024)
 {
 	m_fileSystem = fileSystem;
+	DeviceDB *m_device = new DeviceDB(fileSystem);
 	reset();
 } // ctor
 
@@ -858,25 +859,25 @@ void Interface::sendListingHTTP()
 	String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
 
 	// Connect to HTTP server
-	WiFiClient wifiClient;
-	HTTPClient client;
-	client.setUserAgent(user_agent);
-	// client.setFollowRedirects(true);
-	client.setTimeout(10000);
+	WiFiClient client;
+	HTTPClient http;
+	http.setUserAgent(user_agent);
+	// http.setFollowRedirects(true);
+	http.setTimeout(10000);
 	url.toLowerCase();
-	if (!client.begin(wifiClient, url))
+	if (!http.begin(client, url))
 	{
 		Debug_println(F("\r\nConnection failed"));
 		m_iec.sendFNF();
 		return;
 	}
-	client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+	http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
 	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
-	uint8_t httpCode = client.POST(post_data);	 //Send the request
-	WiFiClient payload = client.getStream(); //Get the response payload as Stream
-	//String payload = client.getString();    //Get the response payload as String
+	uint8_t httpCode = http.POST(post_data);	 //Send the request
+	WiFiClient payload = http.getStream(); //Get the response payload as Stream
+	//String payload = http.getString();    //Get the response payload as String
 
 	Debug_printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
 	if (httpCode != 200)
@@ -921,7 +922,7 @@ void Interface::sendListingHTTP()
 
 	Debug_printf("\r\nBytes Sent: %d\r\n", byte_count);
 
-	client.end(); //Close connection
+	http.end(); //Close connection
 
 	ledON();
 } // sendListingHTTP
@@ -958,13 +959,13 @@ void Interface::sendFileHTTP()
 
 	// Connect to HTTP server
 	uint8_t httpCode = 0;
-	WiFiClient wifiClient;
-	HTTPClient client;
-	client.setUserAgent(user_agent);
-	// client.setFollowRedirects(true);
-	client.setTimeout(10000);
+	WiFiClient client;
+	HTTPClient http;
+	http.setUserAgent(user_agent);
+	// http.setFollowRedirects(true);
+	http.setTimeout(10000);
 	url.toLowerCase();
-	if (!client.begin(wifiClient, url))
+	if (!http.begin(client, url))
 	{
 		Debug_println(F("\r\nConnection failed"));
 		m_iec.sendFNF();
@@ -975,14 +976,14 @@ void Interface::sendFileHTTP()
 
 	if ( post_data.length() )
 	{
-		client.addHeader("Content-Type", "application/x-www-form-urlencoded");
-		httpCode = client.POST(post_data); //Send the request
+		http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+		httpCode = http.POST(post_data); //Send the request
 	}
 	else
 	{
-		httpCode = client.GET(); //Send the request
+		httpCode = http.GET(); //Send the request
 	}
-	WiFiClient file = client.getStream();  //Get the response payload as Stream
+	WiFiClient file = http.getStream();  //Get the response payload as Stream
 
 	if (!file.available())
 	{
@@ -991,7 +992,7 @@ void Interface::sendFileHTTP()
 	}
 	else
 	{
-		size_t len = client.getSize();
+		size_t len = http.getSize();
 
 		// Get file load address
 		file.readBytes(b, 1);
@@ -1052,7 +1053,7 @@ void Interface::sendFileHTTP()
 			// 	break;
 			// }
         }
-        client.end();
+        http.end();
         Debug_println("");
 		Debug_printf("%d of %d bytes sent\r\n", i, len);
 
