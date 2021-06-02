@@ -4,10 +4,11 @@
 #include <ESP8266WiFi.h>
 #endif
 
-//#include <FS.h>
+#include <FS.h>
 
-#include "../filesystem/meat_io.h"
 #include "../../include/global_defines.h"
+
+#include "fs_littlefs.h"
 
 // constants for WebServer
 #define CONTENT_LENGTH_UNKNOWN ((size_t) -1)
@@ -41,12 +42,12 @@ protected:
 	void sendPropResponse(boolean recursing, MFile *curFile);
 	void handleGet(ResourceType resource, bool isGet);
 	void handlePut(ResourceType resource);
-	void handleWriteError(String message, MFile *mFile);
+	void handleWriteError(String message);
 	void handleDirectoryCreate(ResourceType resource);
 	void handleMove(ResourceType resource);
 	void handleDelete(ResourceType resource);
 
-	uint8_t deleteRecursive(const char* path);
+	uint8_t deleteRecursive(String path);
 
 	// Sections are copied from ESP8266Webserver
 	String getMimeType(String path);
@@ -65,7 +66,6 @@ protected:
 	
 	// variables pertaining to current most HTTP request being serviced
 	WiFiServer *server;
-	MFileSystem *m_fileSystem;
 	WiFiClient 	client;
 	String 		method;
 	String 		uri;

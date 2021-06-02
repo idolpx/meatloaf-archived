@@ -3,7 +3,6 @@
 
 #include "meat_io.h"
 #include "../lib/littlefs/lfs.h"
-//#include "MIOException.h"
 #include "../make_unique.h"
 
 /********************************************************
@@ -88,6 +87,8 @@ public:
     LittleFile(String path) : MFile(path) {
         if(!pathValid(path.c_str()))
             m_isNull = true;
+        else
+            m_isNull = false;
     };
 
     bool isFile() override;

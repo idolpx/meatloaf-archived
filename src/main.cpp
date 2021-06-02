@@ -125,7 +125,7 @@ void setup()
 #endif
 
 #if defined(ESP8266)
-	if (!fileSystem->begin() && MFSOwner::mount("/"))
+	if (!fileSystem->begin())
 #elif defined(ESP32) && defined(USE_LITTLEFS)
 	if (!LITTLEFS.begin()) // not sure why pointer is not working
 #else
@@ -140,6 +140,7 @@ void setup()
 	}
 	else
 	{
+		MFSOwner::mount("/");
 		Serial.println("Flash File System started");
 
 		// start the WebDAV server
