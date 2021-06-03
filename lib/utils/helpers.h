@@ -34,4 +34,7 @@ String urldecode(String str);
 String ipToString ( IPAddress ip );
 String formatBytes ( size_t bytes );
 
+String readLine(FS *fileSystem, String filename);
+void readFile(FS *fileSystem, String filename);
+
 #endif

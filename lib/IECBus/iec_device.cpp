@@ -293,6 +293,11 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
 		m_openState = O_DIR;
 	}
+	else if (m_filetype.startsWith(F("URL")))
+	{
+		// Load URL file
+		m_openState = O_URL;
+	}
 	else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
 	{
 		// Mount image file
@@ -303,7 +308,6 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else if (m_filename.startsWith(F("HTTP://")))
 	{
-		uint8_t lpos = 0;
 		URLParser* url = URLParser::parseUrl(m_filename.c_str());
 
 #ifdef DEBUG
@@ -416,7 +420,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_atn_cmd.strLen = 0;
 	}
 
-	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
+	Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
 	Serial.printf("\r\n$IEC: DEVICE[%d] MEDIA[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.media(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
 } // handleATNCmdCodeOpen
@@ -425,6 +429,8 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 {
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
+	String urlFile;
+	URLParser* url;
 
 	Debug_printf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
 
@@ -463,6 +469,23 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 			{
 				sendFile();
 			}
+			break;
+
+		case O_URL:
+			urlFile = String(m_device.path() + m_filename);
+			Debug_printf("\r\nOpening URL: [%s]", urlFile.c_str());
+			m_filename = readLine(m_fileSystem, urlFile);
+			url = URLParser::parseUrl(m_filename.c_str());
+
+			// Mount url
+			Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
+			m_device.partition(0);
+			m_device.url(url->root.c_str());		
+			m_device.path(url->path.c_str());
+			m_filename = url->file.c_str();
+			m_filetype = url->extension.c_str();
+			m_device.image("");
+			sendListingHTTP();
 			break;
 
 		case O_DIR:
@@ -661,6 +684,8 @@ void Interface::sendListing()
 		if (dir.fileSize())
 		{
 			block_cnt = dir.fileSize() / 256;
+			if ( block_cnt < 1)
+				block_cnt = 1;
 
 			uint8_t ext_pos = dir.fileName().lastIndexOf(".") + 1;
 			if (ext_pos && ext_pos != dir.fileName().length())

@@ -65,8 +65,6 @@
 #include "iec_device.h"
 #include "ESPModem.h"
 
-
-
 //void ICACHE_RAM_ATTR isrCheckATN();
 
 //#include "IECBus/Drive.h"

@@ -44,6 +44,7 @@ enum OpenState
 	O_NOTHING,		// Nothing to send / File not found error
 	O_INFO,			// User issued a reload sd card
 	O_FILE,			// A program file is opened
+	O_URL,			// A URL file	
 	O_DIR,			// A listing is requested
 	O_FILE_ERR,		// Incorrect file format opened
 	O_SAVE_REPLACE, // Save-with-replace is requested
