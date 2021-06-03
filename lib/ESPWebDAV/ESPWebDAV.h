@@ -88,6 +88,11 @@
 #endif //ARDUINO_ARCH_ESP32
 #include <StreamString.h>
 
+//#include "meat_io.h"
+#include "fs_littlefs.h"
+#include "../make_unique.h"
+
+
 class ESPWebDAVCore
 {
 public:

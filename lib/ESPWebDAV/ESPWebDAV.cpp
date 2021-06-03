@@ -1092,7 +1092,9 @@ void ESPWebDAVCore::handleDirectoryCreate(ResourceType resource)
             return handleIssue(409, "Conflict");
     }
 
-    if (!gfs->mkdir(uri))
+    auto newDir = std::make_unique<LittleFile>(uri);
+
+    if (!newDir->mkDir())
     {
         // send error
         send("500 Internal Server Error", "text/plain", "Unable to create directory");
