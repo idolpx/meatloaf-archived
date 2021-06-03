@@ -144,7 +144,7 @@ public:
     void sendResult(int resultCode);
     void sendString(String msg);
  //   int checkButton();
-    void connectWiFi();
+    bool connectWiFi();
     void updateLed();
     void disconnectWiFi();
     void setBaudRate(int inSpeed);

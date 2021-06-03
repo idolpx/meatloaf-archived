@@ -223,10 +223,10 @@ void ESPModem::sendString(String msg) {
 //   }
 // }
 
-void ESPModem::connectWiFi() {
+bool ESPModem::connectWiFi() {
   if (ssid == "" || password == "") {
     Serial.println("CONFIGURE SSID AND PASSWORD. TYPE AT? FOR HELP.");
-    return;
+    return false;
   }
 #if defined(ESP32)
   WiFi.begin(ssid.c_str(), password.c_str());
@@ -247,10 +247,12 @@ void ESPModem::connectWiFi() {
     Serial.print("COULD NOT CONNECT TO "); Serial.println(ssid);
     WiFi.disconnect();
     updateLed();
+    return false;
   } else {
     Serial.print("CONNECTED TO "); Serial.println(WiFi.SSID());
     Serial.print("IP ADDRESS: "); Serial.println(WiFi.localIP());
     updateLed();
+    return true;
   }
 }
 
@@ -549,7 +551,10 @@ void ESPModem::start()
 //   }
 
   WiFi.mode(WIFI_STA);
-  connectWiFi();
+
+  int retry = 5;
+
+  do {} while(!connectWiFi() && retry-->0);
 
   if (tcpServerPort > 0)
     tcpServer.begin();
