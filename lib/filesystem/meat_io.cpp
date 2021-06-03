@@ -25,13 +25,23 @@ MFile* MFSOwner::File(String name) {
 
 bool MFSOwner::mount(String name) {
     uint i = 0;
-    Serial.println("MFSOwner::mount");
+    Serial.print("MFSOwner::mount fs:");
+    Serial.print(name);
 
     for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
         if(fs->handles(name)) {
                 Serial.println("MFSOwner found a proper fs");
 
-            return fs->mount();
+            bool ok = fs->mount();
+
+            if(ok)
+                Serial.print("Mounted fs:");
+            else
+                Serial.print("Couldn't mount fs:");
+
+            Serial.print(name);
+
+            return ok;
         }
     }
     return false;
