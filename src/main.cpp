@@ -29,7 +29,6 @@
 //#include <WebDav4WebServer.h>
 
 #include "global_defines.h"
-#include "meat_io.h"
 
 // Setup FileSystem Object
 #if defined(USE_SPIFFS)
@@ -118,8 +117,6 @@ void setup()
 	Serial.printf("\r\n\r\n==============================\r\n");
 	Serial.printf("   %s %s\r\n", PRODUCT_ID, FW_VERSION);
 	Serial.println("------------------------------");
-
-	MFSOwner::mount("/");
 
 	modem.start();
 
