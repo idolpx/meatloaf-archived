@@ -27,6 +27,8 @@
 
 */
 
+#include "ESPWebDAV.h"
+
 #include <FS.h>
 #if defined(ARDUINO_ARCH_ESP8266) || defined(CORE_MOCK)
 #include <ESP8266WiFi.h>
@@ -74,7 +76,7 @@ const char * FileName(const char * path)
 #endif //ARDUINO_ARCH_ESP32
 
 #include <time.h>
-#include <ESPWebDAV.h>
+
 
 // define cal constants
 const char *months[]  = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
