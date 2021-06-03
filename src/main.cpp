@@ -22,7 +22,11 @@
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+//#include <ESP8266WebServer.h>
 #endif
+
+#include <ESPWebDAV.h>
+//#include <WebDav4WebServer.h>
 
 #include "global_defines.h"
 
@@ -60,7 +64,7 @@
 #include "iec.h"
 #include "iec_device.h"
 #include "ESPModem.h"
-#include "ESPWebDAV.h"
+
 
 
 //void ICACHE_RAM_ATTR isrCheckATN();
@@ -71,8 +75,11 @@
 
 //#include "zimodem/zimodem.h"
 
-
+//ESP8266WebServer server(80);
+//ESPWebDAVCore dav;
+WiFiServer tcp(80);
 ESPWebDAV dav;
+
 String statusMessage;
 bool initFailed = false;
 
@@ -142,13 +149,23 @@ void setup()
 		Serial.println("Flash File System started");
 
 		// start the WebDAV server
-		if (!dav.init(SERVER_PORT, fileSystem))
+		tcp.begin();
+		dav.begin(&tcp, fileSystem);
+		dav.setTransferStatusCallback([](const char* name, int percent, bool receive)
 		{
-			Serial.println("ERROR: WebDAV Server failed");
-			initFailed = true;
-		}
-		else
+			Serial.printf("%s: '%s': %d%%\n", receive ? "recv" : "send", name, percent);
+		});
+		//server.addHook(hookWebDAVForWebserver("/.www", dav));
+		//server.begin();
+
+		// if (!dav.init(SERVER_PORT, fileSystem))
+		// {
+		// 	Serial.println("ERROR: WebDAV Server failed");
+		// 	initFailed = true;
+		// }
+		// else
 		{
+			//Serial.println("HTTP server started");
 			Serial.println("WebDAV server started");
 
 			// mDNS INIT
@@ -250,24 +267,26 @@ void setup()
 // ------------------------
 void loop()
 {
-	// ------------------------
-	drive.loop();
-
-	if (dav.isClientWaiting())
-	{
-		if (initFailed)
-			return dav.rejectClient(statusMessage);
-
-		// call handle if server was initialized properly
-		dav.handleClient();
-	}
-
 #if defined(ESP8266)
 	MDNS.update();
 #endif
 
+	// if (dav.isClientWaiting())
+	// {
+	// 	if (initFailed)
+	// 		return dav.rejectClient(statusMessage);
+
+	// 	// call handle if server was initialized properly
+	// 	dav.handleClient();
+	// }
+	//server.handleClient();
+	dav.handleClient();
+
 	//cli.readSerial();
 	modem.service();
+	
+	drive.loop();
+
 }
 
 // void isrCheckATN()
