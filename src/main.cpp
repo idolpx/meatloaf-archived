@@ -140,10 +140,6 @@ void setup()
 	}
 	else
 	{
-<<<<<<< HEAD
-=======
-		MFSOwner::mount("/");
->>>>>>> 52239bfc8d8caa5868138dd3cd23e7a9830b81b6
 		Serial.println("Flash File System started");
 
 		// start the WebDAV server

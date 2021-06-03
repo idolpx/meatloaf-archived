@@ -35,10 +35,7 @@
 
 #include "iec.h"
 #include "device_db.h"
-<<<<<<< HEAD
 #include "URLParser.h"
-=======
->>>>>>> 52239bfc8d8caa5868138dd3cd23e7a9830b81b6
 #include "MemoryInfo.h"
 #include "helpers.h"
 

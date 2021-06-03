@@ -14,10 +14,6 @@
 // 
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
-<<<<<<< HEAD
-=======
-
->>>>>>> 52239bfc8d8caa5868138dd3cd23e7a9830b81b6
 #include "device_db.h"
 
 DeviceDB::DeviceDB(FS* fileSystem)
