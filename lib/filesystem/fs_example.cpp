@@ -1,23 +1,16 @@
-#include "meat_file.h"
+#include "meat_io.h"
 
 void test() {
-    MFile* someFile = MFSOwner::File("meat://c64.meatloaf.cc");
+    std::unique_ptr<MFile> someFile(MFSOwner::File("meat://c64.meatloaf.cc"));
     // do something stupid with it
     if(someFile != nullptr && someFile->isDirectory() && someFile->rewindDirectory()) {
-        MFile* file = someFile->getNextFileInDir();
+        std::unique_ptr<MFile> file(someFile->getNextFileInDir());
         while(file != nullptr) {
-            auto istream = file->inputStream();
+            std::unique_ptr<MIstream> istream(file->inputStream());
             istream->read();
             istream->close();
-            delete file;
-            file = someFile->getNextFileInDir();
-            delete istream;
+            file.reset(someFile->getNextFileInDir());
         };
-
-        if(file != nullptr)
-            delete file;
-
-        delete someFile;
     }
 
 
@@ -26,18 +19,16 @@ void test() {
     // work on MIstream an MFile! And that's also the reason why filesystems have to be 
     // properly ordered in MFSOwner::availableFS
     //
-    MFile* someOtherFile2 = MFSOwner::File("smb://192.168.1.10/warez/cyberpunk.d64"); // a D64File instance
-    MFile* someOtherFile = MFSOwner::File("http://c64net.org/warez/cyberpunk.d64"); // a D64File instance
+    std::unique_ptr<MFile> someOtherFile2(MFSOwner::File("smb://192.168.1.10/warez/cyberpunk.d64")); // a D64File instance
+    std::unique_ptr<MFile> someOtherFile(MFSOwner::File("http://c64net.org/warez/cyberpunk.d64")); // a D64File instance
 
-    MFile* httpFile = MFSOwner::File("http://meatball.c64.org/newfiles/elite.prg"); // a HTTPFile instance
-    MFile* localFile = MFSOwner::File("/downloads/elite.prg"); // a LittleFS instance
+    std::unique_ptr<MFile> httpFile(MFSOwner::File("http://meatball.c64.org/newfiles/elite.prg")); // a HTTPFile instance
+    std::unique_ptr<MFile> localFile(MFSOwner::File("/downloads/elite.prg")); // a LittleFS instance
 
-    MIstream* istream = httpFile->inputStream();
-    MOstream* ostream = localFile->outputStream();
+    std::unique_ptr<MIstream> istream(httpFile->inputStream());
+    std::unique_ptr<MOstream> ostream(localFile->outputStream());
 
     //ostream.write(istream.readBytes(some_buffer, size));
 
-    delete istream;
-    delete ostream;
 }
 

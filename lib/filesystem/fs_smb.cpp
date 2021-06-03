@@ -1,62 +1,57 @@
-#include "fs_smb.h"
+// #include "fs_smb.h"
 
-MFile* SMBFileSystem::create(String path)
-{
-    return new SMBFile(path);
-}
+// MFile* SMBFileSystem::file(String path)
+// {
+//     return new SMBFile(path);
+// }
 
-bool SMBFile::isFile()
-{
+// bool SMBFile::isFile()
+// {
 
-}
+// }
 
-bool SMBFile::isDirectory()
-{
+// bool SMBFile::isDirectory()
+// {
     
-}
+// }
 
-MIstream* SMBFile::inputStream()
-{
-    // return OPENED stream
-}
+// MIstream* SMBFile::inputStream()
+// {
+//     // return OPENED stream
+// }
 
-MOstream* SMBFile::outputStream()
-{
-    // return OPENED stream    
-}
+// MOstream* SMBFile::outputStream()
+// {
+//     // return OPENED stream    
+// }
 
-time_t SMBFile::getLastWrite()
-{
+// time_t SMBFile::getLastWrite()
+// {
     
-}
+// }
 
-time_t SMBFile::getCreationTime()
-{
+// time_t SMBFile::getCreationTime()
+// {
     
-}
+// }
 
-void SMBFile::setTimeCallback(time_t (*cb)(void))
-{
+// void SMBFile::setTimeCallback(time_t (*cb)(void))
+// {
     
-}
+// }
 
-bool SMBFile::rewindDirectory()
-{
+// bool SMBFile::rewindDirectory()
+// {
     
-}
+// }
 
-MFile* SMBFile::getNextFileInDir()
-{
+// MFile* SMBFile::getNextFileInDir()
+// {
     
-}
+// }
 
-bool SMBFile::mkDir()
-{
+// bool SMBFile::mkDir()
+// {
     
-}
-
-bool SMBFile::mkDirs()
-{
-    
-}
+// }
 

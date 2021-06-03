@@ -8,6 +8,8 @@
 
 #include "../../include/global_defines.h"
 
+#include "fs_littlefs.h"
+
 // constants for WebServer
 #define CONTENT_LENGTH_UNKNOWN ((size_t) -1)
 #define CONTENT_LENGTH_NOT_SET ((size_t) -2)
@@ -19,7 +21,7 @@ enum DepthType { DEPTH_NONE, DEPTH_CHILD, DEPTH_ALL };
 
 class ESPWebDAV	{
 public:
-	bool init(uint8_t serverPort, FS* fileSystem);
+	bool init(uint8_t serverPort);
 	bool stop(void);
 	bool isClientWaiting(void);
 	void handleClient(String blank = "");
@@ -37,10 +39,10 @@ protected:
 	void handleUnlock(ResourceType resource);
 	void handlePropPatch(ResourceType resource);
 	void handleProp(ResourceType resource);
-	void sendPropResponse(boolean recursing, File *curFile);
+	void sendPropResponse(boolean recursing, MFile *curFile);
 	void handleGet(ResourceType resource, bool isGet);
 	void handlePut(ResourceType resource);
-	void handleWriteError(String message, File *wFile);
+	void handleWriteError(String message);
 	void handleDirectoryCreate(ResourceType resource);
 	void handleMove(ResourceType resource);
 	void handleDelete(ResourceType resource);
@@ -64,7 +66,6 @@ protected:
 	
 	// variables pertaining to current most HTTP request being serviced
 	WiFiServer *server;
-	FS *m_fileSystem;
 	WiFiClient 	client;
 	String 		method;
 	String 		uri;

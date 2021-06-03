@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include "FS.h"
 
-#define FS_COUNT 2
+#define FS_COUNT 1
 
 /********************************************************
  * Universal streams
@@ -16,14 +16,24 @@ class MStream
 public:
     virtual bool seek(uint32_t pos, SeekMode mode) = 0;
     virtual bool seek(uint32_t pos) = 0;
-    virtual size_t position() const = 0;
+    virtual size_t position() = 0;
     virtual void close() = 0;
     virtual bool open() = 0;
-    virtual ~MStream() = 0;
-    bool isOpen();
-protected:
-    bool m_isOpen;
+    virtual ~MStream() {};
+    virtual bool isOpen() = 0;
 };
+
+// template <class T>
+// class MFileStream: public MStream {
+//     std::unique_ptr<T> file;
+
+// protected:
+//     T* getFile() {
+//         return file.get();
+//     }
+// public:
+//     MFileStream(std::shared_ptr<T> f): file(f) {};
+// };
 
 class MIstream: public MStream {
 public:
@@ -48,7 +58,7 @@ public:
 class MFile {
 public:
     MFile(nullptr_t null) : m_isNull(true) {};
-    MFile(String path) : m_path(path) {};
+    MFile(String path);
     MFile(String path, String name);
     MFile(MFile* path, String name);
 
@@ -67,12 +77,14 @@ public:
     virtual bool rewindDirectory() = 0 ;
     virtual MFile* getNextFileInDir() = 0 ;
     virtual bool mkDir() = 0 ;
-    virtual bool mkDirs() = 0 ;
-
+    virtual bool exists() = 0;
+    virtual size_t size() = 0;
+    virtual bool remove() = 0;
+    virtual bool truncate(size_t size) = 0;
+    virtual bool rename(const char* dest) = 0;
+    virtual ~MFile() {};
 protected:
     String m_path;
-
-private:
     bool m_isNull;
 };
 
@@ -82,13 +94,19 @@ private:
  ********************************************************/
 
 class MFileSystem {
-protected:
-    char* m_prefix;
-
 public:
     MFileSystem(char* prefix);
-    bool services(String name);
-    virtual MFile* create(String path) = 0;
+    bool handles(String path);
+    virtual bool mount() = 0;
+    virtual bool umount() = 0;
+    virtual MFile* getFile(String path) = 0;
+    bool isMounted() {
+        return m_isMounted;
+    }
+
+protected:
+    char* protocol;
+    bool m_isMounted;
 };
 
 
@@ -101,6 +119,8 @@ class MFSOwner {
 
 public:
     static MFile* File(String name);
+    static bool mount(String name);
+    static bool umount(String name);
 };
 
 #endif

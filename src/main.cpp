@@ -25,6 +25,7 @@
 #endif
 
 #include "global_defines.h"
+#include "meat_io.h"
 
 // Setup FileSystem Object
 #if defined(USE_SPIFFS)
@@ -139,10 +140,14 @@ void setup()
 	}
 	else
 	{
+<<<<<<< HEAD
+=======
+		MFSOwner::mount("/");
+>>>>>>> 52239bfc8d8caa5868138dd3cd23e7a9830b81b6
 		Serial.println("Flash File System started");
 
 		// start the WebDAV server
-		if (!dav.init(SERVER_PORT, fileSystem))
+		if (!dav.init(SERVER_PORT))
 		{
 			Serial.println("ERROR: WebDAV Server failed");
 			initFailed = true;
