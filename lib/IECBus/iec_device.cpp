@@ -308,7 +308,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else if (m_filename.startsWith(F("HTTP://")))
 	{
-		URLParser* url = URLParser::parseUrl(m_filename.c_str());
+		EdUrlParser* url = EdUrlParser::parseUrl(m_filename.c_str());
 
 #ifdef DEBUG
 		Serial.printf("\r\nURL: [%s]\r\n", url->url.c_str());
@@ -317,10 +317,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Serial.printf("Scheme: [%s]\r\n", url->scheme.c_str());
 		Serial.printf("Username: [%s]\r\n", url->username.c_str());
 		Serial.printf("Password: [%s]\r\n", url->password.c_str());
-		Serial.printf("Host: [%s]\r\n", url->host.c_str());
+		Serial.printf("Host: [%s]\r\n", url->hostname.c_str());
 		Serial.printf("Port: [%s]\r\n", url->port.c_str());
 		Serial.printf("Path: [%s]\r\n", url->path.c_str());
-		Serial.printf("File: [%s]\r\n", url->file.c_str());
+		Serial.printf("File: [%s]\r\n", url->filename.c_str());
 		Serial.printf("Extension: [%s]\r\n", url->extension.c_str());
 		Serial.printf("Query: [%s]\r\n", url->query.c_str());
 		Serial.printf("Fragment: [%s]\r\n", url->fragment.c_str());
@@ -331,7 +331,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_device.partition(0);
 		m_device.url(url->root.c_str());		
 		m_device.path(url->path.c_str());
-		m_filename = url->file.c_str();
+		m_filename = url->filename.c_str();
 		m_filetype = url->extension.c_str();
 		m_device.image("");
 
@@ -430,7 +430,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
 	String urlFile;
-	URLParser* url;
+	EdUrlParser* url;
 
 	Debug_printf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
 
@@ -475,14 +475,14 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 			urlFile = String(m_device.path() + m_filename);
 			Debug_printf("\r\nOpening URL: [%s]", urlFile.c_str());
 			m_filename = readLine(m_fileSystem, urlFile);
-			url = URLParser::parseUrl(m_filename.c_str());
+			url = EdUrlParser::parseUrl(m_filename.c_str());
 
 			// Mount url
 			Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 			m_device.partition(0);
 			m_device.url(url->root.c_str());		
 			m_device.path(url->path.c_str());
-			m_filename = url->file.c_str();
+			m_filename = url->filename.c_str();
 			m_filetype = url->extension.c_str();
 			m_device.image("");
 			sendListingHTTP();

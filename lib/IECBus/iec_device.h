@@ -35,7 +35,7 @@
 
 #include "iec.h"
 #include "device_db.h"
-#include "URLParser.h"
+#include "EdUrlParser.h"
 #include "MemoryInfo.h"
 #include "helpers.h"
 
