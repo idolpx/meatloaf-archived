@@ -304,14 +304,31 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	else if (m_filename.startsWith(F("HTTP://")))
 	{
 		uint8_t lpos = 0;
+		URLParser* url = URLParser::parseUrl(m_filename.c_str());
+
+#ifdef DEBUG
+		Serial.printf("\r\nURL: [%s]\r\n", url->url.c_str());
+		Serial.printf("Root: [%s]\r\n", url->root.c_str());
+		Serial.printf("Base: [%s]\r\n", url->base.c_str());
+		Serial.printf("Scheme: [%s]\r\n", url->scheme.c_str());
+		Serial.printf("Username: [%s]\r\n", url->username.c_str());
+		Serial.printf("Password: [%s]\r\n", url->password.c_str());
+		Serial.printf("Host: [%s]\r\n", url->host.c_str());
+		Serial.printf("Port: [%s]\r\n", url->port.c_str());
+		Serial.printf("Path: [%s]\r\n", url->path.c_str());
+		Serial.printf("File: [%s]\r\n", url->file.c_str());
+		Serial.printf("Extension: [%s]\r\n", url->extension.c_str());
+		Serial.printf("Query: [%s]\r\n", url->query.c_str());
+		Serial.printf("Fragment: [%s]\r\n", url->fragment.c_str());
+#endif
 
 		// Mount url
 		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.partition(0);
-		lpos = m_filename.indexOf("/", 7);
-		m_device.url(m_filename.substring(0, lpos).c_str());
-		m_device.path(m_filename.substring(lpos, m_filename.lastIndexOf("/") + 1).c_str());
-		m_filename = m_filename.substring(m_filename.lastIndexOf("/") + 1);
+		m_device.url(url->root.c_str());		
+		m_device.path(url->path.c_str());
+		m_filename = url->file.c_str();
+		m_filetype = url->extension.c_str();
 		m_device.image("");
 
 		m_openState = O_DIR;
@@ -584,7 +601,6 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr)
 	uint16_t byte_count;
 
 	// Send List HEADER
-	// "      MEAT LOAF 64      "
 	byte space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
 	byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 
@@ -626,9 +642,6 @@ void Interface::sendListing()
 	byte_count += sendHeader(basicPtr);
 
 	// Send List ITEMS
-	//byte_count += sendLine(basicPtr, 1, "\"THIS IS A FILE\"     PRG");
-	//byte_count += sendLine(basicPtr, 5, "\"THIS IS A FILE 2\"   PRG");
-
 	Dir dir = m_fileSystem->openDir(m_device.path());
 	while (dir.next())
 	{
@@ -725,7 +738,6 @@ void Interface::sendFile()
 		}
 		else
 		{
-
 			Dir dir = m_fileSystem->openDir(m_device.path());
 			while (dir.next() && dir.isDirectory())
 			{
@@ -912,6 +924,7 @@ void Interface::sendListingHTTP()
 
 		byte_count += sendLine(basicPtr, m_jsonHTTP["blocks"], "%s", urldecode(m_jsonHTTP["line"].as<String>()).c_str());
 		ledToggle(true);
+
 		m_lineBuffer = payload.readStringUntil('\n');
 		//Serial.printf("\r\nlinebuffer: %d %s", m_lineBuffer.length(), m_lineBuffer.c_str());
 	} while (m_lineBuffer.length() > 1);
