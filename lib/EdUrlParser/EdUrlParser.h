@@ -50,12 +50,14 @@ class EdUrlParser
 {
 private:
     EdUrlParser();
-    ~EdUrlParser();
+
 
     void parse();
     void string_toupper(std::string &s);
 
 public:
+    virtual ~EdUrlParser();
+
     void parsePath(string pathstr);
     static int parsePath(vector<string>* folders, string pathstr);
     static EdUrlParser* parseUrl(string urlstr);

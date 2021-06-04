@@ -351,11 +351,11 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			m_openState = O_DIR;
 		}
 	}
-	else if (m_filetype.startsWith(F("URL")))
+	else if (m_filetype.startsWith(F("URL")) && m_filetype.length() > 0)
 	{
 		// Load URL file
 		m_openState = O_URL;
-	}	
+	}
 	else if (m_filename.startsWith(F("HTTP://")))
 	{
 		EdUrlParser* url = EdUrlParser::parseUrl(m_filename.c_str());
@@ -385,6 +385,9 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_filetype = url->extension.c_str();
 		m_device.archive("");
 		m_device.image("");
+
+		if (url != NULL)
+			delete url;
 
 		m_openState = O_DIR;
 		if (m_filename.length())
@@ -432,7 +435,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_atn_cmd.strLen = 0;
 	}
 
-	Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
+	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
 	Serial.printf("\r\n$IEC: DEVICE[%d] MEDIA[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.media(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
 } // handleATNCmdCodeOpen
@@ -484,22 +487,25 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 			break;
 
 		case O_URL:
-			urlFile = String(m_device.path() + m_filename);
-			Debug_printf("\r\nOpening URL: [%s]", urlFile.c_str());
-			m_filename = readLine(m_fileSystem, urlFile);
-			url = EdUrlParser::parseUrl(m_filename.c_str());
+			// urlFile = String(m_device.path() + m_filename);
+			// Debug_printf("\r\nOpening URL: [%s]", urlFile.c_str());
+			// m_filename = readLine(m_fileSystem, urlFile);
+			// url = EdUrlParser::parseUrl(m_filename.c_str());
 
-			// Mount url
-			Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-			m_device.partition(0);
-			m_device.url(url->root.c_str());		
-			m_device.path(url->path.c_str());
-			m_filename = url->filename.c_str();
-			m_filetype = url->extension.c_str();
-			m_device.archive("");
-			m_device.image("");
-			sendListingHTTP();
-			break;
+			// // Mount url
+			// Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
+			// m_device.partition(0);
+			// m_device.url(url->root.c_str());		
+			// m_device.path(url->path.c_str());
+			// m_filename = url->filename.c_str();
+			// m_filetype = url->extension.c_str();
+			// m_device.archive("");
+			// m_device.image("");
+			// sendListingHTTP();
+
+			// if (url != NULL)
+			// 	delete url;
+		 	break;
 
 		case O_DIR:
 			// Send listing
@@ -770,9 +776,9 @@ void Interface::sendFile()
 	{
 		m_filename = "";
 
-		if (m_device.path() == "/" && m_device.image().length() == 0)
+		if (m_device.path() == "/" && m_device.archive().length() == 0 && m_device.image().length() == 0)
 		{
-			m_filename = "FB64";
+			m_filename = ".sys/fb64";
 		}
 		else
 		{
@@ -820,14 +826,14 @@ void Interface::sendFile()
 					load_address += 8;
 				}
 #endif
-			if (i == len - 1)
-			{
-				success = m_iec.sendEOI(b[0]); // indicate end of file.
-			}
-			else
-			{
-				success = m_iec.send(b[0]);
-			}
+				if (i == len - 1)
+				{
+					success = m_iec.sendEOI(b[0]); // indicate end of file.
+				}
+				else
+				{
+					success = m_iec.send(b[0]);
+				}
 
 #ifdef DATA_STREAM
 			// Show ASCII Data
@@ -837,16 +843,16 @@ void Interface::sendFile()
 				ba[bi++] = b[0];
 
 				if(bi == 8)
-			{
+				{
 				size_t t = (i * 100) / len;
 					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
 				bi = 0;
-			}
+				}
 #endif
-			// Toggle LED
-			if (i % 50 == 0)
+				// Toggle LED
+				if (i % 50 == 0)
 				{
-				ledToggle(true);
+					ledToggle(true);
 				}
 			}
 
