@@ -52,6 +52,8 @@ public:
     void url(String url);
     String path();
     void path(String path);
+    String archive();
+    void archive(String archive);
     String image();
     void image(String image);
 

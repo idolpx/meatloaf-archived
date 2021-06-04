@@ -29,7 +29,6 @@
 //#include <WebDav4WebServer.h>
 
 #include "global_defines.h"
-#include "meat_io.h"
 
 // Setup FileSystem Object
 #if defined(USE_SPIFFS)
@@ -65,8 +64,6 @@
 #include "iec.h"
 #include "iec_device.h"
 #include "ESPModem.h"
-
-
 
 //void ICACHE_RAM_ATTR isrCheckATN();
 
@@ -108,9 +105,6 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 //String state_string;
 
 // ------------------------
-
-void testLittleFS();
-
 void setup()
 {
 	delay(1000);
@@ -121,8 +115,6 @@ void setup()
 	Serial.printf("\r\n\r\n==============================\r\n");
 	Serial.printf("   %s %s\r\n", PRODUCT_ID, FW_VERSION);
 	Serial.println("------------------------------");
-
-	MFSOwner::mount("/");
 
 	modem.start();
 
@@ -206,8 +198,6 @@ void setup()
 			}
 		}
 		Serial.println("]");
-
-		testLittleFS();
 
 		// // Set initial d64 image
 		// Dir disk = fileSystem->openDir("/UTILS/FB64.d64");

@@ -28,13 +28,14 @@
 */
 
 #include <ESPWebDAV.h>
+
 #include <FS.h>
 #if defined(ARDUINO_ARCH_ESP8266) || defined(CORE_MOCK)
 #include <ESP8266WiFi.h>
 #include <coredecls.h> // crc32()
 #include <PolledTimeout.h>
 #define FILENAME(f) f.fileName().c_str()
-#define FILEFULLNAME(f) f->path()
+#define FILEFULLNAME(f) f.fullName()
 #define FILESIZE(f) f.fileSize()
 #define FILETIME(f) f.fileTime()
 #define GETCREATIONTIME(f) f.getCreationTime()
@@ -75,6 +76,7 @@ const char * FileName(const char * path)
 #endif //ARDUINO_ARCH_ESP32
 
 #include <time.h>
+
 
 // define cal constants
 const char *months[]  = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -333,7 +335,7 @@ bool ESPWebDAVCore::getPayload(StreamString& payload)
 
 bool ESPWebDAVCore::dirAction(const String& path,
                               bool recursive,
-                              const std::function<bool(int depth, const String& parent, MFile* entry)>& cb,
+                              const std::function<bool(int depth, const String& parent, Dir& entry)>& cb,
                               bool callAfter,
                               int depth)
 {
@@ -443,18 +445,14 @@ void ESPWebDAVCore::handleRequest()
             depth = DEPTH_ALL;
         DBG_PRINT("Depth: %d", depth);
     }
-    //File file;
-
-    auto file = std::make_unique<LittleFile>(uri);
-
-
-    if (file != nullptr || (uri == "/"))
+    File file;
+    if (gfs->exists(uri) || (uri == "/"))
     {
         // does uri refer to a file or directory or a null?
-        //file = gfs->open(uri, "r");
+        file = gfs->open(uri, "r");
         if (file)
         {
-            resource = file->isDirectory() ? RESOURCE_DIR : RESOURCE_FILE;
+            resource = file.isDirectory() ? RESOURCE_DIR : RESOURCE_FILE;
             DBG_PRINT("resource: '%s' is %s", uri.c_str(), resource == RESOURCE_DIR ? "dir" : "file");
         }
         else
@@ -493,13 +491,13 @@ void ESPWebDAVCore::handleRequest()
 
     // handle properties
     if (method.equals("PROPFIND"))
-        return handleProp(resource, file.get());
+        return handleProp(resource, file);
 
     if (method.equals("GET"))
-        return handleGet(resource, file.get(), true);
+        return handleGet(resource, file, true);
 
     if (method.equals("HEAD"))
-        return handleGet(resource, file.get(), false);
+        return handleGet(resource, file, false);
 
     // handle options
     if (method.equals("OPTIONS"))
@@ -515,7 +513,7 @@ void ESPWebDAVCore::handleRequest()
 #endif
 
     if (method.equals("PROPPATCH"))
-        return handlePropPatch(resource, file.get());
+        return handlePropPatch(resource, file);
 
     // directory creation
     if (method.equals("MKCOL"))
@@ -523,7 +521,7 @@ void ESPWebDAVCore::handleRequest()
 
     // move a file or directory
     if (method.equals("MOVE"))
-        return handleMove(resource, file.get());
+        return handleMove(resource, file);
 
     // delete a file or directory
     if (method.equals("DELETE"))
@@ -531,7 +529,7 @@ void ESPWebDAVCore::handleRequest()
 
     // delete a file or directory
     if (method.equals("COPY"))
-        return handleCopy(resource, file.get());
+        return handleCopy(resource, file);
 
     // if reached here, means its a unhandled
     handleIssue(404, "Not found");
@@ -689,14 +687,14 @@ void ESPWebDAVCore::handleUnlock(ResourceType resource)
 #endif // WEBDAV_LOCK_SUPPORT
 
 
-void ESPWebDAVCore::handlePropPatch(ResourceType resource, LittleFile* file)
+void ESPWebDAVCore::handlePropPatch(ResourceType resource, File& file)
 {
     DBG_PRINT("PROPPATCH forwarding to PROPFIND");
     handleProp(resource, file);
 }
 
 
-void ESPWebDAVCore::handleProp(ResourceType resource, LittleFile* file)
+void ESPWebDAVCore::handleProp(ResourceType resource, File& file)
 {
     DBG_PRINT("Processing PROPFIND");
     auto v = isVirtual(uri);
@@ -721,10 +719,10 @@ void ESPWebDAVCore::handleProp(ResourceType resource, LittleFile* file)
         // virtual file
         sendPropResponse(false, uri.c_str(), 1024, time(nullptr), 0);
     }
-    else if (!file->isDirectory() || depth == DEPTH_NONE)
+    else if (ISFILE(file) || depth == DEPTH_NONE)
     {
         DBG_PRINT("----- PROP FILE '%s':", uri.c_str());
-        sendPropResponse(file->isDirectory(), uri.c_str(), file->size(), file->getLastWrite(), file->getCreationTime());
+        sendPropResponse(file.isDirectory(), uri.c_str(), file.size(), file.getLastWrite(), GETCREATIONTIME(file));
     }
     else
     {
@@ -848,7 +846,7 @@ void ESPWebDAVCore::sendPropResponse(bool isDir, const String& fullResPath, size
 }
 
 
-void ESPWebDAVCore::handleGet(ResourceType resource, LittleFile* file, bool isGet)
+void ESPWebDAVCore::handleGet(ResourceType resource, File& file, bool isGet)
 {
     DBG_PRINT("Processing GET (ressource=%d)", (int)resource);
     auto v = isVirtual(uri);
@@ -863,7 +861,7 @@ void ESPWebDAVCore::handleGet(ResourceType resource, LittleFile* file, bool isGe
     long tStart = millis();
 #endif
 
-    size_t fileSize = file->size();
+    size_t fileSize = file.size();
     String contentType = contentTypeFn(uri);
     if (uri.endsWith(".gz") && contentType != "application/x-gzip" && contentType != "application/octet-stream")
         sendHeader("Content-Encoding", "gzip");
@@ -911,34 +909,32 @@ void ESPWebDAVCore::handleGet(ResourceType resource, LittleFile* file, bool isGe
         send("206 Partial Content", contentType.c_str(), "");
     }
 
-    std::unique_ptr<MIstream> istream(file->inputStream());
-
-    if (isGet && (internal.length() || istream->seek(_rangeStart, SeekSet)))
+    if (isGet && (internal.length() || file.seek(_rangeStart, SeekSet)))
     {
         DBG_PRINT("GET: (%d bytes, chunked=%d, remain=%d)", remaining, chunked, remaining);
 
         if (internal.length())
         {
             if (transferStatusFn)
-                transferStatusFn(file->name(), (100 * _rangeStart) / fileSize, false);
+                transferStatusFn(file.name(), (100 * _rangeStart) / fileSize, false);
             if ((chunked && !sendContent(&internal.c_str()[_rangeStart], remaining))
                     || (!chunked && client->write(&internal.c_str()[_rangeStart], remaining) != (size_t)remaining))
             {
                 DBG_PRINT("file->net short transfer");
             }
             else if (transferStatusFn)
-                transferStatusFn(file->name(), (100 * (_rangeStart + remaining)) / fileSize, false);
+                transferStatusFn(file.name(), (100 * (_rangeStart + remaining)) / fileSize, false);
         }
         else
         {
             if (transferStatusFn)
-                transferStatusFn(file->name(), 0, false);
+                transferStatusFn(file.name(), 0, false);
             int percent = 0;
 
-            while (remaining > 0 && istream->available())
+            while (remaining > 0 && file.available())
             {
                 size_t toRead = (size_t)remaining > sizeof(buf) ? sizeof(buf) : remaining;
-                size_t numRead = istream->read((uint8_t*)buf, toRead);
+                size_t numRead = file.read((uint8_t*)buf, toRead);
                 DBG_PRINT("read %d bytes from file", (int)numRead);
 
                 if ((chunked && !sendContent(buf, numRead))
@@ -958,10 +954,10 @@ void ESPWebDAVCore::handleGet(ResourceType resource, LittleFile* file, bool isGe
                 remaining -= numRead;
                 if (transferStatusFn)
                 {
-                    int p = (100 * (file->size() - remaining)) / file->size();
+                    int p = (100 * (file.size() - remaining)) / file.size();
                     if (p != percent)
                     {
-                        transferStatusFn(file->name(), percent = p, false);
+                        transferStatusFn(file.name(), percent = p, false);
                     }
                 }
                 DBG_PRINT("wrote %d bytes to http client", (int)numRead);
@@ -985,16 +981,20 @@ void ESPWebDAVCore::handlePut(ResourceType resource)
     if ((code = allowed(uri)) != 200)
         return handleIssue(code, "Lock error");
 
-    //File file;
+    File file;
     stripName(uri);
-    auto file = std::make_unique<LittleFile>(uri);
     DBG_PRINT("create file '%s'", uri.c_str());
-
-    std::unique_ptr<MOstream> ostream(file->outputStream());
-
-    if(!ostream->isOpen())
+#if defined(ARDUINO_ARCH_ESP8266) || defined(CORE_MOCK)
+    if (!(file = gfs->open(uri, "w")))
+#endif //ARDUINO_ARCH_ESP8266
+#if defined(ARDUINO_ARCH_ESP32)
+        String s = uri;
+    if (uri[0] != '/')s = "/" + uri;
+    DBG_PRINT("Create file %s", s.c_str());
+    if (!(file = gfs->open(s, "w")))
+#endif //ARDUINO_ARCH_ESP32
     {
-        return handleWriteError("Unable to create a new file", file.get(), ostream.get());
+        return handleWriteError("Unable to create a new file", file);
     }
 
     // file is created/open for writing at this point
@@ -1010,7 +1010,7 @@ void ESPWebDAVCore::handlePut(ResourceType resource)
         size_t numRemaining = contentLengthHeader;
 
         if (transferStatusFn)
-            transferStatusFn(file->name(), 0, true);
+            transferStatusFn(file.name(), 0, true);
         int percent = 0;
 
         // read data from stream and write to the file
@@ -1026,11 +1026,11 @@ void ESPWebDAVCore::handlePut(ResourceType resource)
             size_t written = 0;
             while (written < numRead)
             {
-                auto numWrite = ostream->write(buf + written, numRead - written);
+                auto numWrite = file.write(buf + written, numRead - written);
                 if (numWrite == 0 || (int)numWrite == -1)
                 {
                     DBG_PRINT("error: numread=%d write=%d written=%d", (int)numRead, (int)numWrite, (int)written);
-                    return handleWriteError("Write data failed", file.get(), ostream.get());
+                    return handleWriteError("Write data failed", file);
                 }
                 written += numWrite;
             }
@@ -1042,14 +1042,14 @@ void ESPWebDAVCore::handlePut(ResourceType resource)
                 int p = (100 * (contentLengthHeader - numRemaining)) / contentLengthHeader;
                 if (p != percent)
                 {
-                    transferStatusFn(file->name(), percent = p, true);
+                    transferStatusFn(file.name(), percent = p, true);
                 }
             }
         }
 
         // detect timeout condition
         if (numRemaining)
-            return handleWriteError("Timed out waiting for data", file.get(), ostream.get());
+            return handleWriteError("Timed out waiting for data", file);
 
         DBG_PRINT("File %d  bytes stored in: %d sec", (contentLengthHeader - numRemaining), ((millis() - tStart) / 1000));
     }
@@ -1063,12 +1063,12 @@ void ESPWebDAVCore::handlePut(ResourceType resource)
 }
 
 
-void ESPWebDAVCore::handleWriteError(const String& message, LittleFile* file, MOstream* ostream)
+void ESPWebDAVCore::handleWriteError(const String& message, File& file)
 {
     // close this file
-    ostream->close();
+    file.close();
     // delete the wrile being written
-    file->remove();
+    gfs->remove(uri);
     // send error
     send("500 Internal Server Error", "text/plain", message);
     DBG_PRINT("%s", message.c_str());
@@ -1094,9 +1094,7 @@ void ESPWebDAVCore::handleDirectoryCreate(ResourceType resource)
             return handleIssue(409, "Conflict");
     }
 
-    auto newDir = std::make_unique<LittleFile>(uri);
-
-    if (!newDir->mkDir())
+    if (!gfs->mkdir(uri))
     {
         // send error
         send("500 Internal Server Error", "text/plain", "Unable to create directory");
@@ -1121,7 +1119,7 @@ String ESPWebDAVCore::urlToUri(const String& url)
 }
 
 
-void ESPWebDAVCore::handleMove(ResourceType resource, LittleFile* src)
+void ESPWebDAVCore::handleMove(ResourceType resource, File& src)
 {
     const char* successCode = "201 Created";
 
@@ -1149,7 +1147,7 @@ void ESPWebDAVCore::handleMove(ResourceType resource, LittleFile* src)
     if (destFile && !ISFILE(destFile))
     {
         dest += '/';
-        dest += src->name();
+        dest += src.name();
         stripSlashes(dest);
         stripName(dest);
         destFile.close();
@@ -1172,6 +1170,8 @@ void ESPWebDAVCore::handleMove(ResourceType resource, LittleFile* src)
             gfs->remove(dest);
         }
     }
+
+    src.close();
 
     DBG_PRINT("finally rename '%s' -> '%s'", uri.c_str(), dest.c_str());
 
@@ -1268,53 +1268,46 @@ void ESPWebDAVCore::handleDelete(ResourceType resource)
 }
 
 
-bool ESPWebDAVCore::copyFile(MFile* srcFile, const String& destName)
+bool ESPWebDAVCore::copyFile(File srcFile, const String& destName)
 {
-    //MFile dest;
-
-    auto dest = std::make_unique<LittleFile>(destName);
-
-//     if (overwrite.equalsIgnoreCase("F"))
-//     {
-//         dest = gfs->open(destName, "r");
-//         if (dest)
-//         {
-//             DBG_PRINT("copy dest '%s' already exists and overwrite is false", destName.c_str());
-//             handleIssue(412, "Precondition Failed");
-//             return false;
-//         }
-//     }
-// #if defined(ARDUINO_ARCH_ESP8266) || defined(CORE_MOCK)
-//     dest = gfs->open(destName, "w");
-// #endif //ARDUINO_ARCH_ESP8266
-// #if defined(ARDUINO_ARCH_ESP32)
-//     String s = destName;
-//     if (destName[0] != '/')s = "/" + destName;
-//     dest = gfs->open(s, "w");
-//     DBG_PRINT("Create file %s", s.c_str());
-// #endif //ARDUINO_ARCH_ESP32
-
-    std::unique_ptr<MIstream> srcStream(srcFile->inputStream());
-    std::unique_ptr<MOstream> dstStream(dest->outputStream());
-
-    if (!dstStream->isOpen())
+    File dest;
+    if (overwrite.equalsIgnoreCase("F"))
+    {
+        dest = gfs->open(destName, "r");
+        if (dest)
+        {
+            DBG_PRINT("copy dest '%s' already exists and overwrite is false", destName.c_str());
+            handleIssue(412, "Precondition Failed");
+            return false;
+        }
+    }
+#if defined(ARDUINO_ARCH_ESP8266) || defined(CORE_MOCK)
+    dest = gfs->open(destName, "w");
+#endif //ARDUINO_ARCH_ESP8266
+#if defined(ARDUINO_ARCH_ESP32)
+    String s = destName;
+    if (destName[0] != '/')s = "/" + destName;
+    dest = gfs->open(s, "w");
+    DBG_PRINT("Create file %s", s.c_str());
+#endif //ARDUINO_ARCH_ESP32
+    if (!dest)
     {
         handleIssue(413, "Request Entity Too Large");
         return false;
     }
-    while (srcStream->available())
+    while (srcFile.available())
     {
         ///XXX USE STREAMTO
         yield();
         char cp[128];
-        int nb = srcStream->read((uint8_t*)cp, sizeof(cp));
+        int nb = srcFile.read((uint8_t*)cp, sizeof(cp));
         if (!nb)
         {
             DBG_PRINT("copy: short read");
             handleIssue(500, "Internal Server Error");
             return false;
         }
-        int wr = dstStream->write((const uint8_t*)cp, nb);
+        int wr = dest.write((const uint8_t*)cp, nb);
         if (wr != nb)
         {
             DBG_PRINT("copy: short write wr=%d != rd=%d", (int)wr, (int)nb);
@@ -1322,12 +1315,12 @@ bool ESPWebDAVCore::copyFile(MFile* srcFile, const String& destName)
             return false;
         }
     }
-    dstStream->close();
+    dest.close();
     return true;
 }
 
 
-void ESPWebDAVCore::handleCopy(ResourceType resource, LittleFile* src)
+void ESPWebDAVCore::handleCopy(ResourceType resource, File& src)
 {
     const char* successCode = "201 Created";
 
@@ -1353,7 +1346,7 @@ void ESPWebDAVCore::handleCopy(ResourceType resource, LittleFile* src)
         if (destPath[destPath.length() - 1] == '/')
         {
             // add file name
-            destPath += src->name();
+            destPath += src.name();
             successCode = "204 No Content"; // COPY to existing resource should give 204 (RFC2518:S8.8.5)
         }
         else
@@ -1377,7 +1370,7 @@ void ESPWebDAVCore::handleCopy(ResourceType resource, LittleFile* src)
         return handleIssue(code, "Locked");
 
     // copy directory
-    if (src->isDirectory())
+    if (src.isDirectory())
     {
         DBG_PRINT("Source is directory");
         if (ISFILE(destParent))
@@ -1394,8 +1387,7 @@ void ESPWebDAVCore::handleCopy(ResourceType resource, LittleFile* src)
             destNameX += FILENAME(source);
             stripName(destNameX);
             DBG_PRINT("COPY: '%s' -> '%s", FILENAME(source), destNameX.c_str());
-            auto srcFile = std::make_unique<LittleFile>(source);
-            return copyFile(srcFile.get(), destNameX);
+            return copyFile(gfs->open(FILENAME(source), "r"), destNameX);
         }))
         {
             return; // handleIssue already called by failed copyFile() handleIssue(409, "Conflict");

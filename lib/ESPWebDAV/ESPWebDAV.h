@@ -88,11 +88,6 @@
 #endif //ARDUINO_ARCH_ESP32
 #include <StreamString.h>
 
-//#include "meat_io.h"
-#include "fs_littlefs.h"
-#include "../make_unique.h"
-
-
 class ESPWebDAVCore
 {
 public:
@@ -122,7 +117,7 @@ public:
     bool dirAction(
         const String& path,
         bool recursive,
-        const std::function<bool(int depth, const String& parent, MFile* entry)>& cb,
+        const std::function<bool(int depth, const String& parent, Dir& entry)>& cb,
         bool callAfter = true,
         int depth = 0);
 
@@ -151,7 +146,7 @@ protected:
 
     typedef void (ESPWebDAVCore::*THandlerFunction)(const String&);
 
-    bool copyFile(MFile* file, const String& destName);
+    bool copyFile(File file, const String& destName);
     bool deleteDir(const String& dir);
     bool mkFullDir(String fullDir);
 
@@ -162,15 +157,15 @@ protected:
     void handleOptions(ResourceType resource);
     void handleLock(ResourceType resource);
     void handleUnlock(ResourceType resource);
-    void handlePropPatch(ResourceType resource, LittleFile* file);
-    void handleProp(ResourceType resource, LittleFile* file);
-    void handleGet(ResourceType resource, LittleFile* file, bool isGet);
+    void handlePropPatch(ResourceType resource, File& file);
+    void handleProp(ResourceType resource, File& file);
+    void handleGet(ResourceType resource, File& file, bool isGet);
     void handlePut(ResourceType resource);
-    void handleWriteError(const String& message, LittleFile* wFile, MOstream *ostream);
+    void handleWriteError(const String& message, File& wFile);
     void handleDirectoryCreate(ResourceType resource);
-    void handleMove(ResourceType resource, LittleFile* file);
+    void handleMove(ResourceType resource, File& file);
     void handleDelete(ResourceType resource);
-    void handleCopy(ResourceType resource, LittleFile* file);
+    void handleCopy(ResourceType resource, File& file);
 
     void sendPropResponse(bool isDir, const String& name, size_t size, time_t lastWrite, time_t creationTime);
     void sendContentProp(const String& what, const String& response);
