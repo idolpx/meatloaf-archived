@@ -371,25 +371,34 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		}
 		else if (m_filename.length() > 3)
 		{
-			// Switch to root
-			if (m_filename.startsWith(F("CD//")))
+			uint8_t pos = 0;
+			if (m_filename.startsWith(F("CD//"))) // Switch to local/server root
 			{
+				pos = 4;
 				m_device.path("");
 				m_device.image("");
+				if (m_filename.startsWith(F("CD///"))) // Switch to local root
+				{
+					pos = 5;
+					m_device.url("");
+				}
 			}
-
-			if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
-			{
-				// Mount image file
-				//Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-				m_device.image(m_filename.substring(3));
-			}
-			else
+			else if (m_filename.startsWith(F("CD:")))
 			{
 				// Enter directory
 				//Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
-				m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
+				pos = 3;
+				
 			}
+
+			// if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
+			// {
+			// 	// Mount image file
+			// 	//Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
+			// 	m_device.image(m_filename.substring(3));
+			// }
+
+			m_device.path(m_device.path() + m_filename.substring(pos) + F("/"));
 		}
 
 		if (atn_cmd.channel == 0x00)
