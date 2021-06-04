@@ -66,10 +66,10 @@ MFileSystem::MFileSystem(char* prefix)
     protocol = prefix;
 }
 
-bool MFileSystem::handles(String path) 
-{
-    return path.startsWith(protocol);
-}
+// bool MFileSystem::handles(String path) 
+// {
+//     return path.startsWith(protocol);
+// }
 
 /********************************************************
  * MFile implementations

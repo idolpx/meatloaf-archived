@@ -81,7 +81,7 @@ protected:
 class MFileSystem {
 public:
     MFileSystem(char* prefix);
-    bool handles(String path);
+    virtual bool handles(String path) = 0;
     virtual bool mount() = 0;
     virtual bool umount() = 0;
     virtual MFile* getFile(String path) = 0;

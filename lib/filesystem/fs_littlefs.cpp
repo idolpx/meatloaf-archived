@@ -10,6 +10,8 @@ lfs_t LittleFileSystem::lfsStruct;
 
 bool LittleFileSystem::handles(String path) 
 {
+    Serial.println("FSTEST: shecking if littlefs handles this");
+
     return true; // fallback fs, so it must be last on FS list
 }
 
