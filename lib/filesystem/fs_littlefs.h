@@ -48,6 +48,8 @@ public:
         umount();
     }
 
+    bool handles(String path);
+
     static lfs_t lfsStruct;
 
 private:
@@ -133,11 +135,11 @@ public:
         memset(&lfsFile, 0, sizeof(lfsFile));
     };
     ~LittleHandle();
-    void obtain(enum lfs_open_flags flags, String m_path);
+    void obtain(int flags, String m_path);
     void dispose();
 
 private:
-    enum lfs_open_flags flags;
+    int flags;
 };
 
 /********************************************************

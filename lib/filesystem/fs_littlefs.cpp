@@ -8,6 +8,11 @@
 
 lfs_t LittleFileSystem::lfsStruct;
 
+bool LittleFileSystem::handles(String path) 
+{
+    return true; // fallback fs, so it must be last on FS list
+}
+
 MFile* LittleFileSystem::getFile(String path)
 {
     if(m_isMounted)
@@ -163,7 +168,11 @@ MIstream* LittleFile::inputStream()
 
 MOstream* LittleFile::outputStream()
 {
+               Serial.println("FSTEST: attempting LittleFile::outputStream 1");
+
     MOstream* ostream = new LittleOStream(m_path);
+            Serial.println("FSTEST: attempting LittleFile::outputStream 2");
+
     ostream->open();   
     return ostream;
 }
@@ -398,7 +407,7 @@ void LittleOStream::close() {
 
 bool LittleOStream::open() {
     if(!isOpen()) {
-        handle->obtain(LFS_O_WRONLY, m_path);
+        handle->obtain(LFS_O_WRONLY | LFS_O_CREAT, m_path);
     }
     return isOpen();
 };
@@ -422,7 +431,6 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
         DEBUGV("lfs_write rc=%d\n", result);
-        return 0;
     }
     return result;
 };
@@ -538,7 +546,7 @@ void LittleHandle::dispose() {
     }
 }
 
-void LittleHandle::obtain(enum lfs_open_flags fl, String m_path) {
+void LittleHandle::obtain(int fl, String m_path) {
     flags = fl;
 
     if ((flags & LFS_O_CREAT) && strchr(m_path.c_str(), '/')) {
@@ -572,6 +580,9 @@ void LittleHandle::obtain(enum lfs_open_flags fl, String m_path) {
     // }
 
     rc = lfs_file_open(&LittleFileSystem::lfsStruct, &lfsFile, m_path.c_str(), flags);
+
+    Serial.printf("FSTEST: lfs_file_open file rc:%d\n",rc);
+
     if (rc == LFS_ERR_ISDIR) {
         // To support the SD.openNextFile, a null FD indicates to the LittleFSFile this is just
         // a directory whose name we are carrying around but which cannot be read or written

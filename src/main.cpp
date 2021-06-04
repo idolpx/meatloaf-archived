@@ -108,6 +108,9 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 //String state_string;
 
 // ------------------------
+
+void testLittleFS();
+
 void setup()
 {
 	delay(1000);
@@ -203,6 +206,8 @@ void setup()
 			}
 		}
 		Serial.println("]");
+
+		testLittleFS();
 
 		// // Set initial d64 image
 		// Dir disk = fileSystem->openDir("/UTILS/FB64.d64");
