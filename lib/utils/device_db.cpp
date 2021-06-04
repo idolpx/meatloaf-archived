@@ -228,6 +228,17 @@ void DeviceDB::path(String path)
     m_device["path"] = path;
     m_dirty = true;
 }
+String DeviceDB::archive()
+{
+    return m_device["archive"];
+}
+void DeviceDB::archive(String archive)
+{
+    if ( archive == NULL)
+        archive = "";
+    m_device["archive"] = archive;
+    m_dirty = true;
+}
 String DeviceDB::image()
 {
     return m_device["image"];

@@ -173,6 +173,7 @@ void Interface::sendDeviceStatus()
 	sendLine(basicPtr, 0, "PARTITION : %d", m_device.partition());
 	sendLine(basicPtr, 0, "URL       : %s", m_device.url().c_str());
 	sendLine(basicPtr, 0, "PATH      : %s", m_device.path().c_str());
+	sendLine(basicPtr, 0, "ARCHIVE   : %s", m_device.archive().c_str());
 	sendLine(basicPtr, 0, "IMAGE     : %s", m_device.image().c_str());
 	sendLine(basicPtr, 0, "FILENAME  : %s", m_filename.c_str());
 
@@ -293,19 +294,68 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
 		m_openState = O_DIR;
 	}
+	else if (m_filename.startsWith(F("CD")))
+	{
+		uint8_t pos = 3;
+		if (m_filename.endsWith(F("^"))) // Switch to local root
+		{
+			m_device.url("");
+			m_device.path("");
+			m_device.archive("");
+			m_device.image("");
+		}
+		else if (m_filename.endsWith(F("_")))
+		{
+			if (m_device.archive().length())
+			{
+				// Unmount archive file
+				m_device.archive("");
+			}
+			else if (m_device.image().length())
+			{
+				// Unmount image file
+				m_device.image("");
+			}
+			else if (m_device.url().length() && m_device.path() == "/")
+			{
+				// Unmount url
+				m_device.url("");
+			}
+			else
+			{
+				// Go back a directory
+				pos = m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1;
+				m_device.path(m_device.path().substring(0, pos));
+			}
+		}
+		else if (m_filename.length() > 3)
+		{
+			if (m_filename.startsWith(F("CD//"))) // Switch to local/server root
+			{
+				pos = 4;
+				m_device.path("");
+				m_device.archive("");
+				m_device.image("");
+			}
+			else if (m_filename.startsWith(F("CD:")))
+			{
+				pos = 3;
+			}
+
+			// Enter directory
+			m_device.path(m_device.path() + m_filename.substring(pos) + F("/"));
+		}
+
+		if (atn_cmd.channel == 0x00)
+		{
+			m_openState = O_DIR;
+		}
+	}
 	else if (m_filetype.startsWith(F("URL")))
 	{
 		// Load URL file
 		m_openState = O_URL;
-	}
-	else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
-	{
-		// Mount image file
-		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-		m_device.image(m_filename);
-
-		m_openState = O_DIR;
-	}
+	}	
 	else if (m_filename.startsWith(F("HTTP://")))
 	{
 		EdUrlParser* url = EdUrlParser::parseUrl(m_filename.c_str());
@@ -333,6 +383,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_device.path(url->path.c_str());
 		m_filename = url->filename.c_str();
 		m_filetype = url->extension.c_str();
+		m_device.archive("");
 		m_device.image("");
 
 		m_openState = O_DIR;
@@ -341,70 +392,22 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			m_openState = O_FILE;
 		}
 	}
-	else if (m_filename.startsWith(F("CD")))
+	else if (String(F(ARCHIVE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
 	{
-		if (m_filename.endsWith(F("_")))
-		{
-			if (m_device.image().length())
-			{
-				// Unmount image file
-				//Debug_printf("\r\nunmount: [%s] <", m_device.image().c_str());
-				m_device.image("");
-			}
-			else if (m_device.url().length() && m_device.path() == "/")
-			{
-				// Unmount url
-				//Debug_printf("\r\nunmount: [%s] <", m_device.url().c_str());
-				m_device.url("");
-			}
-			else
-			{
-				// Go back a directory
-				//Debug_printf("\r\nchangeDir: [%s] <", m_filename.c_str());
-				m_device.path(m_device.path().substring(0, m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1));
+		// Mount archive file
+		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
+		m_device.archive(m_filename);
+		m_device.image("");
 
-				if (!m_device.path().length())
-				{
-					m_device.path("/");
-				}
-			}
-		}
-		else if (m_filename.length() > 3)
-		{
-			uint8_t pos = 0;
-			if (m_filename.startsWith(F("CD//"))) // Switch to local/server root
-			{
-				pos = 4;
-				m_device.path("");
-				m_device.image("");
-				if (m_filename.startsWith(F("CD///"))) // Switch to local root
-				{
-					pos = 5;
-					m_device.url("");
-				}
-			}
-			else if (m_filename.startsWith(F("CD:")))
-			{
-				// Enter directory
-				//Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
-				pos = 3;
-				
-			}
+		m_openState = O_DIR;
+	}
+	else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
+	{
+		// Mount image file
+		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
+		m_device.image(m_filename);
 
-			// if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
-			// {
-			// 	// Mount image file
-			// 	//Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-			// 	m_device.image(m_filename.substring(3));
-			// }
-
-			m_device.path(m_device.path() + m_filename.substring(pos) + F("/"));
-		}
-
-		if (atn_cmd.channel == 0x00)
-		{
-			m_openState = O_DIR;
-		}
+		m_openState = O_DIR;
 	}
 	else if (m_filename.startsWith(F("@INFO")))
 	{
@@ -493,6 +496,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 			m_device.path(url->path.c_str());
 			m_filename = url->filename.c_str();
 			m_filetype = url->extension.c_str();
+			m_device.archive("");
 			m_device.image("");
 			sendListingHTTP();
 			break;
