@@ -52,6 +52,8 @@ public:
     void url(String url);
     String path();
     void path(String path);
+    String archive();
+    void archive(String archive);
     String image();
     void image(String image);
 
@@ -60,7 +62,7 @@ public:
 private:
     bool m_dirty;
     FS* m_fileSystem;
-    StaticJsonDocument<256> m_device;
+    StaticJsonDocument<RECORD_SIZE> m_device;
 };
 
 #endif

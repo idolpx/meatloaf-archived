@@ -44,7 +44,6 @@ class BufferedReader {
 public:
     BufferedReader(MIstream* is) : istream(is) { 
     };
-    // read - moze jakas abstrakcja tablicy?
     MBuffer* read() {
         if(!eofOccured)
             refillBuffer();
@@ -63,7 +62,6 @@ class BufferedWriter {
 public:
     BufferedWriter(MOstream* os) : ostream(os) { 
     };
-    // read - moze jakas abstrakcja tablicy?
     int write(MBuffer* buffer) {
         return ostream->write((uint8_t*)buffer->buffer, buffer->length());
     }

@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "FS.h"
+#include "../make_unique.h"
 
 /********************************************************
  * Universal streams
@@ -32,14 +33,6 @@ public:
 //     MFileStream(std::shared_ptr<T> f): file(f) {};
 // };
 
-class MIstream: public MStream {
-public:
-    virtual int available() = 0;
-    virtual int read() = 0;
-    virtual int peek() = 0;
-    virtual size_t readBytes(char *buffer, size_t length) = 0;
-    virtual size_t read(uint8_t* buf, size_t size) = 0;
-};
 
 class MOstream: public MStream {
 public:
@@ -47,5 +40,15 @@ public:
     virtual size_t write(const uint8_t *buf, size_t size) = 0;
     virtual void flush() = 0;
 };
+
+
+class MIstream: public MStream {
+public:
+    virtual int available() = 0;
+    virtual uint8_t read() = 0;
+    virtual size_t read(uint8_t* buf, size_t size) = 0;
+    bool pipeTo(MOstream* ostream);
+};
+
 
 #endif

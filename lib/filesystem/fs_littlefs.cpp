@@ -147,12 +147,12 @@ bool LittleFile::pathValid(const char *path)
 }
 
 
-bool LittleFile::isFile()
-{
-    lfs_info info;
-    int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
-    return (rc == 0) && (info.type == LFS_TYPE_REG);
-}
+// bool LittleFile::isFile()
+// {
+//     lfs_info info;
+//     int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
+//     return (rc == 0) && (info.type == LFS_TYPE_REG);
+// }
 
 bool LittleFile::isDirectory()
 {
@@ -189,11 +189,6 @@ time_t LittleFile::getLastWrite()
 }
 
 time_t LittleFile::getCreationTime()
-{
-    
-}
-
-void LittleFile::setTimeCallback(time_t (*cb)(void))
 {
     
 }
@@ -245,16 +240,16 @@ bool LittleFile::remove() {
     return true;
 }
 
-bool LittleFile::truncate(size_t size) {
-    auto handle = std::make_unique<LittleHandle>();
-    handle->obtain(LFS_O_WRONLY, m_path);
-    int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, &handle->lfsFile, size);
-    if (rc < 0) {
-        DEBUGV("lfs_file_truncate rc=%d\n", rc);
-        return false;
-    }
-    return true;
-}
+// bool LittleFile::truncate(size_t size) {
+//     auto handle = std::make_unique<LittleHandle>();
+//     handle->obtain(LFS_O_WRONLY, m_path);
+//     int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, &handle->lfsFile, size);
+//     if (rc < 0) {
+//         DEBUGV("lfs_file_truncate rc=%d\n", rc);
+//         return false;
+//     }
+//     return true;
+// }
 
 bool LittleFile::rename(const char* pathTo) {
     if (!pathTo || !pathTo[0]) {
@@ -284,28 +279,28 @@ void LittleFile::openDir(const char *path) {
     lfs_info info;
     //auto dir = std::make_shared<lfs_dir_t>();
     int rc;
-    const char *filter = "";
+    // const char *filter = "";
     if (!pathStr[0]) {
         // openDir("") === openDir("/")
         rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
-        filter = "";
+        // filter = "";
     } else if (lfs_stat(&LittleFileSystem::lfsStruct, pathStr, &info) >= 0) {
         if (info.type == LFS_TYPE_DIR) {
             // Easy peasy, path specifies an existing dir!
             rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
-	    filter = "";
+	    // filter = "";
         } else {
             // This is a file, so open the containing dir
             char *ptr = strrchr(pathStr, '/');
             if (!ptr) {
                 // No slashes, open the root dir
                 rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
-		        filter = pathStr;
+		        // filter = pathStr;
             } else {
                 // We've got slashes, open the dir one up
                 *ptr = 0; // Remove slash, truncate string
                 rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
-		        filter = ptr + 1;
+		        // filter = ptr + 1;
             }
         }
     } else { 
@@ -315,12 +310,12 @@ void LittleFile::openDir(const char *path) {
         if (!ptr) {
             // No slashes, open the root dir
             rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
-	        filter = pathStr;
+	        // filter = pathStr;
         } else {
             // We've got slashes, open the dir one up
             *ptr = 0; // Remove slash, truncate string
             rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
-	        filter = ptr + 1;
+	        // filter = ptr + 1;
         }
     }
     if (rc < 0) {
@@ -358,15 +353,15 @@ MFile* LittleFile::getNextFileInDir()
 
     memset(&_dirent, 0, sizeof(_dirent));
 
-    const int n = _pattern.length();
-    bool match;
+    // const int n = _pattern.length();
+    // bool match;
     //do {
         _dirent.name[0] = 0;
         int rc = lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &_dirent);
         _valid = (rc == 1);
 
-Serial.print("inside getNextFileInDir - got: ");
-Serial.println(_dirent.name);
+// Serial.print("inside getNextFileInDir - got: ");
+// Serial.println(_dirent.name);
 
 
         //match = (!n || !strncmp((const char*) _dirent.name, _pattern.c_str(), n));
@@ -375,7 +370,7 @@ Serial.println(_dirent.name);
     if(!_valid)
         return nullptr;
     else
-        return new LittleFile(this->m_isNull+"/"+String(_dirent.name));
+        return new LittleFile(this->m_path+"/"+String(_dirent.name));
 }
 
 
@@ -479,15 +474,10 @@ int LittleIStream::available() {
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
 };
 
-int LittleIStream::read() {
+uint8_t LittleIStream::read() {
 
 };
-int LittleIStream::peek() {
 
-};
-size_t LittleIStream::readBytes(char *buffer, size_t length) {
-
-};
 size_t LittleIStream::read(uint8_t* buf, size_t size) {
     if (!isOpen() | !buf) {
         return 0;

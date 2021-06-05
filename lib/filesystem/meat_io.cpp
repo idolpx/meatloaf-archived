@@ -1,15 +1,20 @@
 #include "meat_io.h"
 #include "fs_smb.h"
 #include "fs_littlefs.h"
+#include "fs_http.h"
 #include "flash_hal.h"
 #include "MIOException.h"
 /********************************************************
  * MFSOwner implementations
  ********************************************************/
 
-std::shared_ptr<LittleFileSystem> littleFS(new LittleFileSystem("/",FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5));
+// initialize other filesystems here
+LittleFileSystem littleFS("/",FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5);
+HttpFileSystem httpFS("http://");
 
-MFileSystem* MFSOwner::availableFS[FS_COUNT] = { littleFS.get() };
+// put all available filesystems in this array
+// put littleFS as last, fallback system so it can be used if nothing matches
+MFileSystem* MFSOwner::availableFS[FS_COUNT] = { &httpFS, &littleFS };
 
 MFile* MFSOwner::File(String name) {
     uint i = 0;
@@ -90,18 +95,20 @@ bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
 }
 
-const char* MFile::name() const {
+String MFile::name() {
     int lastSlash = m_path.lastIndexOf("/");
-    return m_path.substring(lastSlash+1).c_str();
+
+    String test = m_path.substring(lastSlash+1);    
+
+    Serial.printf("last slash in %s=%d --> %s\n", m_path.c_str(), lastSlash, test.c_str());
+    return test;
 }    
 
-const char* MFile::path() const {
-    return m_path.c_str();
+String MFile::path() {
+    return m_path;
 }    
 
-const char* MFile::extension() const {
-    String name = this->name();
-    int lastPeriod = name.lastIndexOf(".");
-    return m_path.substring(lastPeriod+1).c_str();
-}    
-
+String MFile::extension() {
+    int lastPeriod = m_path.lastIndexOf(".");
+    return m_path.substring(lastPeriod+1);
+}

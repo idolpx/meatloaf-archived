@@ -71,7 +71,7 @@ bool DeviceDB::init(String db_file)
 #endif
             for(byte i = 0; i < 31; i++) // 22 devices x 2 media = 44 records x 256 bytes = 11264 total bytes
             {
-                sprintf( (char *)buffer, "{\"device\":%d,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"/\",\"image\":\"\"}", i );
+                sprintf( (char *)buffer, "{\"device\":%d,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}", i );
                 f_database.write(buffer, RECORD_SIZE);
                 Serial.printf("Writing Record %d: %s\r\n", i, buffer);                    
             }
@@ -226,6 +226,17 @@ void DeviceDB::path(String path)
     if ( path == NULL)
         path = "/";
     m_device["path"] = path;
+    m_dirty = true;
+}
+String DeviceDB::archive()
+{
+    return m_device["archive"];
+}
+void DeviceDB::archive(String archive)
+{
+    if ( archive == NULL)
+        archive = "";
+    m_device["archive"] = archive;
     m_dirty = true;
 }
 String DeviceDB::image()

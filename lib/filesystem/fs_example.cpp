@@ -10,6 +10,26 @@ uint8_t buffer[RECORD_SIZE] = { 0 };
 char buffer[RECORD_SIZE] = { 0 };
 #endif
 
+void recurseList(MFile* file) {
+    if(file->isDirectory()) {
+        std::unique_ptr<MFile> entry(file->getNextFileInDir());
+
+        while(entry != nullptr) {
+            if(entry->isDirectory())
+            {
+                Serial.printf("%s <dir>\n", entry->name().c_str());
+                recurseList(entry.get());
+            }
+            else
+            {
+                Serial.printf("%s <file>\n", entry->name().c_str());                
+            }
+
+            entry.reset(file->getNextFileInDir());
+        }
+    }
+}
+
 void testLittleFS() {
 
     Serial.println("FSTEST: test MFile factory");
@@ -17,6 +37,8 @@ void testLittleFS() {
     std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
     std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
     std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
+
+    std::unique_ptr<MFile> root(MFSOwner::File("/"));
 
     if(fileInRoot==nullptr) {
         Serial.println("FSTEST: null path returned!!!");
@@ -28,12 +50,12 @@ void testLittleFS() {
 
     if(fileInRoot->exists()) {
         bool result = fileInRoot->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInRoot->path(), result);
+        Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInRoot->path().c_str(), result);
     }
 
     if(fileInSub->exists()) {
         bool result = fileInSub->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInSub->path(), result);
+        Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInSub->path().c_str(), result);
     }
 
 
@@ -57,9 +79,9 @@ void testLittleFS() {
 
     Serial.println("FSTEST: check isDir");
 
-    Serial.printf("FSTEST: %s = %d\n", aDir->path(), aDir->isDirectory());
+    Serial.printf("FSTEST: %s = %d\n", aDir->path().c_str(), aDir->isDirectory());
 
-    Serial.printf("FSTEST: %s = %d\n", fileInSub->path(), fileInSub->isDirectory());
+    Serial.printf("FSTEST: %s = %d\n", fileInSub->path().c_str(), fileInSub->isDirectory());
 
     Serial.println("FSTEST: copying test");
 
@@ -96,5 +118,7 @@ void testLittleFS() {
 
     // readFromSub->close(); // not required, closes automagically
     // writeToRoot->close(); // nor required, closes automagically
+
+    recurseList(root.get());
 }
 

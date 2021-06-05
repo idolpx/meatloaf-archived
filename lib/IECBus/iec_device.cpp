@@ -173,6 +173,7 @@ void Interface::sendDeviceStatus()
 	sendLine(basicPtr, 0, "PARTITION : %d", m_device.partition());
 	sendLine(basicPtr, 0, "URL       : %s", m_device.url().c_str());
 	sendLine(basicPtr, 0, "PATH      : %s", m_device.path().c_str());
+	sendLine(basicPtr, 0, "ARCHIVE   : %s", m_device.archive().c_str());
 	sendLine(basicPtr, 0, "IMAGE     : %s", m_device.image().c_str());
 	sendLine(basicPtr, 0, "FILENAME  : %s", m_filename.c_str());
 
@@ -293,18 +294,71 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
 		m_openState = O_DIR;
 	}
-	else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
+	else if (m_filename.startsWith(F("CD")))
 	{
-		// Mount image file
-		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-		m_device.image(m_filename);
+		uint8_t pos = 3;
+		if (m_filename.endsWith(F("^"))) // Switch to local root
+		{
+			m_device.url("");
+			m_device.path("");
+			m_device.archive("");
+			m_device.image("");
+		}
+		else if (m_filename.endsWith(F("_")))
+		{
+			if (m_device.archive().length())
+			{
+				// Unmount archive file
+				m_device.archive("");
+			}
+			else if (m_device.image().length())
+			{
+				// Unmount image file
+				m_device.image("");
+			}
+			else if (m_device.url().length() && m_device.path() == "/")
+			{
+				// Unmount url
+				m_device.url("");
+			}
+			else
+			{
+				// Go back a directory
+				pos = m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1;
+				m_device.path(m_device.path().substring(0, pos));
+			}
+		}
+		else if (m_filename.length() > 3)
+		{
+			if (m_filename.startsWith(F("CD//"))) // Switch to local/server root
+			{
+				pos = 4;
+				m_device.path("");
+				m_device.archive("");
+				m_device.image("");
+			}
+			else if (m_filename.startsWith(F("CD:")))
+			{
+				pos = 3;
+			}
 
-		m_openState = O_DIR;
+			// Enter directory
+			m_device.path(m_device.path() + m_filename.substring(pos) + F("/"));
+		}
+
+		if (atn_cmd.channel == 0x00)
+		{
+			m_openState = O_DIR;
+		}
+	}
+	else if (m_filetype.startsWith(F("URL")) && m_filetype.length() > 0)
+	{
+		// Load URL file
+		m_openState = O_URL;
 	}
 	else if (m_filename.startsWith(F("HTTP://")))
 	{
-		uint8_t lpos = 0;
-		URLParser* url = URLParser::parseUrl(m_filename.c_str());
+		EdUrlParser* url = EdUrlParser::parseUrl(m_filename.c_str());
 
 #ifdef DEBUG
 		Serial.printf("\r\nURL: [%s]\r\n", url->url.c_str());
@@ -313,10 +367,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Serial.printf("Scheme: [%s]\r\n", url->scheme.c_str());
 		Serial.printf("Username: [%s]\r\n", url->username.c_str());
 		Serial.printf("Password: [%s]\r\n", url->password.c_str());
-		Serial.printf("Host: [%s]\r\n", url->host.c_str());
+		Serial.printf("Host: [%s]\r\n", url->hostname.c_str());
 		Serial.printf("Port: [%s]\r\n", url->port.c_str());
 		Serial.printf("Path: [%s]\r\n", url->path.c_str());
-		Serial.printf("File: [%s]\r\n", url->file.c_str());
+		Serial.printf("File: [%s]\r\n", url->filename.c_str());
 		Serial.printf("Extension: [%s]\r\n", url->extension.c_str());
 		Serial.printf("Query: [%s]\r\n", url->query.c_str());
 		Serial.printf("Fragment: [%s]\r\n", url->fragment.c_str());
@@ -327,9 +381,13 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_device.partition(0);
 		m_device.url(url->root.c_str());		
 		m_device.path(url->path.c_str());
-		m_filename = url->file.c_str();
+		m_filename = url->filename.c_str();
 		m_filetype = url->extension.c_str();
+		m_device.archive("");
 		m_device.image("");
+
+		if (url != NULL)
+			delete url;
 
 		m_openState = O_DIR;
 		if (m_filename.length())
@@ -337,61 +395,22 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			m_openState = O_FILE;
 		}
 	}
-	else if (m_filename.startsWith(F("CD")))
+	else if (String(F(ARCHIVE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
 	{
-		if (m_filename.endsWith(F("_")))
-		{
-			if (m_device.image().length())
-			{
-				// Unmount image file
-				//Debug_printf("\r\nunmount: [%s] <", m_device.image().c_str());
-				m_device.image("");
-			}
-			else if (m_device.url().length() && m_device.path() == "/")
-			{
-				// Unmount url
-				//Debug_printf("\r\nunmount: [%s] <", m_device.url().c_str());
-				m_device.url("");
-			}
-			else
-			{
-				// Go back a directory
-				//Debug_printf("\r\nchangeDir: [%s] <", m_filename.c_str());
-				m_device.path(m_device.path().substring(0, m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1));
+		// Mount archive file
+		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
+		m_device.archive(m_filename);
+		m_device.image("");
 
-				if (!m_device.path().length())
-				{
-					m_device.path("/");
-				}
-			}
-		}
-		else if (m_filename.length() > 3)
-		{
-			// Switch to root
-			if (m_filename.startsWith(F("CD//")))
-			{
-				m_device.path("");
-				m_device.image("");
-			}
+		m_openState = O_DIR;
+	}
+	else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
+	{
+		// Mount image file
+		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
+		m_device.image(m_filename);
 
-			if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
-			{
-				// Mount image file
-				//Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-				m_device.image(m_filename.substring(3));
-			}
-			else
-			{
-				// Enter directory
-				//Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
-				m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
-			}
-		}
-
-		if (atn_cmd.channel == 0x00)
-		{
-			m_openState = O_DIR;
-		}
+		m_openState = O_DIR;
 	}
 	else if (m_filename.startsWith(F("@INFO")))
 	{
@@ -425,6 +444,8 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 {
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
+	String urlFile;
+	EdUrlParser* url;
 
 	Debug_printf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
 
@@ -464,6 +485,27 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 				sendFile();
 			}
 			break;
+
+		case O_URL:
+			// urlFile = String(m_device.path() + m_filename);
+			// Debug_printf("\r\nOpening URL: [%s]", urlFile.c_str());
+			// m_filename = readLine(m_fileSystem, urlFile);
+			// url = EdUrlParser::parseUrl(m_filename.c_str());
+
+			// // Mount url
+			// Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
+			// m_device.partition(0);
+			// m_device.url(url->root.c_str());		
+			// m_device.path(url->path.c_str());
+			// m_filename = url->filename.c_str();
+			// m_filetype = url->extension.c_str();
+			// m_device.archive("");
+			// m_device.image("");
+			// sendListingHTTP();
+
+			// if (url != NULL)
+			// 	delete url;
+		 	break;
 
 		case O_DIR:
 			// Send listing
@@ -661,6 +703,8 @@ void Interface::sendListing()
 		if (dir.fileSize())
 		{
 			block_cnt = dir.fileSize() / 256;
+			if ( block_cnt < 1)
+				block_cnt = 1;
 
 			uint8_t ext_pos = dir.fileName().lastIndexOf(".") + 1;
 			if (ext_pos && ext_pos != dir.fileName().length())
@@ -732,9 +776,9 @@ void Interface::sendFile()
 	{
 		m_filename = "";
 
-		if (m_device.path() == "/" && m_device.image().length() == 0)
+		if (m_device.path() == "/" && m_device.archive().length() == 0 && m_device.image().length() == 0)
 		{
-			m_filename = "FB64";
+			m_filename = ".sys/fb64";
 		}
 		else
 		{
@@ -782,14 +826,14 @@ void Interface::sendFile()
 					load_address += 8;
 				}
 #endif
-			if (i == len - 1)
-			{
-				success = m_iec.sendEOI(b[0]); // indicate end of file.
-			}
-			else
-			{
-				success = m_iec.send(b[0]);
-			}
+				if (i == len - 1)
+				{
+					success = m_iec.sendEOI(b[0]); // indicate end of file.
+				}
+				else
+				{
+					success = m_iec.send(b[0]);
+				}
 
 #ifdef DATA_STREAM
 			// Show ASCII Data
@@ -799,16 +843,16 @@ void Interface::sendFile()
 				ba[bi++] = b[0];
 
 				if(bi == 8)
-			{
+				{
 				size_t t = (i * 100) / len;
 					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
 				bi = 0;
-			}
+				}
 #endif
-			// Toggle LED
-			if (i % 50 == 0)
+				// Toggle LED
+				if (i % 50 == 0)
 				{
-				ledToggle(true);
+					ledToggle(true);
 				}
 			}
 

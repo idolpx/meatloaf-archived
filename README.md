@@ -20,6 +20,7 @@ I like this 16MB version.<br/>
 or<br/>
 * 1 x [ESP32 Dev Board](https://www.aliexpress.com/item/32883116057.html)<br/>
 This one has 16MB Flash, 8MB PSRAM, Micro SD with I2C & TFT Port!<br/>
+(Meatloaf is not working yet on the ESP32 but it will be soon.)
 
 Virtual Drive - IEC Serial Port (minimal build)
 * 1 × [6 PIN DIN Male Plug](https://www.aliexpress.com/item/33058840658.html)

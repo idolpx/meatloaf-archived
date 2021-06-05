@@ -93,20 +93,17 @@ public:
             m_isNull = false;
     };
 
-    bool isFile() override;
     bool isDirectory() override;
     MIstream* inputStream() override ; // has to return OPENED stream
     MOstream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
-    void setTimeCallback(time_t (*cb)(void)) override ;
     bool rewindDirectory() override ;
     MFile* getNextFileInDir() override ;
     bool mkDir() override ;
     bool exists() override ;
     size_t size() override ;
     bool remove() override ;
-    bool truncate(size_t size) override;
     bool rename(const char* dest);
 
 private:
@@ -198,9 +195,7 @@ public:
 
     // MIstream methods
     int available() override;
-    int read() override;
-    int peek() override;
-    size_t readBytes(char *buffer, size_t length) override;
+    uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
 
