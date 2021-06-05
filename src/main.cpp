@@ -64,6 +64,7 @@
 #include "iec.h"
 #include "iec_device.h"
 #include "ESPModem.h"
+#include "meat_io.h"
 
 //void ICACHE_RAM_ATTR isrCheckATN();
 
@@ -107,10 +108,14 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 // ------------------------
 void setup()
 {
+	// initialize LittleFS for file operations
+	MFSOwner::mount("/");
+
 	delay(1000);
 
 	// Setup Modem
 	modem.setup();
+
 
 	Serial.printf("\r\n\r\n==============================\r\n");
 	Serial.printf("   %s %s\r\n", PRODUCT_ID, FW_VERSION);
