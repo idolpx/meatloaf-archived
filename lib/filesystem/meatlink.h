@@ -8,9 +8,9 @@
 #define RECORD_SIZE 256
 
 class MeatLink {
-    MeatLink(FS* fileSystem, String linkFileName) 
+    MeatLink(MFile* linkFileName) 
     {
-        m_fileSystem = fileSystem;
+        //m_fileSystem = fileSystem;
         m_fileName = linkFileName;
 
         if( m_fileSystem->exists(m_fileName) )
@@ -25,18 +25,18 @@ class MeatLink {
             File f_link = m_fileSystem->open(m_fileName, "r+");
             if(!f_link) {
                 size_t readCount = f_link.readBytes(buffer, RECORD_SIZE);
-                m_url = String(buffer); // is this enoug? Or do I have to set size somehow?
+                m_url = std::string(buffer); // is this enoug? Or do I have to set size somehow?
                 f_link.close();
             }
         }
     }
 
-    String get() 
+    std::string get() 
     {
         return m_url;
     }
 
-    void put(String url) 
+    void put(std::string url) 
     {
         File f_linkFile = m_fileSystem->open(m_fileName, "w+");
 
@@ -57,9 +57,8 @@ class MeatLink {
     }
 
     private:
-        FS* m_fileSystem;
-        String m_fileName;
-        String m_url;
+        MFile* m_fileName;
+        std::string m_url;
 };
 
 #endif

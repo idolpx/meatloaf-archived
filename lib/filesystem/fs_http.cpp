@@ -6,7 +6,8 @@
 
 bool HttpFile::isDirectory() {
     // hey, why not?
-    return m_path.endsWith("/");
+    //return m_path.endsWith("/");
+    return m_path.back() == '/';
 };
 
 MIstream* HttpFile::inputStream() {

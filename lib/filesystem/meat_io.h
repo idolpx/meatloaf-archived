@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <Arduino.h>
+#include <string>
 #include "FS.h"
 #include "buffered_io.h"
 #include "meat_stream.h"
@@ -18,13 +19,13 @@
 class MFile {
 public:
     MFile(nullptr_t null) : m_isNull(true) {};
-    MFile(String path);
-    MFile(String path, String name);
-    MFile(MFile* path, String name);
+    MFile(std::string path);
+    MFile(std::string path, std::string name);
+    MFile(MFile* path, std::string name);
 
-    String name();
-    String path();
-    String extension();
+    std::string name();
+    std::string path();
+    std::string extension();
     bool operator!=(nullptr_t ptr);
 
     bool copyTo(MFile* dst) {
@@ -49,7 +50,7 @@ public:
     virtual bool rename(const char* dest) = 0;
     virtual ~MFile() {};
 protected:
-    String m_path;
+    std::string m_path;
     bool m_isNull;
 };
 
@@ -61,10 +62,10 @@ protected:
 class MFileSystem {
 public:
     MFileSystem(char* prefix);
-    virtual bool handles(String path) = 0;
+    virtual bool handles(std::string path) = 0;
     virtual bool mount() = 0;
     virtual bool umount() = 0;
-    virtual MFile* getFile(String path) = 0;
+    virtual MFile* getFile(std::string path) = 0;
     bool isMounted() {
         return m_isMounted;
     }
@@ -83,9 +84,9 @@ class MFSOwner {
     static MFileSystem* availableFS[FS_COUNT];
 
 public:
-    static MFile* File(String name);
-    static bool mount(String name);
-    static bool umount(String name);
+    static MFile* File(std::string name);
+    static bool mount(std::string name);
+    static bool umount(std::string name);
 };
 
 #endif

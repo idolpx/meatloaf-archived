@@ -16,7 +16,7 @@ HttpFileSystem httpFS("http://");
 // put littleFS as last, fallback system so it can be used if nothing matches
 MFileSystem* MFSOwner::availableFS[FS_COUNT] = { &httpFS, &littleFS };
 
-MFile* MFSOwner::File(String name) {
+MFile* MFSOwner::File(std::string name) {
     uint i = 0;
     for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
         if(fs->handles(name)) {
@@ -27,10 +27,10 @@ MFile* MFSOwner::File(String name) {
     return nullptr;
 }
 
-bool MFSOwner::mount(String name) {
+bool MFSOwner::mount(std::string name) {
     uint i = 0;
     Serial.print("MFSOwner::mount fs:");
-    Serial.print(name);
+    Serial.print(name.c_str());
 
     for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
         if(fs->handles(name)) {
@@ -43,7 +43,7 @@ bool MFSOwner::mount(String name) {
             else
                 Serial.print("Couldn't mount fs:");
 
-            Serial.print(name);
+            Serial.print(name.c_str());
 
             return ok;
         }
@@ -51,7 +51,7 @@ bool MFSOwner::mount(String name) {
     return false;
 }
 
-bool MFSOwner::umount(String name) {
+bool MFSOwner::umount(std::string name) {
     uint i = 0;
     for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
         if(fs->handles(name)) {
@@ -71,7 +71,7 @@ MFileSystem::MFileSystem(char* prefix)
     protocol = prefix;
 }
 
-// bool MFileSystem::handles(String path) 
+// bool MFileSystem::handles(std::string path) 
 // {
 //     return path.startsWith(protocol);
 // }
@@ -80,35 +80,35 @@ MFileSystem::MFileSystem(char* prefix)
  * MFile implementations
  ********************************************************/
 
-MFile::MFile(String path) {
-    if(path.endsWith("/"))
-        path.remove(path.length()-1);
+MFile::MFile(std::string path) {
+    if(path.back()=='\\')
+        path.erase(path.length()-1,1);
 
     m_path = path;
 }
 
-MFile::MFile(String path, String name) : MFile(path + "/" + name) {}
+MFile::MFile(std::string path, std::string name) : MFile(path + "/" + name) {}
 
-MFile::MFile(MFile* path, String name) : MFile(path->m_path + "/" + name) {}
+MFile::MFile(MFile* path, std::string name) : MFile(path->m_path + "/" + name) {}
 
 bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
 }
 
-String MFile::name() {
-    int lastSlash = m_path.lastIndexOf("/");
+std::string MFile::name() {
+    int lastSlash = m_path.find_last_of('/');
 
-    String test = m_path.substring(lastSlash+1);    
+    std::string test = m_path.substr(lastSlash+1);    
 
     Serial.printf("last slash in %s=%d --> %s\n", m_path.c_str(), lastSlash, test.c_str());
     return test;
 }    
 
-String MFile::path() {
+std::string MFile::path() {
     return m_path;
 }    
 
-String MFile::extension() {
-    int lastPeriod = m_path.lastIndexOf(".");
-    return m_path.substring(lastPeriod+1);
+std::string MFile::extension() {
+    int lastPeriod = m_path.find_last_of(".");
+    return m_path.substr(lastPeriod+1);
 }

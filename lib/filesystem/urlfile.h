@@ -9,7 +9,7 @@ class UrlFile: public MFile {
     //URLParser urlParser;
 
 public:
-    UrlFile(String path): MFile(path) {
+    UrlFile(std::string path): MFile(path) {
         //urlParser.parsePath(path);
     };
 

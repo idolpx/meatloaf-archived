@@ -8,7 +8,7 @@
 
 class HttpIStream: public MIstream {
 public:
-    HttpIStream(String& path) {
+    HttpIStream(std::string& path) {
         m_path = path;
     }
     // MStream methods
@@ -28,14 +28,14 @@ public:
     bool isOpen();
 
 protected:
-    String m_path;
+    std::string m_path;
 };
 
 
 class HttpOStream: public MOstream {
 public:
     // MStream methods
-    HttpOStream(String& path) {
+    HttpOStream(std::string& path) {
         m_path = path;
     }
     bool seek(uint32_t pos, SeekMode mode) override;
@@ -54,13 +54,13 @@ public:
     bool isOpen();
 
 protected:
-    String m_path;
+    std::string m_path;
 };
 
 class HttpFile: public UrlFile {
 
 public:
-    HttpFile(String path): UrlFile(path) {};
+    HttpFile(std::string path): UrlFile(path) {};
 
     bool isDirectory() override;
     MIstream* inputStream() override ; // has to return OPENED stream
@@ -80,7 +80,7 @@ public:
 
 class HttpFileSystem: public MFileSystem 
 {
-    MFile* getFile(String path) override {
+    MFile* getFile(std::string path) override {
         return new HttpFile(path);
     }
     bool mount() override {
@@ -90,8 +90,8 @@ class HttpFileSystem: public MFileSystem
         return true;
     };
 
-    bool handles(String path) {
-        return path.startsWith("http://");
+    bool handles(std::string path) {
+        return path.rfind("http://", 0) == 0;
     }
 public:
     HttpFileSystem(char* prefix): MFileSystem(prefix) {};

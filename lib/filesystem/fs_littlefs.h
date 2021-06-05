@@ -11,7 +11,7 @@
 
 class LittleFileSystem: public MFileSystem 
 {
-    MFile* getFile(String path) override;
+    MFile* getFile(std::string path) override;
     bool mount() override;
     bool umount() override;
 
@@ -48,7 +48,7 @@ public:
         umount();
     }
 
-    bool handles(String path);
+    bool handles(std::string path);
 
     static lfs_t lfsStruct;
 
@@ -86,7 +86,7 @@ friend class LittleOStream;
 friend class LittleIStream;
 
 public:
-    LittleFile(String path) : MFile(path) {
+    LittleFile(std::string path) : MFile(path) {
         if(!pathValid(path.c_str()))
             m_isNull = true;
         else
@@ -111,7 +111,7 @@ private:
     bool dirOpened = false;
     lfs_info _dirent;
     bool _valid;
-    String _pattern;
+    std::string _pattern;
 
     bool pathValid(const char *path);
     void openDir(const char *path);
@@ -132,7 +132,7 @@ public:
         memset(&lfsFile, 0, sizeof(lfsFile));
     };
     ~LittleHandle();
-    void obtain(int flags, String m_path);
+    void obtain(int flags, std::string m_path);
     void dispose();
 
 private:
@@ -146,7 +146,7 @@ private:
 class LittleOStream: public MOstream {
 public:
     // MStream methods
-    LittleOStream(String& path) {
+    LittleOStream(std::string& path) {
         m_path = path;
         handle = std::make_unique<LittleHandle>();
     }
@@ -166,7 +166,7 @@ public:
     bool isOpen();
 
 protected:
-    String m_path;
+    std::string m_path;
 
     std::unique_ptr<LittleHandle> handle;    
 };
@@ -179,7 +179,7 @@ protected:
 
 class LittleIStream: public MIstream {
 public:
-    LittleIStream(String& path) {
+    LittleIStream(std::string& path) {
         m_path = path;
         handle = std::make_unique<LittleHandle>();
     }
@@ -200,7 +200,7 @@ public:
     bool isOpen();
 
 protected:
-    String m_path;
+    std::string m_path;
 
     std::unique_ptr<LittleHandle> handle;    
 };

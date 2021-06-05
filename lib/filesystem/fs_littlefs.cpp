@@ -8,14 +8,14 @@
 
 lfs_t LittleFileSystem::lfsStruct;
 
-bool LittleFileSystem::handles(String path) 
+bool LittleFileSystem::handles(std::string path) 
 {
     Serial.println("FSTEST: shecking if littlefs handles this");
 
     return true; // fallback fs, so it must be last on FS list
 }
 
-MFile* LittleFileSystem::getFile(String path)
+MFile* LittleFileSystem::getFile(std::string path)
 {
     if(m_isMounted)
         return new LittleFile(path);
@@ -370,7 +370,7 @@ MFile* LittleFile::getNextFileInDir()
     if(!_valid)
         return nullptr;
     else
-        return new LittleFile(this->m_path+"/"+String(_dirent.name));
+        return new LittleFile(this->m_path+"/"+std::string(_dirent.name));
 }
 
 
@@ -538,7 +538,7 @@ void LittleHandle::dispose() {
     }
 }
 
-void LittleHandle::obtain(int fl, String m_path) {
+void LittleHandle::obtain(int fl, std::string m_path) {
     flags = fl;
 
     if ((flags & LFS_O_CREAT) && strchr(m_path.c_str(), '/')) {
