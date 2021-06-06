@@ -581,4 +581,3 @@ void LittleHandle::obtain(int fl, std::string m_path) {
                rc, fd, path, openMode, accessMode, rc);
     }    
 }
-
