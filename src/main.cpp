@@ -197,6 +197,7 @@ void setup()
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
+		iec.enableDevice(30);
 		iec.init();
 		Serial.println("IEC Bus Initialized");
 
