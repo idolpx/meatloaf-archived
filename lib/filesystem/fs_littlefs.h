@@ -87,7 +87,12 @@ friend class LittleIStream;
 
 public:
     LittleFile(std::string path) : MFile(path) {
-        if(!pathValid(path.c_str()))
+        if(path == "/")
+            m_path=path;
+        else if(path.back()=='/')
+            m_path=path.erase(path.length()-1,1);
+
+        if(!pathValid(m_path.c_str()))
             m_isNull = true;
         else
             m_isNull = false;

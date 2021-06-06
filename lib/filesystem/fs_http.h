@@ -91,6 +91,8 @@ class HttpFileSystem: public MFileSystem
     };
 
     bool handles(std::string path) {
+        //Serial.println("FSTEST: handles in http");
+
         return path.rfind("http://", 0) == 0;
     }
 public:

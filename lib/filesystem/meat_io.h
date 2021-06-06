@@ -73,6 +73,8 @@ public:
 protected:
     char* protocol;
     bool m_isMounted;
+
+    friend class MFSOwner;
 };
 
 
@@ -87,6 +89,7 @@ public:
     static MFile* File(std::string name);
     static bool mount(std::string name);
     static bool umount(std::string name);
+
 };
 
 #endif
