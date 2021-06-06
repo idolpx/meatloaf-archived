@@ -38,7 +38,7 @@ void testLittleFS() {
     std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
     std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
 
-    std::unique_ptr<MFile> root(MFSOwner::File("/"));
+    std::unique_ptr<MFile> root(MFSOwner::File("dupa/"));
 
     if(fileInRoot==nullptr) {
         Serial.println("FSTEST: null path returned!!!");
@@ -119,6 +119,6 @@ void testLittleFS() {
     // readFromSub->close(); // not required, closes automagically
     // writeToRoot->close(); // nor required, closes automagically
 
-    recurseList(root.get());
+    //recurseList(root.get());
 }
 

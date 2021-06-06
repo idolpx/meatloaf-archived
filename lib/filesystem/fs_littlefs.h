@@ -1,9 +1,8 @@
 #ifndef MEATFILE_DEFINES_FSLITTLE_H
 #define MEATFILE_DEFINES_FSLITTLE_H
 
-#include <../lib/littlefs/lfs.h>
-
 #include "meat_io.h"
+#include "../lib/littlefs/lfs.h"
 #include "../../include/make_unique.h"
 
 /********************************************************
@@ -88,7 +87,12 @@ friend class LittleIStream;
 
 public:
     LittleFile(std::string path) : MFile(path) {
-        if(!pathValid(path.c_str()))
+        if(path == "/")
+            m_path=path;
+        else if(path.back()=='/')
+            m_path=path.erase(path.length()-1,1);
+
+        if(!pathValid(m_path.c_str()))
             m_isNull = true;
         else
             m_isNull = false;

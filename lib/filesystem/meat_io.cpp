@@ -17,10 +17,11 @@ HttpFileSystem httpFS("http://");
 MFileSystem* MFSOwner::availableFS[FS_COUNT] = { &httpFS, &littleFS };
 
 MFile* MFSOwner::File(std::string name) {
-    uint i = 0;
-    for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
-        if(fs->handles(name)) {
-            return fs->getFile(name);
+    for(uint i = 0; i < FS_COUNT ; i ++) {
+        //Serial.printf("FSTEST: trying to find fs for %s = %s\n", name.c_str(), availableFS[i]->protocol);
+        if(availableFS[i]->handles(name)) {
+            //Serial.println("FSTEST: found a proper fs");
+            return availableFS[i]->getFile(name);
         }
     }
     
@@ -28,11 +29,12 @@ MFile* MFSOwner::File(std::string name) {
 }
 
 bool MFSOwner::mount(std::string name) {
-    uint i = 0;
     Serial.print("MFSOwner::mount fs:");
     Serial.print(name.c_str());
 
-    for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
+    for(uint i = 0; i < FS_COUNT ; i ++) {
+        auto fs = availableFS[i];
+
         if(fs->handles(name)) {
                 Serial.println("MFSOwner found a proper fs");
 
@@ -81,9 +83,6 @@ MFileSystem::MFileSystem(char* prefix)
  ********************************************************/
 
 MFile::MFile(std::string path) {
-    if(path.back()=='\\')
-        path.erase(path.length()-1,1);
-
     m_path = path;
 }
 
