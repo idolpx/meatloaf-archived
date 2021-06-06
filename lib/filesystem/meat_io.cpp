@@ -1,9 +1,12 @@
 #include "meat_io.h"
-#include "fs_smb.h"
-#include "fs_littlefs.h"
-#include "fs_http.h"
-#include "flash_hal.h"
+
+#include <flash_hal.h>
+
 #include "MIOException.h"
+#include "fs_littlefs.h"
+#include "scheme/fs_http.h"
+#include "scheme/fs_smb.h"
+
 /********************************************************
  * MFSOwner implementations
  ********************************************************/
