@@ -3,7 +3,11 @@
 
 #include "meat_io.h"
 
-class ZipInputStream: MIstream {
+class Browsable {
+    virtual MFile* getNextEntry() = 0;
+};
+
+class ZipInputStream: MIstream, Browsable {
 public:
     ZipInputStream(std::string& path) {
         m_path = path;
@@ -25,7 +29,7 @@ public:
     bool isOpen();
 
     // Zip-specific methods
-    MFile* getNextEntry(); // skips the stream until the beginnin of next file
+    MFile* getNextEntry() override; // skips the stream until the beginnin of next file
 
 protected:
     std::string m_path;
