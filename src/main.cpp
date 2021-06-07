@@ -105,11 +105,11 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 //uint8_t state_int;
 //String state_string;
 
+void testLittleFS();
+
 // ------------------------
 void setup()
 {
-	// initialize LittleFS for file operations
-	MFSOwner::mount("/");
 
 	delay(1000);
 
@@ -188,8 +188,11 @@ void setup()
 			}
 		}
 
+		//testLittleFS();
+
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
+		iec.enableDevice(30);
 		iec.init();
 		Serial.println("IEC Bus Initialized");
 

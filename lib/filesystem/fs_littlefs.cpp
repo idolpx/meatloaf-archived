@@ -10,13 +10,13 @@ lfs_t LittleFileSystem::lfsStruct;
 
 bool LittleFileSystem::handles(std::string path) 
 {
-    Serial.println("FSTEST: shecking if littlefs handles this");
-
+    //Serial.println("FSTEST: shecking if littlefs handles this");
     return true; // fallback fs, so it must be last on FS list
 }
 
 MFile* LittleFileSystem::getFile(std::string path)
 {
+    //Serial.printf("In getFile %s isMounted=%d\n",path.c_str(), m_isMounted);
     if(m_isMounted)
         return new LittleFile(path);
     else
@@ -170,11 +170,7 @@ MIstream* LittleFile::inputStream()
 
 MOstream* LittleFile::outputStream()
 {
-               Serial.println("FSTEST: attempting LittleFile::outputStream 1");
-
     MOstream* ostream = new LittleOStream(m_path);
-            Serial.println("FSTEST: attempting LittleFile::outputStream 2");
-
     ostream->open();   
     return ostream;
 }
@@ -190,7 +186,7 @@ time_t LittleFile::getLastWrite()
 
 time_t LittleFile::getCreationTime()
 {
-    
+    return 0;
 }
 
 bool LittleFile::mkDir()
@@ -386,10 +382,10 @@ bool LittleOStream::isOpen() {
 }
 
 bool LittleOStream::seek(uint32_t pos, SeekMode mode) {
-
+    return false;
 };
 bool LittleOStream::seek(uint32_t pos) {
-
+    return false;
 };
 size_t LittleOStream::position() {
     if(!isOpen()) return 0;
@@ -411,7 +407,7 @@ bool LittleOStream::open() {
 
 // MOstream methods
 size_t LittleOStream::write(uint8_t) {
-
+    return 0;
 };
 
 size_t LittleOStream::write(const uint8_t *buf, size_t size) {
@@ -446,10 +442,10 @@ bool LittleIStream::isOpen() {
 }
 
 bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
-
+    return false;
 };
 bool LittleIStream::seek(uint32_t pos) {
-
+    return false;
 };
 
 size_t LittleIStream::position() {
@@ -475,7 +471,7 @@ int LittleIStream::available() {
 };
 
 uint8_t LittleIStream::read() {
-
+    return 0;
 };
 
 size_t LittleIStream::read(uint8_t* buf, size_t size) {
@@ -585,4 +581,3 @@ void LittleHandle::obtain(int fl, std::string m_path) {
                rc, fd, path, openMode, accessMode, rc);
     }    
 }
-

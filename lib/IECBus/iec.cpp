@@ -772,6 +772,16 @@ bool  IEC::isDeviceEnabled(const byte deviceNumber)
 	return (enabledDevices & (1<<deviceNumber));
 } // isDeviceEnabled
 
+void IEC::enableDevice(const byte deviceNumber)
+{
+	enabledDevices |= 1UL << deviceNumber;
+} // enableDevice
+
+void IEC::disableDevice(const byte deviceNumber)
+{
+	enabledDevices &= ~(1UL << deviceNumber);
+} // disableDevice
+
 IEC::IECState  IEC::state() const
 {
 	return static_cast<IECState>(m_state);

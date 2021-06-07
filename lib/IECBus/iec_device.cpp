@@ -92,58 +92,58 @@ void Interface::sendDeviceInfo()
 	Debug_println("");
 
 	// Send List HEADER
-	sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
+	sendLine(basicPtr, 0, "\x14\x14\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// CPU
-	sendLine(basicPtr, 0, "SYSTEM ---");
+	sendLine(basicPtr, 0, "\x14\x14" "SYSTEM ---");
 	String sdk = String(ESP.getSdkVersion());
 	sdk.toUpperCase();
-	sendLine(basicPtr, 0, "SDK VER    : %s", sdk.c_str());
+	sendLine(basicPtr, 0, "\x14\x14" "SDK VER    : %s", sdk.c_str());
 	//sendLine(basicPtr, 0, "BOOT VER   : %08X", ESP.getBootVersion());
 	//sendLine(basicPtr, 0, "BOOT MODE  : %08X", ESP.getBootMode());
 	//sendLine(basicPtr, 0, "CHIP ID    : %08X", ESP.getChipId());
-	sendLine(basicPtr, 0, "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
-	sendLine(basicPtr, 0, "CYCLES     : %u", ESP.getCycleCount());
+	sendLine(basicPtr, 0, "\x14\x14" "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
+	sendLine(basicPtr, 0, "\x14\x14" "CYCLES     : %u", ESP.getCycleCount());
 
 	// POWER
-	sendLine(basicPtr, 0, "POWER ---");
+	sendLine(basicPtr, 0, "\x14\x14" "POWER ---");
 	//sendLine(basicPtr, 0, "VOLTAGE    : %d.%d V", ( ESP.getVcc() / 1000 ), ( ESP.getVcc() % 1000 ));
 
 	// RAM
-	sendLine(basicPtr, 0, "MEMORY ---");
-	sendLine(basicPtr, 0, "RAM SIZE   : %5d B", getTotalMemory());
-	sendLine(basicPtr, 0, "RAM FREE   : %5d B", getTotalAvailableMemory());
-	sendLine(basicPtr, 0, "RAM >BLK   : %5d B", getLargestAvailableBlock());
-	sendLine(basicPtr, 0, "RAM FRAG   : %s %%", floatBuffer);
+	sendLine(basicPtr, 0, "\x14\x14" "MEMORY ---");
+	sendLine(basicPtr, 0, "\x14\x14" "RAM SIZE   : %5d B", getTotalMemory());
+	sendLine(basicPtr, 0, "\x14\x14" "RAM FREE   : %5d B", getTotalAvailableMemory());
+	sendLine(basicPtr, 0, "\x14\x14" "RAM >BLK   : %5d B", getLargestAvailableBlock());
+	sendLine(basicPtr, 0, "\x14\x14" "RAM FRAG   : %s %%", floatBuffer);
 
 	// ROM
-	sendLine(basicPtr, 0, "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
-	sendLine(basicPtr, 0, "ROM USED   : %5d B", ESP.getSketchSize());
-	sendLine(basicPtr, 0, "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
+	sendLine(basicPtr, 0, "\x14\x14" "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
+	sendLine(basicPtr, 0, "\x14\x14" "ROM USED   : %5d B", ESP.getSketchSize());
+	sendLine(basicPtr, 0, "\x14\x14" "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
 
 	// FLASH
-	sendLine(basicPtr, 0, "STORAGE ---");
+	sendLine(basicPtr, 0, "\x14\x14" "STORAGE ---");
 	//sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
-	sendLine(basicPtr, 0, "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
+	sendLine(basicPtr, 0, "\x14\x14" "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
 
 	// FILE SYSTEM
-	sendLine(basicPtr, 0, "FILE SYSTEM ---");
-	sendLine(basicPtr, 0, "TYPE       : %s", FS_TYPE);
+	sendLine(basicPtr, 0, "\x14\x14" "FILE SYSTEM ---");
+	sendLine(basicPtr, 0, "\x14\x14" "TYPE       : %s", FS_TYPE);
 	//  #if defined(USE_LITTLEFS)
-	sendLine(basicPtr, 0, "SIZE       : %5d B", fs_info.totalBytes);
-	sendLine(basicPtr, 0, "USED       : %5d B", fs_info.usedBytes);
-	sendLine(basicPtr, 0, "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
+	sendLine(basicPtr, 0, "\x14\x14" "SIZE       : %5d B", fs_info.totalBytes);
+	sendLine(basicPtr, 0, "\x14\x14" "USED       : %5d B", fs_info.usedBytes);
+	sendLine(basicPtr, 0, "\x14\x14" "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
 	//  #endif
 
 	// NETWORK
-	sendLine(basicPtr, 0, "NETWORK ---");
+	sendLine(basicPtr, 0, "\x14\x14" "NETWORK ---");
 	char ip[16];
 	sprintf(ip, "%s", ipToString(WiFi.softAPIP()).c_str());
-	sendLine(basicPtr, 0, "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
-	sendLine(basicPtr, 0, "AP IP      : %s", ip);
+	sendLine(basicPtr, 0, "\x14\x14" "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
+	sendLine(basicPtr, 0, "\x14\x14" "AP IP      : %s", ip);
 	sprintf(ip, "%s", ipToString(WiFi.localIP()).c_str());
-	sendLine(basicPtr, 0, "STA MAC    : %s", WiFi.macAddress().c_str());
-	sendLine(basicPtr, 0, "STA IP     : %s", ip);
+	sendLine(basicPtr, 0, "\x14\x14" "STA MAC    : %s", WiFi.macAddress().c_str());
+	sendLine(basicPtr, 0, "\x14\x14" "STA IP     : %s", ip);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -165,17 +165,17 @@ void Interface::sendDeviceStatus()
 	Debug_println("");
 
 	// Send List HEADER
-	sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
+	sendLine(basicPtr, 0, "\x14\x14\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// Current Config
-	sendLine(basicPtr, 0, "DEVICE    : %d", m_device.device());
-	sendLine(basicPtr, 0, "MEDIA     : %d", m_device.media());
-	sendLine(basicPtr, 0, "PARTITION : %d", m_device.partition());
-	sendLine(basicPtr, 0, "URL       : %s", m_device.url().c_str());
-	sendLine(basicPtr, 0, "PATH      : %s", m_device.path().c_str());
-	sendLine(basicPtr, 0, "ARCHIVE   : %s", m_device.archive().c_str());
-	sendLine(basicPtr, 0, "IMAGE     : %s", m_device.image().c_str());
-	sendLine(basicPtr, 0, "FILENAME  : %s", m_filename.c_str());
+	sendLine(basicPtr, 0, "\x14\x14" "DEVICE    : %d", m_device.device());
+	sendLine(basicPtr, 0, "\x14\x14" "MEDIA     : %d", m_device.media());
+	sendLine(basicPtr, 0, "\x14\x14" "PARTITION : %d", m_device.partition());
+	sendLine(basicPtr, 0, "\x14\x14" "URL       : %s", m_device.url().c_str());
+	sendLine(basicPtr, 0, "\x14\x14" "PATH      : %s", m_device.path().c_str());
+	sendLine(basicPtr, 0, "\x14\x14" "ARCHIVE   : %s", m_device.archive().c_str());
+	sendLine(basicPtr, 0, "\x14\x14" "IMAGE     : %s", m_device.image().c_str());
+	sendLine(basicPtr, 0, "\x14\x14" "FILENAME  : %s", m_filename.c_str());
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -436,7 +436,18 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 
 	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Serial.printf("\r\n$IEC: DEVICE[%d] MEDIA[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.media(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
+	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nARCHIVE[%s]\nIMAGE[%s]\nFILENAME[%s]\nFILETYPE[%s]\nCOMMAND[%s]\r\n", 
+					m_device.device(), 
+					m_device.media(), 
+					m_device.partition(), 
+					m_device.url().c_str(), 
+					m_device.path().c_str(),
+					m_device.archive().c_str(), 
+					m_device.image().c_str(), 
+					m_filename.c_str(), 
+					m_filetype.c_str(), 
+					atn_cmd.str
+	);
 
 } // handleATNCmdCodeOpen
 

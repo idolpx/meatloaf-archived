@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "FS.h"
-#include "../make_unique.h"
+#include "../../include/make_unique.h"
 
 /********************************************************
  * Universal streams
@@ -12,12 +12,13 @@
 class MStream 
 {
 public:
+    //virtual MStream(MStream* srcStream) = 0;
     virtual bool seek(uint32_t pos, SeekMode mode) = 0;
     virtual bool seek(uint32_t pos) = 0;
     virtual size_t position() = 0;
     virtual void close() = 0;
     virtual bool open() = 0;
-    virtual ~MStream() {};
+    virtual ~MStream() = 0;
     virtual bool isOpen() = 0;
 };
 

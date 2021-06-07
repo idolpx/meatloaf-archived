@@ -1,6 +1,8 @@
 #include "meat_io.h"
-#include "../make_unique.h"
+#include "../../include/make_unique.h"
 #include "buffered_io.h"
+#include <string>
+#include "../EdUrlParser/EdUrlParser.h"
 
 #define RECORD_SIZE 256
 
@@ -32,13 +34,23 @@ void recurseList(MFile* file) {
 
 void testLittleFS() {
 
+    std::unique_ptr<MFile> someComplexPath(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp/onefile/brucelee.prg"));
+    
+
+    Serial.println("FSTEST: dnp container");
+
+    std::unique_ptr<MFile> someComplexPathContainer(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp"));
+
+
+    return;
+
     Serial.println("FSTEST: test MFile factory");
 
     std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
     std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
     std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
 
-    std::unique_ptr<MFile> root(MFSOwner::File("/"));
+    //std::unique_ptr<MFile> root(MFSOwner::File("dupa/"));
 
     if(fileInRoot==nullptr) {
         Serial.println("FSTEST: null path returned!!!");
@@ -119,6 +131,6 @@ void testLittleFS() {
     // readFromSub->close(); // not required, closes automagically
     // writeToRoot->close(); // nor required, closes automagically
 
-    recurseList(root.get());
+    //recurseList(root.get());
 }
 

@@ -2,7 +2,7 @@
 #define MEATFILE_DEFINES_FSHTTP_H
 
 #include "meat_io.h"
-#include "../make_unique.h"
+#include "../../include/make_unique.h"
 #include "urlfile.h"
 
 
@@ -91,6 +91,8 @@ class HttpFileSystem: public MFileSystem
     };
 
     bool handles(std::string path) {
+        //Serial.println("FSTEST: handles in http");
+
         return path.rfind("http://", 0) == 0;
     }
 public:

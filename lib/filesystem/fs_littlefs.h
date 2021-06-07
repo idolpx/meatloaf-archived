@@ -3,7 +3,7 @@
 
 #include "meat_io.h"
 #include "../lib/littlefs/lfs.h"
-#include "../make_unique.h"
+#include "../../include/make_unique.h"
 
 /********************************************************
  * MFileSystem
@@ -17,8 +17,8 @@ class LittleFileSystem: public MFileSystem
 
 
 public:
-    LittleFileSystem(char* prefix, uint32_t start, uint32_t size, uint32_t pageSize, uint32_t blockSize, uint32_t maxOpenFds)
-        : MFileSystem(prefix), _start(start) , _size(size) , _pageSize(pageSize) , _blockSize(blockSize) , _maxOpenFds(maxOpenFds)
+    LittleFileSystem(uint32_t start, uint32_t size, uint32_t pageSize, uint32_t blockSize, uint32_t maxOpenFds)
+        : MFileSystem("littleFS"), _start(start) , _size(size) , _pageSize(pageSize) , _blockSize(blockSize) , _maxOpenFds(maxOpenFds)
     {
         memset(&lfsStruct, 0, sizeof(lfsStruct));
         memset(&_lfs_cfg, 0, sizeof(_lfs_cfg));
@@ -41,11 +41,7 @@ public:
         _lfs_cfg.file_max = 0;
         _lfs_cfg.attr_max = 0;
         m_isMounted = false;
-    }
-
-    ~LittleFileSystem()
-    {
-        umount();
+        mount();
     }
 
     bool handles(std::string path);
@@ -87,7 +83,12 @@ friend class LittleIStream;
 
 public:
     LittleFile(std::string path) : MFile(path) {
-        if(!pathValid(path.c_str()))
+        if(path == "/")
+            m_path=path;
+        else if(path.back()=='/')
+            m_path=path.erase(path.length()-1,1);
+
+        if(!pathValid(m_path.c_str()))
             m_isNull = true;
         else
             m_isNull = false;
@@ -155,7 +156,7 @@ public:
     size_t position() override;
     void close() override;
     bool open() override;
-    ~LittleOStream() {
+    ~LittleOStream() override {
         close();
     }
 
@@ -189,7 +190,7 @@ public:
     size_t position() override;
     void close() override;
     bool open() override;
-    ~LittleIStream() {
+    ~LittleIStream() override {
         close();
     }
 
