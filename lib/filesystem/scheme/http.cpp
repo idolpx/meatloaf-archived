@@ -17,6 +17,10 @@ MIstream* HttpFile::inputStream() {
     return istream;
 } ; 
 
+MIstream* HttpFile::createIStream(MIstream* is) {
+    return is; // we don't have to process this stream in any way, just return the original stream
+}
+
 MOstream* HttpFile::outputStream() {
     // has to return OPENED stream
     MOstream* ostream = new HttpOStream(m_path);

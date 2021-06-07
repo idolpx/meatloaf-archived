@@ -106,6 +106,7 @@ public:
     size_t size() override ;
     bool remove() override ;
     bool rename(const char* dest);
+    MIstream* createIStream(MIstream* src);
 
 private:
     lfs_dir_t dir;

@@ -8,10 +8,14 @@
  * Streams implementations
  ********************************************************/
 
-class SevenZipIStream: MIstream, Browsable {
+class SevenZipIStream: MIstream {
 public:
-    SevenZipIStream(std::string& path) {
-        m_path = path;
+    
+    SevenZipIStream(MIstream* srcStream): srcStr(srcStream) {
+        // this stream must be able to return a stream of
+        // UNPACKED file contents
+        // additionaly it has to implement getNextEntry()
+        // which skips data in the stream to next file in zip
     }
     // MStream methods
     bool seek(uint32_t pos, SeekMode mode) override;
@@ -27,13 +31,10 @@ public:
     int available() override;
     uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
-    bool isOpen();
-
-    // Zip-specific methods
-    MFile* getNextEntry() override; // skips the stream until the beginnin of next file
+    bool isOpen() override;
 
 protected:
-    std::string m_path;
+    MStream* srcStr;
 
 };
 
@@ -41,6 +42,36 @@ protected:
 /********************************************************
  * Files implementations
  ********************************************************/
+
+class SevenZipFile: public MFile
+{
+public:
+    SevenZipFile(std::string path) : MFile(path) {};
+    MIstream* createIStream(MIstream* src) override;
+
+    bool isDirectory() override;
+    MIstream* inputStream() override ; // has to return OPENED stream
+    MOstream* outputStream() override ; // has to return OPENED stream
+    time_t getLastWrite() override ;
+    time_t getCreationTime() override ;
+    bool rewindDirectory() override ;
+    MFile* getNextFileInDir() override ;
+    bool mkDir() override ;
+    bool exists() override ;
+    size_t size() override ;
+    bool remove() override ;
+    bool rename(const char* dest);
+
+
+    bool isBrowsable() override {
+        return true;
+    }
+
+    // Browsable methods
+    MFile* getNextEntry() override; // skips the stream until the beginnin of next file
+
+};
+
 
 
 /********************************************************
@@ -50,7 +81,7 @@ protected:
 class SevenZipFileSystem: public MFileSystem 
 {
     MFile* getFile(std::string path) {
-        return new LittleFile(path);
+        return new SevenZipFile(path);
     };
 
 
