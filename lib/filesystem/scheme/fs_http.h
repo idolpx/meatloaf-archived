@@ -3,7 +3,12 @@
 
 #include "meat_io.h"
 #include "../../include/make_unique.h"
+#include "mfile_default_impl.h"
 #include "urlfile.h"
+
+/********************************************************
+ * Streams
+ ********************************************************/
 
 
 class HttpIStream: public MIstream {
@@ -78,25 +83,21 @@ public:
 };
 
 
-class HttpFileSystem: public MFileSystem 
+/********************************************************
+ * FS
+ ********************************************************/
+
+class HttpFileSystem: public MFileSystemDefaultImpl 
 {
     MFile* getFile(std::string path) override {
         return new HttpFile(path);
     }
-    bool mount() override {
-        return true;
-    };
-    bool umount() override {
-        return true;
-    };
 
-    bool handles(std::string path) {
-        //Serial.println("FSTEST: handles in http");
-
-        return path.rfind("http://", 0) == 0;
+    bool handles(std::string name) {
+        return name == "http:";
     }
 public:
-    HttpFileSystem(char* prefix): MFileSystem(prefix) {};
+    HttpFileSystem(): MFileSystemDefaultImpl("http") {};
 };
 
 

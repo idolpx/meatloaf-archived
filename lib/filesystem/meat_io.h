@@ -4,13 +4,11 @@
 #include <memory>
 #include <Arduino.h>
 #include <string>
+#include <vector>
 #include "FS.h"
 #include "buffered_io.h"
 #include "meat_stream.h"
 #include "../../include/make_unique.h"
-
-#define FS_COUNT 2
-
 
 /********************************************************
  * Universal file
@@ -49,9 +47,14 @@ public:
     //virtual bool truncate(size_t size) = 0;
     virtual bool rename(const char* dest) = 0;
     virtual ~MFile() {};
+
+    std::string streamPath;
+    std::string pathInStream;
 protected:
     std::string m_path;
     bool m_isNull;
+    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
+friend class MFSOwner;
 };
 
 /********************************************************
@@ -61,7 +64,8 @@ protected:
 
 class MFileSystem {
 public:
-    MFileSystem(char* prefix);
+    MFileSystem(char* symbol);
+    virtual ~MFileSystem() = 0;
     virtual bool handles(std::string path) = 0;
     virtual bool mount() = 0;
     virtual bool umount() = 0;
@@ -71,7 +75,7 @@ public:
     }
 
 protected:
-    char* protocol;
+    char* symbol;
     bool m_isMounted;
 
     friend class MFSOwner;
@@ -83,12 +87,13 @@ protected:
  ********************************************************/
 
 class MFSOwner {
-    static MFileSystem* availableFS[FS_COUNT];
+    static std::vector<MFileSystem*> availableFS;
 
 public:
     static MFile* File(std::string name);
     static bool mount(std::string name);
     static bool umount(std::string name);
 
+    //static MFile* MatchFile(std::string path);
 };
 #endif
