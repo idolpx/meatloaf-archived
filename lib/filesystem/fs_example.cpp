@@ -41,13 +41,16 @@ void testLittleFS() {
 
     std::unique_ptr<MFile> someComplexPathContainer(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp"));
 
+    Serial.println("FSTEST: normal file");
+
+
+    std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
 
     return;
 
     Serial.println("FSTEST: test MFile factory");
 
     std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
-    std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
     std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
 
     //std::unique_ptr<MFile> root(MFSOwner::File("dupa/"));

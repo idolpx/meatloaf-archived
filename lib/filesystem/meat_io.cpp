@@ -136,7 +136,7 @@ MFile* MFSOwner::File(std::string path) {
          }
     };
 
-    Serial.printf("fs not matched\n");
+    //Serial.printf("Little fs fallback\n");
 
     MFile* newFile = new LittleFile(path);
     newFile->streamPath = path;
@@ -195,6 +195,35 @@ std::string MFile::extension() {
     int lastPeriod = m_path.find_last_of(".");
     return m_path.substr(lastPeriod+1);
 }
+
+MIstream* MFile::inputStream() {
+    ; // has to return OPENED stream
+    std::shared_ptr<MFile> srcStreamProvider(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
+    std::shared_ptr<MIstream> srcStream(srcStreamProvider->inputStream()); // get its base stream, i.e. zip raw file contents
+
+    std::shared_ptr<MIstream> thisStreamPtr(createIStream(srcStream.get())); // wrap this stream into decodec stream, i.e. unpacked zip files
+
+    auto thisStream = thisStreamPtr.get();
+
+    if(pathInStream != "" && isBrowsable()) {
+        // stream is browsable and path was requested, let's skip the stream to requested file
+        std::unique_ptr<MFile> pointedFile(getNextEntry());
+        while (pointedFile != nullptr)
+        {
+            if(pointedFile->path() == this->pathInStream)
+                return thisStream;
+
+            pointedFile.reset(getNextEntry());
+        }
+        
+        return nullptr; // there was no file with that name in this stream!
+    }
+    else {
+        return nullptr; // path requested for unbrowsable stream
+    }
+
+    return thisStream;
+};
 
 /********************************************************
  * MStream implementations

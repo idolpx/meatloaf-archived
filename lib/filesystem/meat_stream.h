@@ -12,7 +12,6 @@
 class MStream 
 {
 public:
-    //virtual MStream(MStream* srcStream) = 0;
     virtual bool seek(uint32_t pos, SeekMode mode) = 0;
     virtual bool seek(uint32_t pos) = 0;
     virtual size_t position() = 0;

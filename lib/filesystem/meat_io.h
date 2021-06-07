@@ -34,7 +34,7 @@ public:
     };
 
     virtual bool isDirectory() = 0;
-    virtual MIstream* inputStream() = 0 ; // has to return OPENED stream
+    virtual MIstream* inputStream();
     virtual MOstream* outputStream() = 0 ; // has to return OPENED stream
     virtual time_t getLastWrite() = 0 ;
     virtual time_t getCreationTime() = 0 ;
@@ -45,11 +45,16 @@ public:
     virtual size_t size() = 0;
     virtual bool remove() = 0;
     virtual bool rename(const char* dest) = 0;
+    virtual MFile* getNextEntry() {};
+    virtual bool isBrowsable() { return false; };
+
     virtual ~MFile() {};
+
 
     std::string streamPath;
     std::string pathInStream;
 protected:
+    virtual MIstream* createIStream(MIstream* src) = 0;
     std::string m_path;
     bool m_isNull;
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
@@ -92,14 +97,13 @@ public:
     static MFile* File(std::string name);
     static bool mount(std::string name);
     static bool umount(std::string name);
-
-    //static MFile* MatchFile(std::string path);
 };
 
 
-class Browsable {
-    virtual MFile* getNextEntry() = 0;
-};
+// class Browsable {
+// public:
+//     virtual MFile* getNextEntry() = 0;
+// };
 
 
 #endif

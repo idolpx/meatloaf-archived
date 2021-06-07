@@ -27,7 +27,7 @@ public:
     size_t size() override ; // we may take content-lenght from header if exists
     bool remove() override { return false; };
     bool rename(const char* dest) { return false; };
-
+    MIstream* createIStream(MIstream* src);
 };
 
 
@@ -56,6 +56,7 @@ public:
     uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
+
 
 protected:
     std::string m_path;
