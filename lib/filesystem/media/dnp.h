@@ -3,10 +3,22 @@
 
 #include "meat_io.h"
 #include "LittleFS.h"
-#include "mfile_default_impl.h"
 #include <string>
 
-class DNPFileSystem: public MFileSystemDefaultImpl 
+/********************************************************
+ * Streams implementations
+ ********************************************************/
+
+/********************************************************
+ * Files implementations
+ ********************************************************/
+
+
+/********************************************************
+ * FS implementations
+ ********************************************************/
+
+class DNPFileSystem: public MFileSystem 
 {
     MFile* getFile(std::string path) {
         return new LittleFile(path);
@@ -14,7 +26,7 @@ class DNPFileSystem: public MFileSystemDefaultImpl
 
 
 public:
-    DNPFileSystem(): MFileSystemDefaultImpl("dnp"){}
+    DNPFileSystem(): MFileSystem("dnp"){}
 
 
     bool handles(std::string fileName) {

@@ -44,7 +44,6 @@ public:
     virtual bool exists() = 0;
     virtual size_t size() = 0;
     virtual bool remove() = 0;
-    //virtual bool truncate(size_t size) = 0;
     virtual bool rename(const char* dest) = 0;
     virtual ~MFile() {};
 
@@ -66,9 +65,9 @@ class MFileSystem {
 public:
     MFileSystem(char* symbol);
     virtual ~MFileSystem() = 0;
+    virtual bool mount() { return true; };
+    virtual bool umount() { return true; };
     virtual bool handles(std::string path) = 0;
-    virtual bool mount() = 0;
-    virtual bool umount() = 0;
     virtual MFile* getFile(std::string path) = 0;
     bool isMounted() {
         return m_isMounted;
@@ -96,4 +95,11 @@ public:
 
     //static MFile* MatchFile(std::string path);
 };
+
+
+class Browsable {
+    virtual MFile* getNextEntry() = 0;
+};
+
+
 #endif

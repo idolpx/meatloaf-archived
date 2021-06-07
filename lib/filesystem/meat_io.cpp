@@ -92,14 +92,14 @@ bool MFSOwner::umount(std::string name) {
 
 
 void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
-    Serial.println("w fillpaths");   
+    //Serial.println("w fillpaths");   
 
     (*matchedElement)++;
 
-    Serial.println("w fillpaths stream pths");
+    //Serial.println("w fillpaths stream pths");
     delay(500);   
     streamPath = joinNamesToPath(fromStart, matchedElement);
-    Serial.println("w fillpaths path in stream");   
+    //Serial.println("w fillpaths path in stream");   
     delay(500);   
     pathInStream = joinNamesToPath(matchedElement, last);
 
@@ -195,3 +195,9 @@ std::string MFile::extension() {
     int lastPeriod = m_path.find_last_of(".");
     return m_path.substr(lastPeriod+1);
 }
+
+/********************************************************
+ * MStream implementations
+ ********************************************************/
+
+MStream::~MStream() {};

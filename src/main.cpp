@@ -188,12 +188,7 @@ void setup()
 			}
 		}
 
-
-		// initialize LittleFS for file operations
-		MFSOwner::mount("/");
-
-		testLittleFS();
-
+		//testLittleFS();
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
