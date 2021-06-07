@@ -161,6 +161,10 @@ bool LittleFile::isDirectory()
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
 }
 
+MIstream* LittleFile::createIStream(MIstream* is) {
+    return is; // we don't have to process this stream in any way, just return the original stream
+}
+
 MIstream* LittleFile::inputStream()
 {
     MIstream* istream = new LittleIStream(m_path);
