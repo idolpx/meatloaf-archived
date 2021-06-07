@@ -5,8 +5,8 @@
 #include "MIOException.h"
 #include "fs_littlefs.h"
 #include "media/dnp.h"
-#include "scheme/fs_http.h"
-#include "scheme/fs_smb.h"
+#include "scheme/http.h"
+#include "scheme/smb.h"
 #include <vector>
 #include <sstream>
 

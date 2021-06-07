@@ -6,6 +6,36 @@
 #include "urlfile.h"
 
 
+/********************************************************
+ * File implementations
+ ********************************************************/
+
+class HttpFile: public UrlFile {
+
+public:
+    HttpFile(std::string path): UrlFile(path) {};
+
+    bool isDirectory() override;
+    MIstream* inputStream() override ; // has to return OPENED stream
+    MOstream* outputStream() override ; // has to return OPENED stream
+    time_t getLastWrite() override ;
+    time_t getCreationTime() override ;
+    bool rewindDirectory() override { return false; };
+    MFile* getNextFileInDir() override { return nullptr; };
+    bool mkDir() override { return false; };
+    bool exists() override ; // we may try open the stream to check if it exists
+    size_t size() override ; // we may take content-lenght from header if exists
+    bool remove() override { return false; };
+    bool rename(const char* dest) { return false; };
+    MIstream* createIStream(MIstream* src);
+};
+
+
+/********************************************************
+ * Streams
+ ********************************************************/
+
+
 class HttpIStream: public MIstream {
 public:
     HttpIStream(std::string& path) {
@@ -26,6 +56,7 @@ public:
     uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
+
 
 protected:
     std::string m_path;
@@ -57,46 +88,22 @@ protected:
     std::string m_path;
 };
 
-class HttpFile: public UrlFile {
 
-public:
-    HttpFile(std::string path): UrlFile(path) {};
-
-    bool isDirectory() override;
-    MIstream* inputStream() override ; // has to return OPENED stream
-    MOstream* outputStream() override ; // has to return OPENED stream
-    time_t getLastWrite() override ;
-    time_t getCreationTime() override ;
-    bool rewindDirectory() override { return false; };
-    MFile* getNextFileInDir() override { return nullptr; };
-    bool mkDir() override { return false; };
-    bool exists() override ; // we may try open the stream to check if it exists
-    size_t size() override ; // we may take content-lenght from header if exists
-    bool remove() override { return false; };
-    bool rename(const char* dest) { return false; };
-
-};
-
+/********************************************************
+ * FS
+ ********************************************************/
 
 class HttpFileSystem: public MFileSystem 
 {
     MFile* getFile(std::string path) override {
         return new HttpFile(path);
     }
-    bool mount() override {
-        return true;
-    };
-    bool umount() override {
-        return true;
-    };
 
-    bool handles(std::string path) {
-        //Serial.println("FSTEST: handles in http");
-
-        return path.rfind("http://", 0) == 0;
+    bool handles(std::string name) {
+        return name == "http:";
     }
 public:
-    HttpFileSystem(char* prefix): MFileSystem(prefix) {};
+    HttpFileSystem(): MFileSystem("http") {};
 };
 
 
