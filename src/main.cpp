@@ -105,7 +105,7 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 //uint8_t state_int;
 //String state_string;
 
-//void testLittleFS();
+void testLittleFS();
 
 // ------------------------
 void setup()
@@ -188,12 +188,7 @@ void setup()
 			}
 		}
 
-
-		// initialize LittleFS for file operations
-		MFSOwner::mount("/");
-
 		//testLittleFS();
-
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;

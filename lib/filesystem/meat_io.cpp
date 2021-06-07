@@ -4,39 +4,62 @@
 
 #include "MIOException.h"
 #include "fs_littlefs.h"
+#include "media/dnp.h"
 #include "scheme/fs_http.h"
 #include "scheme/fs_smb.h"
+#include <vector>
+#include <sstream>
+
+
+std::string joinNamesToPath(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end) {
+    std::string res;
+
+    if((*start)>=(*end))
+        return std::string();
+
+    for(auto i = (*start); i<(*end); i++) {
+        res+=(*i);
+        if(i<(*end))
+            res+="/";
+    }
+
+    return res.erase(res.length()-1,1);
+}
 
 /********************************************************
  * MFSOwner implementations
  ********************************************************/
 
 // initialize other filesystems here
-LittleFileSystem littleFS("/",FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5);
-HttpFileSystem httpFS("http://");
+LittleFileSystem littleFS(FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5);
+HttpFileSystem httpFS;
+DNPFileSystem dnpFS;
 
 // put all available filesystems in this array
 // put littleFS as last, fallback system so it can be used if nothing matches
-MFileSystem* MFSOwner::availableFS[FS_COUNT] = { &httpFS, &littleFS };
+//MFileSystem* MFSOwner::availableFS[FS_COUNT] = { &httpFS, &littleFS };
+std::vector<MFileSystem*> MFSOwner::availableFS{  &dnpFS, &httpFS };
 
-MFile* MFSOwner::File(std::string name) {
-    for(uint i = 0; i < FS_COUNT ; i ++) {
-        //Serial.printf("FSTEST: trying to find fs for %s = %s\n", name.c_str(), availableFS[i]->protocol);
-        if(availableFS[i]->handles(name)) {
-            //Serial.println("FSTEST: found a proper fs");
-            return availableFS[i]->getFile(name);
-        }
-    }
+
+// MFile* MFSOwner::File(std::string name) {
+//     for(auto i = availableFS.begin(); i < availableFS.end() ; i ++) {
+//         Serial.printf("FSTEST: trying to find fs for %s = %s\n", name.c_str(), (*i)->protocol);
+        
+//         if((*i)->handles(name)) {
+//             Serial.println("FSTEST: found a proper fs");
+//             return (*i)->getFile(name);
+//         }
+//     }
     
-    return nullptr;
-}
+//     return nullptr;
+// }
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");
     Serial.print(name.c_str());
 
-    for(uint i = 0; i < FS_COUNT ; i ++) {
-        auto fs = availableFS[i];
+    for(auto i = availableFS.begin(); i < availableFS.end() ; i ++) {
+        auto fs = (*i);
 
         if(fs->handles(name)) {
                 Serial.println("MFSOwner found a proper fs");
@@ -57,8 +80,9 @@ bool MFSOwner::mount(std::string name) {
 }
 
 bool MFSOwner::umount(std::string name) {
-    uint i = 0;
-    for(auto fs = availableFS[i]; i < FS_COUNT ; i ++) {
+    for(auto i = availableFS.begin(); i < availableFS.end() ; i ++) {
+        auto fs = (*i);
+
         if(fs->handles(name)) {
             return fs->umount();
         }
@@ -67,14 +91,71 @@ bool MFSOwner::umount(std::string name) {
 }
 
 
+void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
+    //Serial.println("w fillpaths");   
+
+    (*matchedElement)++;
+
+    //Serial.println("w fillpaths stream pths");
+    delay(500);   
+    streamPath = joinNamesToPath(fromStart, matchedElement);
+    //Serial.println("w fillpaths path in stream");   
+    delay(500);   
+    pathInStream = joinNamesToPath(matchedElement, last);
+
+    Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
+}
+
+MFile* MFSOwner::File(std::string path) {
+    std::vector<std::string> paths;
+    
+    std::string line;
+    std::stringstream ss(path);
+    while(std::getline(ss, line, '/')) {
+        paths.push_back(line);
+    }
+
+    auto pathIterator = paths.end();
+    auto begin = paths.begin();
+    auto end = paths.end();
+
+    while (pathIterator != paths.begin()) {
+        pathIterator--;
+
+        auto part = *pathIterator;
+
+        //Serial.printf("testing part '%s'\n", part.c_str());
+
+        auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ return fs->handles(part); } );
+
+        if(foundIter != availableFS.end()) {
+            auto newFile = (*foundIter)->getFile(path);
+            newFile->fillPaths(&pathIterator, &begin, &end);
+
+            return newFile;
+         }
+    };
+
+    Serial.printf("fs not matched\n");
+
+    MFile* newFile = new LittleFile(path);
+    newFile->streamPath = path;
+    newFile->pathInStream = "";
+
+    return newFile;
+}
+
+
 /********************************************************
  * MFileSystem implementations
  ********************************************************/
 
-MFileSystem::MFileSystem(char* prefix)
+MFileSystem::MFileSystem(char* s)
 {
-    protocol = prefix;
+    symbol = s;
 }
+
+MFileSystem::~MFileSystem() {}
 
 // bool MFileSystem::handles(std::string path) 
 // {
@@ -114,3 +195,9 @@ std::string MFile::extension() {
     int lastPeriod = m_path.find_last_of(".");
     return m_path.substr(lastPeriod+1);
 }
+
+/********************************************************
+ * MStream implementations
+ ********************************************************/
+
+MStream::~MStream() {};

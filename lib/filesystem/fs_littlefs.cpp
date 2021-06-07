@@ -186,7 +186,7 @@ time_t LittleFile::getLastWrite()
 
 time_t LittleFile::getCreationTime()
 {
-    
+    return 0;
 }
 
 bool LittleFile::mkDir()
@@ -382,10 +382,10 @@ bool LittleOStream::isOpen() {
 }
 
 bool LittleOStream::seek(uint32_t pos, SeekMode mode) {
-
+    return false;
 };
 bool LittleOStream::seek(uint32_t pos) {
-
+    return false;
 };
 size_t LittleOStream::position() {
     if(!isOpen()) return 0;
@@ -407,7 +407,7 @@ bool LittleOStream::open() {
 
 // MOstream methods
 size_t LittleOStream::write(uint8_t) {
-
+    return 0;
 };
 
 size_t LittleOStream::write(const uint8_t *buf, size_t size) {
@@ -442,10 +442,10 @@ bool LittleIStream::isOpen() {
 }
 
 bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
-
+    return false;
 };
 bool LittleIStream::seek(uint32_t pos) {
-
+    return false;
 };
 
 size_t LittleIStream::position() {
@@ -471,7 +471,7 @@ int LittleIStream::available() {
 };
 
 uint8_t LittleIStream::read() {
-
+    return 0;
 };
 
 size_t LittleIStream::read(uint8_t* buf, size_t size) {
