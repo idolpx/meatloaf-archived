@@ -38,6 +38,7 @@ time_t HttpFile::getCreationTime() {
 } ;
 
 bool HttpFile::exists() {
+    Serial.printf("\nHttpFile::exists: [%s]\n", m_path.c_str());
     // we may try open the stream to check if it exists
     std::unique_ptr<MIstream> test(inputStream());
 
@@ -94,6 +95,7 @@ void HttpIStream::close() {
 };
 
 bool HttpIStream::open() {
+    Serial.printf("\nHttpIStream::open: [%s]\n", m_path.c_str());
     auto someRc = m_http.begin(m_client, m_path.c_str());
     auto httpCode = m_http.GET(); //Send the request
     m_file = m_http.getStream();  //Get the response payload as Stream

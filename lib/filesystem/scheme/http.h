@@ -26,7 +26,7 @@ public:
     MFile* getNextFileInDir() override { return nullptr; };
     bool mkDir() override { return false; };
     bool exists() override ; // we may try open the stream to check if it exists
-    size_t size() override ; // we may take content-lenght from header if exists
+    size_t size() override ; // we may take content-length from header if exists
     bool remove() override { return false; };
     bool rename(const char* dest) { return false; };
     MIstream* createIStream(MIstream* src);
