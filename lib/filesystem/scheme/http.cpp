@@ -74,9 +74,26 @@ bool HttpOStream::isOpen() {};
 bool HttpIStream::seek(uint32_t pos, SeekMode mode) {};
 bool HttpIStream::seek(uint32_t pos) {};
 size_t HttpIStream::position() {};
-void HttpIStream::close() {};
-bool HttpIStream::open() {};
-int HttpIStream::available() {};
+void HttpIStream::close() {
+    m_http.end();
+};
+bool HttpIStream::open() {
+    auto someRc = m_http.begin(m_client, m_path.c_str());
+    auto httpCode = m_http.GET(); //Send the request
+    m_file = m_http.getStream();  //Get the response payload as Stream
+    m_isOpen = m_file.available();
+    m_length = m_http.getSize();
+    m_bytesAvailable = m_length;
+};
+int HttpIStream::available() {
+    return m_bytesAvailable;
+};
 uint8_t HttpIStream::read() {};
-size_t HttpIStream::read(uint8_t* buf, size_t size) {};
-bool HttpIStream::isOpen() {};
+size_t HttpIStream::read(uint8_t* buf, size_t size) {
+    auto bytesRead= m_file.readBytes((char *) buf, size);
+    m_bytesAvailable-=bytesRead;
+    return bytesRead;
+};
+bool HttpIStream::isOpen() {
+    return m_isOpen;
+};
