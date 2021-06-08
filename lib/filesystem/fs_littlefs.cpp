@@ -156,6 +156,9 @@ bool LittleFile::pathValid(const char *path)
 
 bool LittleFile::isDirectory()
 {
+    if(m_path=="/" || m_path=="")
+        return true;
+        
     lfs_info info;
     int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
@@ -207,13 +210,16 @@ bool LittleFile::exists()
     if (m_isNull) {
         return false;
     }
+    if (m_path=="/" || m_path=="") {
+        return true;
+    }
     lfs_info info;
     int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
     return rc == 0;
 }
 
 size_t LittleFile::size() {
-    if(m_path=="/" || m_path=="")
+    if(m_isNull || m_path=="/" || m_path=="")
         return 0;
     else {
         auto handle = std::make_unique<LittleHandle>();
