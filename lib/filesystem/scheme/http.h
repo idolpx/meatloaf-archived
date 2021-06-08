@@ -4,11 +4,13 @@
 #include "meat_io.h"
 #include "../../include/make_unique.h"
 #include "urlfile.h"
+#include <ESP8266HTTPClient.h>
 
 
 /********************************************************
  * File implementations
  ********************************************************/
+
 
 class HttpFile: public UrlFile {
 
@@ -37,6 +39,7 @@ public:
 
 
 class HttpIStream: public MIstream {
+
 public:
     HttpIStream(std::string& path) {
         m_path = path;
@@ -60,13 +63,27 @@ public:
 
 protected:
     std::string m_path;
+    bool m_isOpen;
+    int m_length;
+    WiFiClient m_file;
+    WiFiClient m_client;
+	HTTPClient m_http;
+    int m_bytesAvailable = 0;
+    int m_position = 0;
 };
 
 
 class HttpOStream: public MOstream {
+	//WiFiClient client;
+	HTTPClient http;
+
+
 public:
     // MStream methods
     HttpOStream(std::string& path) {
+        http.setUserAgent("user_agent");
+        http.setTimeout(10000);
+
         m_path = path;
     }
     bool seek(uint32_t pos, SeekMode mode) override;
@@ -86,6 +103,9 @@ public:
 
 protected:
     std::string m_path;
+    WiFiClient m_file;
+    WiFiClient m_client;
+	HTTPClient m_http;
 };
 
 

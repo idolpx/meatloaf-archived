@@ -60,7 +60,13 @@ bool HttpOStream::seek(uint32_t pos, SeekMode mode) {};
 bool HttpOStream::seek(uint32_t pos) {};
 size_t HttpOStream::position() {};
 void HttpOStream::close() {};
-bool HttpOStream::open() {};
+bool HttpOStream::open() {
+    // obbiously since we have to know the size we send for post data
+    // we will deal with it via a writer, not raw stream
+    auto someRc = m_http.begin(m_client, m_path.c_str());
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    //auto httpCode = http.POST(post_data); //Send the request
+};
 size_t HttpOStream::write(uint8_t) {};
 size_t HttpOStream::write(const uint8_t *buf, size_t size) {};
 void HttpOStream::flush() {};
@@ -71,12 +77,22 @@ bool HttpOStream::isOpen() {};
  * Istream impls
  ********************************************************/
 
-bool HttpIStream::seek(uint32_t pos, SeekMode mode) {};
-bool HttpIStream::seek(uint32_t pos) {};
-size_t HttpIStream::position() {};
+bool HttpIStream::seek(uint32_t pos, SeekMode mode) {
+    // maybe we can use http resume here?
+};
+
+bool HttpIStream::seek(uint32_t pos) {
+    // maybe we can use http resume here?
+};
+
+size_t HttpIStream::position() {
+    return m_position;
+};
+
 void HttpIStream::close() {
     m_http.end();
 };
+
 bool HttpIStream::open() {
     auto someRc = m_http.begin(m_client, m_path.c_str());
     auto httpCode = m_http.GET(); //Send the request
@@ -85,15 +101,20 @@ bool HttpIStream::open() {
     m_length = m_http.getSize();
     m_bytesAvailable = m_length;
 };
+
 int HttpIStream::available() {
     return m_bytesAvailable;
 };
+
 uint8_t HttpIStream::read() {};
+
 size_t HttpIStream::read(uint8_t* buf, size_t size) {
     auto bytesRead= m_file.readBytes((char *) buf, size);
     m_bytesAvailable-=bytesRead;
+    m_position+=bytesRead;
     return bytesRead;
 };
+
 bool HttpIStream::isOpen() {
     return m_isOpen;
 };
