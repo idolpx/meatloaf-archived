@@ -105,7 +105,7 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 //uint8_t state_int;
 //String state_string;
 
-void testLittleFS();
+//void testLittleFS();
 
 // ------------------------
 void setup()
@@ -117,8 +117,8 @@ void setup()
 	modem.setup();
 
 
-	Serial.printf("\r\n\r\n==============================\r\n");
-	Serial.printf("   %s %s\r\n", PRODUCT_ID, FW_VERSION);
+	Serial.println("\r\n\r\n==============================");
+	Serial.println("   " PRODUCT_ID " " FW_VERSION);
 	Serial.println("------------------------------");
 
 	modem.start();
@@ -188,7 +188,7 @@ void setup()
 			}
 		}
 
-		testLittleFS();
+		//testLittleFS();
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
