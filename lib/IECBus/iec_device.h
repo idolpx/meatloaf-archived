@@ -32,12 +32,16 @@
 #include "../../include/global_defines.h"
 #include "../../include/cbmdefines.h"
 #include "../../include/petscii.h"
+#include "../../include/make_unique.h"
 
 #include "iec.h"
 #include "device_db.h"
+#include "meat_io.h"
+#include "buffered_io.h"
 #include "EdUrlParser.h"
 #include "MemoryInfo.h"
 #include "helpers.h"
+#include "utils.h"
 
 enum OpenState
 {

@@ -180,16 +180,12 @@ bool MFile::operator!=(nullptr_t ptr) {
 
 std::string MFile::name() {
     int lastSlash = m_path.find_last_of('/');
-
-    std::string test = m_path.substr(lastSlash+1);    
-
-    Serial.printf("last slash in %s=%d --> %s\n", m_path.c_str(), lastSlash, test.c_str());
-    return test;
-}    
+    return m_path.substr(lastSlash+1);;
+}
 
 std::string MFile::path() {
     return m_path;
-}    
+}
 
 std::string MFile::extension() {
     int lastPeriod = m_path.find_last_of(".");

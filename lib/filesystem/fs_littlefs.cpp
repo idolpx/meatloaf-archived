@@ -573,7 +573,7 @@ void LittleHandle::obtain(int fl, std::string m_path) {
 
     rc = lfs_file_open(&LittleFileSystem::lfsStruct, &lfsFile, m_path.c_str(), flags);
 
-    Serial.printf("FSTEST: lfs_file_open file rc:%d\n",rc);
+    //Serial.printf("FSTEST: lfs_file_open file rc:%d\n",rc);
 
     if (rc == LFS_ERR_ISDIR) {
         // To support the SD.openNextFile, a null FD indicates to the LittleFSFile this is just

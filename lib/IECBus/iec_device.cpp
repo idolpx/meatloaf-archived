@@ -487,14 +487,15 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 
 		case O_FILE:
 			// Send program file
-			if (m_device.url().length())
-			{
-				sendFileHTTP();
-			}
-			else
-			{
-				sendFile();
-			}
+			// if (m_device.url().length())
+			// {
+			// 	sendFileHTTP();
+			// }
+			// else
+			// {
+			// 	sendFile();
+			// }
+			sendFile();
 			break;
 
 		case O_URL:
@@ -520,11 +521,11 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 
 		case O_DIR:
 			// Send listing
-			if (m_device.url().length())
-			{
-				sendListingHTTP();
-			}
-			else
+			// if (m_device.url().length())
+			// {
+			// 	sendListingHTTP();
+			// }
+			// else
 			{
 				sendListing();
 			}
@@ -681,7 +682,7 @@ void Interface::sendListing()
 	Debug_printf("\r\nsendListing:\r\n");
 
 	uint16_t byte_count = 0;
-	String extension = "DIR";
+	std::string extension = "DIR";
 
 	// Reset basic memory pointer:
 	uint16_t basicPtr = C64_BASIC_START;
@@ -695,10 +696,11 @@ void Interface::sendListing()
 	byte_count += sendHeader(basicPtr);
 
 	// Send List ITEMS
-	Dir dir = m_fileSystem->openDir(m_device.path());
-	while (dir.next())
+	std::unique_ptr<MFile> dir(MFSOwner::File(m_device.path().c_str()));
+	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
+	while(entry != nullptr)
 	{
-		uint16_t block_cnt = dir.fileSize() / 256;
+		uint16_t block_cnt = entry->size() / 256;
 		byte block_spc = 3;
 		if (block_cnt > 9)
 			block_spc--;
@@ -707,21 +709,21 @@ void Interface::sendListing()
 		if (block_cnt > 999)
 			block_spc--;
 
-		byte space_cnt = 21 - (dir.fileName().length() + 5);
+		byte space_cnt = 21 - (entry->name().length() + 5);
 		if (space_cnt > 21)
 			space_cnt = 0;
 
-		if (dir.fileSize())
+		if (!entry->isDirectory())
 		{
-			block_cnt = dir.fileSize() / 256;
 			if ( block_cnt < 1)
 				block_cnt = 1;
 
-			uint8_t ext_pos = dir.fileName().lastIndexOf(".") + 1;
-			if (ext_pos && ext_pos != dir.fileName().length())
+			// Get extension
+			uint8_t ext_pos = entry->name().find_last_of(".") + 1;
+			if (ext_pos && ext_pos != entry->name().length())
 			{
-				extension = dir.fileName().substring(ext_pos);
-				extension.toUpperCase();
+				extension = entry->name().substr(ext_pos);
+				util_string_toupper(extension);
 			}
 			else
 			{
@@ -734,10 +736,12 @@ void Interface::sendListing()
 		}
 
 		// Don't show hidden folders or files
-		if (!dir.fileName().startsWith("."))
+		if (!util_starts_with(entry->name(), "."))
 		{
-			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", dir.fileName().c_str(), space_cnt, "", extension.c_str());
+			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name().c_str(), space_cnt, "", extension.c_str());
 		}
+		
+		entry.reset(dir->getNextFileInDir());
 
 		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
 		ledToggle(true);
@@ -767,6 +771,7 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr)
 	//Debug_println("");
 }
 
+
 void Interface::sendFile()
 {
 	uint16_t i = 0;
@@ -774,10 +779,13 @@ void Interface::sendFile()
 
 	uint16_t bi = 0;
 	uint16_t load_address = 0;
-	char b[1];
-	char ba[9];
+	size_t b_len = 1;
+	uint8_t b[b_len];
 
+#ifdef DATA_STREAM
+	char ba[9];
 	ba[8] = '\0';
+#endif
 
 	// Update device database
 	m_device.save();
@@ -804,22 +812,23 @@ void Interface::sendFile()
 	}
 	String inFile = String(m_device.path() + m_filename);
 
-	File file = m_fileSystem->open(inFile, "r");
+	std::unique_ptr<MFile> file(MFSOwner::File(inFile.c_str()));
 
-	if (!file.available())
+	if (!file->exists())
 	{
 		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", inFile.c_str());
 		m_iec.sendFNF();
 	}
 	else
 	{
-		size_t len = file.size();
+		size_t len = file->size();
+		std::shared_ptr<MIstream> fileIStream(file->inputStream());
 
 		// Get file load address
-		file.readBytes(b, 1);
+		fileIStream->read(b, b_len);
 		success = m_iec.send(b[0]);
 		load_address = *b & 0x00FF; // low byte
-		file.readBytes(b, 1);
+		fileIStream->read(b, b_len);
 		success = m_iec.send(b[0]);
 		load_address = load_address | *b << 8;  // high byte
 		// fseek(file, 0, SEEK_SET);
@@ -827,7 +836,7 @@ void Interface::sendFile()
 		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", inFile.c_str(), load_address, len);
 		for (i = 2; success and i < len; ++i) 
 		{
-			success = file.readBytes(b, 1);
+			success = fileIStream->read(b, b_len);
 			if (success)
 			{
 #ifdef DATA_STREAM
@@ -873,7 +882,7 @@ void Interface::sendFile()
 				break;
 			}
 		}
-		file.close();
+		fileIStream->close();
 		Debug_println("");
 		Debug_printf("%d of %d bytes sent\r\n", i, len);
 
@@ -886,34 +895,6 @@ void Interface::sendFile()
 	}
 } // sendFile
 
-void Interface::saveFile()
-{
-	String outFile = String(m_device.path() + m_filename);
-	byte b;
-
-	Debug_printf("\r\nsaveFile: %s", outFile.c_str());
-
-	File file = m_fileSystem->open(outFile, "w");
-	//	noInterrupts();
-	if (!file.available())
-	{
-		Debug_printf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
-	}
-	else
-	{
-		boolean done = false;
-		// Recieve bytes until a EOI is detected
-		do
-		{
-			b = m_iec.receive();
-			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
-
-			file.write(b);
-		} while (not done);
-		file.close();
-	}
-	//	interrupts();
-} // saveFile
 
 void Interface::sendListingHTTP()
 {
@@ -1133,3 +1114,33 @@ void Interface::sendFileHTTP()
         }
     }
 }
+
+
+void Interface::saveFile()
+{
+	String outFile = String(m_device.path() + m_filename);
+	byte b;
+
+	Debug_printf("\r\nsaveFile: %s", outFile.c_str());
+
+	File file = m_fileSystem->open(outFile, "w");
+	//	noInterrupts();
+	if (!file.available())
+	{
+		Debug_printf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
+	}
+	else
+	{
+		boolean done = false;
+		// Recieve bytes until a EOI is detected
+		do
+		{
+			b = m_iec.receive();
+			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
+
+			file.write(b);
+		} while (not done);
+		file.close();
+	}
+	//	interrupts();
+} // saveFile
