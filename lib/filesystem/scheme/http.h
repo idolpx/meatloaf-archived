@@ -37,6 +37,42 @@ public:
  * Streams
  ********************************************************/
 
+class HttpIOStream: public MIstream, MOstream {
+public:
+    HttpIOStream(std::string& path) {
+        m_path = path;
+    }
+    ~HttpIOStream() {
+        close();
+    }
+
+    void close() override;
+    bool open() override;
+
+    // MStream methods
+    bool seek(uint32_t pos, SeekMode mode) override;
+    bool seek(uint32_t pos) override;
+    size_t position() override;
+    void flush() override;
+    int available() override;
+    uint8_t read() override;
+    size_t read(uint8_t* buf, size_t size) override;
+    size_t write(uint8_t) override;
+    size_t write(const uint8_t *buf, size_t size) override;
+    bool isOpen();
+
+protected:
+    std::string m_path;
+    bool m_isOpen;
+    int m_length;
+    WiFiClient m_file;
+    WiFiClient m_client;
+	HTTPClient m_http;
+    int m_bytesAvailable = 0;
+    int m_position = 0;
+
+};
+
 
 class HttpIStream: public MIstream {
 
