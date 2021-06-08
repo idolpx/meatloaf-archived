@@ -3,6 +3,7 @@
 #include "buffered_io.h"
 #include <string>
 #include "../EdUrlParser/EdUrlParser.h"
+#include "stream_writer.h"
 
 #define RECORD_SIZE 256
 
@@ -34,15 +35,17 @@ void recurseList(MFile* file) {
 
 void testLittleFS() {
 
-    std::unique_ptr<MFile> someComplexPath(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp/onefile/brucelee.prg"));
-    
+    std::unique_ptr<MFile> readeTest(MFSOwner::File("test"));
+    std::shared_ptr<MIstream> readerStream(readeTest->inputStream());
+    StreamReader reader(readerStream.get());
 
-    Serial.println("FSTEST: dnp container");
 
-    std::unique_ptr<MFile> someComplexPathContainer(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp"));
+    std::string line = reader.readLn();
 
-    Serial.println("FSTEST: normal file");
-
+    while(!reader.eof()) {
+        Serial.printf("FSTEST: line read:'%s'\n",line.c_str());
+        line = reader.readLn();
+    };
 
     std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
 
@@ -135,5 +138,15 @@ void testLittleFS() {
     // writeToRoot->close(); // nor required, closes automagically
 
     //recurseList(root.get());
+
+
+    std::unique_ptr<MFile> someComplexPath(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp/onefile/brucelee.prg"));
+    
+    Serial.println("FSTEST: dnp container");
+
+    std::unique_ptr<MFile> someComplexPathContainer(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp"));
+
+    Serial.println("FSTEST: normal file");
+
 }
 

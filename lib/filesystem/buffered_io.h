@@ -12,16 +12,38 @@
  ********************************************************/
 
 class MBuffer {
-    char* buffer; // will point to buffered reader internal buffer
     int len = 0;
+
+protected:
+    char* buffer; // will point to buffered reader internal buffer
 
 public:
     int length() {
         return len;
     }
 
+    MBuffer() {};
+
+    char operator [](int idx) {
+        return buffer[idx];
+    }
+
+    // MBuffer(int size) {
+    //     buffer
+    // };
+
     friend class BufferedReader;
     friend class BufferedWriter;
+};
+
+class MBufferConst: public MBuffer {
+protected:
+    const char* buffer; // will point to buffered reader internal buffer
+
+public:
+    MBufferConst(std::string str): buffer(str.c_str()) {
+
+    };
 };
 
 /********************************************************
@@ -31,15 +53,15 @@ public:
 class BufferedReader {
     MIstream* istream;
     bool secondHalf = false;
-    bool eofOccured = false;
 
     #if defined(ESP32)
     uint8_t buffer[BUFFER_SIZE] = { 0 };
     #else //defined(ESP8266)
     char buffer[BUFFER_SIZE] = { 0 };
     #endif
-
+protected:
     MBuffer mbuffer;
+    bool eofOccured = false;
 
     void refillBuffer() {
         secondHalf = !secondHalf;
