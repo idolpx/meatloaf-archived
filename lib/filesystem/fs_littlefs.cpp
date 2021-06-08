@@ -213,10 +213,14 @@ bool LittleFile::exists()
 }
 
 size_t LittleFile::size() {
-    auto handle = std::make_unique<LittleHandle>();
-    handle->obtain(LFS_O_RDONLY, m_path);
-    size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile);
-    return size;
+    if(m_path=="/" || m_path=="")
+        return 0;
+    else {
+        auto handle = std::make_unique<LittleHandle>();
+        handle->obtain(LFS_O_RDONLY, m_path);
+        size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile);
+        return size;
+    }
 }
 
 bool LittleFile::remove() {
