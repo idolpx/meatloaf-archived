@@ -669,6 +669,16 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr)
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, "[PATH]");
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, m_device.path().c_str());
 	}
+	if (m_device.archive().length() > 1)
+	{
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, "[ARCHIVE]");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, m_device.archive().c_str());
+	}
+	if (m_device.image().length() > 1)
+	{
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, "[IMAGE]");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, m_device.image().c_str());
+	}
 	if (m_device.url().length() + m_device.path().length() > 1)
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"----------------\" NFO", 3, "");
@@ -696,7 +706,8 @@ void Interface::sendListing()
 	byte_count += sendHeader(basicPtr);
 
 	// Send List ITEMS
-	std::unique_ptr<MFile> dir(MFSOwner::File(m_device.path().c_str()));
+	String dirTarget = m_device.url() + m_device.path();
+	std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 	while(entry != nullptr)
 	{
@@ -719,11 +730,11 @@ void Interface::sendListing()
 				block_cnt = 1;
 
 			// Get extension
-			uint8_t ext_pos = entry->name().find_last_of(".") + 1;
-			if (ext_pos && ext_pos != entry->name().length())
+			//uint8_t ext_pos = entry->name().find_last_of(".") + 1;
+			//if (ext_pos && ext_pos != entry->name().length())
+			if (entry->extension().length())
 			{
-				extension = entry->name().substr(ext_pos);
-				util_string_toupper(extension);
+				extension = entry->extension();
 			}
 			else
 			{
@@ -795,28 +806,37 @@ void Interface::sendFile()
 	{
 		m_filename = "";
 
-		if (m_device.path() == "/" && m_device.archive().length() == 0 && m_device.image().length() == 0)
+		if (
+			m_device.url().length() == 0 &&
+			m_device.path() == "/" && 
+			m_device.archive().length() == 0 && 
+			m_device.image().length() == 0
+		)
 		{
 			m_filename = ".sys/fb64";
 		}
 		else
 		{
-			Dir dir = m_fileSystem->openDir(m_device.path());
-			while (dir.next() && dir.isDirectory())
+			//Dir dir = m_fileSystem->openDir(m_device.path());
+			String dirTarget = m_device.url() + m_device.path();
+			std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
+			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
+			while (entry != nullptr && entry->isDirectory())
 			{
-				Debug_printf("\r\nsendFile: %s", dir.fileName().c_str());
+				Debug_printf("\r\nsendFile: %s", entry->name().c_str());
+				entry.reset(dir->getNextFileInDir());
 			}
-			if (dir.isFile())
-				m_filename = dir.fileName();
+			if (entry != nullptr)
+				m_filename = entry->name().c_str();
 		}
 	}
-	String inFile = String(m_device.path() + m_filename);
+	String fileTarget = String(m_device.url() + m_device.path() + m_filename);
 
-	std::unique_ptr<MFile> file(MFSOwner::File(inFile.c_str()));
+	std::unique_ptr<MFile> file(MFSOwner::File(fileTarget.c_str()));
 
 	if (!file->exists())
 	{
-		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", inFile.c_str());
+		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", fileTarget.c_str());
 		m_iec.sendFNF();
 	}
 	else
@@ -833,7 +853,7 @@ void Interface::sendFile()
 		load_address = load_address | *b << 8;  // high byte
 		// fseek(file, 0, SEEK_SET);
 
-		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", inFile.c_str(), load_address, len);
+		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", fileTarget.c_str(), load_address, len);
 		for (i = 2; success and i < len; ++i) 
 		{
 			success = fileIStream->read(b, b_len);
@@ -876,6 +896,7 @@ void Interface::sendFile()
 				}
 			}
 
+			// Exit if ATN is pulled while sending
 			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
 			{
 				success = true;
