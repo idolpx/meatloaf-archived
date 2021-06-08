@@ -711,7 +711,9 @@ void Interface::sendListing()
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 	while(entry != nullptr)
 	{
+		Debug_println("before size");
 		uint16_t block_cnt = entry->size() / 256;
+		Debug_println("after size");
 		byte block_spc = 3;
 		if (block_cnt > 9)
 			block_spc--;
@@ -720,12 +722,16 @@ void Interface::sendListing()
 		if (block_cnt > 999)
 			block_spc--;
 
+		Debug_println("before name");
 		byte space_cnt = 21 - (entry->name().length() + 5);
+		Debug_println("after name");
 		if (space_cnt > 21)
 			space_cnt = 0;
 
+		Debug_println("before isDirectory");
 		if (!entry->isDirectory())
 		{
+			Debug_println("after isDirectory");
 			if ( block_cnt < 1)
 				block_cnt = 1;
 
