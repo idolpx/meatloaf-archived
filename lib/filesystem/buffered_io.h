@@ -7,6 +7,10 @@
 #include "meat_io.h"
 #include "meat_stream.h"
 
+/********************************************************
+ * A buffer
+ ********************************************************/
+
 class MBuffer {
     char* buffer; // will point to buffered reader internal buffer
     int len = 0;
@@ -19,6 +23,10 @@ public:
     friend class BufferedReader;
     friend class BufferedWriter;
 };
+
+/********************************************************
+ * Buffered reader
+ ********************************************************/
 
 class BufferedReader {
     MIstream* istream;
@@ -54,6 +62,10 @@ public:
         return eofOccured;
     }
 };
+
+/********************************************************
+ * Buffered writer
+ ********************************************************/
 
 class BufferedWriter {
     MOstream* ostream;

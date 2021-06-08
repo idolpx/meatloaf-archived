@@ -158,7 +158,7 @@ bool LittleFile::isDirectory()
 {
     if(m_path=="/" || m_path=="")
         return true;
-        
+
     lfs_info info;
     int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
@@ -221,6 +221,9 @@ bool LittleFile::exists()
 size_t LittleFile::size() {
     if(m_isNull || m_path=="/" || m_path=="")
         return 0;
+    else if(isDirectory()) {
+        return 0;
+    }
     else {
         auto handle = std::make_unique<LittleHandle>();
         handle->obtain(LFS_O_RDONLY, m_path);

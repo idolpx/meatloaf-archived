@@ -189,7 +189,10 @@ std::string MFile::path() {
 
 std::string MFile::extension() {
     int lastPeriod = m_path.find_last_of(".");
-    return m_path.substr(lastPeriod+1);
+    if(lastPeriod < 0)
+        return "";
+    else
+        return m_path.substr(lastPeriod+1);
 }
 
 MIstream* MFile::inputStream() {
