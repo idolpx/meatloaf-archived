@@ -70,7 +70,6 @@ protected:
 	HTTPClient m_http;
     int m_bytesAvailable = 0;
     int m_position = 0;
-
 };
 
 
@@ -108,6 +107,7 @@ protected:
 	HTTPClient m_http;
     int m_bytesAvailable = 0;
     int m_position = 0;
+    bool isFriendlySkipper = false;
 };
 
 

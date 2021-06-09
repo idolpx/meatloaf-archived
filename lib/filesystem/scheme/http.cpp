@@ -111,12 +111,42 @@ bool HttpIStream::seek(uint32_t pos, SeekMode mode) {
 };
 
 bool HttpIStream::seek(uint32_t pos) {
-    // maybe we can use http resume here? maybe not, maybe only when opening
-    // but we can skip forward and then modify these accordingly:
-    //     m_bytesAvailable-=bytesRead;
-    // m_position+=bytesRead;
-    //
-    // skipping backward, though would probably require reopening the stream, and then we could use resume?
+    if(isFriendlySkipper) {
+        // then we can
+        // Range: bytes=666-
+        // to implement seeking
+        // we should also add:
+        // Keep-Alive: timeout=5, max=1000
+        m_http.addHeader("range","pos.toString");
+        int httpCode = m_http.GET(); //Send the request
+        Serial.printf("URLSTR: httpCode=%d\n", httpCode);
+        if(httpCode != 200)
+            return false;
+
+        Serial.printf("\nHttpIStream::open: [%s]\n", m_path.c_str());
+        m_file = m_http.getStream();  //Get the response payload as Stream
+        m_position = pos;
+        m_bytesAvailable = m_length-pos;
+        return true;
+    } else {
+        if(pos==m_position)
+            return true;
+        if(pos<m_position) {
+            // skipping backward, let's do it from the start...
+            m_http.end();
+            bool op = open();
+            if(!op)
+                return false;
+        }
+
+        // ... and then:
+        // read until we reach pos
+        // but we can skip forward and then modify these accordingly:
+        //     m_bytesAvailable-=bytesRead;
+        // m_position+=bytesRead;
+
+        return true;
+    }
 };
 
 size_t HttpIStream::position() {
@@ -139,6 +169,8 @@ Serial.printf("URLSTR: httpCode=%d\n", httpCode);
     if(httpCode != 200)
         return false;
 
+    // Accept-Ranges: bytes - if we get such header from any request, good!
+    isFriendlySkipper = m_http.header("accept-ranges") == "bytes";
     m_isOpen = true;
     Serial.printf("\nHttpIStream::open: [%s]\n", m_path.c_str());
     m_file = m_http.getStream();  //Get the response payload as Stream
