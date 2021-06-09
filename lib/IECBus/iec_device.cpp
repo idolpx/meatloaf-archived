@@ -356,7 +356,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// Load URL file
 		m_openState = O_URL;
 	}
-	else if (m_filename.startsWith(F("HTTP://")))
+	else if (m_filename.startsWith(F("HTTP://")) || m_filename.startsWith(F("ML://")))
 	{
 		EdUrlParser* url = EdUrlParser::parseUrl(m_filename.c_str());
 
@@ -386,14 +386,14 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_device.archive("");
 		m_device.image("");
 
-		if (url != NULL)
-			delete url;
-
 		m_openState = O_DIR;
-		if (m_filename.length())
+		if (url->scheme == "HTTP" || m_filename.length())
 		{
 			m_openState = O_FILE;
 		}
+
+		if (url != NULL)
+			delete url;
 	}
 	else if (String(F(ARCHIVE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
 	{

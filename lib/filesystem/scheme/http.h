@@ -26,8 +26,13 @@ public:
     bool rewindDirectory() override { return false; };
     MFile* getNextFileInDir() override { return nullptr; };
     bool mkDir() override { return false; };
+<<<<<<< HEAD
     bool exists() override ;
     size_t size() override ;
+=======
+    bool exists() override ; // we may try open the stream to check if it exists
+    size_t size() override ; // we may take content-length from header if exists
+>>>>>>> b4404efdef7775bfc9f3d9cf105f210a65df2b73
     bool remove() override { return false; };
     bool rename(const char* dest) { return false; };
     MIstream* createIStream(MIstream* src);

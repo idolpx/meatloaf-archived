@@ -35,6 +35,7 @@ time_t HttpFile::getCreationTime() {
 } ;
 
 bool HttpFile::exists() {
+    Serial.printf("\nHttpFile::exists: [%s]\n", m_path.c_str());
     // we may try open the stream to check if it exists
     std::unique_ptr<MIstream> test(inputStream());
     // remember that MIStream destuctor should close the stream!
@@ -139,6 +140,7 @@ Serial.printf("URLSTR: httpCode=%d\n", httpCode);
         return false;
 
     m_isOpen = true;
+    Serial.printf("\nHttpIStream::open: [%s]\n", m_path.c_str());
     m_file = m_http.getStream();  //Get the response payload as Stream
     m_length = m_http.getSize();
 Serial.printf("URLSTR: length=%d\n", m_length);
