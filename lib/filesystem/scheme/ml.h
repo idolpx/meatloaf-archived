@@ -10,6 +10,11 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 
+
+/********************************************************
+ * File
+ ********************************************************/
+
 class MLFile: public HttpFile {
     bool dirIsOpen = false;
     String m_lineBuffer;
@@ -37,5 +42,24 @@ public:
     //bool rename(const char* dest) { return false; }; // we can't write to ML server, can we?
     //MIstream* createIStream(MIstream* src); // not used anyway
 };
+
+
+/********************************************************
+ * FS
+ ********************************************************/
+
+class MLFileSystem: public MFileSystem 
+{
+    MFile* getFile(std::string path) override {
+        return new MLFile(path);
+    }
+
+    bool handles(std::string name) {
+        return name == "ml:";
+    }
+public:
+    MLFileSystem(): MFileSystem("meatloaf") {};
+};
+
 
 #endif

@@ -7,6 +7,7 @@
 #include "media/dnp.h"
 #include "scheme/http.h"
 #include "scheme/smb.h"
+#include "scheme/ml.h"
 #include <vector>
 #include <sstream>
 
@@ -34,11 +35,12 @@ std::string joinNamesToPath(std::vector<std::string>::iterator* start, std::vect
 LittleFileSystem littleFS(FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5);
 HttpFileSystem httpFS;
 DNPFileSystem dnpFS;
+MLFileSystem mlFS;
 
 // put all available filesystems in this array
 // put littleFS as last, fallback system so it can be used if nothing matches
 //MFileSystem* MFSOwner::availableFS[FS_COUNT] = { &httpFS, &littleFS };
-std::vector<MFileSystem*> MFSOwner::availableFS{  &dnpFS, &httpFS };
+std::vector<MFileSystem*> MFSOwner::availableFS{  &dnpFS, &httpFS, &mlFS };
 
 
 // MFile* MFSOwner::File(std::string name) {
