@@ -3,6 +3,7 @@
 
 #include "meat_io.h"
 #include "../../include/make_unique.h"
+#include "../../include/global_defines.h"
 #include "urlfile.h"
 #include <ESP8266HTTPClient.h>
 
@@ -25,11 +26,12 @@ public:
     bool rewindDirectory() override { return false; };
     MFile* getNextFileInDir() override { return nullptr; };
     bool mkDir() override { return false; };
-    bool exists() override ; // we may try open the stream to check if it exists
-    size_t size() override ; // we may take content-lenght from header if exists
+    bool exists() override ;
+    size_t size() override ;
     bool remove() override { return false; };
     bool rename(const char* dest) { return false; };
     MIstream* createIStream(MIstream* src);
+    //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 };
 
 
@@ -55,9 +57,7 @@ public:
     size_t position() override;
     void flush() override;
     int available() override;
-    uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
-    size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
     bool isOpen();
 
@@ -78,6 +78,10 @@ class HttpIStream: public MIstream {
 
 public:
     HttpIStream(std::string& path) {
+        m_http.setUserAgent("user_agent");
+        m_http.setTimeout(10000);
+        m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+        m_http.setRedirectLimit(10);
         m_path = path;
     }
     // MStream methods
@@ -92,10 +96,8 @@ public:
 
     // MIstream methods
     int available() override;
-    uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
-
 
 protected:
     std::string m_path;
@@ -110,15 +112,14 @@ protected:
 
 
 class HttpOStream: public MOstream {
-	//WiFiClient client;
-	HTTPClient http;
-
 
 public:
     // MStream methods
     HttpOStream(std::string& path) {
-        http.setUserAgent("user_agent");
-        http.setTimeout(10000);
+        m_http.setUserAgent("user_agent");
+        m_http.setTimeout(10000);
+        m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+        m_http.setRedirectLimit(10);
 
         m_path = path;
     }
@@ -132,13 +133,13 @@ public:
     }
 
     // MOstream methods
-    size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
     void flush() override;
     bool isOpen();
 
 protected:
     std::string m_path;
+    bool m_isOpen;
     WiFiClient m_file;
     WiFiClient m_client;
 	HTTPClient m_http;

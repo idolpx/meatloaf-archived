@@ -36,7 +36,6 @@ public:
 
 class MOstream: public MStream {
 public:
-    virtual size_t write(uint8_t) = 0;
     virtual size_t write(const uint8_t *buf, size_t size) = 0;
     virtual void flush() = 0;
 };
@@ -45,7 +44,6 @@ public:
 class MIstream: public MStream {
 public:
     virtual int available() = 0;
-    virtual uint8_t read() = 0;
     virtual size_t read(uint8_t* buf, size_t size) = 0;
     bool pipeTo(MOstream* ostream);
 };

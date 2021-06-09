@@ -1,7 +1,6 @@
 #include "fs_littlefs.h"
 #include "flash_hal.h"
 #include "MIOException.h"
-
 /********************************************************
  * MFileSystem implementations
  ********************************************************/
@@ -423,9 +422,9 @@ bool LittleOStream::open() {
 };
 
 // MOstream methods
-size_t LittleOStream::write(uint8_t) {
-    return 0;
-};
+//size_t LittleOStream::write(uint8_t) {
+//     return 0;
+// };
 
 size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     if (!isOpen() || !buf) {
@@ -438,8 +437,11 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     // ponizszy fs jest inicjalizowany jako drugi arg LittleFSDirImpl
     //  i jest typu lfs_t
 
+    ledToggle(true);
+
     int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
+        ledOFF();
         DEBUGV("lfs_write rc=%d\n", result);
     }
     return result;
@@ -487,16 +489,19 @@ int LittleIStream::available() {
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
 };
 
-uint8_t LittleIStream::read() {
-    return 0;
-};
+// uint8_t LittleIStream::read() {
+//     return 0;
+// };
 
 size_t LittleIStream::read(uint8_t* buf, size_t size) {
     if (!isOpen() | !buf) {
         return 0;
     }
+    
+    ledToggle(true);
     int result = lfs_file_read(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
+        ledOFF();
         DEBUGV("lfs_read rc=%d\n", result);
         return 0;
     }
@@ -547,6 +552,7 @@ void LittleHandle::dispose() {
         //         DEBUGV("Unable to set last write time on '%s' to %d\n", _name.get(), now);
         //     }
         // }
+        ledOFF();
         rc = -255;
     }
 }

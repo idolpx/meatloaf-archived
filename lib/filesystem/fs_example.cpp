@@ -35,33 +35,51 @@ void recurseList(MFile* file) {
 
 void testLittleFS() {
 
-    std::unique_ptr<MFile> readeTest(MFSOwner::File("test"));
-    std::shared_ptr<MIstream> readerStream(readeTest->inputStream());
-    StreamReader reader(readerStream.get());
+
+    // /* Test Line reader */
+    // std::unique_ptr<MFile> readeTest(MFSOwner::File("test"));
+    // std::shared_ptr<MIstream> readerStream(readeTest->inputStream());
+    // StreamReader reader(readerStream.get());
 
 
-    std::string line = reader.readLn();
+    // std::string line = reader.readLn();
 
-    while(!reader.eof()) {
-        Serial.printf("FSTEST: line read:'%s'\n",line.c_str());
-        line = reader.readLn();
-    };
+    // while(!reader.eof()) {
+    //     Serial.printf("FSTEST: line read:'%s'\n",line.c_str());
+    //     line = reader.readLn();
+    // };
+
+
+    // return;
 
     std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
-
-    return;
 
     Serial.println("FSTEST: test MFile factory");
 
     std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
     std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
 
-    //std::unique_ptr<MFile> root(MFSOwner::File("dupa/"));
 
-    if(fileInRoot==nullptr) {
+    std::unique_ptr<MFile> urlFile(MFSOwner::File("http://c64.meatloaf.cc"));
+
+    if(urlFile==nullptr) {
         Serial.println("FSTEST: null path returned!!!");
-    }
+    } else {
+        Serial.printf("FSTEST: url %s exists =%d\n", urlFile->path().c_str(), urlFile->exists());
+        Serial.printf("FSTEST: url %s size =%d\n", urlFile->path().c_str(), urlFile->size());
 
+        std::unique_ptr<MIstream> urlistream(urlFile->inputStream());
+        StreamReader reader(urlistream.get());
+
+        std::string line = reader.readLn();
+
+        while(!reader.eof()) {
+            Serial.printf("FSTEST: line read:'%s'\n",line.c_str());
+            line = reader.readLn();
+        };
+
+    }
+return;
     char exampleText[]="Proletariusze wszystkich krajow, laczcie sie!";
 
     // test 1 - write some string to a plain file in root dir

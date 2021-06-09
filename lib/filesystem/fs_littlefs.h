@@ -4,6 +4,8 @@
 #include "meat_io.h"
 #include "../lib/littlefs/lfs.h"
 #include "../../include/make_unique.h"
+#include "../../include/global_defines.h"
+
 
 /********************************************************
  * MFileSystem
@@ -162,7 +164,7 @@ public:
     }
 
     // MOstream methods
-    size_t write(uint8_t) override;
+    //size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
     void flush() override;
     bool isOpen();
@@ -197,7 +199,7 @@ public:
 
     // MIstream methods
     int available() override;
-    uint8_t read() override;
+    //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
 

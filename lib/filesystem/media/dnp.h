@@ -29,7 +29,7 @@ public:
 
     // MIstream methods
     int available() override;
-    uint8_t read() override;
+    //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
 
