@@ -25,7 +25,12 @@ class MLFile: public HttpFile {
     size_t m_size;
 
 public:
-    MLFile(std::string path, size_t size = 0, bool isDir = false): HttpFile(path), m_isDir(isDir), m_size(size)  {};
+    MLFile(std::string path, size_t size = 0, bool isDir = false): HttpFile(path), m_isDir(isDir), m_size(size)  {
+        if(isDir && path.back() != '/')
+            m_path = path + "/";
+        if(path.back() == '/')
+            m_isDir = true;
+    };
     ~MLFile();
 
     bool isDirectory() override { return m_isDir; };
