@@ -101,6 +101,7 @@ public:
     MOstream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
+    void openDir(const char *path) override;
     bool rewindDirectory() override ;
     MFile* getNextFileInDir() override ;
     bool mkDir() override ;
@@ -118,7 +119,7 @@ private:
     std::string _pattern;
 
     bool pathValid(const char *path);
-    void openDir(const char *path);
+
 };
 
 

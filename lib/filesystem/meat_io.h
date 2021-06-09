@@ -38,6 +38,7 @@ public:
     virtual MOstream* outputStream() = 0 ; // has to return OPENED stream
     virtual time_t getLastWrite() = 0 ;
     virtual time_t getCreationTime() = 0 ;
+    virtual void openDir(const char *path);
     virtual bool rewindDirectory() = 0 ;
     virtual MFile* getNextFileInDir() = 0 ;
     virtual bool mkDir() = 0 ;

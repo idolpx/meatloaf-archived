@@ -18,24 +18,25 @@
 class MLFile: public HttpFile {
     bool dirIsOpen = false;
     String m_lineBuffer;
-    WiFiClient payload;
-    HTTPClient http;
+    WiFiClient m_file;
+	HTTPClient m_http;
     StaticJsonDocument<256> m_jsonHTTP;
     bool m_isDir;
     size_t m_size;
 
 public:
-    MLFile(std::string path, size_t size = 0, bool isDir = false): HttpFile(path), m_isDir(isDir), m_size(size)  {
+    MLFile(std::string path, size_t size = 0, bool isDir = false): 
+    HttpFile(path), m_isDir(isDir), m_size(size)  
+    {
         if(isDir && path.back() != '/')
             m_path = path + "/";
         if(path.back() == '/')
             m_isDir = true;
-        
-        http.setReuse(true);
     };
     ~MLFile();
 
     bool isDirectory() override { return m_isDir; };
+    void openDir(const char *path) override;
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
     // MIstream* inputStream() override ; // file on ML server = standard HTTP file available via GET

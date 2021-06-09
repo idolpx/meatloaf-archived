@@ -75,7 +75,7 @@ bool HttpOStream::open() {
     // we'll ad a lambda that will allow adding headers
     // m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    bool initOk = m_http.begin(m_client, m_path.c_str());
+    bool initOk = m_http.begin(m_file, m_path.c_str());
 Serial.printf("URLSTR: someRc=%d\n", initOk);
     if(!initOk)
         return false;
@@ -86,7 +86,7 @@ Serial.printf("URLSTR: someRc=%d\n", initOk);
     //     return false;
 
     m_isOpen = true;
-    m_file = m_http.getStream();  //Get the response payload as Stream
+    //m_file = m_http.getStream();  //Get the response payload as Stream
 };
 //size_t HttpOStream::write(uint8_t) {};
 size_t HttpOStream::write(const uint8_t *buf, size_t size) {
@@ -159,7 +159,7 @@ void HttpIStream::close() {
 };
 
 bool HttpIStream::open() {
-    bool initOk = m_http.begin(m_client, m_path.c_str());
+    bool initOk = m_http.begin(m_file, m_path.c_str());
 Serial.printf("URLSTR: someRc=%d\n", initOk);
     if(!initOk)
         return false;
@@ -173,7 +173,7 @@ Serial.printf("URLSTR: httpCode=%d\n", httpCode);
     isFriendlySkipper = m_http.header("accept-ranges") == "bytes";
     m_isOpen = true;
     Serial.printf("\nHttpIStream::open: [%s]\n", m_path.c_str());
-    m_file = m_http.getStream();  //Get the response payload as Stream
+    //m_file = m_http.getStream();  //Get the response payload as Stream
     m_length = m_http.getSize();
 Serial.printf("URLSTR: length=%d\n", m_length);
     m_bytesAvailable = m_length;

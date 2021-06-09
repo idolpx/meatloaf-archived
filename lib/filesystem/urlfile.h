@@ -2,15 +2,14 @@
 #define MEATFILE_DEFINES_URLFILE_H
 
 #include "meat_io.h"
-//#include "../URLParser/URLParser.h"
+#include "EdUrlParser.h"
 
 class UrlFile: public MFile {
-    // incorporate somehow the URLParser
-    //URLParser urlParser;
 
 public:
+    EdUrlParser urlParser;
     UrlFile(std::string path): MFile(path) {
-        //urlParser.parsePath(path);
+        urlParser.parsePath(path);
     };
 
 };

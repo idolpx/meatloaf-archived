@@ -66,7 +66,7 @@ protected:
     bool m_isOpen;
     int m_length;
     WiFiClient m_file;
-    WiFiClient m_client;
+    //WiFiClient m_client;
 	HTTPClient m_http;
     int m_bytesAvailable = 0;
     int m_position = 0;
@@ -103,7 +103,7 @@ protected:
     bool m_isOpen;
     int m_length;
     WiFiClient m_file;
-    WiFiClient m_client;
+    //WiFiClient m_client;
 	HTTPClient m_http;
     int m_bytesAvailable = 0;
     int m_position = 0;
@@ -142,7 +142,7 @@ protected:
     std::string m_path;
     bool m_isOpen;
     WiFiClient m_file;
-    WiFiClient m_client;
+    //WiFiClient m_client;
 	HTTPClient m_http;
 };
 

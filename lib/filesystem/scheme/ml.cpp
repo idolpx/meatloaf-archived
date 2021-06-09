@@ -1,8 +1,15 @@
 #include "ml.h"
 
+
+MLFile::~MLFile() {
+    // just to be sure to close it if we don't read the directory until the very end
+    m_http.end();
+}
+
 MFile* MLFile::getNextFileInDir() {
     if(!dirIsOpen) // might be first call, so let's try opening the dir
     {
+        Serial.print("\ndirIsOpen = 0");
         dirIsOpen = rewindDirectory();
     }
 
@@ -10,7 +17,7 @@ MFile* MLFile::getNextFileInDir() {
         return nullptr; // we couldn't open it or whole dir was at this stage - return nullptr, as usual
 
     // calling this proc will read a single JSON line that will be processed into MFile and returned
-    m_lineBuffer = payload.readStringUntil('\n');
+    m_lineBuffer = m_file.readStringUntil('\n');
 
 	if(m_lineBuffer.length() > 1)
 	{
@@ -21,7 +28,7 @@ MFile* MLFile::getNextFileInDir() {
 			Serial.print(F("\r\ndeserializeJson() failed: "));
 			Serial.println(error.c_str());
             dirIsOpen = false;
-            http.end();
+            m_http.end();
             ledOFF();
             return nullptr;
 		}
@@ -52,12 +59,15 @@ MFile* MLFile::getNextFileInDir() {
     }
 };
 
-MLFile::~MLFile() {
-    // just to be sure to close it if we don't read the directory until the very end
-    http.end();
-}
 
-bool MLFile::rewindDirectory() {
+
+
+void MLFile::openDir(const char *path) {
+    if (!isDirectory()) { 
+        dirIsOpen = false;
+        return;
+    }
+    
     Debug_printf("\r\nRequesting JSON dir from PHP: ");
 
 	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
@@ -68,22 +78,30 @@ bool MLFile::rewindDirectory() {
 	// Connect to HTTP server
 	//WiFiClient client; // TODO do we need both clients? This and payload? Maybe we do, just asking....
 	url.toLowerCase();
-	if (!http.begin(payload, url))
+	if (!m_http.begin(m_file, url))
 	{
 		Debug_println(F("\r\nConnection failed"));
-		return false;
+		dirIsOpen = false;
+        return;
 	}
-	http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
 	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
-	uint8_t httpCode = http.POST(post_data);	 //Send the request
+	uint8_t httpCode = m_http.POST(post_data);	 //Send the request
 	//payload = http.getStream(); //Get the response payload as Stream
 
 	Debug_printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
+
 	if (httpCode != 200) {
-		return false;
+		dirIsOpen = false;
     }
     else
-        return true;
+        dirIsOpen = true;
+}
+
+
+bool MLFile::rewindDirectory() {
+
+
 };

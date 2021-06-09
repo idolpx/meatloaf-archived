@@ -49,14 +49,12 @@ typedef int (*__kv_callback)(void* list, string k, string v);
 class EdUrlParser 
 {
 private:
-    EdUrlParser();
-
-
     void parse();
     void string_toupper(std::string &s);
 
 public:
-    virtual ~EdUrlParser();
+    EdUrlParser();
+    ~EdUrlParser();
 
     void parsePath(string pathstr);
     static int parsePath(vector<string>* folders, string pathstr);
