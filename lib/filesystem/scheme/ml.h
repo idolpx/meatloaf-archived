@@ -30,6 +30,8 @@ public:
             m_path = path + "/";
         if(path.back() == '/')
             m_isDir = true;
+        
+        http.setReuse(true);
     };
     ~MLFile();
 

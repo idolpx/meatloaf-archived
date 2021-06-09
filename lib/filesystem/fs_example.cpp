@@ -52,76 +52,77 @@ void testLittleFS() {
 
     // return;
 
-    std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
+    // std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
 
     Serial.println("FSTEST: test MFile factory");
 
-    std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
-    std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
+    // std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
+    // std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
 
 
-    std::unique_ptr<MFile> urlFile(MFSOwner::File("http://c64.meatloaf.cc"));
+    std::unique_ptr<MFile> urlFile(MFSOwner::File("ml://c64.meatloaf.cc"));
 
-    if(urlFile==nullptr) {
-        Serial.println("FSTEST: null path returned!!!");
-    } else {
-        Serial.printf("FSTEST: url %s exists =%d\n", urlFile->path().c_str(), urlFile->exists());
-        Serial.printf("FSTEST: url %s size =%d\n", urlFile->path().c_str(), urlFile->size());
+    // if(urlFile==nullptr) {
+    //     Serial.println("FSTEST: null path returned!!!");
+    // } else {
+    //     Serial.printf("FSTEST: url %s exists =%d\n", urlFile->path().c_str(), urlFile->exists());
+    //     Serial.printf("FSTEST: url %s size =%d\n", urlFile->path().c_str(), urlFile->size());
 
-        std::unique_ptr<MIstream> urlistream(urlFile->inputStream());
-        StreamReader reader(urlistream.get());
+    //     std::unique_ptr<MIstream> urlistream(urlFile->inputStream());
+    //     StreamReader reader(urlistream.get());
 
-        std::string line = reader.readLn();
+    //     std::string line = reader.readLn();
 
-        while(!reader.eof()) {
-            Serial.printf("FSTEST: line read:'%s'\n",line.c_str());
-            line = reader.readLn();
-        };
+    //     while(!reader.eof()) {
+    //         Serial.printf("FSTEST: line read:'%s'\n",line.c_str());
+    //         line = reader.readLn();
+    //     };
 
-    }
-return;
-    char exampleText[]="Proletariusze wszystkich krajow, laczcie sie!";
+    // }
+    // return;
 
-    // test 1 - write some string to a plain file in root dir
+    // char exampleText[]="Proletariusze wszystkich krajow, laczcie sie!";
 
-    if(fileInRoot->exists()) {
-        bool result = fileInRoot->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInRoot->path().c_str(), result);
-    }
+    // // test 1 - write some string to a plain file in root dir
 
-    if(fileInSub->exists()) {
-        bool result = fileInSub->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInSub->path().c_str(), result);
-    }
+    // if(fileInRoot->exists()) {
+    //     bool result = fileInRoot->remove();
+    //     Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInRoot->path().c_str(), result);
+    // }
+
+    // if(fileInSub->exists()) {
+    //     bool result = fileInSub->remove();
+    //     Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInSub->path().c_str(), result);
+    // }
 
 
-    Serial.println("FSTEST: root file attempt obtain ostream");
+    // Serial.println("FSTEST: root file attempt obtain ostream");
 
-    std::unique_ptr<MOstream> writeToSub(fileInSub->outputStream());
+    // std::unique_ptr<MOstream> writeToSub(fileInSub->outputStream());
 
-    if(writeToSub->isOpen()) {
-        Serial.println("FSTEST: root file opened for writing");
-        strncpy(buffer, exampleText, RECORD_SIZE);
-        Serial.println("FSTEST: root file attempt write");
-        int rc = writeToSub->write((uint8_t*)buffer, strlen(exampleText));
-        if(rc<=0) {
-            Serial.println("FSTEST: Writing root file failed");
-        }
-        writeToSub->close();
-    }
-    else {
-        Serial.println("FSTEST: Opening fileInRoot for output failed");
-    }
+    // if(writeToSub->isOpen()) {
+    //     Serial.println("FSTEST: root file opened for writing");
+    //     strncpy(buffer, exampleText, RECORD_SIZE);
+    //     Serial.println("FSTEST: root file attempt write");
+    //     int rc = writeToSub->write((uint8_t*)buffer, strlen(exampleText));
+    //     if(rc<=0) {
+    //         Serial.println("FSTEST: Writing root file failed");
+    //     }
+    //     writeToSub->close();
+    // }
+    // else {
+    //     Serial.println("FSTEST: Opening fileInRoot for output failed");
+    // }
 
-    Serial.println("FSTEST: check isDir");
+    // Serial.println("FSTEST: check isDir");
 
-    Serial.printf("FSTEST: %s = %d\n", aDir->path().c_str(), aDir->isDirectory());
+    // Serial.printf("FSTEST: %s = %d\n", aDir->path().c_str(), aDir->isDirectory());
 
-    Serial.printf("FSTEST: %s = %d\n", fileInSub->path().c_str(), fileInSub->isDirectory());
+    // Serial.printf("FSTEST: %s = %d\n", fileInSub->path().c_str(), fileInSub->isDirectory());
 
-    Serial.println("FSTEST: copying test");
+    // Serial.println("FSTEST: copying test");
 
-    fileInSub->copyTo(fileInRoot.get());
+    // fileInSub->copyTo(fileInRoot.get());
 
     // std::shared_ptr<MIstream> readFromSub(fileInSub->inputStream());
     // std::shared_ptr<MOstream> writeToRoot(fileInRoot->outputStream());
@@ -158,13 +159,13 @@ return;
     //recurseList(root.get());
 
 
-    std::unique_ptr<MFile> someComplexPath(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp/onefile/brucelee.prg"));
+    // std::unique_ptr<MFile> someComplexPath(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp/onefile/brucelee.prg"));
     
-    Serial.println("FSTEST: dnp container");
+    // Serial.println("FSTEST: dnp container");
 
-    std::unique_ptr<MFile> someComplexPathContainer(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp"));
+    // std::unique_ptr<MFile> someComplexPathContainer(MFSOwner::File("http://server.com/dire/ctory/c64archive.7z/games/disc1.dnp"));
 
-    Serial.println("FSTEST: normal file");
+    // Serial.println("FSTEST: normal file");
 
 }
 

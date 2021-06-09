@@ -120,6 +120,7 @@ public:
         m_http.setTimeout(10000);
         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         m_http.setRedirectLimit(10);
+        m_http.setReuse(true);
 
         m_path = path;
     }

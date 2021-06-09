@@ -188,7 +188,7 @@ void setup()
 			}
 		}
 
-		//testLittleFS();
+		testLittleFS();
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
