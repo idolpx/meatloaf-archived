@@ -134,7 +134,9 @@ bool HttpIStream::seek(uint32_t pos) {
         if(pos<m_position) {
             // skipping backward, let's do it from the start...
             m_http.end();
-            open();
+            bool op = open();
+            if(!op)
+                return false;
         }
 
         // ... and then:
@@ -143,7 +145,7 @@ bool HttpIStream::seek(uint32_t pos) {
         //     m_bytesAvailable-=bytesRead;
         // m_position+=bytesRead;
 
-
+        return true;
     }
 };
 
