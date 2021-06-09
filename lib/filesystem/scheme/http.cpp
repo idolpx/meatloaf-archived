@@ -117,7 +117,7 @@ bool HttpIStream::seek(uint32_t pos) {
         // to implement seeking
         // we should also add:
         // Keep-Alive: timeout=5, max=1000
-        m_http.addHeader("range","pos.toString");
+        m_http.addHeader("range","bytes=pos.toString");
         int httpCode = m_http.GET(); //Send the request
         Serial.printf("URLSTR: httpCode=%d\n", httpCode);
         if(httpCode != 200)

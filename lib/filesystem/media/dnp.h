@@ -86,8 +86,8 @@ public:
 
 
     bool handles(std::string fileName) {
-        //Serial.printf("handles w dnp %s %d\n", path.c_str(), path.rfind(".dnp"));
-        return fileName.rfind(".dnp") == fileName.length()-4;
+        //Serial.printf("handles w dnp %s %d\n", fileName.rfind(".dnp"), fileName.length()-4);
+        return fileName.rfind(".dnp") != -1 &&  fileName.rfind(".dnp") == fileName.length()-4;
     }
 
 
