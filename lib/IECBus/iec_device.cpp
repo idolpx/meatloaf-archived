@@ -709,6 +709,9 @@ void Interface::sendListing()
 	String dirTarget = m_device.url() + m_device.path();
 	std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
+
+	// create header here------------
+
 	while(entry != nullptr)
 	{
 		uint16_t block_cnt = entry->size() / 256;
@@ -755,6 +758,9 @@ void Interface::sendListing()
 		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
 		ledToggle(true);
 	}
+
+	// create footer here------------
+
 
 	byte_count += sendFooter(basicPtr);
 
