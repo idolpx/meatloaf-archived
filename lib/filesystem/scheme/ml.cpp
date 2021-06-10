@@ -7,6 +7,8 @@ MLFile::~MLFile() {
 }
 
 MFile* MLFile::getNextFileInDir() {
+//Debug_printv("inside MLFile::getNextFileInDir");
+
     if(!dirIsOpen) // might be first call, so let's try opening the dir
     {
         Serial.print("\ndirIsOpen = 0, rewinding");
@@ -73,7 +75,7 @@ bool MLFile::rewindDirectory() {
         return false;
     }
     
-Serial.printf("\r\nRequesting JSON dir from PHP: ");
+//Serial.printf("\r\nRequesting JSON dir from PHP: ");
 
 	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
 	String url("http://c64.meatloaf.cc/api/");
