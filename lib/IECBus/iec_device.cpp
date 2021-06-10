@@ -652,7 +652,7 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 
 uint16_t Interface::sendHeader(uint16_t &basicPtr)
 {
-	return sendHeader(basicPtr, '\0', '\0', '\0');
+	return sendHeader(basicPtr, "", "", "");
 }
 
 uint16_t Interface::sendHeader(uint16_t &basicPtr, char* header, char* id, char* dos)
