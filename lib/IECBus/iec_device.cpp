@@ -354,7 +354,8 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else if (m_filename.startsWith(F("HTTP://")) || m_filename.startsWith(F("ML://")))
 	{
-		EdUrlParser* url = EdUrlParser::parseUrl(m_filename.c_str());
+		EdUrlParser* url;
+		url->parseUrl(m_filename.c_str());
 
 #ifdef DEBUG
 		Serial.printf("\r\nURL: [%s]\r\n", url->url.c_str());
@@ -365,7 +366,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Serial.printf("Password: [%s]\r\n", url->password.c_str());
 		Serial.printf("Host: [%s]\r\n", url->hostname.c_str());
 		Serial.printf("Port: [%s]\r\n", url->port.c_str());
-		Serial.printf("Path: [%s]\r\n", url->path.c_str());
+		Serial.printf("Path: [%s]\r\n", url->pathX.c_str());
 		Serial.printf("File: [%s]\r\n", url->filename.c_str());
 		Serial.printf("Extension: [%s]\r\n", url->extension.c_str());
 		Serial.printf("Query: [%s]\r\n", url->query.c_str());
@@ -376,7 +377,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.partition(0);
 		m_device.url(url->root.c_str());		
-		m_device.path(url->path.c_str());
+		m_device.path(url->pathX.c_str());
 		m_filename = url->filename.c_str();
 		m_filetype = url->extension.c_str();
 		m_device.archive("");
@@ -691,7 +692,7 @@ void Interface::sendListing()
 		if (block_cnt > 999)
 			block_spc--;
 
-		byte space_cnt = 21 - (entry->name().length() + 5);
+		byte space_cnt = 21 - (entry->filename.length() + 5);
 		if (space_cnt > 21)
 			space_cnt = 0;
 
@@ -701,9 +702,9 @@ void Interface::sendListing()
 				block_cnt = 1;
 
 			// Get extension
-			if (entry->extension().length())
+			if (entry->extension.length())
 			{
-				extension = entry->extension();
+				extension = entry->extension;
 			}
 			else
 			{
@@ -716,10 +717,10 @@ void Interface::sendListing()
 		}
 
 		// Don't show hidden folders or files
-		Debug_printv("[%s]", entry->name().c_str());
-		if (!util_starts_with(entry->name(), "."))
+		Debug_printv("[%s]", entry->filename.c_str());
+		if (!util_starts_with(entry->filename, "."))
 		{
-			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name().c_str(), space_cnt, "", extension.c_str());
+			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->filename.c_str(), space_cnt, "", extension.c_str());
 		}
 		
 		entry.reset(dir->getNextFileInDir());
@@ -806,11 +807,11 @@ void Interface::sendFile()
 			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 			while (entry != nullptr && entry->isDirectory())
 			{
-				Debug_printf("\r\nsendFile: %s", entry->name().c_str());
+				Debug_printf("\r\nsendFile: %s", entry->filename.c_str());
 				entry.reset(dir->getNextFileInDir());
 			}
 			if (entry != nullptr)
-				m_filename = entry->name().c_str();
+				m_filename = entry->filename.c_str();
 		}
 	}
 	String fileTarget = String(m_device.url() + m_device.path() + m_filename);

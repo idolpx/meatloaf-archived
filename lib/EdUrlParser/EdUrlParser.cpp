@@ -36,8 +36,8 @@
 #define CHECK_REMAIN_END(POS, LEN, REQ_LEN) if(LEN-POS < REQ_LEN) {_url_errorno=100; goto __PARSE_END; }
 #define WALK_CHAR(POS, BUF, DELI) if(BUF[POS++] != DELI) goto __PARSE_END
 
-int __kv_callback_map(void* list, string k, string v);
-int __kv_callback_vec(void* list, string k, string v);
+int __kv_callback_map(void* list, std::string k, std::string v);
+int __kv_callback_vec(void* list, std::string k, std::string v);
 
 EdUrlParser::EdUrlParser() {
 }
@@ -45,10 +45,10 @@ EdUrlParser::EdUrlParser() {
 EdUrlParser::~EdUrlParser() {
 }
 
-string EdUrlParser::urlEncode(string s) 
+std::string EdUrlParser::urlEncode(std::string s) 
 {
     const char *ptr = s.c_str();
-    string enc;
+    std::string enc;
     char c;
     char phex[3] = { '%' };
     for (size_t i = 0; i < s.size(); i++) {
@@ -67,13 +67,13 @@ string EdUrlParser::urlEncode(string s)
     return enc;
 }
 
-string EdUrlParser::urlDecode(string str) 
+std::string EdUrlParser::urlDecode(std::string str) 
 {
     int _url_errorno = 0;
     size_t pos = 0, per = 0;
     size_t len = str.size();
     const char* buf = str.c_str();
-    string decstr;
+    std::string decstr;
     _url_errorno = 0;
     for (per = pos = 0;;) {
         WALK_UNTIL2(pos, len, buf, '%', '+');
@@ -134,8 +134,10 @@ char EdUrlParser::toChar(const char* hex)
 }
 
 
-void EdUrlParser::parse() 
+void EdUrlParser::parseUrl(std::string src_url) 
 {
+    Debug_printv("parseUrl: [%s]\n", src_url.c_str());
+    url = src_url;
     int _url_errorno = 0;
     const char *str = url.c_str();
 
@@ -215,7 +217,7 @@ void EdUrlParser::parse()
 
     __PARSE_PATH: path_pos = pos;
     WALK_UNTIL(pos, len, str, '?');
-    path = url.substr(path_pos, pos - path_pos);
+    pathX = url.substr(path_pos, pos - path_pos);
     CHECK_LEN_END(pos, len);
 
     __PARSE_PARAM:
@@ -231,7 +233,7 @@ void EdUrlParser::parse()
     fragment = url.substr(tag_pos, len - tag_pos);
 
     __PARSE_END:
-        parsePath(path);
+        parsePath(pathX);
 
         // set root URL
         root = scheme + "://" + hostname;
@@ -241,19 +243,19 @@ void EdUrlParser::parse()
         root += '/';
 
         // set base URL
-        base += path;
+        base += pathX;
         
         return;
 }
 
-int EdUrlParser::parsePath(vector<string>* folders, string pathstr) 
+int EdUrlParser::parsePath(std::vector<std::string>* folders, std::string pathstr) 
 {
     int _url_errorno = 0;
     int path_pos = 0;
     size_t pos = 0;
     size_t len = pathstr.size();
     const char* str = pathstr.c_str();
-    string name;
+    std::string name;
     for (pos = 0;;) {
         WALK_CHAR(pos, str, '/');
         path_pos = pos;
@@ -265,13 +267,13 @@ int EdUrlParser::parsePath(vector<string>* folders, string pathstr)
     __PARSE_END: return folders->size();
 }
 
-void EdUrlParser::parsePath(string pathstr) 
+void EdUrlParser::parsePath(std::string pathstr) 
 {
     size_t pos = 0;
 
     // Path
     pos = pathstr.find_last_of('/');
-    path = pathstr.substr(0, pos) + '/';
+    pathX = pathstr.substr(0, pos) + '/';
 
     // File
     filename = pathstr.substr(pos + 1);
@@ -285,23 +287,15 @@ void EdUrlParser::parsePath(string pathstr)
     }
 }
 
-EdUrlParser* EdUrlParser::parseUrl(string urlstr) 
-{
-    EdUrlParser *url = new EdUrlParser;
-    url->url = urlstr;
-    url->parse();
-    return url;
-}
-
-size_t EdUrlParser::parseKeyValueMap(unordered_map<string, string> *kvmap, string rawstr, bool strict) {
+size_t EdUrlParser::parseKeyValueMap(std::unordered_map<std::string, std::string> *kvmap, std::string rawstr, bool strict) {
     return parseKeyValue(rawstr, __kv_callback_map, kvmap, strict);
 }
 
-size_t EdUrlParser::parseKeyValueList(vector< query_kv_t > *kvvec, string rawstr, bool strict) {
+size_t EdUrlParser::parseKeyValueList(std::vector< query_kv_t > *kvvec, std::string rawstr, bool strict) {
     return parseKeyValue(rawstr, __kv_callback_vec, kvvec, strict);
 }
 
-size_t EdUrlParser::parseKeyValue(string rawstr, __kv_callback kvcb, void* obj, bool strict) {
+size_t EdUrlParser::parseKeyValue(std::string rawstr, __kv_callback kvcb, void* obj, bool strict) {
 
     int _url_errorno = 0;
     const char *str = rawstr.c_str();
@@ -309,7 +303,7 @@ size_t EdUrlParser::parseKeyValue(string rawstr, __kv_callback kvcb, void* obj, 
     pos = 0;
     len = rawstr.size();
 
-    string key, val;
+    std::string key, val;
     size_t key_pos;
     WALK_SP(pos, len, str);
     CHECK_LEN_END(pos, len);
@@ -351,21 +345,21 @@ size_t EdUrlParser::parseKeyValue(string rawstr, __kv_callback kvcb, void* obj, 
 }
 
 
-int __kv_callback_map(void* list, string k, string v) {
-    auto *map = (unordered_map<string, string>*)list;
+int __kv_callback_map(void* list, std::string k, std::string v) {
+    auto *map = (std::unordered_map<std::string, std::string>*)list;
     (*map)[k] = v;
     return map->size();
 }
 
-int __kv_callback_vec(void* list, string k, string v) {
-    auto *vec = (vector<query_kv_t>*)list;
+int __kv_callback_vec(void* list, std::string k, std::string v) {
+    auto *vec = (std::vector<query_kv_t>*)list;
     query_kv_t t ={k, v};
     vec->push_back(t);
     return vec->size();
 }
 
 // convert to uppercase (in place)
-void EdUrlParser::string_toupper(string &s)
+void EdUrlParser::string_toupper(std::string &s)
 {
     transform(s.begin(), s.end(), s.begin(),
                    [](unsigned char c) { return toupper(c); });

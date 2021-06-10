@@ -7,7 +7,6 @@ MLFile::~MLFile() {
 }
 
 MFile* MLFile::getNextFileInDir() {
-//Debug_printv("inside MLFile::getNextFileInDir");
 
     if(!dirIsOpen) // might be first call, so let's try opening the dir
     {
@@ -20,7 +19,7 @@ MFile* MLFile::getNextFileInDir() {
 
     // calling this proc will read a single JSON line that will be processed into MFile and returned
     m_lineBuffer = m_file.readStringUntil('\n');
-Serial.printf("Buffer read from ml server: %s\n", m_lineBuffer.c_str());
+//Serial.printf("Buffer read from ml server: %s\n", m_lineBuffer.c_str());
 	if(m_lineBuffer.length() > 1)
 	{
 		// Parse JSON object
@@ -31,7 +30,6 @@ Serial.printf("Buffer read from ml server: %s\n", m_lineBuffer.c_str());
 			Serial.println(error.c_str());
             dirIsOpen = false;
             m_http.end();
-            ledOFF();
             return nullptr;
 		}
         else {
@@ -49,21 +47,20 @@ Serial.printf("Buffer read from ml server: %s\n", m_lineBuffer.c_str());
             dirIsOpen = true;
             ledToggle(true);
 
-            std::string path = urldecode(m_jsonHTTP["name"]).c_str();
+            std::string fname = root + pathX + urldecode(m_jsonHTTP["name"]).c_str();
             size_t size = m_jsonHTTP["size"];
             bool dir = m_jsonHTTP["dir"];
 
-            return new MLFile(path, size, dir); // note such path can't be used to do our "magic" stream-in-strea-in-stream, you can use it only to list dir
+            return new MLFile(fname, size, dir); // note such path can't be used to do our "magic" stream-in-strea-in-stream, you can use it only to list dir
             //return new MLFile("ml://c64.meatloaf.cc/dummy/file.prg", 123, false);
         }
 
 	} 
     else {
         // no more entries, let's close the stream
-                Serial.println("no more entries");
+        //Serial.println("no more entries");
 
         dirIsOpen = false;
-        ledOFF();
         return nullptr;
     }
 };
@@ -77,15 +74,14 @@ bool MLFile::rewindDirectory() {
     
 //Serial.printf("\r\nRequesting JSON dir from PHP: ");
 
-	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
-	String url("http://c64.meatloaf.cc/api/");
+	//String url("http://c64.meatloaf.cc/api/");
+    std::string url = "http:/" + pathInStream + "/api/";
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-    String post_data("p=" + urlencode(String(pathInStream.substr(1, pathInStream.find_first_of("/")).c_str()))); // pathInStream will return here /c64.meatloaf.cc/some/directory
+    std::string post_data = "p=" + pathX; // pathInStream will return here /c64.meatloaf.cc/some/directory
 
 	// Connect to HTTP server
-	//WiFiClient client; // TODO do we need both clients? This and payload? Maybe we do, just asking....
-	url.toLowerCase();
-	if (!m_http.begin(m_file, url))
+	Serial.printf("\r\nConnecting!\r\n--------------------\r\n%s\r\n%s\r\n", url.c_str(), post_data.c_str());
+	if (!m_http.begin(m_file, url.c_str()))
 	{
 		Serial.printf("\r\nConnection failed");
 		dirIsOpen = false;
@@ -93,9 +89,7 @@ bool MLFile::rewindDirectory() {
 	}
 	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-	Serial.printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
-
-	uint8_t httpCode = m_http.POST(post_data);	 //Send the request
+	uint8_t httpCode = m_http.POST(post_data.c_str());	 //Send the request
 	//payload = http.getStream(); //Get the response payload as Stream
 
 	Serial.printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code

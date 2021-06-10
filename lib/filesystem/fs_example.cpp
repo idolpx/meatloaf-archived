@@ -20,12 +20,12 @@ void recurseList(MFile* file) {
         while(entry != nullptr) {
             if(entry->isDirectory())
             {
-                Serial.printf("%s <dir>\n", entry->name().c_str());
+                Serial.printf("%s <dir>\n", entry->filename.c_str());
                 recurseList(entry.get());
             }
             else
             {
-                Serial.printf("%s <file>\n", entry->name().c_str());                
+                Serial.printf("%s <file>\n", entry->filename.c_str());                
             }
 
             entry.reset(file->getNextFileInDir());
@@ -62,6 +62,22 @@ void testLittleFS() {
 
     std::unique_ptr<MFile> urlFile(MFSOwner::File("ml://c64.meatloaf.cc/"));
 
+    Serial.printf("URL: [%s]\n", urlFile->url.c_str());
+    Serial.printf("Root: [%s]\n", urlFile->root.c_str());
+    Serial.printf("Base: [%s]\n", urlFile->base.c_str());
+    Serial.printf("Scheme: [%s]\n", urlFile->scheme.c_str());
+    Serial.printf("Username: [%s]\n", urlFile->username.c_str());
+    Serial.printf("Password: [%s]\n", urlFile->password.c_str());
+    Serial.printf("Host: [%s]\n", urlFile->hostname.c_str());
+    Serial.printf("Port: [%s]\n", urlFile->port.c_str());
+    Serial.printf("Path: [%s]\n", urlFile->pathX.c_str());
+    Serial.printf("File: [%s]\n", urlFile->filename.c_str());
+    Serial.printf("Extension: [%s]\n", urlFile->extension.c_str());
+    Serial.printf("Query: [%s]\n", urlFile->query.c_str());
+    Serial.printf("Fragment: [%s]\n\n", urlFile->fragment.c_str());
+    Serial.printf("MFile path: [%s]\n", urlFile->path().c_str());
+    Serial.printf("-------------------------------\n");
+
     std::unique_ptr<MFile> entry(urlFile->getNextFileInDir());
 
     while(entry != nullptr) {
@@ -72,7 +88,21 @@ void testLittleFS() {
         // }
         // else
         // {
-            Serial.printf("listing ml %s <file>\n", entry->name().c_str());                
+            Serial.printf("URL: [%s]\n", entry->url.c_str());
+            Serial.printf("Root: [%s]\n", entry->root.c_str());
+            Serial.printf("Base: [%s]\n", entry->base.c_str());
+            Serial.printf("Scheme: [%s]\n", entry->scheme.c_str());
+            Serial.printf("Username: [%s]\n", entry->username.c_str());
+            Serial.printf("Password: [%s]\n", entry->password.c_str());
+            Serial.printf("Host: [%s]\n", entry->hostname.c_str());
+            Serial.printf("Port: [%s]\n", entry->port.c_str());
+            Serial.printf("Path: [%s]\n", entry->pathX.c_str());
+            Serial.printf("File: [%s]\n", entry->filename.c_str());
+            Serial.printf("Extension: [%s]\n", entry->extension.c_str());
+            Serial.printf("Query: [%s]\n", entry->query.c_str());
+            Serial.printf("Fragment: [%s]\n\n", entry->fragment.c_str());
+            Serial.printf("MFile path: [%s]\n", entry->path().c_str());
+            Serial.printf("-------------------------------\n");
 //        }
 
         entry.reset(urlFile->getNextFileInDir());

@@ -58,8 +58,10 @@ public:
 class MLFileSystem: public MFileSystem 
 {
     MFile* getFile(std::string path) override {
-        //Debug_printv("MLFileSystem::getFile(%s)", path.c_str());
-        return new MLFile(path);
+        Debug_printv("MLFileSystem::getFile(%s)", path.c_str());
+        MLFile* newMLFile = new MLFile(path);
+        newMLFile->parseUrl(path);
+        return newMLFile;
     }
 
     bool handles(std::string name) {

@@ -29,59 +29,56 @@
 #ifndef EDURLPARSER_H_
 #define EDURLPARSER_H_
 
+#include "../../include/global_defines.h"
+
 #include <unordered_map>
 #include <tuple>
 #include <vector>
 #include <string>
 #include <algorithm>
 
-using namespace std;
-
 typedef struct {
-    string key;
-    string val;
+    std::string key;
+    std::string val;
 } query_kv_t;
 
-typedef int (*__kv_callback)(void* list, string k, string v);
-
-
+typedef int (*__kv_callback)(void* list, std::string k, std::string v);
 
 class EdUrlParser 
 {
 private:
-    void parse();
     void string_toupper(std::string &s);
 
 public:
     EdUrlParser();
     ~EdUrlParser();
 
-    void parsePath(string pathstr);
-    static int parsePath(vector<string>* folders, string pathstr);
-    static EdUrlParser* parseUrl(string urlstr);
+    void parsePath(std::string pathstr);
+    int parsePath(std::vector<std::string>* folders, std::string pathstr);
+    void parseUrl(std::string urlstr);
 
-    static string urlEncode(string s);	
-    static string urlDecode(string str);
+    static std::string urlEncode(std::string s);	
+    static std::string urlDecode(std::string str);
     static void toHex(char *desthex, char c);
     static char toChar(const char* hex);
     
-    static size_t parseKeyValueMap(unordered_map<string, string> *kvmap, string str, bool strict=true);
-    static size_t parseKeyValueList(vector< query_kv_t > *kvmap, string rawstr, bool strict=true);
-    static size_t parseKeyValue(string rawstr, __kv_callback kvcb, void* obj, bool strict);
+    static size_t parseKeyValueMap(std::unordered_map<std::string, std::string> *kvmap, std::string str, bool strict=true);
+    static size_t parseKeyValueList(std::vector< query_kv_t > *kvmap, std::string rawstr, bool strict=true);
+    static size_t parseKeyValue(std::string rawstr, __kv_callback kvcb, void* obj, bool strict);
 
-    string url;
-    string root;
-    string base;
-    string scheme;
-    string username;
-    string password;
-    string hostname;
-    string port;
-    string path;
-    string filename;
-    string extension;
-    string query;
-    string fragment;
+    std::string url;
+    std::string root;
+    std::string base;
+    std::string scheme;
+    std::string username;
+    std::string password;
+    std::string hostname;
+    std::string port;
+    std::string pathX;
+    std::string filename;
+    std::string extension;
+    std::string query;
+    std::string fragment;
 };
 
 #endif /* EDURLPARSER_H_ */

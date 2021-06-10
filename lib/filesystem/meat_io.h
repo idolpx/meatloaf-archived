@@ -9,21 +9,24 @@
 #include "buffered_io.h"
 #include "meat_stream.h"
 #include "../../include/make_unique.h"
+#include "EdUrlParser.h"
 
 /********************************************************
  * Universal file
  ********************************************************/
 
-class MFile {
+class MFile : public EdUrlParser {
 public:
     MFile(nullptr_t null) : m_isNull(true) {};
     MFile(std::string path);
     MFile(std::string path, std::string name);
     MFile(MFile* path, std::string name);
 
-    std::string name();
+    //std::string name();
     std::string path();
-    std::string extension();
+    //std::string extension();
+    std::string header;
+    std::string mediaRoot;
     bool operator!=(nullptr_t ptr);
 
     bool copyTo(MFile* dst) {

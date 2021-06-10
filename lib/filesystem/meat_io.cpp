@@ -114,6 +114,7 @@ MFile* MFSOwner::File(std::string path) {
     
     std::string line;
     std::stringstream ss(path);
+
     while(std::getline(ss, line, '/')) {
         paths.push_back(line);
     }
@@ -133,15 +134,16 @@ MFile* MFSOwner::File(std::string path) {
         auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ return fs->handles(part); } );
 
         if(foundIter != availableFS.end()) {
-//Serial.printf("matched fs: %s\n", (*foundIter)->symbol);            
+Serial.printf("matched fs: %s [%s]\n", (*foundIter)->symbol, path.c_str());
             auto newFile = (*foundIter)->getFile(path);
             newFile->fillPaths(&pathIterator, &begin, &end);
+            newFile->parseUrl(path);
 
             return newFile;
          }
     };
 
-    //Serial.printf("Little fs fallback\n");
+    Serial.printf("Little fs fallback\n");
 
     MFile* newFile = new LittleFile(path);
     newFile->streamPath = path;
@@ -183,22 +185,22 @@ bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
 }
 
-std::string MFile::name() {
-    int lastSlash = m_path.find_last_of('/');
-    return m_path.substr(lastSlash+1);;
-}
+// std::string MFile::name() {
+//     int lastSlash = m_path.find_last_of('/');
+//     return m_path.substr(lastSlash+1);;
+// }
 
 std::string MFile::path() {
     return m_path;
 }
 
-std::string MFile::extension() {
-    int lastPeriod = m_path.find_last_of(".");
-    if(lastPeriod < 0)
-        return "";
-    else
-        return m_path.substr(lastPeriod+1);
-}
+// std::string MFile::extension() {
+//     int lastPeriod = m_path.find_last_of(".");
+//     if(lastPeriod < 0)
+//         return "";
+//     else
+//         return m_path.substr(lastPeriod+1);
+// }
 
 MIstream* MFile::inputStream() {
     ; // has to return OPENED stream
