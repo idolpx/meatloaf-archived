@@ -9,7 +9,7 @@ MLFile::~MLFile() {
 MFile* MLFile::getNextFileInDir() {
     if(!dirIsOpen) // might be first call, so let's try opening the dir
     {
-        Serial.print("\ndirIsOpen = 0");
+        Serial.print("\ndirIsOpen = 0, rewinding");
         dirIsOpen = rewindDirectory();
     }
 
@@ -54,6 +54,8 @@ Serial.printf("Buffer read from ml server: %s\n", m_lineBuffer.c_str());
 	} 
     else {
         // no more entries, let's close the stream
+                Serial.println("no more entries");
+
         dirIsOpen = false;
         ledOFF();
         return nullptr;
@@ -93,6 +95,7 @@ Serial.printf("\r\nRequesting JSON dir from PHP: ");
 	Serial.printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
 
 	if (httpCode != 200) {
+        Serial.println("httpCode != 200");
 		dirIsOpen = false;
     }
     else

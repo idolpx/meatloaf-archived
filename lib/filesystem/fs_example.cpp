@@ -75,7 +75,7 @@ void testLittleFS() {
             Serial.printf("listing ml %s <file>\n", entry->name().c_str());                
 //        }
 
-        entry.reset(entry->getNextFileInDir());
+        entry.reset(urlFile->getNextFileInDir());
     }
 
     // if(urlFile==nullptr) {
