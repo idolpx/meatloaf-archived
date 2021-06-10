@@ -652,7 +652,7 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 
 uint16_t Interface::sendHeader(uint16_t &basicPtr)
 {
-	return sendHeader(basicPtr, "", "", "");
+	return sendHeader(basicPtr, " \0", " \0", " \0");
 }
 
 uint16_t Interface::sendHeader(uint16_t &basicPtr, char* header, char* id, char* dos)
@@ -715,14 +715,13 @@ void Interface::sendListing()
 	byte_count += 2;
 	Debug_println("");
 
-	byte_count += sendHeader(basicPtr);
-
 	// Send List ITEMS
 	String dirTarget = m_device.url() + m_device.path();
 	std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
-	// create header here------------
+	// Send Listing Header
+	byte_count += sendHeader(basicPtr);
 
 	while(entry != nullptr)
 	{
@@ -771,9 +770,12 @@ void Interface::sendListing()
 		ledToggle(true);
 	}
 
-	// create footer here------------
+	if(entry == nullptr)
+	{
+		Debug_printv("entry is null");
+	}
 
-
+	// Send Listing Footer
 	byte_count += sendFooter(basicPtr);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.

@@ -10,6 +10,7 @@
 #include "scheme/ml.h"
 #include <vector>
 #include <sstream>
+#include "utils.h"
 
 
 std::string joinNamesToPath(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end) {
@@ -125,6 +126,7 @@ MFile* MFSOwner::File(std::string path) {
         pathIterator--;
 
         auto part = *pathIterator;
+        util_string_toupper(part);
 
         //Serial.printf("testing part '%s'\n", part.c_str());
 
