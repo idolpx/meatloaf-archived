@@ -44,6 +44,7 @@ Serial.printf("Buffer read from ml server: %s\n", m_lineBuffer.c_str());
             {"path":"ml://servername.com/full/file/path/demos","isDir":true,"size":0} 
 
             */
+           dirIsOpen = true;
             ledToggle(true);
 
             //return new MLFile(m_jsonHTTP["path"], m_jsonHTTP["size"], m_jsonHTTP["isDir"]); // note such path can't be used to do our "magic" stream-in-strea-in-stream, you can use it only to list dir
@@ -71,7 +72,7 @@ Serial.printf("\r\nRequesting JSON dir from PHP: ");
 	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
 	String url("http://c64.meatloaf.cc/api/");
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-    String post_data("p=" + urlencode(String(pathInStream.c_str()))); // pathInStream will return here /c64.meatloaf.cc/some/directory
+    String post_data("p=" + urlencode(String(pathInStream.substr(1, pathInStream.find_first_of("/")).c_str()))); // pathInStream will return here /c64.meatloaf.cc/some/directory
 
 	// Connect to HTTP server
 	//WiFiClient client; // TODO do we need both clients? This and payload? Maybe we do, just asking....
