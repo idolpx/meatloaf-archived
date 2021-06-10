@@ -101,7 +101,6 @@ public:
     MOstream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
-    void openDir(const char *path) override;
     bool rewindDirectory() override ;
     MFile* getNextFileInDir() override ;
     bool mkDir() override ;
@@ -112,6 +111,7 @@ public:
     MIstream* createIStream(MIstream* src);
 
 private:
+    void openDir(const char *path);
     lfs_dir_t dir;
     bool dirOpened = false;
     lfs_info _dirent;

@@ -60,7 +60,23 @@ void testLittleFS() {
     // std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
 
 
-    std::unique_ptr<MFile> urlFile(MFSOwner::File("ml://c64.meatloaf.cc"));
+    std::unique_ptr<MFile> urlFile(MFSOwner::File("ml://c64.meatloaf.cc/"));
+
+    std::unique_ptr<MFile> entry(urlFile->getNextFileInDir());
+
+    while(entry != nullptr) {
+        // if(entry->isDirectory())
+        // {
+        //     Serial.printf("%s <dir>\n", entry->name().c_str());
+        //     recurseList(entry.get());
+        // }
+        // else
+        // {
+            Serial.printf("listing ml %s <file>\n", entry->name().c_str());                
+//        }
+
+        entry.reset(entry->getNextFileInDir());
+    }
 
     // if(urlFile==nullptr) {
     //     Serial.println("FSTEST: null path returned!!!");
