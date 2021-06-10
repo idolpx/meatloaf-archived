@@ -18,7 +18,7 @@ MFile* MLFile::getNextFileInDir() {
 
     // calling this proc will read a single JSON line that will be processed into MFile and returned
     m_lineBuffer = m_file.readStringUntil('\n');
-
+Serial.printf("Buffer read from ml server: %s\n", m_lineBuffer.c_str());
 	if(m_lineBuffer.length() > 1)
 	{
 		// Parse JSON object
@@ -60,15 +60,13 @@ MFile* MLFile::getNextFileInDir() {
 };
 
 
-
-
-void MLFile::openDir(const char *path) {
+bool MLFile::rewindDirectory() {
     if (!isDirectory()) { 
         dirIsOpen = false;
-        return;
+        return false;
     }
     
-    Debug_printf("\r\nRequesting JSON dir from PHP: ");
+Serial.printf("\r\nRequesting JSON dir from PHP: ");
 
 	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
 	String url("http://c64.meatloaf.cc/api/");
@@ -80,28 +78,24 @@ void MLFile::openDir(const char *path) {
 	url.toLowerCase();
 	if (!m_http.begin(m_file, url))
 	{
-		Debug_println(F("\r\nConnection failed"));
+		Serial.printf("\r\nConnection failed");
 		dirIsOpen = false;
-        return;
+        return false;
 	}
 	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
+	Serial.printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
 
 	uint8_t httpCode = m_http.POST(post_data);	 //Send the request
 	//payload = http.getStream(); //Get the response payload as Stream
 
-	Debug_printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
+	Serial.printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
 
 	if (httpCode != 200) {
 		dirIsOpen = false;
     }
     else
         dirIsOpen = true;
-}
 
-
-bool MLFile::rewindDirectory() {
-
-
+    return dirIsOpen;
 };

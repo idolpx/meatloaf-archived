@@ -131,7 +131,7 @@ MFile* MFSOwner::File(std::string path) {
         auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ return fs->handles(part); } );
 
         if(foundIter != availableFS.end()) {
-Serial.printf("matched fs: %s\n", (*foundIter)->symbol);            
+//Serial.printf("matched fs: %s\n", (*foundIter)->symbol);            
             auto newFile = (*foundIter)->getFile(path);
             newFile->fillPaths(&pathIterator, &begin, &end);
 

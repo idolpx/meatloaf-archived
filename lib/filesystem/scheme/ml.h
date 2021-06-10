@@ -36,7 +36,7 @@ public:
     ~MLFile();
 
     bool isDirectory() override { return m_isDir; };
-    void openDir(const char *path) override;
+    //void openDir(const char *path) override;
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
     // MIstream* inputStream() override ; // file on ML server = standard HTTP file available via GET
