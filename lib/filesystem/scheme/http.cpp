@@ -111,13 +111,14 @@ bool HttpIStream::seek(uint32_t pos, SeekMode mode) {
 };
 
 bool HttpIStream::seek(uint32_t pos) {
+    if(pos==m_position)
+        return true;
+
     if(isFriendlySkipper) {
-        // then we can
+        char str[40];
         // Range: bytes=666-
-        // to implement seeking
-        // we should also add:
-        // Keep-Alive: timeout=5, max=1000
-        m_http.addHeader("range","bytes=pos.toString");
+        snprintf(str, sizeof str, "bytes=%lu-", (unsigned long)pos);
+        m_http.addHeader("range",str);
         int httpCode = m_http.GET(); //Send the request
         Serial.printf("URLSTR: httpCode=%d\n", httpCode);
         if(httpCode != 200)
@@ -129,21 +130,19 @@ bool HttpIStream::seek(uint32_t pos) {
         m_bytesAvailable = m_length-pos;
         return true;
     } else {
-        if(pos==m_position)
-            return true;
         if(pos<m_position) {
-            // skipping backward, let's do it from the start...
+            // skipping backward and range not supported, let's simply reopen the stream...
             m_http.end();
             bool op = open();
             if(!op)
                 return false;
         }
 
-        // ... and then:
-        // read until we reach pos
-        // but we can skip forward and then modify these accordingly:
-        //     m_bytesAvailable-=bytesRead;
-        // m_position+=bytesRead;
+        // ... and then read until we reach pos
+        // while(m_position < pos) {
+        //  m_position+=m_file.readBytes(buffer, size);  <----------- trurn this on!!!!
+        // }
+        m_bytesAvailable = m_length-pos;
 
         return true;
     }
