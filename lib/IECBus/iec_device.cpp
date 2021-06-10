@@ -92,58 +92,58 @@ void Interface::sendDeviceInfo()
 	Debug_println("");
 
 	// Send List HEADER
-	sendLine(basicPtr, 0, "\x14\x14\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
+	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_RVS_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// CPU
-	sendLine(basicPtr, 0, "\x14\x14" "SYSTEM ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "SYSTEM ---");
 	String sdk = String(ESP.getSdkVersion());
 	sdk.toUpperCase();
-	sendLine(basicPtr, 0, "\x14\x14" "SDK VER    : %s", sdk.c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "SDK VER    : %s", sdk.c_str());
 	//sendLine(basicPtr, 0, "BOOT VER   : %08X", ESP.getBootVersion());
 	//sendLine(basicPtr, 0, "BOOT MODE  : %08X", ESP.getBootMode());
 	//sendLine(basicPtr, 0, "CHIP ID    : %08X", ESP.getChipId());
-	sendLine(basicPtr, 0, "\x14\x14" "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
-	sendLine(basicPtr, 0, "\x14\x14" "CYCLES     : %u", ESP.getCycleCount());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "CYCLES     : %u", ESP.getCycleCount());
 
 	// POWER
-	sendLine(basicPtr, 0, "\x14\x14" "POWER ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "POWER ---");
 	//sendLine(basicPtr, 0, "VOLTAGE    : %d.%d V", ( ESP.getVcc() / 1000 ), ( ESP.getVcc() % 1000 ));
 
 	// RAM
-	sendLine(basicPtr, 0, "\x14\x14" "MEMORY ---");
-	sendLine(basicPtr, 0, "\x14\x14" "RAM SIZE   : %5d B", getTotalMemory());
-	sendLine(basicPtr, 0, "\x14\x14" "RAM FREE   : %5d B", getTotalAvailableMemory());
-	sendLine(basicPtr, 0, "\x14\x14" "RAM >BLK   : %5d B", getLargestAvailableBlock());
-	sendLine(basicPtr, 0, "\x14\x14" "RAM FRAG   : %s %%", floatBuffer);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "MEMORY ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM SIZE   : %5d B", getTotalMemory());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM FREE   : %5d B", getTotalAvailableMemory());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM >BLK   : %5d B", getLargestAvailableBlock());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM FRAG   : %s %%", floatBuffer);
 
 	// ROM
-	sendLine(basicPtr, 0, "\x14\x14" "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
-	sendLine(basicPtr, 0, "\x14\x14" "ROM USED   : %5d B", ESP.getSketchSize());
-	sendLine(basicPtr, 0, "\x14\x14" "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM USED   : %5d B", ESP.getSketchSize());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
 
 	// FLASH
-	sendLine(basicPtr, 0, "\x14\x14" "STORAGE ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STORAGE ---");
 	//sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
-	sendLine(basicPtr, 0, "\x14\x14" "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
 
 	// FILE SYSTEM
-	sendLine(basicPtr, 0, "\x14\x14" "FILE SYSTEM ---");
-	sendLine(basicPtr, 0, "\x14\x14" "TYPE       : %s", FS_TYPE);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FILE SYSTEM ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "TYPE       : %s", FS_TYPE);
 	//  #if defined(USE_LITTLEFS)
-	sendLine(basicPtr, 0, "\x14\x14" "SIZE       : %5d B", fs_info.totalBytes);
-	sendLine(basicPtr, 0, "\x14\x14" "USED       : %5d B", fs_info.usedBytes);
-	sendLine(basicPtr, 0, "\x14\x14" "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "SIZE       : %5d B", fs_info.totalBytes);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "USED       : %5d B", fs_info.usedBytes);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
 	//  #endif
 
 	// NETWORK
-	sendLine(basicPtr, 0, "\x14\x14" "NETWORK ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "NETWORK ---");
 	char ip[16];
 	sprintf(ip, "%s", ipToString(WiFi.softAPIP()).c_str());
-	sendLine(basicPtr, 0, "\x14\x14" "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
-	sendLine(basicPtr, 0, "\x14\x14" "AP IP      : %s", ip);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "AP IP      : %s", ip);
 	sprintf(ip, "%s", ipToString(WiFi.localIP()).c_str());
-	sendLine(basicPtr, 0, "\x14\x14" "STA MAC    : %s", WiFi.macAddress().c_str());
-	sendLine(basicPtr, 0, "\x14\x14" "STA IP     : %s", ip);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STA MAC    : %s", WiFi.macAddress().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STA IP     : %s", ip);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -165,17 +165,17 @@ void Interface::sendDeviceStatus()
 	Debug_println("");
 
 	// Send List HEADER
-	sendLine(basicPtr, 0, "\x14\x14\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
+	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_RVS_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// Current Config
-	sendLine(basicPtr, 0, "\x14\x14" "DEVICE    : %d", m_device.device());
-	sendLine(basicPtr, 0, "\x14\x14" "MEDIA     : %d", m_device.media());
-	sendLine(basicPtr, 0, "\x14\x14" "PARTITION : %d", m_device.partition());
-	sendLine(basicPtr, 0, "\x14\x14" "URL       : %s", m_device.url().c_str());
-	sendLine(basicPtr, 0, "\x14\x14" "PATH      : %s", m_device.path().c_str());
-	sendLine(basicPtr, 0, "\x14\x14" "ARCHIVE   : %s", m_device.archive().c_str());
-	sendLine(basicPtr, 0, "\x14\x14" "IMAGE     : %s", m_device.image().c_str());
-	sendLine(basicPtr, 0, "\x14\x14" "FILENAME  : %s", m_filename.c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE    : %d", m_device.device());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "MEDIA     : %d", m_device.media());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "PARTITION : %d", m_device.partition());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_device.url().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_device.path().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_filename.c_str());
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -652,23 +652,16 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 
 uint16_t Interface::sendHeader(uint16_t &basicPtr)
 {
-	return sendHeader(basicPtr, " \0", " \0", " \0");
+	return sendHeader(basicPtr, " \0");
 }
 
-uint16_t Interface::sendHeader(uint16_t &basicPtr, char* header, char* id, char* dos)
+uint16_t Interface::sendHeader(uint16_t &basicPtr, char* header)
 {
-	uint16_t byte_count;
-	// Set Defaults
-	if (!strlen(header))
-		sprintf(header, PRODUCT_ID);
-	if (!strlen(id))
-		sprintf(id, "%.02d", m_device.device());
-	if (!strlen(dos))
-		sprintf(dos, "2A");
+	uint16_t byte_count = 0;
 
 	// Send List HEADER
-	byte space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
-	byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+	//byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+	byte_count += sendLine(basicPtr, 0, CBM_RVS_ON "%s", header);
 
 	// Send Extra INFO
 	if (m_device.url().length())
@@ -721,6 +714,12 @@ void Interface::sendListing()
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 	// Send Listing Header
+	// Set Defaults
+	if (!strlen(header))
+	{
+		byte space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
+		sprintf(header, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+	}
 	byte_count += sendHeader(basicPtr);
 
 	while(entry != nullptr)
@@ -759,6 +758,7 @@ void Interface::sendListing()
 		}
 
 		// Don't show hidden folders or files
+		Debug_printv("[%s]", entry->name().c_str());
 		if (!util_starts_with(entry->name(), "."))
 		{
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name().c_str(), space_cnt, "", extension.c_str());

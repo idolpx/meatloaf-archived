@@ -86,7 +86,7 @@ private:
 	void sendListing(void);
 	void sendListingHTTP(void);
 	uint16_t sendHeader(uint16_t &basicPtr);
-	uint16_t sendHeader(uint16_t &basicPtr, char* header, char* id, char* dos);
+	uint16_t sendHeader(uint16_t &basicPtr, char* header);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...);
 	uint16_t sendFooter(uint16_t &basicPtr);
