@@ -650,18 +650,14 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 	return b_cnt;
 } // sendLine
 
-uint16_t Interface::sendHeader(uint16_t &basicPtr)
-{
-	return sendHeader(basicPtr, " \0");
-}
 
-uint16_t Interface::sendHeader(uint16_t &basicPtr, char* header)
+uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 {
 	uint16_t byte_count = 0;
 
 	// Send List HEADER
 	//byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
-	byte_count += sendLine(basicPtr, 0, CBM_RVS_ON "%s", header);
+	byte_count += sendLine(basicPtr, 0, CBM_RVS_ON "%s", header.c_str());
 
 	// Send Extra INFO
 	if (m_device.url().length())
@@ -723,7 +719,7 @@ void Interface::sendListing()
 		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 		header = buffer;
 	}
-	byte_count += sendHeader(basicPtr);
+	byte_count += sendHeader(basicPtr, header);
 
 	while(entry != nullptr)
 	{
