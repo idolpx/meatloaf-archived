@@ -4,7 +4,6 @@
 #include "meat_io.h"
 #include "../../include/make_unique.h"
 #include "../../include/global_defines.h"
-#include "urlfile.h"
 #include <ESP8266HTTPClient.h>
 
 
@@ -13,10 +12,10 @@
  ********************************************************/
 
 
-class HttpFile: public UrlFile {
+class HttpFile: public MFile {
 
 public:
-    HttpFile(std::string path): UrlFile(path) {};
+    HttpFile(std::string path): MFile(path) {};
 
     bool isDirectory() override;
     MIstream* inputStream() override ; // has to return OPENED stream
