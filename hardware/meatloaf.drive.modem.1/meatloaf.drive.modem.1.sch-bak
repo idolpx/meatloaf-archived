@@ -580,8 +580,6 @@ Wire Notes Line
 Wire Notes Line
 	5350 6300 8250 6300
 Wire Notes Line
-	8250 6300 8250 4650
-Wire Notes Line
 	8250 4650 5350 4650
 Text Notes 5350 4600 0    50   ~ 10
 IEC Serial Interface
@@ -626,4 +624,14 @@ Wire Wire Line
 Connection ~ 7450 3250
 Wire Wire Line
 	7450 3250 8050 3250
+Text Notes 7050 7100 0    79   ~ 16
+Meatloaf - A Commodore 64/128/VIC20/+4 \nWiFi Modem and IEC Serial Floppy Drive multi-device emulator \n\nhttps://github.com/idolpx/meatloaf
+Wire Notes Line
+	8250 6300 8250 4650
+Text Notes 7400 7500 0    59   ~ 0
+MEATLOAF CBM (NICE SLICE)
+Text Notes 8150 7650 0    59   ~ 0
+2020/06/08
+Text Notes 10600 7650 0    59   ~ 0
+1.00.005
 $EndSCHEMATC

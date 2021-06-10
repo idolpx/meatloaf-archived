@@ -149,15 +149,10 @@ Wire Wire Line
 Wire Wire Line
 	7650 1900 4750 1900
 Wire Wire Line
-	7250 2550 7400 2550
-Wire Wire Line
-	7400 2550 7400 2450
-Wire Wire Line
-	7250 2450 7400 2450
-Connection ~ 7400 2450
+	7250 2450 7300 2450
+Connection ~ 7300 2450
 Wire Wire Line
 	6500 2950 6500 2000
-Connection ~ 6500 2000
 Wire Wire Line
 	6500 2000 4750 2000
 Wire Wire Line
@@ -173,9 +168,6 @@ Wire Wire Line
 Wire Wire Line
 	7550 1800 7550 2200
 Connection ~ 7550 2350
-Wire Wire Line
-	7400 2550 8050 2550
-Connection ~ 7400 2550
 Wire Wire Line
 	7300 2650 8050 2650
 Connection ~ 7300 2650
@@ -307,214 +299,195 @@ Wire Wire Line
 $Comp
 L power:GND #PWR0104
 U 1 1 60D95544
-P 2550 4400
-F 0 "#PWR0104" H 2550 4150 50  0001 C CNN
-F 1 "GND" H 2555 4227 50  0000 C CNN
-F 2 "" H 2550 4400 50  0001 C CNN
-F 3 "" H 2550 4400 50  0001 C CNN
-	1    2550 4400
+P 2000 6700
+F 0 "#PWR0104" H 2000 6450 50  0001 C CNN
+F 1 "GND" H 2005 6527 50  0000 C CNN
+F 2 "" H 2000 6700 50  0001 C CNN
+F 3 "" H 2000 6700 50  0001 C CNN
+	1    2000 6700
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	2550 4200 2550 4300
 Connection ~ 4150 1350
 $Comp
 L LED:WS2812B D1
 U 1 1 60D83541
-P 2550 3900
-F 0 "D1" H 2206 3946 50  0000 R CNN
-F 1 "STATUS" H 2206 3855 50  0000 R CNN
-F 2 "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" H 2600 3600 50  0001 L TNN
-F 3 "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf" H 2650 3525 50  0001 L TNN
-	1    2550 3900
-	-1   0    0    -1  
+P 1600 2150
+F 0 "D1" H 1256 2196 50  0000 R CNN
+F 1 "STATUS" H 1256 2105 50  0000 R CNN
+F 2 "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" H 1650 1850 50  0001 L TNN
+F 3 "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf" H 1700 1775 50  0001 L TNN
+	1    1600 2150
+	0    -1   1    0   
 $EndComp
 Wire Wire Line
-	4750 2100 4950 2100
-Wire Wire Line
-	4950 2100 4950 3500
+	4750 2100 4850 2100
 Wire Wire Line
 	8050 2200 7550 2200
 Text Label 7850 2200 0    50   ~ 0
 GND
-Connection ~ 2900 2700
+Connection ~ 3000 2700
 Wire Wire Line
-	2900 3100 2900 2700
+	3000 3100 3000 2700
 Wire Wire Line
-	2750 3100 2900 3100
+	2850 3100 3000 3100
 Wire Wire Line
-	2350 1900 1700 1900
-Connection ~ 2350 1900
+	2450 1900 2200 1900
+Connection ~ 2450 1900
 Wire Wire Line
-	1700 1900 1700 1850
-Connection ~ 1700 1900
+	2200 1900 2200 1850
+Connection ~ 2200 1900
 Wire Wire Line
-	2450 1900 2350 1900
+	2550 1900 2450 1900
 Wire Wire Line
-	1700 2300 1700 2250
-Connection ~ 1700 2300
+	2200 2300 2200 2250
+Connection ~ 2200 2300
 Wire Wire Line
-	2350 2300 2450 2300
-Connection ~ 2350 2300
+	2450 2300 2550 2300
+Connection ~ 2450 2300
 Wire Wire Line
-	1700 2300 2350 2300
+	2200 2300 2450 2300
 Wire Wire Line
-	2350 2700 1700 2700
-Connection ~ 2350 2700
+	2450 2700 2200 2700
+Connection ~ 2450 2700
 Wire Wire Line
-	1700 2700 1700 2650
-Connection ~ 1700 2700
+	2200 2700 2200 2650
+Connection ~ 2200 2700
 Wire Wire Line
-	2450 2700 2350 2700
+	2550 2700 2450 2700
 Wire Wire Line
-	2350 3100 1700 3100
-Connection ~ 2350 3100
+	2450 3100 2200 3100
+Connection ~ 2450 3100
 Wire Wire Line
-	1700 3100 1700 3050
+	2200 3100 2200 3050
 Wire Wire Line
-	2450 3100 2350 3100
+	2550 3100 2450 3100
 Wire Wire Line
-	1700 2750 1700 2700
+	2200 2750 2200 2700
 Wire Wire Line
-	1700 2350 1700 2300
+	2200 2350 2200 2300
 Wire Wire Line
-	1700 1950 1700 1900
+	2200 1950 2200 1900
 $Comp
 L Device:R R4
 U 1 1 60F24DEE
-P 1700 2900
-F 0 "R4" H 1630 2854 50  0000 R CNN
-F 1 "R" H 1630 2945 50  0000 R CNN
-F 2 "" V 1630 2900 50  0001 C CNN
-F 3 "~" H 1700 2900 50  0001 C CNN
-	1    1700 2900
+P 2200 2900
+F 0 "R4" H 2130 2854 50  0000 R CNN
+F 1 "R" H 2130 2945 50  0000 R CNN
+F 2 "" V 2130 2900 50  0001 C CNN
+F 3 "~" H 2200 2900 50  0001 C CNN
+	1    2200 2900
 	-1   0    0    1   
 $EndComp
 $Comp
 L Switch:SW_MEC_5G SW4
 U 1 1 60F247A8
-P 2550 3100
-F 0 "SW4" H 2550 3385 50  0000 C CNN
-F 1 "MODE / RESET" H 2550 3294 50  0000 C CNN
-F 2 "" H 2550 3300 50  0001 C CNN
-F 3 "http://www.apem.com/int/index.php?controller=attachment&id_attachment=488" H 2550 3300 50  0001 C CNN
-	1    2550 3100
+P 2650 3100
+F 0 "SW4" H 2650 3385 50  0000 C CNN
+F 1 "MODE / RESET" H 2650 3294 50  0000 C CNN
+F 2 "" H 2650 3300 50  0001 C CNN
+F 3 "http://www.apem.com/int/index.php?controller=attachment&id_attachment=488" H 2650 3300 50  0001 C CNN
+	1    2650 3100
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R R1
 U 1 1 60CA2A86
-P 1700 1700
-F 0 "R1" H 1630 1654 50  0000 R CNN
-F 1 "R" H 1630 1745 50  0000 R CNN
-F 2 "" V 1630 1700 50  0001 C CNN
-F 3 "~" H 1700 1700 50  0001 C CNN
-	1    1700 1700
+P 2200 1700
+F 0 "R1" H 2130 1654 50  0000 R CNN
+F 1 "R" H 2130 1745 50  0000 R CNN
+F 2 "" V 2130 1700 50  0001 C CNN
+F 3 "~" H 2200 1700 50  0001 C CNN
+	1    2200 1700
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	2900 2300 2900 2700
-Connection ~ 2900 2300
+	3000 2300 3000 2700
+Connection ~ 3000 2300
 Wire Wire Line
-	2750 2700 2900 2700
+	2850 2700 3000 2700
 Wire Wire Line
-	2750 2300 2900 2300
+	2850 2300 3000 2300
 Wire Wire Line
-	2900 1900 2750 1900
+	3000 1900 2850 1900
 Wire Wire Line
-	2900 2300 2900 1900
+	3000 2300 3000 1900
 $Comp
 L Device:R R3
 U 1 1 60CA3CB1
-P 1700 2500
-F 0 "R3" H 1630 2454 50  0000 R CNN
-F 1 "R" H 1630 2545 50  0000 R CNN
-F 2 "" V 1630 2500 50  0001 C CNN
-F 3 "~" H 1700 2500 50  0001 C CNN
-	1    1700 2500
+P 2200 2500
+F 0 "R3" H 2130 2454 50  0000 R CNN
+F 1 "R" H 2130 2545 50  0000 R CNN
+F 2 "" V 2130 2500 50  0001 C CNN
+F 3 "~" H 2200 2500 50  0001 C CNN
+	1    2200 2500
 	-1   0    0    1   
 $EndComp
 $Comp
 L Device:R R2
 U 1 1 60CA35A5
-P 1700 2100
-F 0 "R2" H 1630 2054 50  0000 R CNN
-F 1 "R" H 1630 2145 50  0000 R CNN
-F 2 "" V 1630 2100 50  0001 C CNN
-F 3 "~" H 1700 2100 50  0001 C CNN
-	1    1700 2100
+P 2200 2100
+F 0 "R2" H 2130 2054 50  0000 R CNN
+F 1 "R" H 2130 2145 50  0000 R CNN
+F 2 "" V 2130 2100 50  0001 C CNN
+F 3 "~" H 2200 2100 50  0001 C CNN
+	1    2200 2100
 	-1   0    0    1   
 $EndComp
 $Comp
 L Switch:SW_MEC_5G SW3
 U 1 1 60CA1F59
-P 2550 2700
-F 0 "SW3" H 2550 2985 50  0000 C CNN
-F 1 "NEXT" H 2550 2894 50  0000 C CNN
-F 2 "" H 2550 2900 50  0001 C CNN
-F 3 "http://www.apem.com/int/index.php?controller=attachment&id_attachment=488" H 2550 2900 50  0001 C CNN
-	1    2550 2700
+P 2650 2700
+F 0 "SW3" H 2650 2985 50  0000 C CNN
+F 1 "NEXT" H 2650 2894 50  0000 C CNN
+F 2 "" H 2650 2900 50  0001 C CNN
+F 3 "http://www.apem.com/int/index.php?controller=attachment&id_attachment=488" H 2650 2900 50  0001 C CNN
+	1    2650 2700
 	1    0    0    -1  
 $EndComp
 $Comp
 L Switch:SW_MEC_5G SW2
 U 1 1 60CA124A
-P 2550 2300
-F 0 "SW2" H 2550 2585 50  0000 C CNN
-F 1 "SELECT" H 2550 2494 50  0000 C CNN
-F 2 "" H 2550 2500 50  0001 C CNN
-F 3 "http://www.apem.com/int/index.php?controller=attachment&id_attachment=488" H 2550 2500 50  0001 C CNN
-	1    2550 2300
+P 2650 2300
+F 0 "SW2" H 2650 2585 50  0000 C CNN
+F 1 "SELECT" H 2650 2494 50  0000 C CNN
+F 2 "" H 2650 2500 50  0001 C CNN
+F 3 "http://www.apem.com/int/index.php?controller=attachment&id_attachment=488" H 2650 2500 50  0001 C CNN
+	1    2650 2300
 	1    0    0    -1  
 $EndComp
 $Comp
 L Switch:SW_MEC_5G SW1
 U 1 1 60C9FC9C
-P 2550 1900
-F 0 "SW1" H 2550 2185 50  0000 C CNN
-F 1 "PREVIOUS" H 2550 2094 50  0000 C CNN
-F 2 "" H 2550 2100 50  0001 C CNN
-F 3 "http://www.apem.com/int/index.php?controller=attachment&id_attachment=488" H 2550 2100 50  0001 C CNN
-	1    2550 1900
+P 2650 1900
+F 0 "SW1" H 2650 2185 50  0000 C CNN
+F 1 "PREVIOUS" H 2650 2094 50  0000 C CNN
+F 2 "" H 2650 2100 50  0001 C CNN
+F 3 "http://www.apem.com/int/index.php?controller=attachment&id_attachment=488" H 2650 2100 50  0001 C CNN
+	1    2650 1900
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3550 2300 2900 2300
+	3550 2300 3000 2300
 Wire Wire Line
-	1700 1550 1700 1350
+	2200 1550 2200 1350
 Wire Wire Line
-	1700 1350 3450 1350
+	2200 1350 3450 1350
 Connection ~ 3450 1350
 $Comp
 L Device:Buzzer BZ1
 U 1 1 60C9C159
-P 1850 3600
-F 0 "BZ1" H 1855 3890 50  0000 C CNN
-F 1 "Buzzer" H 1855 3799 50  0000 C CNN
-F 2 "" V 1825 3700 50  0001 C CNN
-F 3 "~" V 1825 3700 50  0001 C CNN
-	1    1850 3600
+P 2550 3700
+F 0 "BZ1" H 2555 3990 50  0000 C CNN
+F 1 "Buzzer" H 2555 3899 50  0000 C CNN
+F 2 "" V 2525 3800 50  0001 C CNN
+F 3 "~" V 2525 3800 50  0001 C CNN
+	1    2550 3700
 	-1   0    0    -1  
 $EndComp
 Wire Wire Line
 	4850 2800 4850 3300
 Wire Wire Line
-	4850 3300 2850 3300
-Wire Wire Line
-	2850 3300 2850 3900
-Wire Wire Line
-	4950 3500 1950 3500
-Wire Wire Line
-	1950 3700 2050 3700
-Wire Wire Line
-	2050 3700 2050 4300
-Wire Wire Line
-	2050 4300 2550 4300
-Connection ~ 2550 4300
-Wire Wire Line
-	2550 4300 2550 4400
-Wire Wire Line
-	8050 2450 7400 2450
+	8050 2450 7300 2450
 Text Label 7850 2450 0    50   ~ 0
 FLAG2
 Wire Wire Line
@@ -530,35 +503,20 @@ Wire Wire Line
 Text Label 7850 3350 0    50   ~ 0
 PC2
 Wire Wire Line
-	2550 3600 2550 3400
-Wire Wire Line
-	2550 3400 3450 3400
-Wire Wire Line
-	3450 3400 3450 2100
-Connection ~ 3450 2100
-Wire Wire Line
 	6750 2450 6650 2450
 Wire Wire Line
-	6650 2450 6650 1200
+	6650 2450 6650 1050
 $Comp
 L power:+5V #PWR?
 U 1 1 61057287
-P 6650 1200
-F 0 "#PWR?" H 6650 1050 50  0001 C CNN
-F 1 "+5V" H 6665 1373 50  0000 C CNN
-F 2 "" H 6650 1200 50  0001 C CNN
-F 3 "" H 6650 1200 50  0001 C CNN
-	1    6650 1200
+P 6650 1050
+F 0 "#PWR?" H 6650 900 50  0001 C CNN
+F 1 "+5V" H 6665 1223 50  0000 C CNN
+F 2 "" H 6650 1050 50  0001 C CNN
+F 3 "" H 6650 1050 50  0001 C CNN
+	1    6650 1050
 	1    0    0    -1  
 $EndComp
-Wire Notes Line
-	1500 1200 3250 1200
-Wire Notes Line
-	3250 1200 3250 4700
-Wire Notes Line
-	3250 4700 1500 4700
-Wire Notes Line
-	1500 4700 1500 1200
 $Comp
 L power:GND #PWR?
 U 1 1 610706CA
@@ -573,8 +531,8 @@ $EndComp
 Wire Wire Line
 	7550 4200 7550 3600
 Connection ~ 7550 3600
-Text Notes 1500 1150 0    50   ~ 10
-Controls\nAudio, Visual Indicators\n(optional)
+Text Notes 1050 1150 0    50   ~ 10
+Controls\nAudio, Visual Indicators (optional)
 Wire Notes Line
 	5350 4650 5350 6300
 Wire Notes Line
@@ -583,16 +541,9 @@ Wire Notes Line
 	8250 4650 5350 4650
 Text Notes 5350 4600 0    50   ~ 10
 IEC Serial Interface
-Wire Wire Line
-	6500 2000 7400 2000
 Connection ~ 7550 2200
 Wire Wire Line
 	7550 2200 7550 2350
-Wire Wire Line
-	7400 2000 7400 2450
-Connection ~ 7400 2000
-Wire Wire Line
-	7400 2000 8050 2000
 Wire Notes Line
 	5150 1200 5150 4000
 Wire Notes Line
@@ -609,9 +560,7 @@ Wire Notes Line
 	8200 4450 6200 4450
 Wire Notes Line
 	6200 4450 6200 1650
-Wire Notes Line
-	6200 1650 8200 1650
-Text Notes 6200 1600 0    50   ~ 10
+Text Notes 6200 800  0    50   ~ 10
 User Port - Serial / Parallel Transfer Interface
 Wire Wire Line
 	6750 2850 6700 2850
@@ -634,4 +583,182 @@ Text Notes 8150 7650 0    59   ~ 0
 2020/06/08
 Text Notes 10600 7650 0    59   ~ 0
 1.00.005
+Wire Wire Line
+	1300 2150 1150 2150
+Wire Wire Line
+	1900 2150 2000 2150
+$Comp
+L LED:WS2812B D?
+U 1 1 60C99683
+P 1600 3100
+F 0 "D?" H 1256 3146 50  0000 R CNN
+F 1 "STATUS" H 1256 3055 50  0000 R CNN
+F 2 "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" H 1650 2800 50  0001 L TNN
+F 3 "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf" H 1700 2725 50  0001 L TNN
+	1    1600 3100
+	0    -1   1    0   
+$EndComp
+$Comp
+L LED:WS2812B D?
+U 1 1 60C9BA40
+P 1600 4050
+F 0 "D?" H 1256 4096 50  0000 R CNN
+F 1 "STATUS" H 1256 4005 50  0000 R CNN
+F 2 "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" H 1650 3750 50  0001 L TNN
+F 3 "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf" H 1700 3675 50  0001 L TNN
+	1    1600 4050
+	0    -1   1    0   
+$EndComp
+$Comp
+L LED:WS2812B D?
+U 1 1 60C9D420
+P 1600 5050
+F 0 "D?" H 1256 5096 50  0000 R CNN
+F 1 "STATUS" H 1256 5005 50  0000 R CNN
+F 2 "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" H 1650 4750 50  0001 L TNN
+F 3 "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf" H 1700 4675 50  0001 L TNN
+	1    1600 5050
+	0    -1   1    0   
+$EndComp
+$Comp
+L LED:WS2812B D?
+U 1 1 60CCD228
+P 1600 6000
+F 0 "D?" H 1256 6046 50  0000 R CNN
+F 1 "STATUS" H 1256 5955 50  0000 R CNN
+F 2 "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" H 1650 5700 50  0001 L TNN
+F 3 "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf" H 1700 5625 50  0001 L TNN
+	1    1600 6000
+	0    -1   1    0   
+$EndComp
+Wire Wire Line
+	1300 3100 1150 3100
+Wire Wire Line
+	1150 3100 1150 2150
+Wire Wire Line
+	1900 3100 2000 3100
+Wire Wire Line
+	2000 2150 2000 3100
+Wire Wire Line
+	1900 4050 2000 4050
+Connection ~ 2000 3100
+Wire Wire Line
+	1900 5050 2000 5050
+Connection ~ 2000 4050
+Wire Wire Line
+	1900 6000 2000 6000
+Wire Wire Line
+	2000 6000 2000 5050
+Connection ~ 2000 5050
+Wire Wire Line
+	1300 6000 1150 6000
+Wire Wire Line
+	1150 6000 1150 5050
+Connection ~ 1150 3100
+Wire Wire Line
+	1300 4050 1150 4050
+Connection ~ 1150 4050
+Wire Wire Line
+	1150 4050 1150 3100
+Wire Wire Line
+	1300 5050 1150 5050
+Connection ~ 1150 5050
+Wire Wire Line
+	1150 5050 1150 4050
+Wire Wire Line
+	1600 5700 1600 5350
+Wire Wire Line
+	1600 4750 1600 4350
+Wire Wire Line
+	1600 3750 1600 3400
+Wire Wire Line
+	1600 2800 1600 2450
+Wire Wire Line
+	2650 3600 2750 3600
+Wire Wire Line
+	2750 3600 2750 3300
+Wire Wire Line
+	2750 3300 4850 3300
+Wire Wire Line
+	2000 6700 2000 6000
+Connection ~ 2000 6000
+Wire Wire Line
+	2000 3100 2000 4050
+Wire Wire Line
+	2650 4050 2000 4050
+Wire Wire Line
+	2650 3800 2650 4050
+Wire Wire Line
+	2000 4050 2000 5050
+Wire Wire Line
+	1150 2150 1150 1350
+Wire Wire Line
+	1150 1350 2200 1350
+Connection ~ 1150 2150
+Connection ~ 2200 1350
+Wire Wire Line
+	4850 2100 4850 1450
+Wire Wire Line
+	4850 1450 1600 1450
+Wire Wire Line
+	1600 1450 1600 1850
+Wire Notes Line
+	3100 1200 1050 1200
+Wire Notes Line
+	1050 1200 1050 6400
+Wire Notes Line
+	1050 6400 3100 6400
+Wire Notes Line
+	3100 6400 3100 1200
+$Comp
+L Transistor_FET:BSS84 Q?
+U 1 1 60E3B961
+P 7550 1500
+F 0 "Q?" V 7892 1500 50  0000 C CNN
+F 1 "BSS84" V 7801 1500 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 7750 1425 50  0001 L CIN
+F 3 "http://assets.nexperia.com/documents/data-sheet/BSS84.pdf" H 7550 1500 50  0001 L CNN
+	1    7550 1500
+	0    1    -1   0   
+$EndComp
+Wire Wire Line
+	7250 2550 7750 2550
+Connection ~ 7750 2550
+Wire Wire Line
+	7750 2550 8050 2550
+Wire Wire Line
+	7750 1350 7750 1400
+Connection ~ 7750 1400
+Wire Wire Line
+	7750 1400 7750 2000
+$Comp
+L Transistor_FET:BSS84 Q?
+U 1 1 60E90E11
+P 7050 1500
+F 0 "Q?" V 7392 1500 50  0000 C CNN
+F 1 "BSS84" V 7301 1500 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 7250 1425 50  0001 L CIN
+F 3 "http://assets.nexperia.com/documents/data-sheet/BSS84.pdf" H 7050 1500 50  0001 L CNN
+	1    7050 1500
+	0    1    -1   0   
+$EndComp
+Wire Wire Line
+	7250 1400 7300 1400
+Wire Wire Line
+	7300 1400 7300 2450
+Connection ~ 7300 1400
+Wire Wire Line
+	7300 1400 7350 1400
+Wire Wire Line
+	7550 1700 7050 1700
+Wire Wire Line
+	6850 1400 6500 1400
+Wire Wire Line
+	6500 1400 6500 2000
+Connection ~ 6500 2000
+Wire Wire Line
+	8050 2000 7750 2000
+Connection ~ 7750 2000
+Wire Wire Line
+	7750 2000 7750 2550
 $EndSCHEMATC

@@ -44,11 +44,15 @@ Serial.printf("Buffer read from ml server: %s\n", m_lineBuffer.c_str());
             {"path":"ml://servername.com/full/file/path/demos","isDir":true,"size":0} 
 
             */
-           dirIsOpen = true;
+            dirIsOpen = true;
             ledToggle(true);
 
-            //return new MLFile(m_jsonHTTP["path"], m_jsonHTTP["size"], m_jsonHTTP["isDir"]); // note such path can't be used to do our "magic" stream-in-strea-in-stream, you can use it only to list dir
-            return new MLFile("ml://c64.meatloaf.cc/dummy/file.prg", 123, false);
+            std::string path = urldecode(m_jsonHTTP["name"]).c_str();
+            size_t size = m_jsonHTTP["size"];
+            bool dir = m_jsonHTTP["dir"];
+
+            return new MLFile(path, size, dir); // note such path can't be used to do our "magic" stream-in-strea-in-stream, you can use it only to list dir
+            //return new MLFile("ml://c64.meatloaf.cc/dummy/file.prg", 123, false);
         }
 
 	} 

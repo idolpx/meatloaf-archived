@@ -189,6 +189,7 @@ void setup()
 		}
 
 		testLittleFS();
+		Debug_printv("Printing VERBOSE [%d]", 1);
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;

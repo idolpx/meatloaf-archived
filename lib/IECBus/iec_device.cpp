@@ -652,7 +652,19 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 
 uint16_t Interface::sendHeader(uint16_t &basicPtr)
 {
+	return sendHeader(basicPtr, '\0', '\0', '\0');
+}
+
+uint16_t Interface::sendHeader(uint16_t &basicPtr, char* header, char* id, char* dos)
+{
 	uint16_t byte_count;
+	// Set Defaults
+	if (!strlen(header))
+		sprintf(header, PRODUCT_ID);
+	if (!strlen(id))
+		sprintf(id, "%.02d", m_device.device());
+	if (!strlen(dos))
+		sprintf(dos, "2A");
 
 	// Send List HEADER
 	byte space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
@@ -773,13 +785,20 @@ void Interface::sendListing()
 	ledON();
 } // sendListing
 
+
 uint16_t Interface::sendFooter(uint16_t &basicPtr)
+{
+	uint16_t blocks_free = 65536;
+	return sendFooter(basicPtr, blocks_free);
+}
+
+uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free)
 {
 	// Send List FOOTER
 	// #if defined(USE_LITTLEFS)
 	FSInfo64 fs_info;
 	m_fileSystem->info64(fs_info);
-	return sendLine(basicPtr, (fs_info.totalBytes - fs_info.usedBytes) / 256, "BLOCKS FREE.");
+	return sendLine(basicPtr, blocks_free, "BLOCKS FREE.");
 	// #elif defined(USE_SPIFFS)
 	// 	return sendLine(basicPtr, 00, "UNKNOWN BLOCKS FREE.");
 	// #endif

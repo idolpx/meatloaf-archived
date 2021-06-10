@@ -38,6 +38,7 @@
 #define CBM_BACK_ARROW 0x5f
 #define CBM_EXCLAMATION_MARKS "!!"
 #define CBM_DOLLAR_SIGN '$'
+#define CBM_CRSR_LEFT 0x9d
 
 namespace CBM
 {

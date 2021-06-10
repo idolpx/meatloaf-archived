@@ -35,7 +35,7 @@
 //#define DEVICE_MASK   0b00000000000000000000111000000000 //  Devices 9-11
 #define IMAGE_TYPES   "D64|D71|D80|D81|D82|D8B|G64|X64|Z64|TAP|T64|TCRT|CRT|D1M|D2M|D4M|DHD|HDD|DNP|DFI|M2I|NIB"
 #define FILE_TYPES    "C64|PRG|P00|SEQ|S00|USR|U00|REL|R00"
-#define ARCHIVE_TYPES "ZIP|7Z|RAR"
+#define ARCHIVE_TYPES "7Z|GZ|ZIP|RAR"
 
 // ESP8266 GPIO to C64 User Port
 #define TX_PIN               TX  // TX   //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
@@ -122,12 +122,19 @@ inline static void ledOFF()
 
 // Enable this for verbose logging of IEC interface
 // May cause ?LOAD ERROR
-//#define DEBUG
+#define DEBUG
 
+#ifndef DEBUG_PORT
+#define DEBUG_PORT Serial
+#endif
+#if defined(ARDUINO_ARCH_ESP8266) || defined(CORE_MOCK)
+#define pathToFileName(p) p
+#endif //ARDUINO_ARCH_ESP8266
 #ifdef DEBUG
-#define Debug_print(...) Serial.print(__VA_ARGS__)
-#define Debug_println(...) Serial.println(__VA_ARGS__)
-#define Debug_printf(...) Serial.printf(__VA_ARGS__)
+#define Debug_print(...) DEBUG_PORT.print(__VA_ARGS__)
+#define Debug_println(...) DEBUG_PORT.println(__VA_ARGS__)
+#define Debug_printf(...) DEBUG_PORT.printf(__VA_ARGS__)
+#define Debug_printv(format, ...) {DEBUG_PORT.printf("[%s:%u] %s(): " format "\r\n", pathToFileName(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__);}
 #else
 #define Debug_print(...)
 #define Debug_println(...)
@@ -140,7 +147,7 @@ inline static void ledOFF()
 // Enable this to show the data stream while loading
 // Make sure device baud rate and monitor_speed = 921600
 // May cause ?LOAD ERROR
-//#define DATA_STREAM
+#define DATA_STREAM
 
 // Select the FileSystem in PLATFORMIO.INI file
 //#define USE_SPIFFS
