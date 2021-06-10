@@ -32,13 +32,9 @@ namespace
 } // unnamed namespace
 
 Interface::Interface(IEC &iec, FS *fileSystem)
-	: m_iec(iec)
-	  // NOTE: Householding with RAM bytes: We use the middle of serial buffer for the ATNCmd buffer info.
-	  // This is ok and won't be overwritten by actual serial data from the host, this is because when this ATNCmd data is in use
-	  // only a few bytes of the actual serial data will be used in the buffer.
-	  ,
-	  m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])), m_device(fileSystem)
-//,  m_jsonHTTPBuffer(1024)
+	: m_iec(iec),
+	  m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])), 
+	  m_device(fileSystem)
 {
 	m_fileSystem = fileSystem;
 	DeviceDB *m_device = new DeviceDB(fileSystem);
@@ -455,8 +451,6 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 {
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
-	String urlFile;
-	EdUrlParser* url;
 
 	Debug_printf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
 
@@ -486,49 +480,13 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 			break;
 
 		case O_FILE:
-			// Send program file
-			// if (m_device.url().length())
-			// {
-			// 	sendFileHTTP();
-			// }
-			// else
-			// {
-			// 	sendFile();
-			// }
+			// Send file
 			sendFile();
 			break;
 
-		case O_URL:
-			// urlFile = String(m_device.path() + m_filename);
-			// Debug_printf("\r\nOpening URL: [%s]", urlFile.c_str());
-			// m_filename = readLine(m_fileSystem, urlFile);
-			// url = EdUrlParser::parseUrl(m_filename.c_str());
-
-			// // Mount url
-			// Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-			// m_device.partition(0);
-			// m_device.url(url->root.c_str());		
-			// m_device.path(url->path.c_str());
-			// m_filename = url->filename.c_str();
-			// m_filetype = url->extension.c_str();
-			// m_device.archive("");
-			// m_device.image("");
-			// sendListingHTTP();
-
-			// if (url != NULL)
-			// 	delete url;
-		 	break;
-
 		case O_DIR:
 			// Send listing
-			// if (m_device.url().length())
-			// {
-			// 	sendListingHTTP();
-			// }
-			// else
-			{
-				sendListing();
-			}
+			sendListing();
 			break;
 
 		case O_FILE_ERR:
@@ -710,10 +668,11 @@ void Interface::sendListing()
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 	// Send Listing Header
-	// Set Defaults
 	std::string header = "";
-	if (!header.length())
+	//Debug_printv("header [%d][%s]", header.length(), header.c_str());
+	if (header.length() == 0)
 	{
+		// Set device default Listing Header
 		char buffer[100];
 		byte space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
 		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
