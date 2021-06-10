@@ -715,10 +715,13 @@ void Interface::sendListing()
 
 	// Send Listing Header
 	// Set Defaults
-	if (!strlen(header))
+	std::string header = "";
+	if (!header.length())
 	{
+		char buffer[100];
 		byte space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
-		sprintf(header, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+		header = buffer;
 	}
 	byte_count += sendHeader(basicPtr);
 
