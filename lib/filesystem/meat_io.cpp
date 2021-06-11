@@ -38,24 +38,8 @@ HttpFileSystem httpFS;
 DNPFileSystem dnpFS;
 MLFileSystem mlFS;
 
-// put all available filesystems in this array
-// put littleFS as last, fallback system so it can be used if nothing matches
-//MFileSystem* MFSOwner::availableFS[FS_COUNT] = { &httpFS, &littleFS };
+// put all available filesystems in this array - first matching system gets the file!
 std::vector<MFileSystem*> MFSOwner::availableFS{  &dnpFS, &httpFS, &mlFS };
-
-
-// MFile* MFSOwner::File(std::string name) {
-//     for(auto i = availableFS.begin(); i < availableFS.end() ; i ++) {
-//         Serial.printf("FSTEST: trying to find fs for %s = %s\n", name.c_str(), (*i)->protocol);
-        
-//         if((*i)->handles(name)) {
-//             Serial.println("FSTEST: found a proper fs");
-//             return (*i)->getFile(name);
-//         }
-//     }
-    
-//     return nullptr;
-// }
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");
@@ -93,22 +77,6 @@ bool MFSOwner::umount(std::string name) {
     return true;
 }
 
-
-void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
-    //Serial.println("w fillpaths");   
-
-    (*matchedElement)++;
-
-    //Serial.println("w fillpaths stream pths");
-    delay(500);   
-    streamPath = joinNamesToPath(fromStart, matchedElement);
-    //Serial.println("w fillpaths path in stream");   
-    delay(500);   
-    pathInStream = joinNamesToPath(matchedElement, last);
-
-    Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
-}
-
 MFile* MFSOwner::File(std::string path) {
     std::vector<std::string> paths;
     
@@ -137,7 +105,6 @@ MFile* MFSOwner::File(std::string path) {
 Serial.printf("matched fs: %s [%s]\n", (*foundIter)->symbol, path.c_str());
             auto newFile = (*foundIter)->getFile(path);
             newFile->fillPaths(&pathIterator, &begin, &end);
-            newFile->parseUrl(path);
 
             return newFile;
          }
@@ -164,17 +131,13 @@ MFileSystem::MFileSystem(char* s)
 
 MFileSystem::~MFileSystem() {}
 
-// bool MFileSystem::handles(std::string path) 
-// {
-//     return path.startsWith(protocol);
-// }
-
 /********************************************************
  * MFile implementations
  ********************************************************/
 
 MFile::MFile(std::string path) {
     m_path = path;
+    parseUrl(path);
 }
 
 MFile::MFile(std::string path, std::string name) : MFile(path + "/" + name) {}
@@ -185,22 +148,24 @@ bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
 }
 
-// std::string MFile::name() {
-//     int lastSlash = m_path.find_last_of('/');
-//     return m_path.substr(lastSlash+1);;
-// }
+void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
+    //Serial.println("w fillpaths");   
+
+    (*matchedElement)++;
+
+    //Serial.println("w fillpaths stream pths");
+    delay(500);   
+    streamPath = joinNamesToPath(fromStart, matchedElement);
+    //Serial.println("w fillpaths path in stream");   
+    delay(500);   
+    pathInStream = joinNamesToPath(matchedElement, last);
+
+    Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
+}
 
 std::string MFile::path() {
     return m_path;
 }
-
-// std::string MFile::extension() {
-//     int lastPeriod = m_path.find_last_of(".");
-//     if(lastPeriod < 0)
-//         return "";
-//     else
-//         return m_path.substr(lastPeriod+1);
-// }
 
 MIstream* MFile::inputStream() {
     ; // has to return OPENED stream
@@ -230,6 +195,19 @@ MIstream* MFile::inputStream() {
 
     return thisStream;
 };
+
+// std::string MFile::extension() {
+//     int lastPeriod = m_path.find_last_of(".");
+//     if(lastPeriod < 0)
+//         return "";
+//     else
+//         return m_path.substr(lastPeriod+1);
+// }
+
+// std::string MFile::name() {
+//     int lastSlash = m_path.find_last_of('/');
+//     return m_path.substr(lastSlash+1);;
+// }
 
 /********************************************************
  * MStream implementations
