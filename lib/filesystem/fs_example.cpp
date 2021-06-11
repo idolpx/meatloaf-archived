@@ -62,7 +62,7 @@ void testLittleFS() {
     // std::unique_ptr<MFile> cserverFile(MFSOwner::File("cs://utilities/disk tools/cie.d64/cie+serial"));
     // std::shared_ptr<MIstream> cserverStream(cserverFile->inputStream());
 
-    std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools"));
+    std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools/cie.d64"));
     cserverPath->rewindDirectory();
 
     // std::unique_ptr<MFile> complexPath(MFSOwner::File("ml://c64.meatloaf.cc/some/deeper/d64/path.zip/file/inside/andextension.sid"));

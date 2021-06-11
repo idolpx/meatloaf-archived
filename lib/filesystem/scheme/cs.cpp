@@ -14,12 +14,12 @@ void CServerSessionMgr::connect() {
     int rc = m_wifi.connect("commodoreserver.com", 1541);
     Serial.printf("CServer: connect: %d\n", rc);
 
-    if(breader==nullptr) {
+    if(breader==nullptr && rc != 0) {
         // do not initialize in constructor - compiler bug!
         Serial.println("breader ---- INIT!");
         breader = new StreamReader([this](uint8_t* buffer, size_t size)->int  {
             int x = this->read(buffer, size);
-            Serial.printf("Lambda read %d\n",x);
+            //Serial.printf("Lambda read %d\n",x);
             return x;
         });
         breader->delimiter = 10;
@@ -49,8 +49,9 @@ bool CServerSessionMgr::command(std::string command) {
 
 size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
     auto rd = m_wifi.read(buf, size);
-    int attempts = 3;
+    int attempts = 5;
     while(rd == 0 && (attempts--)>0) {
+        Serial.printf("Read Attempt %d\n", attempts);
         delay(500);
         rd = m_wifi.read(buf, size);
     } 
@@ -71,9 +72,9 @@ std::string CServerSessionMgr::readReply() {
     uint8_t buffer[40] = { 0 };
     memset(buffer, 0, sizeof(buffer));
     int rd = read(buffer, 40);
-    for(int i=0; i<rd; i++) {
-        Serial.printf("%d ", buffer[i]);
-    }
+    // for(int i=0; i<rd; i++) {
+    //     Serial.printf("%d ", buffer[i]);
+    // }
     Serial.printf("CServer: replies %d bytes: '%s'\n", rd, buffer);
     return std::string((char *)buffer);
 }
@@ -279,8 +280,10 @@ bool CServerFile::rewindDirectory() {
         dirIsImage = true;
         dirIsOpen = true;
         // to list image contents we have to run
-        Serial.println("cserver: this is a d64 img!");
+        //Serial.println("cserver: this is a d64 img!");
         CServerFileSystem::session.command("$");
+        CServerFileSystem::session.breader->readLn(); // skip some line
+        auto line = CServerFileSystem::session.breader->readLn(); // skip header
 
         return true;
     }
@@ -288,26 +291,20 @@ bool CServerFile::rewindDirectory() {
         dirIsImage = false;
         dirIsOpen = true;
         // to list directory contents we use
-        Serial.println("cserver: this is a directory!");
+        //Serial.println("cserver: this is a directory!");
         CServerFileSystem::session.command("disks");
+        auto line = CServerFileSystem::session.breader->readLn(); // skip header
 
         return true;
     }
 };
 
 MFile* CServerFile::getNextFileInDir() {
-    Serial.println("cserver: getNextFileInDir0");
     if(!dirIsOpen)
         rewindDirectory();
 
-    Serial.println("cserver: getNextFileInDir1");
-
-
     if(!dirIsOpen)
         return nullptr;
-
-    Serial.println("cserver: getNextFileInDir2");
-
 
     if(dirIsImage) {
         auto line = CServerFileSystem::session.breader->readLn();
@@ -318,15 +315,23 @@ MFile* CServerFile::getNextFileInDir() {
         // 'ot line:'1   "CIE-SYS52281    " PRG   2049
         // 'ot line:'1   "CIE-SYS52281S   " PRG   2049
         // 'ot line:'658 BLOCKS FREE.
-        Serial.printf("cserver: got dir line: '%s'\n", line.c_str());
 
-        if(line.find('\x04')==-1) {
+        if(line.find('\x04')!=std::string::npos) {
             Serial.println("No more!");
             dirIsOpen = false;
             return nullptr;
         }
-        else
-            return new CServerFile("xxxxx");
+        if(line.find("BLOCKS FREE.")!=std::string::npos) {
+            dirIsOpen = false;
+            return nullptr;
+        }
+        else {
+            std::string name = line.substr(5,16);
+            util_string_rtrim(name);
+            //Serial.printf("xx: %s -- %s\n", line.c_str(), name);
+            return new CServerFile(path() +"/"+ name);
+
+        }
     } else {
         auto line = CServerFileSystem::session.breader->readLn();
         // Got line:''
@@ -345,21 +350,25 @@ MFile* CServerFile::getNextFileInDir() {
 
         // 32 62 91 68 73 83 75 32 84 79 79 76 83 93 13 No more! = > [DISK TOOLS]
 
-        Serial.printf("cserver: got dir line: %d '%s' \n", line.find('\x04'), line.c_str());
-
-        auto xx = line.c_str();
-
-            for(int i=0; i<line.length(); i++) {
-        Serial.printf("%d ", line[i]);
-    }
-
-        if(line.find('\x04')==-1) {
+        if(line.find('\x04')!=std::string::npos) {
             Serial.println("No more!");
             dirIsOpen = false;
             return nullptr;
         }
-        else
-            return new CServerFile("xxxxx");
+        else {
+            std::string name;
+
+            if((*line.begin())=='[') {
+                name = line.substr(1,line.length()-2);
+            }
+            else {
+                name = line.substr(0, line.length()-1);
+            }
+
+            //Serial.printf("xx: %s -- %s\n", line.c_str(), name.c_str());
+
+            return new CServerFile(path() +"/"+ name);
+        }
     }
 };
 
