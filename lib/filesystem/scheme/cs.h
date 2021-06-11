@@ -43,7 +43,12 @@ public:
 class CServerFile: public MFile {
 
 public:
-    CServerFile(std::string path): MFile(path) {};
+    CServerFile(std::string path): MFile(path) {
+
+                    Serial.printf("Creating CServer file %s", path.c_str());
+
+
+    };
 
     bool isDirectory() override;
     MIstream* inputStream() override ; // has to return OPENED stream

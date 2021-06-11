@@ -247,6 +247,8 @@ bool CServerOStream::isOpen() {
 bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
     // otherwise - false
+    Serial.printf("trying to chop %s", m_path.c_str());
+
     auto chopped = chop();
     auto second = (chopped.end())-2; // skipping scheme and empty 
     //auto x = (*second);
@@ -318,7 +320,7 @@ MFile* CServerFile::getNextFileInDir() {
         // 'ot line:'658 BLOCKS FREE.
         Serial.printf("cserver: got dir line: '%s'\n", line.c_str());
 
-        if(line.find('\x04')>=0) {
+        if(line.find('\x04')==-1) {
             Serial.println("No more!");
             dirIsOpen = false;
             return nullptr;
@@ -341,7 +343,9 @@ MFile* CServerFile::getNextFileInDir() {
         // 'ot line:'FLOPPY REPAIR KIT (1984)(ORCHID SOFTWARE LABORATOR
         // 'ot line:'1541 DEMO DISK (19XX)(-).D64
 
-        Serial.printf("cserver: got dir line: '%s'\n", line.c_str());
+        // 32 62 91 68 73 83 75 32 84 79 79 76 83 93 13 No more! = > [DISK TOOLS]
+
+        Serial.printf("cserver: got dir line: %d '%s' \n", line.find('\x04'), line.c_str());
 
         auto xx = line.c_str();
 
@@ -349,7 +353,7 @@ MFile* CServerFile::getNextFileInDir() {
         Serial.printf("%d ", line[i]);
     }
 
-        if(line.find('\x04')>=0) {
+        if(line.find('\x04')==-1) {
             Serial.println("No more!");
             dirIsOpen = false;
             return nullptr;
@@ -374,3 +378,4 @@ bool CServerFile::remove() {
 };
 
 CServerSessionMgr CServerFileSystem::session;
+ 

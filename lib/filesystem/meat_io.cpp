@@ -159,7 +159,8 @@ MFileSystem::~MFileSystem() {}
 
 MFile::MFile(std::string path) {
     parseUrl(path);
-    //Serial.printf("Parsing url of %s! name=%s\n", path.c_str(), filename.c_str());
+    //m_path = path;   
+    m_path = url(); 
 }
 
 MFile::MFile(std::string path, std::string name) : MFile(path + "/" + name) {}
