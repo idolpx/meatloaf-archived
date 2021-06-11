@@ -75,13 +75,13 @@ bool MLFile::rewindDirectory() {
 //Serial.printf("\r\nRequesting JSON dir from PHP: ");
 
 	//String url("http://c64.meatloaf.cc/api/");
-    std::string url = "http:/" + hostname + "/api/";
+    String url = std::string("http://" + hostname + "/api/").c_str();
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-    std::string post_data = "p=" + pathX; // pathInStream will return here /c64.meatloaf.cc/some/directory
+    String post_data = std::string("p=" + pathX).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
 
 	// Connect to HTTP server
 	Serial.printf("\r\nConnecting!\r\n--------------------\r\n%s\r\n%s\r\n", url.c_str(), post_data.c_str());
-	if (!m_http.begin(m_file, url.c_str()))
+	if (!m_http.begin(m_file, url))
 	{
 		Serial.printf("\r\nConnection failed");
 		dirIsOpen = false;
@@ -97,7 +97,6 @@ bool MLFile::rewindDirectory() {
     // Send the request
 	uint8_t httpCode = m_http.POST(post_data.c_str());
 
-    // Set 
 	Serial.printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
 
 	if (httpCode != 200) {

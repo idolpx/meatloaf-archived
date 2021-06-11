@@ -65,15 +65,8 @@ void testLittleFS() {
     // std::unique_ptr<MFile> cserverFile(MFSOwner::File("cs://utilities/disk tools/cie.d64/cie+serial"));
     // std::shared_ptr<MIstream> cserverStream(cserverFile->inputStream());
 
-<<<<<<< HEAD
-    std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools/cie.d64"));
-    cserverPath->rewindDirectory();
-
-    // std::unique_ptr<MFile> complexPath(MFSOwner::File("ml://c64.meatloaf.cc/some/deeper/d64/path.zip/file/inside/andextension.sid"));
-=======
     //std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools"));
     //cserverPath->rewindDirectory();
->>>>>>> d70d9565dde1535d8e2f897749a7e1edc68691ed
 
     // std::unique_ptr<MFile> entry(cserverPath->getNextFileInDir());
 
@@ -212,7 +205,6 @@ void testMeatLoafServer()
     Serial.printf("-------------------------------\n");
 
     std::unique_ptr<MFile> entry(mlFile->getNextFileInDir());
-
     while(entry != nullptr) {
         Serial.printf("URL: [%s]\n", entry->url().c_str());
         Serial.printf("Root: [%s]\n", entry->root().c_str());

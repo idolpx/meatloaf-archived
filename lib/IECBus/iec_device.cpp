@@ -352,7 +352,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// Load URL file
 		m_openState = O_URL;
 	}
-	else if (m_filename.startsWith(F("HTTP://")) || m_filename.startsWith(F("ML://")))
+	else if (m_filename.startsWith(F("HTTP://")) || m_filename.startsWith(F("ML://")) || m_filename.startsWith(F("CS://")))
 	{
 		EdUrlParser* url;
 		url->parseUrl(m_filename.c_str());
