@@ -17,7 +17,7 @@
 #define __IGNORE_UNSUED_PVAR(v) (void*)v
 
 
-// Retruns a uint16 value given two bytes in high-low order
+// Returns a uint16 value given two bytes in high-low order
 #define UINT16_FROM_HILOBYTES(high, low) ((uint16_t)high << 8 | low)
 
 // Returns a uint16 value from the little-endian version
@@ -65,6 +65,6 @@ void util_clean_devicespec(uint8_t* buf, unsigned short len);
 bool util_string_value_is_true(std::string value);
 bool util_string_value_is_true(const char *value);
 
-void util_replaceAll(std::string& str, const std::string& from, const std::string& to);
+void util_replace_all(std::string& str, const std::string& from, const std::string& to);
 
 #endif // _FN_UTILS_H

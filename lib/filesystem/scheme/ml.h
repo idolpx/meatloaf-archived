@@ -48,6 +48,8 @@ public:
     //bool remove() override { return false; }; // we can't write to ML server, can we?
     //bool rename(const char* dest) { return false; }; // we can't write to ML server, can we?
     //MIstream* createIStream(MIstream* src); // not used anyway
+
+    //std::string mediaRoot();
 };
 
 
@@ -59,9 +61,7 @@ class MLFileSystem: public MFileSystem
 {
     MFile* getFile(std::string path) override {
         Debug_printv("MLFileSystem::getFile(%s)", path.c_str());
-        MLFile* newMLFile = new MLFile(path);
-        newMLFile->parseUrl(path);
-        return newMLFile;
+        return new MLFile(path);
     }
 
     bool handles(std::string name) {

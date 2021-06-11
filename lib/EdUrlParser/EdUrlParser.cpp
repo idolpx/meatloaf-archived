@@ -136,15 +136,14 @@ char EdUrlParser::toChar(const char* hex)
 
 void EdUrlParser::parseUrl(std::string src_url) 
 {
-    //Serial.printf("parseUrl: [%s]\n", src_url.c_str());
-    url = src_url;
+    Serial.printf("parseUrl: [%s]\n", src_url.c_str());
     int _url_errorno = 0;
-    const char *str = url.c_str();
+    const char *str = src_url.c_str();
 
     size_t pos, len;
     size_t scheme_pos, user_pos, pass_pos, host_pos, port_pos, path_pos, param_pos, tag_pos;
     pos = 0;
-    len = url.size();
+    len = src_url.size();
     WALK_SP(pos, len, str); // remove preceding spaces.
     if (str[pos] == '/') {
         goto __PARSE_HOST;
@@ -154,7 +153,7 @@ void EdUrlParser::parseUrl(std::string src_url)
     scheme_pos = pos;
     WALK_UNTIL(pos, len, str, ':');
     CHECK_LEN_END(pos, len);
-    scheme = url.substr(scheme_pos, pos - scheme_pos);
+    scheme = src_url.substr(scheme_pos, pos - scheme_pos);
     CHECK_REMAIN_END(pos, len, 3);
     WALK_CHAR(pos, str, ':');
     WALK_CHAR(pos, str, '/');
@@ -176,17 +175,17 @@ void EdUrlParser::parseUrl(std::string src_url)
         // Username Only
         pos = user_pos;
         WALK_UNTIL(pos, len, str, '@');
-        username = url.substr(user_pos, pos - user_pos);
+        username = src_url.substr(user_pos, pos - user_pos);
         WALK_CHAR(pos, str, '@');
     }
     else
     {
         // Username & Password
-        username = url.substr(user_pos, pos - user_pos);
+        username = src_url.substr(user_pos, pos - user_pos);
         WALK_CHAR(pos, str, ':');
         pass_pos = pos;
         WALK_UNTIL(pos, len, str, '@');
-        password = url.substr(pass_pos, pos - pass_pos);
+        password = src_url.substr(pass_pos, pos - pass_pos);
         WALK_CHAR(pos, str, '@');
     }
 
@@ -195,7 +194,7 @@ void EdUrlParser::parseUrl(std::string src_url)
     host_pos = pos;
     WALK_UNTIL3(pos, len, str, ':', '/', '?');
     if (pos < len) {
-        hostname = url.substr(host_pos, pos - host_pos);
+        hostname = src_url.substr(host_pos, pos - host_pos);
         if (str[pos] == ':')
             goto __PARSE_PORT;
         if (str[pos] == '/')
@@ -203,48 +202,38 @@ void EdUrlParser::parseUrl(std::string src_url)
         if (str[pos] == '?')
             goto __PARSE_PARAM;
     } else {
-        hostname = url.substr(host_pos, pos - host_pos);
+        hostname = src_url.substr(host_pos, pos - host_pos);
     }
 
     __PARSE_PORT:
     WALK_CHAR(pos, str, ':');
     port_pos = pos;
     WALK_UNTIL2(pos, len, str, '/', '?');
-    port = url.substr(port_pos, pos - port_pos);
+    port = src_url.substr(port_pos, pos - port_pos);
     CHECK_LEN_END(pos, len);
     if (str[pos] == '?')
         goto __PARSE_PARAM;
 
     __PARSE_PATH: path_pos = pos;
     WALK_UNTIL(pos, len, str, '?');
-    pathX = url.substr(path_pos, pos - path_pos);
+    pathX = src_url.substr(path_pos, pos - path_pos);
     CHECK_LEN_END(pos, len);
 
     __PARSE_PARAM:
     WALK_CHAR(pos, str, '?');
     param_pos = pos;
     WALK_UNTIL(pos, len, str, '#');
-    query = url.substr(param_pos, pos - param_pos);
+    query = src_url.substr(param_pos, pos - param_pos);
     CHECK_LEN_END(pos, len);
 
     // start parsing fragment
     WALK_CHAR(pos, str, '#');
     tag_pos = pos;
-    fragment = url.substr(tag_pos, len - tag_pos);
+    fragment = src_url.substr(tag_pos, len - tag_pos);
 
     __PARSE_END:
+        replace_all(pathX, "//", "/");
         parsePath(pathX);
-
-        // set root URL
-        root = scheme + "://" + hostname;
-        if ( port.size() )
-            root += ':' + port;
-        base = root;
-        root += '/';
-
-        // set base URL
-        base += pathX;
-        
         return;
 }
 
@@ -264,7 +253,8 @@ int EdUrlParser::parsePath(std::vector<std::string>* folders, std::string pathst
         name = pathstr.substr(path_pos, pos - path_pos);
         folders->push_back(name);
     }
-    __PARSE_END: return folders->size();
+    __PARSE_END:
+        return folders->size();
 }
 
 void EdUrlParser::parsePath(std::string pathstr) 
@@ -285,6 +275,45 @@ void EdUrlParser::parsePath(std::string pathstr)
         extension = filename.substr(pos + 1);
         string_toupper(extension);
     }
+}
+
+std::string EdUrlParser::root(void)
+{
+    string_toupper(scheme);
+    
+    // set root URL
+    std::string root = scheme + "://";
+    if ( username.size() )
+    {
+        root += username;
+        if ( password.size() )
+            root += ':' + password;
+        root += '@';
+    }
+    root += hostname;
+    if ( port.size() )
+        root += ':' + port;
+
+    return root;
+}
+
+std::string EdUrlParser::base(void)
+{
+    // set base URL
+    return root() + pathX;
+}
+
+std::string EdUrlParser::url(void)
+{
+    // set full URL
+    std::string url = base();
+    url += filename;
+    if ( query.size() )
+        url += '?' + query;
+    if ( fragment.size() )
+        url += '#' + fragment;
+
+    return url;
 }
 
 size_t EdUrlParser::parseKeyValueMap(std::unordered_map<std::string, std::string> *kvmap, std::string rawstr, bool strict) {
@@ -363,4 +392,16 @@ void EdUrlParser::string_toupper(std::string &s)
 {
     transform(s.begin(), s.end(), s.begin(),
                    [](unsigned char c) { return toupper(c); });
+}
+
+void EdUrlParser::replace_all(std::string &str, const std::string &from, const std::string &to)
+{
+    if (from.empty())
+        return;
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos)
+    {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+    }
 }

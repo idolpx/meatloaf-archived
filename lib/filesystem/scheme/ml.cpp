@@ -47,7 +47,7 @@ MFile* MLFile::getNextFileInDir() {
             dirIsOpen = true;
             ledToggle(true);
 
-            std::string fname = root + pathX + urldecode(m_jsonHTTP["name"]).c_str();
+            std::string fname = base() + urldecode(m_jsonHTTP["name"]).c_str();
             size_t size = m_jsonHTTP["size"];
             bool dir = m_jsonHTTP["dir"];
 
@@ -75,7 +75,7 @@ bool MLFile::rewindDirectory() {
 //Serial.printf("\r\nRequesting JSON dir from PHP: ");
 
 	//String url("http://c64.meatloaf.cc/api/");
-    std::string url = "http:/" + pathInStream + "/api/";
+    std::string url = "http:/" + hostname + "/api/";
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
     std::string post_data = "p=" + pathX; // pathInStream will return here /c64.meatloaf.cc/some/directory
 
@@ -89,14 +89,32 @@ bool MLFile::rewindDirectory() {
 	}
 	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-	uint8_t httpCode = m_http.POST(post_data.c_str());	 //Send the request
-	//payload = http.getStream(); //Get the response payload as Stream
+    // Setup response headers we want to collect
+    const char * headerKeys[] = {"ml_media_root", "ml_header", "ml_id", "ml_blocks_free", "ml_block_size"} ;
+    const size_t numberOfHeaders = 5;
+    m_http.collectHeaders(headerKeys, numberOfHeaders);
 
+    // Send the request
+	uint8_t httpCode = m_http.POST(post_data.c_str());
+
+    // Set 
 	Serial.printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
 
 	if (httpCode != 200) {
-        Serial.println("httpCode != 200");
+        Serial.println(m_http.errorToString(httpCode));
 		dirIsOpen = false;
+
+        // Show HTTP Headers
+        Serial.println("HEADERS--------------");
+        size_t i = 0;
+        for (i=0; i < m_http.headers(); i++)
+        {
+            Serial.println(m_http.header(i));
+        }
+        Serial.println("DATA-----------------");
+        Serial.println(m_http.getString());
+        Serial.println("---------------------");
+
     }
     else
         dirIsOpen = true;

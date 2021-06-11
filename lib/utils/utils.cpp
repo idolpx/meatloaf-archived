@@ -522,7 +522,7 @@ bool util_string_value_is_true(std::string value)
     return util_string_value_is_true(value.c_str());
 }
 
-void util_replaceAll(std::string &str, const std::string &from, const std::string &to)
+void util_replace_all(std::string &str, const std::string &from, const std::string &to)
 {
     if (from.empty())
         return;

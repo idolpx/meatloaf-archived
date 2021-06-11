@@ -358,9 +358,9 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		url->parseUrl(m_filename.c_str());
 
 #ifdef DEBUG
-		Serial.printf("\r\nURL: [%s]\r\n", url->url.c_str());
-		Serial.printf("Root: [%s]\r\n", url->root.c_str());
-		Serial.printf("Base: [%s]\r\n", url->base.c_str());
+		Serial.printf("\r\nURL: [%s]\r\n", url->url().c_str());
+		Serial.printf("Root: [%s]\r\n", url->root().c_str());
+		Serial.printf("Base: [%s]\r\n", url->base().c_str());
 		Serial.printf("Scheme: [%s]\r\n", url->scheme.c_str());
 		Serial.printf("Username: [%s]\r\n", url->username.c_str());
 		Serial.printf("Password: [%s]\r\n", url->password.c_str());
@@ -376,7 +376,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// Mount url
 		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.partition(0);
-		m_device.url(url->root.c_str());		
+		m_device.url(url->root().c_str());		
 		m_device.path(url->pathX.c_str());
 		m_filename = url->filename.c_str();
 		m_filetype = url->extension.c_str();
