@@ -1,3 +1,6 @@
+
+#include "fs_example.h"
+
 #include "meat_io.h"
 #include "../../include/make_unique.h"
 #include "buffered_io.h"
@@ -62,34 +65,14 @@ void testLittleFS() {
     // std::unique_ptr<MFile> cserverFile(MFSOwner::File("cs://utilities/disk tools/cie.d64/cie+serial"));
     // std::shared_ptr<MIstream> cserverStream(cserverFile->inputStream());
 
-    std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools"));
-    cserverPath->rewindDirectory();
+    //std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools"));
+    //cserverPath->rewindDirectory();
 
-    // std::unique_ptr<MFile> complexPath(MFSOwner::File("ml://c64.meatloaf.cc/some/deeper/d64/path.zip/file/inside/andextension.sid"));
+    // std::unique_ptr<MFile> entry(cserverPath->getNextFileInDir());
 
-    // std::unique_ptr<MFile> urlFile(MFSOwner::File("ml://c64.meatloaf.cc/"));
-
-    // Serial.printf("URL: [%s]\n", complexPath->url.c_str());
-    // Serial.printf("Root: [%s]\n", complexPath->root.c_str());
-    // Serial.printf("Base: [%s]\n", complexPath->base.c_str());
-    // Serial.printf("Scheme: [%s]\n", complexPath->scheme.c_str());
-    // Serial.printf("Username: [%s]\n", complexPath->username.c_str());
-    // Serial.printf("Password: [%s]\n", complexPath->password.c_str());
-    // Serial.printf("Host: [%s]\n", complexPath->hostname.c_str());
-    // Serial.printf("Port: [%s]\n", complexPath->port.c_str());
-    // Serial.printf("Path: [%s]\n", complexPath->pathX.c_str());
-    // Serial.printf("File: [%s]\n", complexPath->filename.c_str());
-    // Serial.printf("Extension: [%s]\n", complexPath->extension.c_str());
-    // Serial.printf("Query: [%s]\n", complexPath->query.c_str());
-    // Serial.printf("Fragment: [%s]\n\n", complexPath->fragment.c_str());
-    // Serial.printf("MFile path: [%s]\n", complexPath->path().c_str());
-    // Serial.printf("-------------------------------\n");
-
-    std::unique_ptr<MFile> entry(cserverPath->getNextFileInDir());
-
-    while(entry != nullptr) {
-        entry.reset(cserverPath->getNextFileInDir());
-    }
+    // while(entry != nullptr) {
+    //     entry.reset(cserverPath->getNextFileInDir());
+    // }
 
     // if(urlFile==nullptr) {
     //     Serial.println("FSTEST: null path returned!!!");
@@ -198,3 +181,48 @@ void testLittleFS() {
 
 }
 
+
+void testMeatLoafServer()
+{
+    // std::unique_ptr<MFile> complexPath(MFSOwner::File("ml://c64.meatloaf.cc/some/deeper/d64/path.zip/file/inside/andextension.sid"));
+
+    std::unique_ptr<MFile> mlFile(MFSOwner::File("ml://c64.meatloaf.cc/"));
+
+    Serial.printf("URL: [%s]\n", mlFile->url().c_str());
+    Serial.printf("Root: [%s]\n", mlFile->root().c_str());
+    Serial.printf("Base: [%s]\n", mlFile->base().c_str());
+    Serial.printf("Scheme: [%s]\n", mlFile->scheme.c_str());
+    Serial.printf("Username: [%s]\n", mlFile->username.c_str());
+    Serial.printf("Password: [%s]\n", mlFile->password.c_str());
+    Serial.printf("Host: [%s]\n", mlFile->hostname.c_str());
+    Serial.printf("Port: [%s]\n", mlFile->port.c_str());
+    Serial.printf("Path: [%s]\n", mlFile->pathX.c_str());
+    Serial.printf("File: [%s]\n", mlFile->filename.c_str());
+    Serial.printf("Extension: [%s]\n", mlFile->extension.c_str());
+    Serial.printf("Query: [%s]\n", mlFile->query.c_str());
+    Serial.printf("Fragment: [%s]\n\n", mlFile->fragment.c_str());
+    Serial.printf("MFile path: [%s]\n", mlFile->path().c_str());
+    Serial.printf("-------------------------------\n");
+
+    std::unique_ptr<MFile> entry(mlFile->getNextFileInDir());
+
+    while(entry != nullptr) {
+        Serial.printf("URL: [%s]\n", entry->url().c_str());
+        Serial.printf("Root: [%s]\n", entry->root().c_str());
+        Serial.printf("Base: [%s]\n", entry->base().c_str());
+        Serial.printf("Scheme: [%s]\n", entry->scheme.c_str());
+        Serial.printf("Username: [%s]\n", entry->username.c_str());
+        Serial.printf("Password: [%s]\n", entry->password.c_str());
+        Serial.printf("Host: [%s]\n", entry->hostname.c_str());
+        Serial.printf("Port: [%s]\n", entry->port.c_str());
+        Serial.printf("Path: [%s]\n", entry->pathX.c_str());
+        Serial.printf("File: [%s]\n", entry->filename.c_str());
+        Serial.printf("Extension: [%s]\n", entry->extension.c_str());
+        Serial.printf("Query: [%s]\n", entry->query.c_str());
+        Serial.printf("Fragment: [%s]\n\n", entry->fragment.c_str());
+        Serial.printf("MFile path: [%s]\n", entry->path().c_str());
+        Serial.printf("-------------------------------\n");
+
+        entry.reset(mlFile->getNextFileInDir());
+    }
+}
