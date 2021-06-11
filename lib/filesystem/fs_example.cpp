@@ -59,15 +59,15 @@ void testLittleFS() {
     // std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
     // std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
 
-    std::unique_ptr<MFile> cserverFile(MFSOwner::File("cs://utilities/disk tools/cie.d64/cie+serial"));
-    std::shared_ptr<MIstream> cserverStream(cserverFile->inputStream());
+    // std::unique_ptr<MFile> cserverFile(MFSOwner::File("cs://utilities/disk tools/cie.d64/cie+serial"));
+    // std::shared_ptr<MIstream> cserverStream(cserverFile->inputStream());
 
     std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools"));
     cserverPath->rewindDirectory();
 
-    std::unique_ptr<MFile> complexPath(MFSOwner::File("ml://c64.meatloaf.cc/some/deeper/d64/path.zip/file/inside/andextension.sid"));
+    // std::unique_ptr<MFile> complexPath(MFSOwner::File("ml://c64.meatloaf.cc/some/deeper/d64/path.zip/file/inside/andextension.sid"));
 
-    std::unique_ptr<MFile> urlFile(MFSOwner::File("ml://c64.meatloaf.cc/"));
+    // std::unique_ptr<MFile> urlFile(MFSOwner::File("ml://c64.meatloaf.cc/"));
 
     // Serial.printf("URL: [%s]\n", complexPath->url.c_str());
     // Serial.printf("Root: [%s]\n", complexPath->root.c_str());
@@ -85,11 +85,11 @@ void testLittleFS() {
     // Serial.printf("MFile path: [%s]\n", complexPath->path().c_str());
     // Serial.printf("-------------------------------\n");
 
-    // std::unique_ptr<MFile> entry(cserverPath->getNextFileInDir());
+    std::unique_ptr<MFile> entry(cserverPath->getNextFileInDir());
 
-    // while(entry != nullptr) {
-    //     entry.reset(urlFile->getNextFileInDir());
-    // }
+    while(entry != nullptr) {
+        entry.reset(cserverPath->getNextFileInDir());
+    }
 
     // if(urlFile==nullptr) {
     //     Serial.println("FSTEST: null path returned!!!");

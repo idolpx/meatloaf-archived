@@ -33,13 +33,13 @@ public:
     };
     
     StreamReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {
-        read();
+        //read();
     }
 
     std::string readLn() {
         if(buffPos==0 && mbuffer.length()==0 && eof())
             return "";
-
+//tu dodać read dla lambdowego
         lineBuilder="";
 //Serial.printf("FSTEST: wchodze do realn przy buffPos=%d, buf.len=%d, eof=%d\n", buffPos, mbuffer.length(), eof());
         do {

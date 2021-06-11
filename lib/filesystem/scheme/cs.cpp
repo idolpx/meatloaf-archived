@@ -13,6 +13,17 @@
 void CServerSessionMgr::connect() {
     int rc = m_wifi.connect("commodoreserver.com", 1541);
     Serial.printf("CServer: connect: %d\n", rc);
+
+    if(breader==nullptr) {
+        // do not initialize in constructor - compiler bug!
+        Serial.println("breader ---- INIT!");
+        breader = new StreamReader([this](uint8_t* buffer, size_t size)->int  {
+            int x = this->read(buffer, size);
+            Serial.printf("Lambda read %d\n",x);
+            return x;
+        });
+        breader->delimiter = 10;
+    }
 }
 
 void CServerSessionMgr::disconnect() {
@@ -39,7 +50,7 @@ bool CServerSessionMgr::command(std::string command) {
 size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
     auto rd = m_wifi.read(buf, size);
     int attempts = 3;
-    while(rd == 0 && attempts-->0) {
+    while(rd == 0 && (attempts--)>0) {
         delay(500);
         rd = m_wifi.read(buf, size);
     } 
@@ -260,8 +271,11 @@ bool CServerFile::rewindDirectory() {
     if(!isDirectory())
         return false;
 
+    CServerFileSystem::session.traversePath(this);
+    
     if(MFileSystem::byExtension(".d64", path())) {
         dirIsImage = true;
+        dirIsOpen = true;
         // to list image contents we have to run
         Serial.println("cserver: this is a d64 img!");
         CServerFileSystem::session.command("$");
@@ -270,21 +284,31 @@ bool CServerFile::rewindDirectory() {
     }
     else {
         dirIsImage = false;
+        dirIsOpen = true;
         // to list directory contents we use
         Serial.println("cserver: this is a directory!");
         CServerFileSystem::session.command("disks");
+
+        return true;
     }
 };
 
 MFile* CServerFile::getNextFileInDir() {
+    Serial.println("cserver: getNextFileInDir0");
     if(!dirIsOpen)
         rewindDirectory();
-    
+
+    Serial.println("cserver: getNextFileInDir1");
+
+
     if(!dirIsOpen)
         return nullptr;
 
+    Serial.println("cserver: getNextFileInDir2");
+
+
     if(dirIsImage) {
-        // auto line = CServerFileSystem::session.breader->readLn();
+        auto line = CServerFileSystem::session.breader->readLn();
         // 'ot line:'0 ␒"CIE�������������" 00�2A�
         // 'ot line:'2   "CIE+SERIAL      " PRG   2049
         // 'ot line:'1   "CIE-SYS31801    " PRG   2049
@@ -292,14 +316,17 @@ MFile* CServerFile::getNextFileInDir() {
         // 'ot line:'1   "CIE-SYS52281    " PRG   2049
         // 'ot line:'1   "CIE-SYS52281S   " PRG   2049
         // 'ot line:'658 BLOCKS FREE.
-        // Serial.printf("cserver: got dir line: %s", line.c_str());
+        Serial.printf("cserver: got dir line: '%s'\n", line.c_str());
 
-        // if(line.find('\x04')>=0)
-        //     return nullptr;
-        // else
-        //     return new CServerFile("xxxxx");
+        if(line.find('\x04')>=0) {
+            Serial.println("No more!");
+            dirIsOpen = false;
+            return nullptr;
+        }
+        else
+            return new CServerFile("xxxxx");
     } else {
-        //auto line = CServerFileSystem::session.breader->readLn();
+        auto line = CServerFileSystem::session.breader->readLn();
         // Got line:''
         // Got line:''
         // 'ot line:'FAST-TESTER DELUXE EXCESS.D64
@@ -314,13 +341,21 @@ MFile* CServerFile::getNextFileInDir() {
         // 'ot line:'FLOPPY REPAIR KIT (1984)(ORCHID SOFTWARE LABORATOR
         // 'ot line:'1541 DEMO DISK (19XX)(-).D64
 
-        // Serial.printf("cserver: got dir line: %s", line.c_str());
+        Serial.printf("cserver: got dir line: '%s'\n", line.c_str());
 
-        // if(line.find('\x04')>=0)
-        //     return nullptr;
-        // else
-        //     return new CServerFile("xxxxx");
+        auto xx = line.c_str();
 
+            for(int i=0; i<line.length(); i++) {
+        Serial.printf("%d ", line[i]);
+    }
+
+        if(line.find('\x04')>=0) {
+            Serial.println("No more!");
+            dirIsOpen = false;
+            return nullptr;
+        }
+        else
+            return new CServerFile("xxxxx");
     }
 };
 

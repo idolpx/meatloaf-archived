@@ -17,14 +17,11 @@ class CServerSessionMgr {
 public:
     CServerSessionMgr(std::string user = "", std::string pass = "") : m_user(user), m_pass(pass) 
     {
-        breader = new StreamReader([this](uint8_t* buffer, size_t size)->int  {
-            return read(buffer, size);
-        });
-        breader->delimiter = 10;
     };
     ~CServerSessionMgr() {
         disconnect();
-        delete breader;
+        if(breader!=nullptr)
+            delete breader;
     };
     void connect();
     void disconnect();
