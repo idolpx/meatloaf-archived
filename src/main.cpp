@@ -65,6 +65,7 @@
 #include "iec_device.h"
 #include "ESPModem.h"
 #include "meat_io.h"
+#include "fs_example.h"
 
 //void ICACHE_RAM_ATTR isrCheckATN();
 
@@ -104,8 +105,6 @@ ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
 // statemachine state = statemachine::none;
 //uint8_t state_int;
 //String state_string;
-
-void testLittleFS();
 
 // ------------------------
 void setup()
@@ -188,7 +187,8 @@ void setup()
 			}
 		}
 
-		testLittleFS();
+		//testLittleFS();
+		testMeatLoafServer();
 		Debug_printv("Printing VERBOSE [%d]", 1);
 
 		// Setup IEC Bus
