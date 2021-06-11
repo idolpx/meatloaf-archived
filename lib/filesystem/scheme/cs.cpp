@@ -1,17 +1,21 @@
 #include "cs.h"
 #include "../../include/make_unique.h"
-
+#include "utils.h"
 
 /********************************************************
  * Client impls
  ********************************************************/
+// fajna sciezka do sprawdzenia:
+// utilities/disk tools/cie.d64
+
+#define OK_REPLY "00 - OK\x0d\x0a\x04"
 
 void CServerSessionMgr::connect() {
-    m_wifi.connect("commodoreserver.com", 1541);
+    int rc = m_wifi.connect("commodoreserver.com", 1541);
+    Serial.printf("CServer: connect: %d\n", rc);
 }
 
 void CServerSessionMgr::disconnect() {
-    // QUIT - might be close stream
     if(m_wifi.connected()) {
         command("quit");
         m_wifi.stop();
@@ -24,7 +28,8 @@ bool CServerSessionMgr::command(std::string command) {
         connect();
 
     if(m_wifi.connected()) {
-        m_wifi.write((command+'\n').c_str());
+        Serial.printf("CServer: send command: %s\n", command.c_str());
+        m_wifi.write((command+'\r').c_str());
         return true;
     }
     else
@@ -32,7 +37,13 @@ bool CServerSessionMgr::command(std::string command) {
 }
 
 size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
-    return m_wifi.read(buf, size);
+    auto rd = m_wifi.read(buf, size);
+    int attempts = 3;
+    while(rd == 0 && attempts-->0) {
+        delay(500);
+        rd = m_wifi.read(buf, size);
+    } 
+    return rd;
 }
 
 size_t CServerSessionMgr::write(std::string &fileName, const uint8_t *buf, size_t size) {
@@ -45,18 +56,58 @@ size_t CServerSessionMgr::write(std::string &fileName, const uint8_t *buf, size_
         return 0;
 }
 
+std::string CServerSessionMgr::readReply() {
+    uint8_t buffer[40] = { 0 };
+    memset(buffer, 0, sizeof(buffer));
+    int rd = read(buffer, 40);
+    for(int i=0; i<rd; i++) {
+        Serial.printf("%d ", buffer[i]);
+    }
+    Serial.printf("CServer: replies %d bytes: '%s'\n", rd, buffer);
+    return std::string((char *)buffer);
+}
+
+bool CServerSessionMgr::isOK() {
+    return readReply() == OK_REPLY;
+}
+
+
 bool CServerSessionMgr::traversePath(MFile* path) {
     // tricky. First we have to
     // CF / - to go back to root
     command("cf /");
-    // CF xxx - to browse into subsequent dirs
-    // each CF should return: 00-OK
-    // or: ?500 - CANNOT CHANGE TO dupa
-    // THEN we have to mount the image INSERT image_name
-    command("insert disk_name");
-    // should reply with: 00 - OK
-    // or: ?500 - DISK NOT FOUND.
 
+    if(isOK()) {
+        auto chopped = path->chop();
+        auto second = (chopped.begin())+2; // skipping scheme and empty 
+
+        for(auto i = second; i < chopped.end(); i++) {
+            auto part = (*i);
+            
+            if(/*MFileSystem::byExtension(".d64", part) || */MFileSystem::byExtension(".d64", part)) {
+                // THEN we have to mount the image INSERT image_name
+                command("insert "+part);
+                // disk image is the end, so return
+                if(isOK()) {
+                    return true;
+                }
+                else {
+                    // or: ?500 - DISK NOT FOUND.
+                    return false;
+                }
+            }
+            else {
+                // CF xxx - to browse into subsequent dirs
+                command("cf "+part);
+                if(!isOK()) {
+                    // or: ?500 - CANNOT CHANGE TO dupa
+                    return false;
+                }
+            }
+        }
+    }
+    else
+        return false; // shouldn't really happen, right?
 }
 
 /********************************************************
@@ -81,19 +132,32 @@ void CServerIStream::close() {
 
 bool CServerIStream::open() {
     auto file = std::make_unique<CServerFile>(m_path);
+    m_isOpen = false;
+
+    if(file->isDirectory())
+        return false; // or do we want to stream whole d64 image? :D
 
     if(CServerFileSystem::session.traversePath(file.get())) {
-
+        // should we allow loading of * in any directory?
         // then we can LOAD and get available count from first 2 bytes in (LH) endian
-        CServerFileSystem::session.command("load name_here");
+        // name here MUST BE UPPER CASE
+        util_string_toupper(file->filename);
+        CServerFileSystem::session.command("load "+file->filename);
         // read first 2 bytes with size, low first, but may also reply with: ?500 - ERROR
-        m_bytesAvailable = 6666; // put len here
-
-        // if everything was ok
-        m_isOpen = true;
+        uint8_t buffer[2] = { 0, 0 };
+        read(buffer, 2);
+        // hmmm... should we check if they're "?5" for error?!
+        if(buffer[0]=='?' && buffer[1]=='5') {
+            Serial.println("CServer: open file failed");
+            CServerFileSystem::session.readReply();
+        }
+        else {
+            m_bytesAvailable = buffer[0] + buffer[1]*256; // put len here
+            // if everything was ok
+            Serial.printf("CServer: file open, size: %d\n", m_bytesAvailable);
+            m_isOpen = true;
+        }
     }
-    else
-        m_isOpen = false;
 
     return m_isOpen;
 };
@@ -170,7 +234,14 @@ bool CServerOStream::isOpen() {
  ********************************************************/
 
 bool CServerFile::isDirectory() {
-    // CS files [named like this] are directories
+    // if penultimate part is .d64 - it is a file
+    // otherwise - false
+    auto chopped = chop();
+    auto second = (chopped.end())-2; // skipping scheme and empty 
+    //auto x = (*second);
+    //Serial.printf("isDirectory second from right:%s\n", x.c_str());
+
+    return !MFileSystem::byExtension(".d64", *second);
 };
 
 MIstream* CServerFile::inputStream() {
@@ -186,19 +257,71 @@ MOstream* CServerFile::outputStream() {
 };
 
 bool CServerFile::rewindDirectory() {
-    // DISKS - disks is our de facto directory listing command, unless previous path part is .d64, then we have to use $ command to list the dir!
-    // DISKS and $ ends with 4 (EOT)
-    // format:
-    //  >[PUBLIC ROOT]
-    // [APPS]
-    // [CLUBS]
-    // [COMMS]
-    // [DEMOS]
+    if(!isDirectory())
+        return false;
 
+    if(MFileSystem::byExtension(".d64", path())) {
+        dirIsImage = true;
+        // to list image contents we have to run
+        Serial.println("cserver: this is a d64 img!");
+        CServerFileSystem::session.command("$");
+
+        return true;
+    }
+    else {
+        dirIsImage = false;
+        // to list directory contents we use
+        Serial.println("cserver: this is a directory!");
+        CServerFileSystem::session.command("disks");
+    }
 };
 
 MFile* CServerFile::getNextFileInDir() {
+    if(!dirIsOpen)
+        rewindDirectory();
+    
+    if(!dirIsOpen)
+        return nullptr;
 
+    if(dirIsImage) {
+        // auto line = CServerFileSystem::session.breader->readLn();
+        // 'ot line:'0 ␒"CIE�������������" 00�2A�
+        // 'ot line:'2   "CIE+SERIAL      " PRG   2049
+        // 'ot line:'1   "CIE-SYS31801    " PRG   2049
+        // 'ot line:'1   "CIE-SYS31801S   " PRG   2049
+        // 'ot line:'1   "CIE-SYS52281    " PRG   2049
+        // 'ot line:'1   "CIE-SYS52281S   " PRG   2049
+        // 'ot line:'658 BLOCKS FREE.
+        // Serial.printf("cserver: got dir line: %s", line.c_str());
+
+        // if(line.find('\x04')>=0)
+        //     return nullptr;
+        // else
+        //     return new CServerFile("xxxxx");
+    } else {
+        //auto line = CServerFileSystem::session.breader->readLn();
+        // Got line:''
+        // Got line:''
+        // 'ot line:'FAST-TESTER DELUXE EXCESS.D64
+        // 'ot line:'EMPTY.D64
+        // 'ot line:'CMD UTILITIES D1.D64
+        // 'ot line:'CBMCMD22.D64
+        // 'ot line:'NAV96.D64
+        // 'ot line:'NAV92.D64
+        // 'ot line:'SINGLE DISKCOPY 64 (1983)(KEVIN PICKELL).D64
+        // 'ot line:'LYNX (19XX)(-).D64
+        // 'ot line:'GEOS DISK EDITOR (1990)(GREG BADROS).D64
+        // 'ot line:'FLOPPY REPAIR KIT (1984)(ORCHID SOFTWARE LABORATOR
+        // 'ot line:'1541 DEMO DISK (19XX)(-).D64
+
+        // Serial.printf("cserver: got dir line: %s", line.c_str());
+
+        // if(line.find('\x04')>=0)
+        //     return nullptr;
+        // else
+        //     return new CServerFile("xxxxx");
+
+    }
 };
 
 bool CServerFile::exists() {} ;
@@ -210,7 +333,9 @@ bool CServerFile::mkDir() {
     return false; 
 };
 
-bool remove() { 
+bool CServerFile::remove() { 
     // but it does support remove = SCRATCH FILENAME
     return false; 
 };
+
+CServerSessionMgr CServerFileSystem::session;

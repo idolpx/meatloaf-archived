@@ -51,7 +51,9 @@ public:
  ********************************************************/
 
 class BufferedReader {
-    MIstream* istream;
+    MIstream* istream = nullptr;
+    std::function<int(uint8_t* buf, size_t size)> readFn;
+
     bool secondHalf = false;
 
     #if defined(ESP32)
@@ -66,7 +68,14 @@ protected:
     void refillBuffer() {
         secondHalf = !secondHalf;
         uint8_t* window = (secondHalf) ? (uint8_t*)buffer : (uint8_t*)(buffer+RECORD_SIZE);
-        mbuffer.len = istream->read(window, RECORD_SIZE);
+
+        if(istream != nullptr) {
+            mbuffer.len = istream->read(window, RECORD_SIZE);
+        }
+        else {
+            mbuffer.len = readFn(window, RECORD_SIZE);
+        }
+
         mbuffer.buffer = (char *)window;
         eofOccured = mbuffer.len == 0;
     }
@@ -74,6 +83,11 @@ protected:
 public:
     BufferedReader(MIstream* is) : istream(is) { 
     };
+
+    BufferedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : readFn(fn) {
+
+    };
+
     MBuffer* read() {
         if(!eofOccured)
             refillBuffer();

@@ -31,6 +31,10 @@ public:
     StreamReader(MIstream* is) : BufferedReader(is), buffPos(0), lineBuilder("") { 
         read();
     };
+    
+    StreamReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {
+        read();
+    }
 
     std::string readLn() {
         if(buffPos==0 && mbuffer.length()==0 && eof())

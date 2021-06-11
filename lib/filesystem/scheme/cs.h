@@ -3,6 +3,8 @@
 
 #include "meat_io.h"
 #include "WiFiClient.h"
+#include "stream_writer.h"
+
 // a scheme for handling Commodore Server
 // see: https://www.commodoreserver.com/BlogEntryView.asp?EID=9D133160E7C344A398EC1F45AEF4BF32
 
@@ -13,9 +15,16 @@ class CServerSessionMgr {
     std::string m_pass;
 
 public:
-    CServerSessionMgr(std::string user, std::string pass) : m_user(user), m_pass(pass) {};
+    CServerSessionMgr(std::string user = "", std::string pass = "") : m_user(user), m_pass(pass) 
+    {
+        breader = new StreamReader([this](uint8_t* buffer, size_t size)->int  {
+            return read(buffer, size);
+        });
+        breader->delimiter = 10;
+    };
     ~CServerSessionMgr() {
         disconnect();
+        delete breader;
     };
     void connect();
     void disconnect();
@@ -23,9 +32,12 @@ public:
     size_t read(uint8_t* buf, size_t size);
     size_t write(std::string &fileName, const uint8_t *buf, size_t size);
     bool traversePath(MFile* path);
+    std::string readReply();
+    bool isOK();
     void flush() {
         m_wifi.flush();
     }
+    StreamReader* breader;
 };
 
 /********************************************************
@@ -50,6 +62,9 @@ public:
     time_t getCreationTime() override  { return 0; };
     bool rename(const char* dest) { return false; };
     MIstream* createIStream(MIstream* src) { return src; };
+private:
+    bool dirIsOpen = false;
+    bool dirIsImage = false;
 };
 
 /********************************************************
@@ -122,16 +137,16 @@ protected:
 
 class CServerFileSystem: public MFileSystem 
 {
-    MFile* getFile(std::string path) override {
-        return new CServerFile(path);
-    }
-
     bool handles(std::string name) {
         return name == "CS:";
     }
 public:
     CServerFileSystem(): MFileSystem("c=server") {};
     static CServerSessionMgr session;
+    MFile* getFile(std::string path) override {
+        return new CServerFile(path);
+    }
+
 };
 
 

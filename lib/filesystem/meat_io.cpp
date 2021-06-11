@@ -8,10 +8,24 @@
 #include "scheme/http.h"
 #include "scheme/smb.h"
 #include "scheme/ml.h"
+#include "scheme/cs.h"
 #include <vector>
 #include <sstream>
 #include "utils.h"
 
+
+
+std::vector<std::string> chopPath(std::string path) {
+    std::vector<std::string> paths;
+    
+    std::string line;
+    std::stringstream ss(path);
+
+    while(std::getline(ss, line, '/')) {
+        paths.push_back(line);
+    }
+    return paths;
+}
 
 std::string joinNamesToPath(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end) {
     std::string res;
@@ -37,6 +51,8 @@ LittleFileSystem littleFS(FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOC
 HttpFileSystem httpFS;
 DNPFileSystem dnpFS;
 MLFileSystem mlFS;
+CServerFileSystem csFS;
+
 
 // put all available filesystems in this array - first matching system gets the file!
 std::vector<MFileSystem*> MFSOwner::availableFS{  &dnpFS, &httpFS, &mlFS };
@@ -78,18 +94,24 @@ bool MFSOwner::umount(std::string name) {
 }
 
 MFile* MFSOwner::File(std::string path) {
-    std::vector<std::string> paths;
+    std::vector<std::string> paths = chopPath(path);
     
-    std::string line;
-    std::stringstream ss(path);
+    // std::string line;
 
-    while(std::getline(ss, line, '/')) {
-        paths.push_back(line);
-    }
+    // std::stringstream ss(path);
+
+    // while(std::getline(ss, line, '/')) {
+    //     paths.push_back(line);
+    // }
 
     auto pathIterator = paths.end();
     auto begin = paths.begin();
     auto end = paths.end();
+
+    if((*begin)=="cs:") {
+        Serial.printf("CServer path found!\n");
+        return csFS.getFile(path);
+    }
 
     while (pathIterator != paths.begin()) {
         pathIterator--;
@@ -137,7 +159,7 @@ MFileSystem::~MFileSystem() {}
 
 MFile::MFile(std::string path) {
     parseUrl(path);
-    m_path = url();
+    //Serial.printf("Parsing url of %s! name=%s\n", path.c_str(), filename.c_str());
 }
 
 MFile::MFile(std::string path, std::string name) : MFile(path + "/" + name) {}
@@ -146,6 +168,10 @@ MFile::MFile(MFile* path, std::string name) : MFile(path->m_path + "/" + name) {
 
 bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
+}
+
+std::vector<std::string> MFile::chop() {
+    return chopPath(m_path);
 }
 
 void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {

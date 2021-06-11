@@ -27,6 +27,7 @@ public:
     //std::string extension();
     std::string header;
     std::string mediaRoot;
+
     bool operator!=(nullptr_t ptr);
 
     bool copyTo(MFile* dst) {
@@ -35,6 +36,8 @@ public:
 
         return istream->pipeTo(ostream.get());
     };
+
+    std::vector<std::string> chop();
 
     virtual bool isDirectory() = 0;
     virtual MIstream* inputStream();
@@ -81,7 +84,7 @@ public:
         return m_isMounted;
     }
 
-    bool byExtension(char* ext, std::string fileName) {
+    static bool byExtension(char* ext, std::string fileName) {
         return fileName.rfind(ext) != -1 &&  fileName.rfind(ext) == fileName.length()-4;
     }
 
