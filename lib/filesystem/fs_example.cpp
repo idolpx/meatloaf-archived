@@ -54,7 +54,7 @@ void testLittleFS() {
 
     // std::unique_ptr<MFile> fileInSub(MFSOwner::File(".sys/mfile_subtest.txt"));
 
-    Serial.println("FSTEST: test MFile factory");
+    // Serial.println("FSTEST: test MFile factory");
 
     // std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
     // std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));

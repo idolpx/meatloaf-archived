@@ -48,6 +48,7 @@ class EdUrlParser
 {
 private:
     void string_toupper(std::string &s);
+    void replace_all(std::string &str, const std::string &from, const std::string &to);
 
 public:
     EdUrlParser();
@@ -66,9 +67,9 @@ public:
     static size_t parseKeyValueList(std::vector< query_kv_t > *kvmap, std::string rawstr, bool strict=true);
     static size_t parseKeyValue(std::string rawstr, __kv_callback kvcb, void* obj, bool strict);
 
-    std::string url;
-    std::string root;
-    std::string base;
+    std::string url(void);
+    std::string root(void);
+    std::string base(void);
     std::string scheme;
     std::string username;
     std::string password;

@@ -10,6 +10,7 @@ bool HttpFile::isDirectory() {
 
 MIstream* HttpFile::inputStream() {
     // has to return OPENED stream
+    Serial.printf("HttpFile::inputStream [%s]\n", m_path.c_str());
     MIstream* istream = new HttpIStream(m_path);
     istream->open();   
     return istream;
