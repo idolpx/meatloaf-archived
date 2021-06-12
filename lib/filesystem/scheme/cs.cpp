@@ -99,7 +99,8 @@ bool CServerSessionMgr::traversePath(MFile* path) {
             auto part = chopped[i];
             
             Serial.printf("traversePath: [%s]\n", part.c_str());
-            if(util_ends_with(part, ".D64")) {
+            if(util_ends_with(part, ".D64") || util_ends_with(part, ".D64")) 
+            {
                 // THEN we have to mount the image INSERT image_name
                 command("insert "+part);
 
@@ -112,7 +113,8 @@ bool CServerSessionMgr::traversePath(MFile* path) {
                     return false;
                 }
             }
-            else {
+            else 
+            {
                 // CF xxx - to browse into subsequent dirs
                 command("cf "+part);
                 if(!isOK()) {
@@ -290,7 +292,8 @@ bool CServerFile::rewindDirectory() {
 
     if(!CServerFileSystem::session.traversePath(this)) return false;
 
-    if(MFileSystem::byExtension(".d64", path)) {
+    if(util_ends_with(path, ".d64") || util_ends_with(path, ".D64"))
+    {
         dirIsImage = true;
         dirIsOpen = true;
         // to list image contents we have to run
@@ -304,7 +307,8 @@ bool CServerFile::rewindDirectory() {
 
         return true;
     }
-    else {
+    else 
+    {
         dirIsImage = false;
         dirIsOpen = true;
         // to list directory contents we use
