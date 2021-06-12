@@ -274,7 +274,7 @@ bool CServerFile::rewindDirectory() {
     if(!isDirectory())
         return false;
 
-    CServerFileSystem::session.traversePath(this);
+    if(!CServerFileSystem::session.traversePath(this)) return false;
     
     if(MFileSystem::byExtension(".d64", path())) {
         dirIsImage = true;
