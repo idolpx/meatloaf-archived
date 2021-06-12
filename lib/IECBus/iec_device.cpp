@@ -346,6 +346,11 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			{
 				pos = 3;
 			}
+			else if (atn_cmd.channel == 0x0F)
+			{
+				// Support wedge syntax without ":"
+				pos = 2;
+			}
 
 			// Enter directory
 			m_device.path(m_device.path() + m_filename.substring(pos) + F("/"));
