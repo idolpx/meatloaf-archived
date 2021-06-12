@@ -95,7 +95,7 @@ bool MFSOwner::umount(std::string name) {
 
 MFile* MFSOwner::File(std::string path) {
     std::vector<std::string> paths = MFile::chopPath(path);
-    
+
     // std::string line;
 
     // std::stringstream ss(path);
@@ -160,19 +160,19 @@ MFileSystem::~MFileSystem() {}
 MFile::MFile(std::string path) {
     parseUrl(path);
     //m_path = path;   
-    m_path = url(); 
+    //m_path = url(); 
 }
 
 MFile::MFile(std::string path, std::string name) : MFile(path + "/" + name) {}
 
-MFile::MFile(MFile* path, std::string name) : MFile(path->m_path + "/" + name) {}
+MFile::MFile(MFile* path, std::string name) : MFile(path->path + "/" + name) {}
 
 bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
 }
 
 std::vector<std::string> MFile::chop() {
-    return chopPath(m_path);
+    return chopPath(path);
 }
 
 void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
@@ -190,9 +190,9 @@ void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::v
     Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
 }
 
-std::string MFile::path() {
-    return m_path;
-}
+// std::string MFile::path() {
+//     return m_path;
+// }
 
 MIstream* MFile::inputStream() {
     ; // has to return OPENED stream
@@ -208,7 +208,7 @@ MIstream* MFile::inputStream() {
         std::unique_ptr<MFile> pointedFile(getNextEntry());
         while (pointedFile != nullptr)
         {
-            if(pointedFile->path() == this->pathInStream)
+            if(pointedFile->path == this->pathInStream)
                 return thisStream;
 
             pointedFile.reset(getNextEntry());

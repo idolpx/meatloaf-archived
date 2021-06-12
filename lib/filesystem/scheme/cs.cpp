@@ -92,18 +92,17 @@ bool CServerSessionMgr::traversePath(MFile* path) {
 
     if(isOK()) {
 
-        auto m_path = path->path();
-        auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : m_path;
+        std::vector<std::string> chopped;
+        MFile::parsePath(&chopped, path->path);
 
-        auto chopped = MFile::chopPath(corrFile);
-        auto second = (chopped.begin())+3; // skipping scheme and empty 
-
-        for(auto i = second; i < chopped.end(); i++) {
-            auto part = (*i);
+        for(int i = 0; i < chopped.size(); i++) {
+            auto part = chopped[i];
             
-            if(/*MFileSystem::byExtension(".d64", part) || */MFileSystem::byExtension(".d64", part)) {
+            Serial.printf("traversePath: [%s]\n", part.c_str());
+            if(util_ends_with(part, ".D64")) {
                 // THEN we have to mount the image INSERT image_name
                 command("insert "+part);
+
                 // disk image is the end, so return
                 if(isOK()) {
                     return true;
@@ -122,6 +121,7 @@ bool CServerSessionMgr::traversePath(MFile* path) {
                 }
             }
         }
+        return true;
     }
     else
         return false; // shouldn't really happen, right?
@@ -253,12 +253,12 @@ bool CServerOStream::isOpen() {
 bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
     // otherwise - false
-    Serial.printf("trying to chop %s", m_path.c_str());
+    Serial.printf("trying to chop %s\n", path.c_str());
 
-    if((*path().end())=='/')
+    if(util_ends_with(path, "/"))
         return true;
 
-    auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : m_path;
+    auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : path;
 
     auto chopped = MFile::chopPath(corrFile);
     auto second = (chopped.end())-2; // penultimate path part is d64? 
@@ -286,18 +286,19 @@ bool CServerFile::rewindDirectory() {
     if(!isDirectory())
         return false;
 
-    auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : m_path;
-
     if(!CServerFileSystem::session.traversePath(this)) return false;
 
-    if(MFileSystem::byExtension(".d64", corrFile)) {
+    if(MFileSystem::byExtension(".d64", path)) {
         dirIsImage = true;
         dirIsOpen = true;
         // to list image contents we have to run
         //Serial.println("cserver: this is a d64 img!");
         CServerFileSystem::session.command("$");
-        CServerFileSystem::session.breader->readLn(); // skip some line
-        auto line = CServerFileSystem::session.breader->readLn(); // skip header
+        auto line = CServerFileSystem::session.breader->readLn(); // mounted image name
+        media_image = line.substr(5);
+        line = CServerFileSystem::session.breader->readLn(); // dir header
+        media_header = line.substr(2, line.find_last_of("\""));
+        media_id = line.substr(line.find_last_of("\"")+2);
 
         return true;
     }
@@ -307,8 +308,9 @@ bool CServerFile::rewindDirectory() {
         // to list directory contents we use
         //Serial.println("cserver: this is a directory!");
         CServerFileSystem::session.command("disks");
-        auto line = CServerFileSystem::session.breader->readLn(); // skip header
-        
+        auto line = CServerFileSystem::session.breader->readLn(); // dir header
+        media_header = line.substr(2, line.find_last_of("]")-1);
+        media_id = "C=SVR";
 
         return true;
     }
@@ -383,7 +385,7 @@ MFile* CServerFile::getNextFileInDir() {
 
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name.c_str());
 
-            return new CServerFile(path() +"/"+ name, 0);
+            return new CServerFile(path + name, 0);
         }
     }
 };

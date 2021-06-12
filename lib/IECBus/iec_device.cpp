@@ -383,7 +383,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Serial.printf("Password: [%s]\r\n", ml_file->password.c_str());
 		Serial.printf("Host: [%s]\r\n", ml_file->hostname.c_str());
 		Serial.printf("Port: [%s]\r\n", ml_file->port.c_str());
-		Serial.printf("Path: [%s]\r\n", ml_file->pathX.c_str());
+		Serial.printf("Path: [%s]\r\n", ml_file->path.c_str());
 		Serial.printf("File: [%s]\r\n", ml_file->filename.c_str());
 		Serial.printf("Extension: [%s]\r\n", ml_file->extension.c_str());
 		Serial.printf("Query: [%s]\r\n", ml_file->query.c_str());
@@ -394,7 +394,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.partition(0);
 		m_device.url(ml_file->root().c_str());		
-		m_device.path(ml_file->pathX.c_str());
+		m_device.path(ml_file->path.c_str());
 		m_filename = ml_file->filename.c_str();
 		m_filetype = ml_file->extension.c_str();
 		m_device.archive("");
@@ -691,17 +691,17 @@ void Interface::sendListing()
 	// Send Listing Header
 	char buffer[100];
 	byte space_cnt = 0;
-	if (dir->media_header.size() == 0)
+	//if (dir->media_header.size() == 0)
 	{
 		// Set device default Listing Header
 		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
 		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A\0", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 	}
-	else
-	{
-		space_cnt = (16 - dir->media_header.size()) / 2;
-		sprintf(buffer, "\"%*s%s%*s\" %s\0", space_cnt, "", dir->media_header.c_str(), space_cnt, "", dir->media_id.c_str());
-	}
+	// else
+	// {
+	// 	space_cnt = (16 - dir->media_header.size()) / 2;
+	// 	sprintf(buffer, "\"%*s%s%*s\" %s\0", space_cnt, "", dir->media_header.c_str(), space_cnt, "", dir->media_id.c_str());
+	// }
 	byte_count += sendHeader(basicPtr, buffer);
 	
 

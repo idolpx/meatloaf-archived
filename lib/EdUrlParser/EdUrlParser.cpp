@@ -216,7 +216,7 @@ void EdUrlParser::parseUrl(std::string src_url)
 
     __PARSE_PATH: path_pos = pos;
     WALK_UNTIL(pos, len, str, '?');
-    pathX = src_url.substr(path_pos, pos - path_pos);
+    path = src_url.substr(path_pos, pos - path_pos);
     CHECK_LEN_END(pos, len);
 
     __PARSE_PARAM:
@@ -232,12 +232,12 @@ void EdUrlParser::parseUrl(std::string src_url)
     fragment = src_url.substr(tag_pos, len - tag_pos);
 
     __PARSE_END:
-        replace_all(pathX, "//", "/");
-        parsePath(pathX);
+        replace_all(path, "//", "/");
+        parsePath(path);
         return;
 }
 
-int EdUrlParser::parsePath(std::vector<std::string>* folders, std::string pathstr) 
+size_t EdUrlParser::parsePath(std::vector<std::string>* folders, std::string pathstr) 
 {
     int _url_errorno = 0;
     int path_pos = 0;
@@ -263,7 +263,7 @@ void EdUrlParser::parsePath(std::string pathstr)
 
     // Path
     pos = pathstr.find_last_of('/');
-    pathX = pathstr.substr(0, pos) + '/';
+    path = pathstr.substr(0, pos) + '/';
 
     // File
     filename = pathstr.substr(pos + 1);
@@ -300,7 +300,7 @@ std::string EdUrlParser::root(void)
 std::string EdUrlParser::base(void)
 {
     // set base URL
-    return root() + pathX;
+    return root() + path;
 }
 
 std::string EdUrlParser::url(void)

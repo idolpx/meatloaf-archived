@@ -77,7 +77,7 @@ bool MLFile::rewindDirectory() {
 	//String url("http://c64.meatloaf.cc/api/");
     String url = std::string("http://" + hostname + "/api/").c_str();
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-    String post_data = std::string("p=" + pathX).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
+    String post_data = std::string("p=" + path).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
 
 	// Connect to HTTP server
 	Serial.printf("\r\nConnecting!\r\n--------------------\r\n%s\r\n%s\r\n", url.c_str(), post_data.c_str());

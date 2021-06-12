@@ -74,12 +74,11 @@ void testLittleFS() {
     Serial.printf("Password: [%s]\n", cserverFile->password.c_str());
     Serial.printf("Host: [%s]\n", cserverFile->hostname.c_str());
     Serial.printf("Port: [%s]\n", cserverFile->port.c_str());
-    Serial.printf("Path: [%s]\n", cserverFile->pathX.c_str());
+    Serial.printf("Path: [%s]\n", cserverFile->path.c_str());
     Serial.printf("File: [%s]\n", cserverFile->filename.c_str());
     Serial.printf("Extension: [%s]\n", cserverFile->extension.c_str());
     Serial.printf("Query: [%s]\n", cserverFile->query.c_str());
     Serial.printf("Fragment: [%s]\n\n", cserverFile->fragment.c_str());
-    Serial.printf("MFile path: [%s]\n", cserverFile->path().c_str());
     Serial.printf("-------------------------------\n");
 
     //std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools"));
@@ -213,12 +212,11 @@ void testMeatLoafServer()
     Serial.printf("Password: [%s]\n", mlFile->password.c_str());
     Serial.printf("Host: [%s]\n", mlFile->hostname.c_str());
     Serial.printf("Port: [%s]\n", mlFile->port.c_str());
-    Serial.printf("Path: [%s]\n", mlFile->pathX.c_str());
+    Serial.printf("Path: [%s]\n", mlFile->path.c_str());
     Serial.printf("File: [%s]\n", mlFile->filename.c_str());
     Serial.printf("Extension: [%s]\n", mlFile->extension.c_str());
     Serial.printf("Query: [%s]\n", mlFile->query.c_str());
     Serial.printf("Fragment: [%s]\n\n", mlFile->fragment.c_str());
-    Serial.printf("MFile path: [%s]\n", mlFile->path().c_str());
     Serial.printf("-------------------------------\n");
 
     std::unique_ptr<MFile> entry(mlFile->getNextFileInDir());
@@ -231,12 +229,11 @@ void testMeatLoafServer()
         Serial.printf("Password: [%s]\n", entry->password.c_str());
         Serial.printf("Host: [%s]\n", entry->hostname.c_str());
         Serial.printf("Port: [%s]\n", entry->port.c_str());
-        Serial.printf("Path: [%s]\n", entry->pathX.c_str());
+        Serial.printf("Path: [%s]\n", entry->path.c_str());
         Serial.printf("File: [%s]\n", entry->filename.c_str());
         Serial.printf("Extension: [%s]\n", entry->extension.c_str());
         Serial.printf("Query: [%s]\n", entry->query.c_str());
         Serial.printf("Fragment: [%s]\n\n", entry->fragment.c_str());
-        Serial.printf("MFile path: [%s]\n", entry->path().c_str());
         Serial.printf("-------------------------------\n");
 
         entry.reset(mlFile->getNextFileInDir());

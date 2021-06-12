@@ -55,7 +55,7 @@ public:
     ~EdUrlParser();
 
     void parsePath(std::string pathstr);
-    int parsePath(std::vector<std::string>* folders, std::string pathstr);
+    static size_t parsePath(std::vector<std::string>* folders, std::string pathstr);
     void parseUrl(std::string urlstr);
 
     static std::string urlEncode(std::string s);	
@@ -75,7 +75,7 @@ public:
     std::string password;
     std::string hostname;
     std::string port;
-    std::string pathX;
+    std::string path;
     std::string filename;
     std::string extension;
     std::string query;
