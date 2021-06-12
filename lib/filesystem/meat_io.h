@@ -21,6 +21,8 @@ public:
     MFile(std::string path);
     MFile(std::string path, std::string name);
     MFile(MFile* path, std::string name);
+    static std::vector<std::string> chopPath(std::string path);
+
 
     //std::string name();
     std::string path();

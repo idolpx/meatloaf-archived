@@ -15,7 +15,7 @@
 
 
 
-std::vector<std::string> chopPath(std::string path) {
+std::vector<std::string> MFile::chopPath(std::string path) {
     std::vector<std::string> paths;
     
     std::string line;
@@ -94,7 +94,7 @@ bool MFSOwner::umount(std::string name) {
 }
 
 MFile* MFSOwner::File(std::string path) {
-    std::vector<std::string> paths = chopPath(path);
+    std::vector<std::string> paths = MFile::chopPath(path);
     
     // std::string line;
 
