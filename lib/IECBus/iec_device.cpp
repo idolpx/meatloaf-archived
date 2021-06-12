@@ -302,31 +302,40 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		}
 		else if (m_filename.endsWith(F("_")))
 		{
-			if (m_device.archive().length())
+			// Go back a directory
+			// If at root of image, umount image
+			// If at root of archive, unmount archive
+			// If at root of url, unmount url
+			if (m_device.path() == "/")
 			{
-				// Unmount archive file
-				m_device.archive("");
+				if (m_device.archive().length())
+				{
+					// Unmount archive file
+					m_device.archive("");
+				}
+				else if (m_device.image().length())
+				{
+					// Unmount image file
+					m_device.image("");
+				}
+				else if (m_device.url().length())
+				{
+					// Unmount url
+					m_device.url("");
+				}				
 			}
-			else if (m_device.image().length())
-			{
-				// Unmount image file
-				m_device.image("");
-			}
-			else if (m_device.url().length() && m_device.path() == "/")
-			{
-				// Unmount url
-				m_device.url("");
-			}
-			else
-			{
-				// Go back a directory
-				pos = m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1;
-				m_device.path(m_device.path().substring(0, pos));
-			}
+
+			pos = m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1;
+			m_device.path(m_device.path().substring(0, pos));			
 		}
 		else if (m_filename.length() > 3)
 		{
-			if (m_filename.startsWith(F("CD//"))) // Switch to local/server root
+
+			// Switch to root
+			// If image is mounted, go to image root
+			// If archive is mounted, go to archive root
+			// If url is mounted, go to url root
+			if (m_filename.startsWith(F("CD//"))) 
 			{
 				pos = 4;
 				m_device.path("");
@@ -341,8 +350,12 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			// Enter directory
 			m_device.path(m_device.path() + m_filename.substring(pos) + F("/"));
 		}
+		else
+		{
+			pos = 0;
+		}
 
-		if (atn_cmd.channel == 0x00)
+		if (atn_cmd.channel == 0x00 && pos > 0)
 		{
 			m_openState = O_DIR;
 		}

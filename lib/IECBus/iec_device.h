@@ -35,6 +35,7 @@
 #include "../../include/make_unique.h"
 
 #include "iec.h"
+#include "doscmd.h"
 #include "device_db.h"
 #include "meat_io.h"
 #include "buffered_io.h"
