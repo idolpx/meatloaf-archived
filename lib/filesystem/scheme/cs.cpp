@@ -258,8 +258,10 @@ bool CServerFile::isDirectory() {
     if((*path().end())=='/')
         return true;
 
-    auto chopped = chop();
-    auto second = (chopped.end())-2; // skipping scheme and empty 
+    auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : m_path;
+
+    auto chopped = MFile::chopPath(corrFile);
+    auto second = (chopped.end())-2; // penultimate path part is d64? 
     //auto x = (*second);
     //Serial.printf("isDirectory second from right:%s\n", x.c_str());
 
