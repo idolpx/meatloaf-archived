@@ -25,8 +25,12 @@ public:
     //std::string name();
     std::string path();
     //std::string extension();
-    std::string header;
-    std::string mediaRoot;
+    std::string media_root;
+    std::string media_header;
+    std::string media_id;
+    uint16_t media_blocks_free;
+    uint16_t media_block_size;
+    
 
     bool operator!=(nullptr_t ptr);
 

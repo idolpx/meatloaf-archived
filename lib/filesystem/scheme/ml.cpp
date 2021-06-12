@@ -90,7 +90,7 @@ bool MLFile::rewindDirectory() {
 	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
     // Setup response headers we want to collect
-    const char * headerKeys[] = {"ml_media_root", "ml_header", "ml_id", "ml_blocks_free", "ml_block_size"} ;
+    const char * headerKeys[] = {"ml_media_root", "ml_media_header", "ml_media_id", "ml_media_blocks_free", "ml_media_block_size"} ;
     const size_t numberOfHeaders = 5;
     m_http.collectHeaders(headerKeys, numberOfHeaders);
 
@@ -116,7 +116,14 @@ bool MLFile::rewindDirectory() {
 
     }
     else
+    {
         dirIsOpen = true;
+        media_root = m_http.header("ml_media_root").c_str();
+        media_header = m_http.header("ml_media_header").c_str();
+        media_id = m_http.header("ml_media_id").c_str();
+        media_block_size = m_http.header("ml_media_block_size").toInt();
+        media_blocks_free = m_http.header("ml_media_blocks_free").toInt();
+    }
 
     return dirIsOpen;
 };

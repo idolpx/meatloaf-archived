@@ -665,18 +665,23 @@ void Interface::sendListing()
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 	// Send Listing Header
-	std::string header = "";
-	//Debug_printv("header [%d][%s]", header.length(), header.c_str());
-	if (header.length() == 0)
+	char buffer[100];
+	byte space_cnt = 0;
+	if (dir->media_header.size() == 0)
 	{
 		// Set device default Listing Header
-		char buffer[100];
-		byte space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
-		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
-		header = buffer;
+		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
+		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A\0", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 	}
-	byte_count += sendHeader(basicPtr, header);
+	else
+	{
+		space_cnt = (16 - dir->media_header.size()) / 2;
+		sprintf(buffer, "\"%*s%s%*s\" %s\0", space_cnt, "", dir->media_header.c_str(), space_cnt, "", dir->media_id.c_str());
+	}
+	byte_count += sendHeader(basicPtr, buffer);
+	
 
+	// Send Directory Items
 	while(entry != nullptr)
 	{
 		uint16_t block_cnt = entry->size() / 256;
@@ -714,24 +719,18 @@ void Interface::sendListing()
 
 		// Don't show hidden folders or files
 		Debug_printv("[%s]", entry->filename.c_str());
-		if (!util_starts_with(entry->filename, "."))
+		if (!util_starts_with(entry->filename, ".") || m_show_hidden)
 		{
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->filename.c_str(), space_cnt, "", extension.c_str());
 		}
 		
 		entry.reset(dir->getNextFileInDir());
 
-		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
 		ledToggle(true);
 	}
 
-	if(entry == nullptr)
-	{
-		Debug_printv("entry is null");
-	}
-
 	// Send Listing Footer
-	byte_count += sendFooter(basicPtr);
+	byte_count += sendFooter(basicPtr, dir->media_blocks_free, dir->media_block_size);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -742,13 +741,6 @@ void Interface::sendListing()
 	ledON();
 } // sendListing
 
-
-uint16_t Interface::sendFooter(uint16_t &basicPtr)
-{
-	uint16_t blocks_free = 65536;
-	uint16_t block_size = 256;
-	return sendFooter(basicPtr, blocks_free, block_size);
-}
 
 uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size)
 {
