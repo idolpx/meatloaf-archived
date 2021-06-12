@@ -136,7 +136,7 @@ char EdUrlParser::toChar(const char* hex)
 
 void EdUrlParser::parseUrl(std::string src_url) 
 {
-    Serial.printf("parseUrl: [%s]\n", src_url.c_str());
+    Serial.printf("\nparseUrl: [%d][%s]\n", src_url.size(), src_url.c_str());
     int _url_errorno = 0;
     const char *str = src_url.c_str();
 

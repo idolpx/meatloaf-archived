@@ -89,7 +89,7 @@ private:
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...);
 	uint16_t sendFooter(uint16_t &basicPtr);
-	uint16_t sendFooter(uint16_t &basicPtr, uint16_t blocks_free);
+	uint16_t sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size);
 	void sendFile(void);
 	void sendFileHTTP(void);
 
@@ -115,6 +115,7 @@ private:
 	IEC::ATNCmd &m_atn_cmd;
 
 	FS *m_fileSystem;
+	std::unique_ptr<MFile> ml_file;
 	StaticJsonDocument<256> m_jsonHTTP;
 	String m_lineBuffer;
 	//DynamicJsonDocument m_jsonHTTPBuffer;

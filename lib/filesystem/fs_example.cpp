@@ -62,8 +62,25 @@ void testLittleFS() {
     // std::unique_ptr<MFile> fileInRoot(MFSOwner::File("mfile_test.txt"));
     // std::unique_ptr<MFile> aDir(MFSOwner::File(".sys"));
 
-    // std::unique_ptr<MFile> cserverFile(MFSOwner::File("cs://utilities/disk tools/cie.d64/cie+serial"));
+    //std::unique_ptr<MFile> cserverFile(MFSOwner::File("cs:///utilities/disk tools/cie.d64/cie+serial"));
+    std::unique_ptr<MFile> cserverFile(MFSOwner::File("cs:///"));
     // std::shared_ptr<MIstream> cserverStream(cserverFile->inputStream());
+
+    Serial.printf("URL: [%s]\n", cserverFile->url().c_str());
+    Serial.printf("Root: [%s]\n", cserverFile->root().c_str());
+    Serial.printf("Base: [%s]\n", cserverFile->base().c_str());
+    Serial.printf("Scheme: [%s]\n", cserverFile->scheme.c_str());
+    Serial.printf("Username: [%s]\n", cserverFile->username.c_str());
+    Serial.printf("Password: [%s]\n", cserverFile->password.c_str());
+    Serial.printf("Host: [%s]\n", cserverFile->hostname.c_str());
+    Serial.printf("Port: [%s]\n", cserverFile->port.c_str());
+    Serial.printf("Path: [%s]\n", cserverFile->pathX.c_str());
+    Serial.printf("File: [%s]\n", cserverFile->filename.c_str());
+    Serial.printf("Extension: [%s]\n", cserverFile->extension.c_str());
+    Serial.printf("Query: [%s]\n", cserverFile->query.c_str());
+    Serial.printf("Fragment: [%s]\n\n", cserverFile->fragment.c_str());
+    Serial.printf("MFile path: [%s]\n", cserverFile->path().c_str());
+    Serial.printf("-------------------------------\n");
 
     //std::unique_ptr<MFile> cserverPath(MFSOwner::File("cs://utilities/disk tools"));
     //cserverPath->rewindDirectory();

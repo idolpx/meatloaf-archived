@@ -160,12 +160,6 @@ void setup()
 		//server.addHook(hookWebDAVForWebserver("/.www", dav));
 		//server.begin();
 
-		// if (!dav.init(SERVER_PORT, fileSystem))
-		// {
-		// 	Serial.println("ERROR: WebDAV Server failed");
-		// 	initFailed = true;
-		// }
-		// else
 		{
 			//Serial.println("HTTP server started");
 			Serial.println("WebDAV server started");
@@ -187,8 +181,8 @@ void setup()
 			}
 		}
 
-		//testLittleFS();
-		testMeatLoafServer();
+		testLittleFS();
+		//testMeatLoafServer();
 		Debug_printv("Printing VERBOSE [%d]", 1);
 
 		// Setup IEC Bus
@@ -278,14 +272,6 @@ void loop()
 	MDNS.update();
 #endif
 
-	// if (dav.isClientWaiting())
-	// {
-	// 	if (initFailed)
-	// 		return dav.rejectClient(statusMessage);
-
-	// 	// call handle if server was initialized properly
-	// 	dav.handleClient();
-	// }
 	//server.handleClient();
 	dav.handleClient();
 
@@ -293,7 +279,6 @@ void loop()
 	modem.service();
 	
 	drive.loop();
-
 }
 
 // void isrCheckATN()
