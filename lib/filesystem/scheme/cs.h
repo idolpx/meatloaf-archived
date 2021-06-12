@@ -41,9 +41,16 @@ public:
  * File implementations
  ********************************************************/
 class CServerFile: public MFile {
+private:
+    bool dirIsOpen = false;
+    bool dirIsImage = false;
+    bool m_isDir;
+    size_t m_size;
 
 public:
-    CServerFile(std::string path): MFile(path) {};
+    CServerFile(std::string path, size_t size = 0): MFile(path) {
+        m_size = size;
+    };
 
     bool isDirectory() override;
     MIstream* inputStream() override ; // has to return OPENED stream
@@ -59,9 +66,7 @@ public:
     time_t getCreationTime() override  { return 0; };
     bool rename(const char* dest) { return false; };
     MIstream* createIStream(MIstream* src) { return src; };
-private:
-    bool dirIsOpen = false;
-    bool dirIsImage = false;
+
 };
 
 /********************************************************

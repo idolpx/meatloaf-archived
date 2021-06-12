@@ -294,6 +294,7 @@ bool CServerFile::rewindDirectory() {
         //Serial.println("cserver: this is a directory!");
         CServerFileSystem::session.command("disks");
         auto line = CServerFileSystem::session.breader->readLn(); // skip header
+        
 
         return true;
     }
@@ -326,10 +327,11 @@ MFile* CServerFile::getNextFileInDir() {
             return nullptr;
         }
         else {
-            std::string name = line.substr(5,16);
+            std::string name = line.substr(6,17);
             util_string_rtrim(name);
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name);
-            return new CServerFile(path() +"/"+ name);
+            //return new CServerFile(path() +"/"+ name);
+            return new CServerFile(url() + "/"+ name);
 
         }
     } else {
@@ -367,14 +369,16 @@ MFile* CServerFile::getNextFileInDir() {
 
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name.c_str());
 
-            return new CServerFile(path() +"/"+ name);
+            return new CServerFile(path() +"/"+ name, 0);
         }
     }
 };
 
 bool CServerFile::exists() {} ;
 
-size_t CServerFile::size() {} ;
+size_t CServerFile::size() {
+    return m_size;
+};
 
 bool CServerFile::mkDir() { 
     // but it does support creating dirs = MD FOLDER

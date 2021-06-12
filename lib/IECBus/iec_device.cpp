@@ -718,7 +718,7 @@ void Interface::sendListing()
 		}
 
 		// Don't show hidden folders or files
-		Debug_printv("[%s]", entry->filename.c_str());
+		Debug_printv("size[%d] name[%s]", entry->size(), entry->filename.c_str());
 		if (!util_starts_with(entry->filename, ".") || m_show_hidden)
 		{
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->filename.c_str(), space_cnt, "", extension.c_str());
