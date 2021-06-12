@@ -258,14 +258,16 @@ bool CServerFile::isDirectory() {
     if(util_ends_with(path, "/"))
         return true;
 
-    auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : path;
+    // auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : path;
 
-    auto chopped = MFile::chopPath(corrFile);
-    auto second = (chopped.end())-2; // penultimate path part is d64? 
+    // auto chopped = MFile::chopPath(corrFile);
+    // auto second = (chopped.end())-2; // penultimate path part is d64? 
     //auto x = (*second);
     //Serial.printf("isDirectory second from right:%s\n", x.c_str());
+    if ( util_ends_with(path, ".d64") || util_ends_with(path, ".D64"))
+        return true;
 
-    return !MFileSystem::byExtension(".d64", *second);
+    return false;
 };
 
 MIstream* CServerFile::inputStream() {

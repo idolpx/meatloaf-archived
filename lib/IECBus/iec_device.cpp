@@ -773,12 +773,24 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_
 {
 	// Send List FOOTER
 	// #if defined(USE_LITTLEFS)
-	FSInfo64 fs_info;
-	m_fileSystem->info64(fs_info);
+	uint64_t byte_count = 0;
 	if (block_size > 256)
-		return sendLine(basicPtr, blocks_free, "BLOCKS FREE. (1 BLOCK = %d BYTES)", block_size);
-	else
-		return sendLine(basicPtr, blocks_free, "BLOCKS FREE.");
+	{
+		//String bytes = String(" BYTES");
+		byte_count += sendLine(basicPtr, 0, "%*s\"-------------------\" NFO", 0, "");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[BLOCK SIZE]");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "1024 BYTES");
+		byte_count += sendLine(basicPtr, 0, "%*s\"===================\" NFO", 0, "");
+	}
+	
+	if (m_device.url().length() == 0)
+	{
+		FSInfo64 fs_info;
+		m_fileSystem->info64(fs_info);
+		blocks_free = fs_info.totalBytes - fs_info.usedBytes;
+	}
+	byte_count = sendLine(basicPtr, blocks_free, "BLOCKS FREE.");
+	return byte_count;
 	// #elif defined(USE_SPIFFS)
 	// 	return sendLine(basicPtr, 00, "UNKNOWN BLOCKS FREE.");
 	// #endif
