@@ -108,7 +108,7 @@ MFile* MFSOwner::File(std::string path) {
     auto begin = paths.begin();
     auto end = paths.end();
 
-    if((*begin)=="cs:") {
+    if((*begin)=="cs:" || (*begin)=="CS:") {
         Serial.printf("CServer path found!\n");
         return csFS.getFile(path);
     }
