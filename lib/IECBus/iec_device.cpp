@@ -660,9 +660,9 @@ void Interface::sendListing()
 	Debug_println("");
 
 	// Send List ITEMS
-	//String dirTarget = m_device.url() + m_device.path();
-	//std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
-	std::unique_ptr<MFile> entry(ml_file->getNextFileInDir());
+	String dirTarget = m_device.url() + m_device.path();
+	std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
+	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 	// Send Listing Header
 	std::string header = "";
@@ -719,7 +719,7 @@ void Interface::sendListing()
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->filename.c_str(), space_cnt, "", extension.c_str());
 		}
 		
-		entry.reset(ml_file->getNextFileInDir());
+		entry.reset(dir->getNextFileInDir());
 
 		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
 		ledToggle(true);
@@ -802,13 +802,13 @@ void Interface::sendFile()
 		else
 		{
 			//Dir dir = m_fileSystem->openDir(m_device.path());
-			//String dirTarget = m_device.url() + m_device.path();
-			//std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
-			std::unique_ptr<MFile> entry(ml_file->getNextFileInDir());
+			String dirTarget = m_device.url() + m_device.path();
+			std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
+			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 			while (entry != nullptr && entry->isDirectory())
 			{
 				Debug_printf("\r\nsendFile: %s", entry->filename.c_str());
-				entry.reset(ml_file->getNextFileInDir());
+				entry.reset(dir->getNextFileInDir());
 			}
 			if (entry != nullptr)
 				m_filename = entry->filename.c_str();
@@ -816,17 +816,17 @@ void Interface::sendFile()
 	}
 	String fileTarget = String(m_device.url() + m_device.path() + m_filename);
 
-	//std::unique_ptr<MFile> file(MFSOwner::File(fileTarget.c_str()));
+	std::unique_ptr<MFile> file(MFSOwner::File(fileTarget.c_str()));
 
-	if (!ml_file->exists())
+	if (!file->exists())
 	{
 		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", fileTarget.c_str());
 		m_iec.sendFNF();
 	}
 	else
 	{
-		size_t len = ml_file->size();
-		std::shared_ptr<MIstream> fileIStream(ml_file->inputStream());
+		size_t len = file->size();
+		std::shared_ptr<MIstream> fileIStream(file->inputStream());
 
 		// Get file load address
 		fileIStream->read(b, b_len);
@@ -899,226 +899,6 @@ void Interface::sendFile()
 		}
 	}
 } // sendFile
-
-
-void Interface::sendListingHTTP()
-{
-	Debug_printf("\r\nsendListingHTTP: ");
-
-	uint16_t byte_count = 0;
-
-	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
-	String url(m_device.url() + "/api/");
-	String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-
-	// Connect to HTTP server
-	WiFiClient client;
-	HTTPClient http;
-	http.setUserAgent(user_agent);
-	// http.setFollowRedirects(true);
-	http.setTimeout(10000);
-	url.toLowerCase();
-	if (!http.begin(client, url))
-	{
-		Debug_println(F("\r\nConnection failed"));
-		m_iec.sendFNF();
-		return;
-	}
-	http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
-	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
-
-	uint8_t httpCode = http.POST(post_data);	 //Send the request
-	WiFiClient payload = http.getStream(); //Get the response payload as Stream
-	//String payload = http.getString();    //Get the response payload as String
-
-	Debug_printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
-	if (httpCode != 200)
-	{
-		Debug_println(F("Error"));
-		m_iec.sendFNF();
-		return;
-	}
-
-	//Serial.println(payload);    //Print request response payload
-	m_lineBuffer = payload.readStringUntil('\n');
-
-	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
-
-	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-	byte_count += 2;
-	Debug_println("");
-
-	do
-	{
-		// Parse JSON object
-		DeserializationError error = deserializeJson(m_jsonHTTP, m_lineBuffer);
-		if (error)
-		{
-			Serial.print(F("\r\ndeserializeJson() failed: "));
-			Serial.println(error.c_str());
-			break;
-		}
-
-		byte_count += sendLine(basicPtr, m_jsonHTTP["blocks"], "%s", urldecode(m_jsonHTTP["line"].as<String>()).c_str());
-		ledToggle(true);
-
-		m_lineBuffer = payload.readStringUntil('\n');
-		//Serial.printf("\r\nlinebuffer: %d %s", m_lineBuffer.length(), m_lineBuffer.c_str());
-	} while (m_lineBuffer.length() > 1);
-
-	//End program with two zeros after last line. Last zero goes out as EOI.
-	m_iec.send(0);
-	m_iec.sendEOI(0);
-
-	Debug_printf("\r\nBytes Sent: %d\r\n", byte_count);
-
-	http.end(); //Close connection
-
-	ledON();
-} // sendListingHTTP
-
-void Interface::sendFileHTTP()
-{
-	uint16_t i = 0;
-	bool success = true;
-
-	uint16_t bi = 0;
-	uint16_t load_address = 0;
-	char b[1];
-	char ba[9];
-
-	ba[8] = '\0';
-
-	// Update device database
-	m_device.save();
-
-	Debug_printf("\r\nsendFileHTTP: ");
-
-	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
-	String url;
-	String post_data;
-	//if ( m_device.image().length() )
-	{
-		url = m_device.url() + "/api/";
-		post_data = "p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename);
-	}
-	// else
-	// {
-	// 	url = m_device.url() + m_device.path() + m_filename;
-	// }
-
-	// Connect to HTTP server
-	uint8_t httpCode = 0;
-	WiFiClient client;
-	HTTPClient http;
-	http.setUserAgent(user_agent);
-	// http.setFollowRedirects(true);
-	http.setTimeout(10000);
-	url.toLowerCase();
-	if (!http.begin(client, url))
-	{
-		Debug_println(F("\r\nConnection failed"));
-		m_iec.sendFNF();
-		return;
-	}
-
-	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
-
-	if ( post_data.length() )
-	{
-		http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-		httpCode = http.POST(post_data); //Send the request
-	}
-	else
-	{
-		httpCode = http.GET(); //Send the request
-	}
-	WiFiClient file = http.getStream();  //Get the response payload as Stream
-
-	if (!file.available())
-	{
-		Debug_printf("\r\nsendFileHTTP: %s (File Not Found)\r\n", url.c_str());
-		m_iec.sendFNF();
-	}
-	else
-	{
-		size_t len = http.getSize();
-
-		// Get file load address
-		file.readBytes(b, 1);
-		success = m_iec.send(b[0]);
-		load_address = *b & 0x00FF; // low byte
-		file.readBytes(b, 1);
-		success = m_iec.send(b[0]);
-		load_address = load_address | *b << 8;  // high byte
-		// fseek(file, 0, SEEK_SET);
-
-		Debug_printf("\r\nsendFileHTTP: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_filename.c_str(), load_address, len);
-		for (i = 2; success and i < len; ++i)
-		{ 
-			// End if sending to CBM fails.
-			success = file.readBytes(b, 1);
-			if (success)
-			{
-#ifdef DATA_STREAM
-				if (bi == 0)
-        		{
-					Debug_printf(":%.4X ", load_address);
-					load_address += 8;
-				}
-#endif
-				if (i == len - 1)
-				{
-					success = m_iec.sendEOI(b[0]); // indicate end of file.
-				}
-				else
-				{
-					success = m_iec.send(b[0]);
-				}
-
-#ifdef DATA_STREAM
-            // Show ASCII Data
-				if (b[0] < 32 || b[0] >= 127) 
-                b[0] = 46;
-
-				ba[bi++] = b[0];
-
-				if(bi == 8)
-            	{
-					size_t t = (i * 100) / len;
-					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
-                	bi = 0;
-            	}
-#endif
-				// Toggle LED
-				if (i % 50 == 0)
-				{
-					ledToggle(true);
-				}
-            }
-
-			// if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
-			// {
-			// 	success = true;
-			// 	break;
-			// }
-        }
-        http.end();
-        Debug_println("");
-		Debug_printf("%d of %d bytes sent\r\n", i, len);
-
-        ledON();
-
-		if (!success || i != len)
-        {
-			Debug_println("Transfer aborted!");
-        }
-    }
-}
 
 
 void Interface::saveFile()
