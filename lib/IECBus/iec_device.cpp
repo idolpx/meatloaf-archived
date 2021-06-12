@@ -664,6 +664,12 @@ void Interface::sendListing()
 	std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
+	if(entry == nullptr) {
+		ledOFF();
+		m_iec.sendFNF();
+		return;
+	}
+
 	// Send Listing Header
 	char buffer[100];
 	byte space_cnt = 0;
@@ -684,6 +690,9 @@ void Interface::sendListing()
 	// Send Directory Items
 	while(entry != nullptr)
 	{
+
+
+Serial.println("looping in SendDir");
 		uint16_t block_cnt = entry->size() / 256;
 		byte block_spc = 3;
 		if (block_cnt > 9)
@@ -797,8 +806,12 @@ void Interface::sendFile()
 			String dirTarget = m_device.url() + m_device.path();
 			std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
 			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
-			while (entry != nullptr && entry->isDirectory())
+
+			// you should check entry here for nullptr - if it's null then do FNF instead!
+			while (entry != nullptr/* why this?! && entry->isDirectory()*/)
 			{
+				Serial.println("looping in sendFile - why?");
+
 				Debug_printf("\r\nsendFile: %s", entry->filename.c_str());
 				entry.reset(dir->getNextFileInDir());
 			}

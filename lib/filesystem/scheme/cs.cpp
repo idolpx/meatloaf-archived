@@ -11,6 +11,9 @@
 #define OK_REPLY "00 - OK\x0d\x0a\x04"
 
 void CServerSessionMgr::connect() {
+    if(m_wifi.connected())
+        return;
+
     int rc = m_wifi.connect("commodoreserver.com", 1541);
     Serial.printf("CServer: connect: %d\n", rc);
 
@@ -35,8 +38,7 @@ void CServerSessionMgr::disconnect() {
 
 bool CServerSessionMgr::command(std::string command) {
     // 13 (CR) sends the command
-    if(!m_wifi.connected())
-        connect();
+    connect();
 
     if(m_wifi.connected()) {
         Serial.printf("CServer: send command: %s\n", command.c_str());
@@ -59,8 +61,7 @@ size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
 }
 
 size_t CServerSessionMgr::write(std::string &fileName, const uint8_t *buf, size_t size) {
-    if(!m_wifi.connected())
-        connect();
+    connect();
 
     if(m_wifi.connected())
         return m_wifi.write(buf, size);
@@ -90,8 +91,12 @@ bool CServerSessionMgr::traversePath(MFile* path) {
     command("cf /");
 
     if(isOK()) {
-        auto chopped = path->chop();
-        auto second = (chopped.begin())+2; // skipping scheme and empty 
+
+        auto m_path = path->path();
+        auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : m_path;
+
+        auto chopped = MFile::chopPath(corrFile);
+        auto second = (chopped.begin())+3; // skipping scheme and empty 
 
         for(auto i = second; i < chopped.end(); i++) {
             auto part = (*i);
@@ -250,6 +255,9 @@ bool CServerFile::isDirectory() {
     // otherwise - false
     Serial.printf("trying to chop %s", m_path.c_str());
 
+    if((*path().end())=='/')
+        return true;
+
     auto chopped = chop();
     auto second = (chopped.end())-2; // skipping scheme and empty 
     //auto x = (*second);
@@ -271,12 +279,16 @@ MOstream* CServerFile::outputStream() {
 };
 
 bool CServerFile::rewindDirectory() {
+    CServerFileSystem::session.connect();
+    
     if(!isDirectory())
         return false;
 
+    auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : m_path;
+
     if(!CServerFileSystem::session.traversePath(this)) return false;
-    
-    if(MFileSystem::byExtension(".d64", path())) {
+
+    if(MFileSystem::byExtension(".d64", corrFile)) {
         dirIsImage = true;
         dirIsOpen = true;
         // to list image contents we have to run
@@ -361,7 +373,7 @@ MFile* CServerFile::getNextFileInDir() {
             std::string name;
 
             if((*line.begin())=='[') {
-                name = line.substr(1,line.length()-2);
+                name = line.substr(1,line.length()-3);
             }
             else {
                 name = line.substr(0, line.length()-1);
