@@ -91,9 +91,9 @@ public:
         return m_isMounted;
     }
 
-    // static bool byExtension(char* ext, std::string fileName) {
-    //     return fileName.rfind(ext) != -1 &&  fileName.rfind(ext) == fileName.length()-4;
-    // }
+    static bool byExtension(char* ext, std::string fileName) {
+        return fileName.rfind(ext) != -1 &&  fileName.rfind(ext) == fileName.length()-4;
+    }
 
 protected:
     char* symbol;
