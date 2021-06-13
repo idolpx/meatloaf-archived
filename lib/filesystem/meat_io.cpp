@@ -4,7 +4,9 @@
 
 #include "MIOException.h"
 #include "fs_littlefs.h"
+#include "media/d64.h"
 #include "media/dnp.h"
+#include "media/url.h"
 #include "scheme/http.h"
 #include "scheme/smb.h"
 #include "scheme/ml.h"
@@ -49,13 +51,15 @@ std::string joinNamesToPath(std::vector<std::string>::iterator* start, std::vect
 // initialize other filesystems here
 LittleFileSystem littleFS(FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5);
 HttpFileSystem httpFS;
+D64FileSystem d64FS;
 DNPFileSystem dnpFS;
+URLFileSystem urlFS;
 MLFileSystem mlFS;
 CServerFileSystem csFS;
 
 
 // put all available filesystems in this array - first matching system gets the file!
-std::vector<MFileSystem*> MFSOwner::availableFS{  &dnpFS, &httpFS, &mlFS };
+std::vector<MFileSystem*> MFSOwner::availableFS{ &d64FS, &dnpFS, &httpFS, &urlFS, &mlFS };
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");
