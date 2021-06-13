@@ -88,7 +88,7 @@ void Interface::sendDeviceInfo()
 	Debug_println("");
 
 	// Send List HEADER
-	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_RVS_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
+	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// CPU
 	sendLine(basicPtr, 0, CBM_DEL_DEL "SYSTEM ---");
@@ -161,7 +161,7 @@ void Interface::sendDeviceStatus()
 	Debug_println("");
 
 	// Send List HEADER
-	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_RVS_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
+	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// Current Config
 	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE    : %d", m_device.device());
@@ -630,7 +630,7 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 
 	// Send List HEADER
 	//byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
-	byte_count += sendLine(basicPtr, 0, CBM_RVS_ON "%s", header.c_str());
+	byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "%s", header.c_str());
 
 	// Send Extra INFO
 	if (m_device.url().length())
