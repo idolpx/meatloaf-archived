@@ -580,3 +580,25 @@ bool compare_char_insensitive(char &c1, char &c2)
         return true;
     return false;
 }
+
+std::vector<std::string> split(std::string toSplit, char ch, int limit) {
+    std::vector<std::string> parts;
+
+    limit--;
+
+    while(limit > 0 && toSplit.size()>0) {
+        auto pos = toSplit.find(ch);
+        if(pos == std::string::npos) {
+            parts.push_back(toSplit);
+            return parts;
+        }
+        parts.push_back(toSplit.substr(0, pos));
+
+        toSplit = toSplit.substr(pos+1);
+
+        limit--;
+    }
+    parts.push_back(toSplit);
+
+    return parts;
+}

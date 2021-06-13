@@ -7,6 +7,7 @@
 #include <string>
 #include "../EdUrlParser/EdUrlParser.h"
 #include "stream_writer.h"
+#include "peoples_url_parser.h"
 
 void testReader(MFile* readeTest) {
     // /* Test Line reader */
@@ -119,6 +120,11 @@ void testCopy(MFile* srcFile, MFile* dstFile) {
 
     srcStream->close(); // not required, closes automagically
     dstStream->close(); // nor required, closes automagically
+}
+
+void dumpParts(std::vector<std::string> v) {
+    for(auto i = v.begin(); i < v.end(); i++)
+        Serial.printf("%s::",(*i).c_str());
 }
 
 void runTests() {

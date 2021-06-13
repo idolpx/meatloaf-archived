@@ -160,7 +160,7 @@ void HttpIStream::close() {
 
 bool HttpIStream::open() {
     bool initOk = m_http.begin(m_file, url.c_str());
-Serial.printf("URLSTR: someRc=%d\n", initOk);
+Serial.printf("URLSTR input %s: someRc=%d\n", url.c_str(), initOk);
     if(!initOk)
         return false;
     

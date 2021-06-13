@@ -72,4 +72,6 @@ void util_replace_all(std::string& str, const std::string& from, const std::stri
 
 bool compare_char(char &c1, char &c2);
 bool compare_char_insensitive(char &c1, char &c2);
+
+std::vector<std::string> split(std::string toSplit, char ch, int limit=INT16_MAX);
 #endif // _FN_UTILS_H
