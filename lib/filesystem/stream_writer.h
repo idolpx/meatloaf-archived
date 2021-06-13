@@ -12,12 +12,12 @@ public:
 
     bool print(std::string line) {
         MBufferConst buffer(line);
-        write(&buffer);        
+        return write(&buffer);        
     }
 
     bool printLn(std::string line) {
         MBufferConst buffer(line+delimiter);
-        write(&buffer);    
+        return write(&buffer);    
     }
 };
 

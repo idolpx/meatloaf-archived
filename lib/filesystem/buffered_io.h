@@ -1,7 +1,7 @@
 #ifndef MEATFILE_BUFFERED_H
 #define MEATFILE_BUFFERED_H
 
-#define RECORD_SIZE 256
+//#define RECORD_SIZE 256
 #define BUFFER_SIZE 512
 
 #include "meat_io.h"
@@ -54,7 +54,7 @@ class BufferedReader {
     MIstream* istream = nullptr;
     std::function<int(uint8_t* buf, size_t size)> readFn;
 
-    bool secondHalf = false;
+    //bool secondHalf = false;
 
     #if defined(ESP32)
     uint8_t buffer[BUFFER_SIZE] = { 0 };
@@ -66,18 +66,26 @@ protected:
     bool eofOccured = false;
 
     void refillBuffer() {
-        secondHalf = !secondHalf;
-        uint8_t* window = (secondHalf) ? (uint8_t*)buffer : (uint8_t*)(buffer+RECORD_SIZE);
+        //secondHalf = !secondHalf;
+        //uint8_t* window = (secondHalf) ? (uint8_t*)buffer : (uint8_t*)(buffer+RECORD_SIZE);
+
+           // Serial.println("Refill buffer before read!");
 
         if(istream != nullptr) {
-            mbuffer.len = istream->read(window, RECORD_SIZE);
+                //        Serial.println("read from stream!");
+
+            mbuffer.len = istream->read((uint8_t*)buffer, BUFFER_SIZE);
         }
         else {
-            mbuffer.len = readFn(window, RECORD_SIZE);
+                  //      Serial.println("read from lambda!");
+            mbuffer.len = readFn((uint8_t*)buffer, BUFFER_SIZE);
+    ///        Serial.println("Read lambda launched ok!");
         }
 
-        mbuffer.buffer = (char *)window;
-        eofOccured = (mbuffer.len == 0) || (istream->available() == 0);
+        mbuffer.buffer = (char *)buffer;
+        eofOccured = (mbuffer.len == 0) || (istream != nullptr && istream->available() == 0);
+       //             Serial.println("refillBuffer ok!");
+
     }
 
 public:

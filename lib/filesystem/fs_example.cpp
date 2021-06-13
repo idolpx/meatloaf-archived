@@ -124,15 +124,15 @@ void testCopy(MFile* srcFile, MFile* dstFile) {
 void runTests() {
 
     // this is a directory for verious directories tests
-    std::shared_ptr<MFile> testDir(MFSOwner::File("cs:///utilities"));
+    // std::shared_ptr<MFile> testDir(MFSOwner::File("cs:///utilities"));
 
-    // this is a file for tests that run on files
-    std::shared_ptr<MFile> testFile(MFSOwner::File("cs:///utilities/disk tools/cie.d64/CIE+SERIAL"));
+    // // this is a file for tests that run on files
+    // std::shared_ptr<MFile> testFile(MFSOwner::File("cs:///utilities/disk tools/cie.d64/CIE+SERIAL"));
 
-    // this is a file for write tests
-    std::shared_ptr<MFile> destFile(MFSOwner::File("/testfile"));
+    // // this is a file for write tests
+    // std::shared_ptr<MFile> destFile(MFSOwner::File("/testfile"));
 
-    std::shared_ptr<MFile> otherFile(MFSOwner::File("/"));
+    // std::shared_ptr<MFile> otherFile(MFSOwner::File("/"));
 
     // Uncomment as needed
     //testReader(testFile.get());
@@ -147,6 +147,6 @@ void runTests() {
 
     //testFileProperties(destFile.get());
 
-    testCopy(testFile.get(), destFile.get());
+    //testCopy(testFile.get(), destFile.get());
 }
 

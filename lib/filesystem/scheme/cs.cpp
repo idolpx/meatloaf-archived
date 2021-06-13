@@ -21,6 +21,7 @@ void CServerSessionMgr::connect() {
         // do not initialize in constructor - compiler bug!
         Serial.println("breader ---- INIT!");
         breader = new StreamReader([this](uint8_t* buffer, size_t size)->int  {
+            //Serial.println("Lambda read start");
             int x = this->read(buffer, size);
             //Serial.printf("Lambda read %d\n",x);
             return x;
@@ -50,6 +51,8 @@ bool CServerSessionMgr::command(std::string command) {
 }
 
 size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
+        Serial.println("CServerSessionMgr::read");
+
     auto rd = m_wifi.read(buf, size);
     int attempts = 5;
     int wait = 500;
@@ -199,6 +202,7 @@ int CServerIStream::available() {
 };
 
 size_t CServerIStream::read(uint8_t* buf, size_t size)  {
+    //Serial.println("CServerIStream::read");
     auto bytesRead = CServerFileSystem::session.read(buf, size);
     m_bytesAvailable-=bytesRead;
     m_position+=bytesRead;
@@ -298,35 +302,45 @@ bool CServerFile::rewindDirectory() {
     if(!isDirectory())
         return false;
 
+    dirIsOpen = false;
+
     if(!CServerFileSystem::session.traversePath(this)) return false;
 
     if(util_ends_with(url(), ".D64"))
     {
         dirIsImage = true;
-        dirIsOpen = true;
         // to list image contents we have to run
         //Serial.println("cserver: this is a d64 img!");
         CServerFileSystem::session.command("$");
         auto line = CServerFileSystem::session.breader->readLn(); // mounted image name
-        media_image = line.substr(5);
-        line = CServerFileSystem::session.breader->readLn(); // dir header
-        media_header = line.substr(2, line.find_last_of("\""));
-        media_id = line.substr(line.find_last_of("\"")+2);
-
-        return true;
+        if(!CServerFileSystem::session.breader->eof()) {
+            dirIsOpen = true;
+            media_image = line.substr(5);
+            line = CServerFileSystem::session.breader->readLn(); // dir header
+            media_header = line.substr(2, line.find_last_of("\""));
+            media_id = line.substr(line.find_last_of("\"")+2);
+            return true;
+        }
+        else
+            return true;
     }
     else 
     {
         dirIsImage = false;
-        dirIsOpen = true;
         // to list directory contents we use
         //Serial.println("cserver: this is a directory!");
         CServerFileSystem::session.command("disks");
         auto line = CServerFileSystem::session.breader->readLn(); // dir header
-        media_header = line.substr(2, line.find_last_of("]")-1);
-        media_id = "C=SVR";
+        if(!CServerFileSystem::session.breader->eof()) {
+            media_header = line.substr(2, line.find_last_of("]")-1);
+            media_id = "C=SVR";
+            dirIsOpen = true;
 
-        return true;
+            return true;
+        }
+        else 
+            return false;
+        
     }
 };
 
