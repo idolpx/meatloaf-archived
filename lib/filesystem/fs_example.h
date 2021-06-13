@@ -1,4 +1,3 @@
 
 
-void testLittleFS();
-void testMeatLoafServer();
+void runTests();

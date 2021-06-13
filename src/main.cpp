@@ -181,8 +181,7 @@ void setup()
 			}
 		}
 
-		testLittleFS();
-		//testMeatLoafServer();
+		runTests();
 		Debug_printv("Printing VERBOSE [%d]", 1);
 
 		// Setup IEC Bus
