@@ -275,6 +275,8 @@ void EdUrlParser::parsePath(std::string pathstr)
         extension = filename.substr(pos + 1);
         string_toupper(extension);
     }
+    localPath = path + ((path == "/") ? "" : "/") + filename;
+
 }
 
 std::string EdUrlParser::root(void)

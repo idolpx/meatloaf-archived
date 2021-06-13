@@ -36,6 +36,7 @@ void testFileProperties(MFile* cserverFile) {
     Serial.printf("Extension: [%s]\n", cserverFile->extension.c_str());
     Serial.printf("Query: [%s]\n", cserverFile->query.c_str());
     Serial.printf("Fragment: [%s]\n\n", cserverFile->fragment.c_str());
+    Serial.printf("Local path: [%s]\n\n", cserverFile->localPath.c_str());
     Serial.printf("-------------------------------\n");
 }
 
@@ -52,19 +53,19 @@ void testDirectory(MFile* dir, bool verbose=false) {
 }
 
 
-void testRecursiveDir(MFile* file) {
+void testRecursiveDir(MFile* file, std::string indent) {
     if(file->isDirectory()) {
         std::unique_ptr<MFile> entry(file->getNextFileInDir());
 
         while(entry != nullptr) {
             if(entry->isDirectory())
             {
-                Serial.printf("%s <dir>\n", entry->filename.c_str());
-                testRecursiveDir(entry.get());
+                Serial.printf("%s%s <dir>\n", indent.c_str(), entry->filename.c_str());
+                testRecursiveDir(entry.get(), indent+"   ");
             }
             else
             {
-                Serial.printf("%s <file>\n", entry->filename.c_str());                
+                Serial.printf("%s%s\n", indent.c_str(), entry->filename.c_str());                
             }
 
             entry.reset(file->getNextFileInDir());
@@ -87,9 +88,9 @@ void testCopy(MFile* srcFile, MFile* dstFile) {
         Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
     }
 
-    Serial.println("FSTEST: root file attempt obtain ostream");
-
+    Serial.println("FSTEST copy: attempt obtain istream");
     std::shared_ptr<MIstream> srcStream(srcFile->inputStream());
+    Serial.println("FSTEST copy: attempt obtain ostream");
     std::shared_ptr<MOstream> dstStream(dstFile->outputStream());
 
     if(!srcStream->isOpen()) {
@@ -123,19 +124,29 @@ void testCopy(MFile* srcFile, MFile* dstFile) {
 void runTests() {
 
     // this is a directory for verious directories tests
-    std::unique_ptr<MFile> testDir(MFSOwner::File("cs:///utilities"));
+    std::shared_ptr<MFile> testDir(MFSOwner::File("cs:///utilities"));
 
     // this is a file for tests that run on files
-    std::unique_ptr<MFile> testFile(MFSOwner::File("cs:///utilities/disk tools/cie.d64/CIE+SERIAL"));
+    std::shared_ptr<MFile> testFile(MFSOwner::File("cs:///utilities/disk tools/cie.d64/CIE+SERIAL"));
 
     // this is a file for write tests
-    std::unique_ptr<MFile> destFile(MFSOwner::File("testfile"));
+    std::shared_ptr<MFile> destFile(MFSOwner::File("/testfile"));
+
+    std::shared_ptr<MFile> otherFile(MFSOwner::File("/"));
 
     // Uncomment as needed
     //testReader(testFile.get());
     //testFileProperties(testDir.get());
     //testDirectory(testDir.get());
-    //testRecursiveDir(testDir.get());
+
+    // !!!!!!!!!!!!!!!!
+    // TODO - this function fucks up littlefs, when run next tests will crash meatloaf
+    // si this is probably some bug in dir reading functions of littlefs!
+    // !!!!!!!!!!!!!!!!
+    //testRecursiveDir(otherFile.get(),"");
+
+    //testFileProperties(destFile.get());
+
     testCopy(testFile.get(), destFile.get());
 }
 

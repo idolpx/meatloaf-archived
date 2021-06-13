@@ -113,7 +113,7 @@ MFile* MFSOwner::File(std::string path) {
     auto end = paths.end();
 
     if(util_starts_with(path,"cs:")) {
-        Serial.printf("CServer path found!\n");
+        //Serial.printf("CServer path found!\n");
         return csFS.getFile(path);
     }
 
@@ -123,10 +123,10 @@ MFile* MFSOwner::File(std::string path) {
         auto part = *pathIterator;
         util_string_toupper(part);
 
-        Serial.printf("testing part '%s'\n", part.c_str());
+        //Serial.printf("testing part '%s'\n", part.c_str());
 
         auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
-            Serial.printf("calling handles for '%s'\n", fs->symbol);
+            //Serial.printf("calling handles for '%s'\n", fs->symbol);
             return fs->handles(part); 
         } );
 
@@ -139,7 +139,7 @@ Serial.printf("matched fs: %s [%s]\n", (*foundIter)->symbol, path.c_str());
          }
     };
 
-    Serial.printf("Little fs fallback\n");
+    //Serial.printf("Little fs fallback\n");
 
     MFile* newFile = new LittleFile(path);
     newFile->streamPath = path;

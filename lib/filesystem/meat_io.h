@@ -17,6 +17,7 @@
 
 class MFile : public EdUrlParser {
 public:
+    MFile() {}; // only for local FS!!!
     MFile(nullptr_t null) : m_isNull(true) {};
     MFile(std::string path);
     MFile(std::string path, std::string name);

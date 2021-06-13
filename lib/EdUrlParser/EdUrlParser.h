@@ -80,6 +80,7 @@ public:
     std::string extension;
     std::string query;
     std::string fragment;
+    std::string localPath;
 };
 
 #endif /* EDURLPARSER_H_ */

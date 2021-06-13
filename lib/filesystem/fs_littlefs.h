@@ -5,6 +5,7 @@
 #include "../lib/littlefs/lfs.h"
 #include "../../include/make_unique.h"
 #include "../../include/global_defines.h"
+#include "EdUrlParser.h"
 
 
 /********************************************************
@@ -84,12 +85,16 @@ friend class LittleOStream;
 friend class LittleIStream;
 
 public:
-    LittleFile(std::string path) : MFile(path) {
+    LittleFile(std::string path) {
+        parsePath(path);
         if(!pathValid(path.c_str()))
             m_isNull = true;
         else
             m_isNull = false;
     };
+    // ~LittleFile() {
+    //     Serial.printf("*** Destroying littlefile %s\n",localPath.c_str());
+    // }
 
     bool isDirectory() override;
     MIstream* inputStream() override ; // has to return OPENED stream
@@ -129,6 +134,7 @@ public:
 
     LittleHandle() : rc(-255) 
     {
+        //Serial.println("*** Creating little handle");
         memset(&lfsFile, 0, sizeof(lfsFile));
     };
     ~LittleHandle();

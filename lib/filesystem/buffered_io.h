@@ -77,7 +77,7 @@ protected:
         }
 
         mbuffer.buffer = (char *)window;
-        eofOccured = mbuffer.len == 0;
+        eofOccured = (mbuffer.len == 0) || (istream->available() == 0);
     }
 
 public:
