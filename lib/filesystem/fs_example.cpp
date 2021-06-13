@@ -116,7 +116,7 @@ void testCreateAndCopy(MFile* fileInRoot, MFile* fileInSub) {
     writeToRoot->close(); // nor required, closes automagically
 }
 
-void testLittleFS() {
+void runTests() {
 
     // this is a directory for verious directories tests
     std::unique_ptr<MFile> testDir(MFSOwner::File("cs:///"));
@@ -135,45 +135,3 @@ void testLittleFS() {
     //testCreateAndCopy(testFile, destFile);
 }
 
-
-void runTests()
-{
-    // std::unique_ptr<MFile> complexPath(MFSOwner::File("ml://c64.meatloaf.cc/some/deeper/d64/path.zip/file/inside/andextension.sid"));
-
-    std::unique_ptr<MFile> mlFile(MFSOwner::File("ml://c64.meatloaf.cc/"));
-
-    Serial.printf("URL: [%s]\n", mlFile->url().c_str());
-    Serial.printf("Root: [%s]\n", mlFile->root().c_str());
-    Serial.printf("Base: [%s]\n", mlFile->base().c_str());
-    Serial.printf("Scheme: [%s]\n", mlFile->scheme.c_str());
-    Serial.printf("Username: [%s]\n", mlFile->username.c_str());
-    Serial.printf("Password: [%s]\n", mlFile->password.c_str());
-    Serial.printf("Host: [%s]\n", mlFile->hostname.c_str());
-    Serial.printf("Port: [%s]\n", mlFile->port.c_str());
-    Serial.printf("Path: [%s]\n", mlFile->path.c_str());
-    Serial.printf("File: [%s]\n", mlFile->filename.c_str());
-    Serial.printf("Extension: [%s]\n", mlFile->extension.c_str());
-    Serial.printf("Query: [%s]\n", mlFile->query.c_str());
-    Serial.printf("Fragment: [%s]\n\n", mlFile->fragment.c_str());
-    Serial.printf("-------------------------------\n");
-
-    std::unique_ptr<MFile> entry(mlFile->getNextFileInDir());
-    while(entry != nullptr) {
-        Serial.printf("URL: [%s]\n", entry->url().c_str());
-        Serial.printf("Root: [%s]\n", entry->root().c_str());
-        Serial.printf("Base: [%s]\n", entry->base().c_str());
-        Serial.printf("Scheme: [%s]\n", entry->scheme.c_str());
-        Serial.printf("Username: [%s]\n", entry->username.c_str());
-        Serial.printf("Password: [%s]\n", entry->password.c_str());
-        Serial.printf("Host: [%s]\n", entry->hostname.c_str());
-        Serial.printf("Port: [%s]\n", entry->port.c_str());
-        Serial.printf("Path: [%s]\n", entry->path.c_str());
-        Serial.printf("File: [%s]\n", entry->filename.c_str());
-        Serial.printf("Extension: [%s]\n", entry->extension.c_str());
-        Serial.printf("Query: [%s]\n", entry->query.c_str());
-        Serial.printf("Fragment: [%s]\n\n", entry->fragment.c_str());
-        Serial.printf("-------------------------------\n");
-
-        entry.reset(mlFile->getNextFileInDir());
-    }
-}
