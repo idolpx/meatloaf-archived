@@ -22,23 +22,24 @@
 #define C64_BASIC_START     0x0801
 
 // 1541 RAM and ROM memory map definitions.
-#define CBM1541_RAM_OFFSET 0
-#define CBM1541_RAM_SIZE  (1024 * 2)
-#define CBM1541_VIA1_OFFSET 0x1800
-#define CBM1541_VIA1_SIZE 0x10
-#define CBM1541_VIA2_OFFSET 0x1C00
-#define CBM1541_VIA2_SIZE 0x10
-#define CBM1541_ROM_OFFSET 0xC000
-#define CBM1541_ROM_SIZE (1024 * 16)
+#define CBM_1541_RAM_OFFSET 0
+#define CBM_1541_RAM_SIZE  (1024 * 2)
+#define CBM_1541_VIA1_OFFSET 0x1800
+#define CBM_1541_VIA1_SIZE 0x10
+#define CBM_1541_VIA2_OFFSET 0x1C00
+#define CBM_1541_VIA2_SIZE 0x10
+#define CBM_1541_ROM_OFFSET 0xC000
+#define CBM_1541_ROM_SIZE (1024 * 16)
 
 // Largest Serial byte buffer request from / to arduino.
 #define MAX_BYTES_PER_REQUEST 256
 
 // Back arrow character code.
 #define CBM_DOLLAR_SIGN '$'
+#define CBM_EXCLAMATION_MARKS "!!"
+
 #define CBM_ARROW_LEFT "\x5F"
 #define CBM_ARROW_UP "\x5E"
-#define CBM_EXCLAMATION_MARKS "!!"
 #define CBM_CRSR_LEFT "\x9d"
 #define CBM_DEL_DEL "\x14\x14"
 
