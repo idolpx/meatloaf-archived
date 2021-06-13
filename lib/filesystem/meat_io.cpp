@@ -112,7 +112,7 @@ MFile* MFSOwner::File(std::string path) {
     auto begin = paths.begin();
     auto end = paths.end();
 
-    if((*begin)=="cs:" || (*begin)=="CS:") {
+    if(util_starts_with(path,"cs:")) {
         Serial.printf("CServer path found!\n");
         return csFS.getFile(path);
     }
@@ -123,9 +123,12 @@ MFile* MFSOwner::File(std::string path) {
         auto part = *pathIterator;
         util_string_toupper(part);
 
-        //Serial.printf("testing part '%s'\n", part.c_str());
+        Serial.printf("testing part '%s'\n", part.c_str());
 
-        auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ return fs->handles(part); } );
+        auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
+            Serial.printf("calling handles for '%s'\n", fs->symbol);
+            return fs->handles(part); 
+        } );
 
         if(foundIter != availableFS.end()) {
 Serial.printf("matched fs: %s [%s]\n", (*foundIter)->symbol, path.c_str());
@@ -163,8 +166,6 @@ MFileSystem::~MFileSystem() {}
 
 MFile::MFile(std::string path) {
     parseUrl(path);
-    //m_path = path;   
-    //m_path = url(); 
 }
 
 MFile::MFile(std::string path, std::string name) : MFile(path + "/" + name) {}
@@ -176,7 +177,7 @@ bool MFile::operator!=(nullptr_t ptr) {
 }
 
 std::vector<std::string> MFile::chop() {
-    return chopPath(path);
+    return chopPath(url());
 }
 
 void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
@@ -193,10 +194,6 @@ void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::v
 
     Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
 }
-
-// std::string MFile::path() {
-//     return m_path;
-// }
 
 MIstream* MFile::inputStream() {
     ; // has to return OPENED stream
@@ -226,19 +223,6 @@ MIstream* MFile::inputStream() {
 
     return thisStream;
 };
-
-// std::string MFile::extension() {
-//     int lastPeriod = m_path.find_last_of(".");
-//     if(lastPeriod < 0)
-//         return "";
-//     else
-//         return m_path.substr(lastPeriod+1);
-// }
-
-// std::string MFile::name() {
-//     int lastSlash = m_path.find_last_of('/');
-//     return m_path.substr(lastSlash+1);;
-// }
 
 /********************************************************
  * MStream implementations

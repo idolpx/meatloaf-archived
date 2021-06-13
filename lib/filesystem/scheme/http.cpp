@@ -5,13 +5,13 @@
 
 bool HttpFile::isDirectory() {
     // hey, why not?
-    return m_path.back() == '/';
+    return false;
 };
 
 MIstream* HttpFile::inputStream() {
     // has to return OPENED stream
-    Serial.printf("HttpFile::inputStream [%s]\n", m_path.c_str());
-    MIstream* istream = new HttpIStream(m_path);
+    Serial.printf("HttpFile::inputStream [%s]\n", url().c_str());
+    MIstream* istream = new HttpIStream(url());
     istream->open();   
     return istream;
 } ; 
@@ -22,7 +22,7 @@ MIstream* HttpFile::createIStream(MIstream* is) {
 
 MOstream* HttpFile::outputStream() {
     // has to return OPENED stream
-    MOstream* ostream = new HttpOStream(m_path);
+    MOstream* ostream = new HttpOStream(url());
     ostream->open();   
     return ostream;
 } ; 
@@ -36,7 +36,7 @@ time_t HttpFile::getCreationTime() {
 } ;
 
 bool HttpFile::exists() {
-    Serial.printf("\nHttpFile::exists: [%s]\n", m_path.c_str());
+    Serial.printf("\nHttpFile::exists: [%s]\n", url().c_str());
     // we may try open the stream to check if it exists
     std::unique_ptr<MIstream> test(inputStream());
     // remember that MIStream destuctor should close the stream!
@@ -76,7 +76,7 @@ bool HttpOStream::open() {
     // we'll ad a lambda that will allow adding headers
     // m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    bool initOk = m_http.begin(m_file, m_path.c_str());
+    bool initOk = m_http.begin(m_file, url.c_str());
 Serial.printf("URLSTR: someRc=%d\n", initOk);
     if(!initOk)
         return false;
@@ -125,7 +125,7 @@ bool HttpIStream::seek(uint32_t pos) {
         if(httpCode != 200)
             return false;
 
-        Serial.printf("\nHttpIStream::open: [%s]\n", m_path.c_str());
+        Serial.printf("\nHttpIStream::open: [%s]\n", url.c_str());
         m_file = m_http.getStream();  //Get the response payload as Stream
         m_position = pos;
         m_bytesAvailable = m_length-pos;
@@ -159,7 +159,7 @@ void HttpIStream::close() {
 };
 
 bool HttpIStream::open() {
-    bool initOk = m_http.begin(m_file, m_path.c_str());
+    bool initOk = m_http.begin(m_file, url.c_str());
 Serial.printf("URLSTR: someRc=%d\n", initOk);
     if(!initOk)
         return false;
@@ -172,7 +172,7 @@ Serial.printf("URLSTR: httpCode=%d\n", httpCode);
     // Accept-Ranges: bytes - if we get such header from any request, good!
     isFriendlySkipper = m_http.header("accept-ranges") == "bytes";
     m_isOpen = true;
-    Serial.printf("\nHttpIStream::open: [%s]\n", m_path.c_str());
+    Serial.printf("\nHttpIStream::open: [%s]\n", url.c_str());
     //m_file = m_http.getStream();  //Get the response payload as Stream
     m_length = m_http.getSize();
 Serial.printf("URLSTR: length=%d\n", m_length);

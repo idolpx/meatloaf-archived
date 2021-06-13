@@ -145,21 +145,13 @@ bool LittleFile::pathValid(const char *path)
     return true;
 }
 
-
-// bool LittleFile::isFile()
-// {
-//     lfs_info info;
-//     int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
-//     return (rc == 0) && (info.type == LFS_TYPE_REG);
-// }
-
 bool LittleFile::isDirectory()
 {
-    if(m_path=="/" || m_path=="")
+    if(path=="/" || path=="")
         return true;
 
     lfs_info info;
-    int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
+    int rc = lfs_stat(&LittleFileSystem::lfsStruct, path.c_str(), &info);
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
 }
 
@@ -169,14 +161,14 @@ MIstream* LittleFile::createIStream(MIstream* is) {
 
 MIstream* LittleFile::inputStream()
 {
-    MIstream* istream = new LittleIStream(m_path);
+    MIstream* istream = new LittleIStream(path);
     istream->open();   
     return istream;
 }
 
 MOstream* LittleFile::outputStream()
 {
-    MOstream* ostream = new LittleOStream(m_path);
+    MOstream* ostream = new LittleOStream(path);
     ostream->open();   
     return ostream;
 }
@@ -184,7 +176,7 @@ MOstream* LittleFile::outputStream()
 time_t LittleFile::getLastWrite()
 {
     time_t ftime = 0;
-    int rc = lfs_getattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 't', (void *)&ftime, sizeof(ftime));
+    int rc = lfs_getattr(&LittleFileSystem::lfsStruct, path.c_str(), 't', (void *)&ftime, sizeof(ftime));
     if (rc != sizeof(ftime))
         ftime = 0; // Error, so clear read value
     return ftime;
@@ -200,7 +192,7 @@ bool LittleFile::mkDir()
     if (m_isNull) {
         return false;
     }
-    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, m_path.c_str());
+    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, path.c_str());
     return (rc==0);
 }
 
@@ -209,23 +201,23 @@ bool LittleFile::exists()
     if (m_isNull) {
         return false;
     }
-    if (m_path=="/" || m_path=="") {
+    if (path=="/" || path=="") {
         return true;
     }
     lfs_info info;
-    int rc = lfs_stat(&LittleFileSystem::lfsStruct, m_path.c_str(), &info);
+    int rc = lfs_stat(&LittleFileSystem::lfsStruct, path.c_str(), &info);
     return rc == 0;
 }
 
 size_t LittleFile::size() {
-    if(m_isNull || m_path=="/" || m_path=="")
+    if(m_isNull || path=="/" || path=="")
         return 0;
     else if(isDirectory()) {
         return 0;
     }
     else {
         auto handle = std::make_unique<LittleHandle>();
-        handle->obtain(LFS_O_RDONLY, m_path);
+        handle->obtain(LFS_O_RDONLY, path);
         size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile);
         return size;
     }
@@ -233,13 +225,13 @@ size_t LittleFile::size() {
 
 bool LittleFile::remove() {
     // musi obslugiwac usuwanie plikow i katalogow!
-    int rc = lfs_remove(&LittleFileSystem::lfsStruct, m_path.c_str());
+    int rc = lfs_remove(&LittleFileSystem::lfsStruct, path.c_str());
     if (rc != 0) {
         DEBUGV("lfs_remove: rc=%d path=`%s`\n", rc, path);
         return false;
     }
     // Now try and remove any empty subdirs this makes, silently
-    char *pathStr = strdup(m_path.c_str());
+    char *pathStr = strdup(path.c_str());
     if (pathStr) {
         char *ptr = strrchr(pathStr, '/');
         while (ptr) {
@@ -254,7 +246,7 @@ bool LittleFile::remove() {
 
 // bool LittleFile::truncate(size_t size) {
 //     auto handle = std::make_unique<LittleHandle>();
-//     handle->obtain(LFS_O_WRONLY, m_path);
+//     handle->obtain(LFS_O_WRONLY, path);
 //     int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, &handle->lfsFile, size);
 //     if (rc < 0) {
 //         DEBUGV("lfs_file_truncate rc=%d\n", rc);
@@ -267,7 +259,7 @@ bool LittleFile::rename(const char* pathTo) {
     if (!pathTo || !pathTo[0]) {
         return false;
     }
-    int rc = lfs_rename(&LittleFileSystem::lfsStruct, m_path.c_str(), pathTo);
+    int rc = lfs_rename(&LittleFileSystem::lfsStruct, path.c_str(), pathTo);
     if (rc != 0) {
         DEBUGV("lfs_rename: rc=%d, from=`%s`, to=`%s`\n", rc, pathFrom, pathTo);
         return false;
@@ -361,7 +353,7 @@ bool LittleFile::rewindDirectory()
 MFile* LittleFile::getNextFileInDir()
 {
     if(!dirOpened)
-        openDir(m_path.c_str());
+        openDir(path.c_str());
 
     memset(&_dirent, 0, sizeof(_dirent));
 
@@ -382,7 +374,7 @@ MFile* LittleFile::getNextFileInDir()
     if(!_valid)
         return nullptr;
     else
-        return new LittleFile(this->m_path+"/"+std::string(_dirent.name));
+        return new LittleFile(this->path+"/"+std::string(_dirent.name));
 }
 
 
@@ -416,7 +408,7 @@ void LittleOStream::close() {
 
 bool LittleOStream::open() {
     if(!isOpen()) {
-        handle->obtain(LFS_O_WRONLY | LFS_O_CREAT, m_path);
+        handle->obtain(LFS_O_WRONLY | LFS_O_CREAT, localPath);
     }
     return isOpen();
 };
@@ -478,7 +470,7 @@ void LittleIStream::close() {
 
 bool LittleIStream::open() {
     if(!isOpen()) {
-        handle->obtain(LFS_O_RDONLY, m_path);
+        handle->obtain(LFS_O_RDONLY, localPath);
     }
     return isOpen();
 };
@@ -540,14 +532,14 @@ void LittleHandle::dispose() {
         //     // If the file opened with O_CREAT, write the creation time attribute
         //     if (_creation) {
         //         // int lfs_setattr(lfs_t *lfsStruct, const char *path, uint8_t type, const void *buffer, lfs_size_t size);
-        //         int rc = lfs_setattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 'c', (const void *)&_creation, sizeof(_creation));
+        //         int rc = lfs_setattr(&LittleFileSystem::lfsStruct, path.c_str(), 'c', (const void *)&_creation, sizeof(_creation));
         //         if (rc < 0) {
         //             DEBUGV("Unable to set creation time on '%s' to %d\n", _name.get(), _creation);
         //         }
         //     }
         //     // Add metadata with last write time
         //     time_t now = timeCallback();
-        //     int rc = lfs_setattr(&LittleFileSystem::lfsStruct, m_path.c_str(), 't', (const void *)&now, sizeof(now));
+        //     int rc = lfs_setattr(&LittleFileSystem::lfsStruct, path.c_str(), 't', (const void *)&now, sizeof(now));
         //     if (rc < 0) {
         //         DEBUGV("Unable to set last write time on '%s' to %d\n", _name.get(), now);
         //     }
@@ -581,7 +573,7 @@ void LittleHandle::obtain(int fl, std::string m_path) {
     // // if (timeCallback && (flags & LFS_O_CREAT)) {
     //     // O_CREATE means we *may* make the file, but not if it already exists.
     //     // See if it exists, and only if not update the creation time
-    //     int rc = lfs_file_open(&LittleFileSystem::lfsStruct, fd.get(), m_path.c_str(), LFS_O_RDONLY);
+    //     int rc = lfs_file_open(&LittleFileSystem::lfsStruct, fd.get(), path.c_str(), LFS_O_RDONLY);
 
     // 	if (rc == 0) {
     //         lfs_file_close(&LittleFileSystem::lfsStruct, fd.get()); // It exists, don't update create time

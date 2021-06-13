@@ -52,9 +52,11 @@ bool CServerSessionMgr::command(std::string command) {
 size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
     auto rd = m_wifi.read(buf, size);
     int attempts = 5;
+    int wait = 500;
     while(rd == 0 && (attempts--)>0) {
         Serial.printf("Read Attempt %d\n", attempts);
-        delay(500);
+        delay(wait);
+        wait+=100;
         rd = m_wifi.read(buf, size);
     } 
     return rd;
@@ -88,17 +90,27 @@ bool CServerSessionMgr::isOK() {
 bool CServerSessionMgr::traversePath(MFile* path) {
     // tricky. First we have to
     // CF / - to go back to root
+
+Serial.printf("Traversing path: %s\n", path->url().c_str());
+
     command("cf /");
 
     if(isOK()) {
 
-        std::vector<std::string> chopped;
-        MFile::parsePath(&chopped, path->path);
+        std::vector<std::string> chopped = path->chop();
 
-        for(int i = 0; i < chopped.size(); i++) {
+        //MFile::parsePath(&chopped, path->path); - nope this doessn't work and crases in the loop!
+
+        Serial.println("Before loop");
+        Serial.printf("Chopped size:%d\n", chopped.size());
+        delay(500);
+
+        for(int i = 3; i < chopped.size(); i++) {
+            Serial.println("Before chopped deref");
+
             auto part = chopped[i];
             
-            Serial.printf("traversePath: [%s]\n", part.c_str());
+            Serial.printf("traverse path part: [%s]\n", part.c_str());
             if(util_ends_with(part, ".D64")) 
             {
                 // THEN we have to mount the image INSERT image_name
@@ -150,7 +162,7 @@ void CServerIStream::close() {
 };
 
 bool CServerIStream::open() {
-    auto file = std::make_unique<CServerFile>(m_path);
+    auto file = std::make_unique<CServerFile>(url);
     m_isOpen = false;
 
     if(file->isDirectory())
@@ -219,7 +231,7 @@ void CServerOStream::close() {
 };
 
 bool CServerOStream::open() {
-    auto file = std::make_unique<CServerFile>(m_path);
+    auto file = std::make_unique<CServerFile>(url);
 
     if(CServerFileSystem::session.traversePath(file.get())) {
         m_isOpen = true;
@@ -233,7 +245,7 @@ bool CServerOStream::open() {
 // MOstream methods
 size_t CServerOStream::write(const uint8_t *buf, size_t size) {
     // we have to write all at once... sorry...
-    auto file = std::make_unique<CServerFile>(m_path);
+    auto file = std::make_unique<CServerFile>(url);
 
     CServerFileSystem::session.command("save fileName,size[,type=PRG,SEQ]");
     m_isOpen = false; // c64 server supports only writing all at once, so this channel has to be marked closed
@@ -255,31 +267,27 @@ bool CServerOStream::isOpen() {
 bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
     // otherwise - false
-    Serial.printf("trying to chop %s\n", path.c_str());
 
-    if(util_ends_with(path, "/"))
-        return true;
+    Serial.printf("trying to chop %s\n", url().c_str());
 
-    // auto corrFile = (*(m_path.end())=='/') ? m_path.erase(m_path.size()-1,1) : path;
-
-    // auto chopped = MFile::chopPath(corrFile);
-    // auto second = (chopped.end())-2; // penultimate path part is d64? 
+    auto chopped = MFile::chopPath(url());
+    auto second = (chopped.end())-2; // penultimate path part is d64? 
     //auto x = (*second);
     //Serial.printf("isDirectory second from right:%s\n", x.c_str());
-    if ( util_ends_with(path, ".D64"))
+    if ( util_ends_with(*second, ".D64"))
+        return false;
+    else
         return true;
-
-    return false;
 };
 
 MIstream* CServerFile::inputStream() {
-    MIstream* istream = new CServerIStream(m_path);
+    MIstream* istream = new CServerIStream(url());
     istream->open();   
     return istream;
 }; 
 
 MOstream* CServerFile::outputStream() {
-    MOstream* ostream = new CServerOStream(m_path);
+    MOstream* ostream = new CServerOStream(url());
     ostream->open();   
     return ostream;
 };
@@ -292,7 +300,7 @@ bool CServerFile::rewindDirectory() {
 
     if(!CServerFileSystem::session.traversePath(this)) return false;
 
-    if(util_ends_with(path, ".D64"))
+    if(util_ends_with(url(), ".D64"))
     {
         dirIsImage = true;
         dirIsOpen = true;
@@ -391,7 +399,7 @@ MFile* CServerFile::getNextFileInDir() {
 
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name.c_str());
 
-            return new CServerFile(path + name, 0);
+            return new CServerFile(url() + "/" + name, 0);
         }
     }
 };

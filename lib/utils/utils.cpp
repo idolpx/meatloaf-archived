@@ -385,6 +385,8 @@ bool util_starts_with(std::string s, const char *pattern, bool case_sensitive)
 {
     if (s.empty() || pattern == nullptr)
         return false;
+    if(s.length()<strlen(pattern))
+        return false;
 
     std::string ss = s.substr(0, strlen(pattern));
     std::string pp = pattern;
@@ -397,6 +399,8 @@ bool util_starts_with(std::string s, const char *pattern, bool case_sensitive)
 bool util_ends_with(std::string s, const char *pattern, bool case_sensitive)
 {
     if (s.empty() || pattern == nullptr)
+        return false;
+    if(s.length()<strlen(pattern))
         return false;
 
     std::string ss = s.substr((s.length() - strlen(pattern)));

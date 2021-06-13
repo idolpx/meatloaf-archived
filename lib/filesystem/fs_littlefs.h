@@ -85,12 +85,7 @@ friend class LittleIStream;
 
 public:
     LittleFile(std::string path) : MFile(path) {
-        if(path == "/")
-            m_path=path;
-        else if(path.back()=='/')
-            m_path=path.erase(path.length()-1,1);
-
-        if(!pathValid(m_path.c_str()))
+        if(!pathValid(path.c_str()))
             m_isNull = true;
         else
             m_isNull = false;
@@ -137,7 +132,7 @@ public:
         memset(&lfsFile, 0, sizeof(lfsFile));
     };
     ~LittleHandle();
-    void obtain(int flags, std::string m_path);
+    void obtain(int flags, std::string localPath);
     void dispose();
 
 private:
@@ -152,7 +147,7 @@ class LittleOStream: public MOstream {
 public:
     // MStream methods
     LittleOStream(std::string& path) {
-        m_path = path;
+        localPath = path;
         handle = std::make_unique<LittleHandle>();
     }
     bool seek(uint32_t pos, SeekMode mode) override;
@@ -171,7 +166,7 @@ public:
     bool isOpen();
 
 protected:
-    std::string m_path;
+    std::string localPath;
 
     std::unique_ptr<LittleHandle> handle;    
 };
@@ -185,7 +180,7 @@ protected:
 class LittleIStream: public MIstream {
 public:
     LittleIStream(std::string& path) {
-        m_path = path;
+        localPath = path;
         handle = std::make_unique<LittleHandle>();
     }
     // MStream methods
@@ -205,7 +200,7 @@ public:
     bool isOpen();
 
 protected:
-    std::string m_path;
+    std::string localPath;
 
     std::unique_ptr<LittleHandle> handle;    
 };

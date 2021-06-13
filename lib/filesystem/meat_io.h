@@ -68,7 +68,6 @@ public:
     std::string pathInStream;
 protected:
     virtual MIstream* createIStream(MIstream* src) = 0;
-    std::string m_path;
     bool m_isNull;
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 friend class MFSOwner;

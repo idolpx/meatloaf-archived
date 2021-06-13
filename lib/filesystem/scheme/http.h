@@ -41,7 +41,7 @@ public:
 class HttpIOStream: public MIstream, MOstream {
 public:
     HttpIOStream(std::string& path) {
-        m_path = path;
+        url = path;
     }
     ~HttpIOStream() {
         close();
@@ -61,7 +61,7 @@ public:
     bool isOpen();
 
 protected:
-    std::string m_path;
+    std::string url;
     bool m_isOpen;
     int m_length;
     WiFiClient m_file;
@@ -75,12 +75,12 @@ protected:
 class HttpIStream: public MIstream {
 
 public:
-    HttpIStream(std::string& path) {
+    HttpIStream(std::string path) {
         m_http.setUserAgent("user_agent");
         m_http.setTimeout(10000);
         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         m_http.setRedirectLimit(10);
-        m_path = path;
+        url = path;
     }
     // MStream methods
     bool seek(uint32_t pos, SeekMode mode) override;
@@ -98,7 +98,7 @@ public:
     bool isOpen();
 
 protected:
-    std::string m_path;
+    std::string url;
     bool m_isOpen;
     int m_length;
     WiFiClient m_file;
@@ -114,14 +114,14 @@ class HttpOStream: public MOstream {
 
 public:
     // MStream methods
-    HttpOStream(std::string& path) {
+    HttpOStream(std::string path) {
         m_http.setUserAgent("user_agent");
         m_http.setTimeout(10000);
         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         m_http.setRedirectLimit(10);
         m_http.setReuse(true);
 
-        m_path = path;
+        url = path;
     }
     bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
@@ -138,7 +138,7 @@ public:
     bool isOpen();
 
 protected:
-    std::string m_path;
+    std::string url;
     bool m_isOpen;
     WiFiClient m_file;
     //WiFiClient m_client;

@@ -77,8 +77,8 @@ public:
 class CServerIStream: public MIstream {
 
 public:
-    CServerIStream(std::string& path) {
-        m_path = path;
+    CServerIStream(std::string path) {
+        url = path;
     }
     ~CServerIStream() {
         close();
@@ -96,7 +96,7 @@ public:
     bool isOpen() override;
 
 protected:
-    std::string m_path;
+    std::string url;
     bool m_isOpen;
     int m_length;
     int m_bytesAvailable = 0;
@@ -108,8 +108,8 @@ class CServerOStream: public MOstream {
 
 public:
     // MStream methods
-    CServerOStream(std::string& path) {
-        m_path = path;
+    CServerOStream(std::string path) {
+        url = path;
     }
     ~CServerOStream() {
         close();
@@ -127,7 +127,7 @@ public:
     bool isOpen() override;
 
 protected:
-    std::string m_path;
+    std::string url;
     bool m_isOpen;
     WiFiClient m_file;
 };

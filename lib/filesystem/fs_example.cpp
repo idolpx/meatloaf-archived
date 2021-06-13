@@ -39,11 +39,14 @@ void testFileProperties(MFile* cserverFile) {
     Serial.printf("-------------------------------\n");
 }
 
-void testDirectory(MFile* dir) {
+void testDirectory(MFile* dir, bool verbose=false) {
     std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
     while(entry != nullptr) {
-        testFileProperties(entry.get());
+        if(verbose)
+            testFileProperties(entry.get());
+        else
+            Serial.printf("%s\n", entry->url().c_str());
         entry.reset(dir->getNextFileInDir());
     }
 }
@@ -69,36 +72,37 @@ void testRecursiveDir(MFile* file) {
     }
 }
 
-void testCreateAndCopy(MFile* fileInRoot, MFile* fileInSub) {
+void testCopy(MFile* srcFile, MFile* dstFile) {
     char exampleText[]="Proletariusze wszystkich krajow, laczcie sie!";
 
     // test 1 - write some string to a plain file in root dir
 
-    if(fileInRoot->exists()) {
-        bool result = fileInRoot->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInRoot->path.c_str(), result);
-    }
+    // if(!srcFile->exists()) {
+    //     Serial.printf("FSTEST: %s doesn't exist!\n", srcFile->path.c_str());
+    //     return;
+    // }
 
-    if(fileInSub->exists()) {
-        bool result = fileInSub->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", fileInSub->path.c_str(), result);
+    if(dstFile->exists()) {
+        bool result = dstFile->remove();
+        Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
     }
 
     Serial.println("FSTEST: root file attempt obtain ostream");
 
+    std::shared_ptr<MIstream> srcStream(srcFile->inputStream());
+    std::shared_ptr<MOstream> dstStream(dstFile->outputStream());
 
-    std::shared_ptr<MIstream> readFromSub(fileInSub->inputStream());
-    std::shared_ptr<MOstream> writeToRoot(fileInRoot->outputStream());
-
-    if(!readFromSub->isOpen()) {
+    if(!srcStream->isOpen()) {
         Serial.println("FSTEST: couldn't open a stream for reading");
+        return;
     }
-    else if(!writeToRoot->isOpen()) {
+    else if(!dstStream->isOpen()) {
         Serial.println("FSTEST: couldn't open a stream for writing");
+        return;
     }
     else {
-        auto br = std::make_unique<BufferedReader>(readFromSub.get());
-        auto bw = std::make_unique<BufferedWriter>(writeToRoot.get());
+        auto br = std::make_unique<BufferedReader>(srcStream.get());
+        auto bw = std::make_unique<BufferedWriter>(dstStream.get());
 
         do {
             auto buffer = br->read();
@@ -112,14 +116,14 @@ void testCreateAndCopy(MFile* fileInRoot, MFile* fileInSub) {
         } while (!br->eof());
     }
 
-    readFromSub->close(); // not required, closes automagically
-    writeToRoot->close(); // nor required, closes automagically
+    srcStream->close(); // not required, closes automagically
+    dstStream->close(); // nor required, closes automagically
 }
 
 void runTests() {
 
     // this is a directory for verious directories tests
-    std::unique_ptr<MFile> testDir(MFSOwner::File("cs:///"));
+    std::unique_ptr<MFile> testDir(MFSOwner::File("cs:///utilities"));
 
     // this is a file for tests that run on files
     std::unique_ptr<MFile> testFile(MFSOwner::File("cs:///utilities/disk tools/cie.d64/CIE+SERIAL"));
@@ -132,6 +136,6 @@ void runTests() {
     //testFileProperties(testDir.get());
     //testDirectory(testDir.get());
     //testRecursiveDir(testDir.get());
-    //testCreateAndCopy(testFile, destFile);
+    testCopy(testFile.get(), destFile.get());
 }
 
