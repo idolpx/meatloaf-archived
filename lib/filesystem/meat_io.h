@@ -92,7 +92,7 @@ public:
     }
 
     static bool byExtension(char* ext, std::string fileName) {
-        return fileName.rfind(ext) != -1 &&  fileName.rfind(ext) == fileName.length()-4;
+        return fileName.rfind(ext) != -1 &&  toupper(fileName.rfind(ext)) == toupper(fileName.length()-4);
     }
 
 protected:

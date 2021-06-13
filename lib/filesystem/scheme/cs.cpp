@@ -99,7 +99,7 @@ bool CServerSessionMgr::traversePath(MFile* path) {
             auto part = chopped[i];
             
             Serial.printf("traversePath: [%s]\n", part.c_str());
-            if(util_ends_with(part, ".D64") || util_ends_with(part, ".D64")) 
+            if(util_ends_with(part, ".D64")) 
             {
                 // THEN we have to mount the image INSERT image_name
                 command("insert "+part);
@@ -266,7 +266,7 @@ bool CServerFile::isDirectory() {
     // auto second = (chopped.end())-2; // penultimate path part is d64? 
     //auto x = (*second);
     //Serial.printf("isDirectory second from right:%s\n", x.c_str());
-    if ( util_ends_with(path, ".d64") || util_ends_with(path, ".D64"))
+    if ( util_ends_with(path, ".D64"))
         return true;
 
     return false;
@@ -292,7 +292,7 @@ bool CServerFile::rewindDirectory() {
 
     if(!CServerFileSystem::session.traversePath(this)) return false;
 
-    if(util_ends_with(path, ".d64") || util_ends_with(path, ".D64"))
+    if(util_ends_with(path, ".D64"))
     {
         dirIsImage = true;
         dirIsOpen = true;

@@ -38,6 +38,8 @@ void util_string_trim(std::string &s);
 
 void util_string_tolower(std::string &s);
 void util_string_toupper(std::string &s);
+bool util_string_compare(std::string &s1, std::string &s2);
+bool util_string_compare_case_insensitive(std::string &s1, std::string &s2);
 
 long util_parseInt(FILE *f, char skipChar);
 long util_parseInt(FILE *f);
@@ -49,8 +51,8 @@ std::string util_long_entry(std::string filename, size_t fileSize, bool is_dir);
 int util_ellipsize(const char* src, char *dst, int dstsize);
 //std::string util_ellipsize(std::string longString, int maxLength);
 bool util_wildcard_match(const char *str, const char *pattern);
-bool util_starts_with(std::string s, const char *pattern);
-bool util_ends_with(std::string s, const char *pattern);
+bool util_starts_with(std::string s, const char *pattern, bool case_sensitive = false);
+bool util_ends_with(std::string s, const char *pattern, bool case_sensitive = false);
 
 bool util_concat_paths(char *dest, const char *parent, const char *child, int dest_size);
 
@@ -67,4 +69,7 @@ bool util_string_value_is_true(const char *value);
 
 void util_replace_all(std::string& str, const std::string& from, const std::string& to);
 
+
+bool compare_char(char &c1, char &c2);
+bool compare_char_insensitive(char &c1, char &c2);
 #endif // _FN_UTILS_H

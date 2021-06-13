@@ -381,22 +381,30 @@ bool util_wildcard_match(const char *str, const char *pattern)
     return lookup[n][m];
 }
 
-bool util_starts_with(std::string s, const char *pattern)
+bool util_starts_with(std::string s, const char *pattern, bool case_sensitive)
 {
     if (s.empty() || pattern == nullptr)
         return false;
 
     std::string ss = s.substr(0, strlen(pattern));
-    return ss.compare(pattern) == 0;
+    std::string pp = pattern;
+    if ( case_sensitive )
+        return util_string_compare(ss, pp);
+    else
+        return util_string_compare_case_insensitive(ss, pp);
 }
 
-bool util_ends_with(std::string s, const char *pattern)
+bool util_ends_with(std::string s, const char *pattern, bool case_sensitive)
 {
     if (s.empty() || pattern == nullptr)
         return false;
 
     std::string ss = s.substr((s.length() - strlen(pattern)));
-    return ss.compare(pattern) == 0;
+    std::string pp = pattern;
+    if ( case_sensitive )
+        return util_string_compare(ss, pp);
+    else
+        return util_string_compare_case_insensitive(ss, pp);
 }
 
 /*
@@ -532,4 +540,39 @@ void util_replace_all(std::string &str, const std::string &from, const std::stri
         str.replace(start_pos, from.length(), to);
         start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
     }
+}
+
+/*
+ * String Comparision
+ */
+bool util_string_compare(std::string &s1, std::string &s2)
+{
+    return ( (s1.size() == s2.size() ) &&
+             std::equal(s1.begin(), s1.end(), s2.begin(), &compare_char) );
+}
+
+/*
+ * Case Insensitive String Comparision
+ */
+bool util_string_compare_case_insensitive(std::string &s1, std::string &s2)
+{
+    return ( (s1.size() == s2.size() ) &&
+             std::equal(s1.begin(), s1.end(), s2.begin(), &compare_char_insensitive) );
+}
+
+bool compare_char(char &c1, char &c2)
+{
+    if (c1 == c2)
+        return true;
+
+    return false;
+}
+
+bool compare_char_insensitive(char &c1, char &c2)
+{
+    if (c1 == c2)
+        return true;
+    else if (std::toupper(c1) == std::toupper(c2))
+        return true;
+    return false;
 }
