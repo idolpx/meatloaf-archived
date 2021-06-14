@@ -73,7 +73,7 @@ class PeoplesUrlParser {
     }
 
 public:
-    void parse(std::string u) {
+    void parseUrl(std::string u) {
         url = u;
         auto parts = mstr::split(url, ':', 2);
 

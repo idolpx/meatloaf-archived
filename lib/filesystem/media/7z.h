@@ -66,10 +66,6 @@ public:
     bool isBrowsable() override {
         return true;
     }
-
-    // Browsable methods
-    MFile* getNextEntry() override; // skips the stream until the beginnin of next file
-
 };
 
 

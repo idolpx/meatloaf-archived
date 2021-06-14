@@ -64,9 +64,6 @@ public:
         return true;
     }
 
-    MFile* getNextEntry() override; // skips the stream until the beginnin of next file
-
-
 };
 
 

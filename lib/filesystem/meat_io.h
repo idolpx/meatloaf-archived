@@ -61,7 +61,6 @@ public:
     virtual size_t size() = 0;
     virtual bool remove() = 0;
     virtual bool rename(const char* dest) = 0;
-    virtual MFile* getNextEntry() {};
     virtual bool isBrowsable() { return false; };
     virtual bool isRandomAccess() { return false; };
 
@@ -118,11 +117,6 @@ public:
     static bool umount(std::string name);
 };
 
-
-// class Browsable {
-// public:
-//     virtual MFile* getNextEntry() = 0;
-// };
 
 
 #endif
