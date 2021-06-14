@@ -28,6 +28,8 @@ monitor_filters = default, esp8266_exception_decoder
 lib_deps = 
     ArduinoJson
 
+build_type = debug
+
 build_flags =
     -D USE_LITTLEFS
 
