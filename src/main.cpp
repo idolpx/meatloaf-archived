@@ -181,7 +181,7 @@ void setup()
 			}
 		}
 
-		runTests();
+		runTestsSuite();
 		Debug_printv("Printing VERBOSE [%d]", 1);
 
 		// Setup IEC Bus

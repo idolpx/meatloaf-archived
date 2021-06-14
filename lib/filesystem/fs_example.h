@@ -1,3 +1,3 @@
 
 
-void runTests();
+void runTestsSuite();

@@ -1,54 +1,71 @@
-#include "fs_example.h"
+#include <string>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
 
+#include "fs_example.h"
 #include "meat_io.h"
 #include "../../include/make_unique.h"
 #include "../../include/global_defines.h"
 #include "buffered_io.h"
-#include <string>
-#include "../EdUrlParser/EdUrlParser.h"
 #include "stream_writer.h"
-#include "peoples_url_parser.h"
-
-#include <ESP8266HTTPClient.h>
-#include <WiFiClient.h>
 
 
+void testHeader(std::string testName) {
+    Serial.println("\n\n******************************");
+    Serial.printf("* TESTING: %s\n", testName.c_str());
+    Serial.println("******************************\n");
+}
 
 void testReader(MFile* readeTest) {
     // /* Test Line reader */
+    testHeader("Buffered line reader");
+
+    Serial.printf("* Trying to read file:%s\n", readeTest->url.c_str());
+
     std::shared_ptr<MIstream> readerStream(readeTest->inputStream());
-    StreamReader reader(readerStream.get());
 
-    std::string line = reader.readLn();
+    if(readerStream->isOpen()) {
+        StreamReader reader(readerStream.get());
 
-    while(!reader.eof()) {
-        Serial.printf("FSTEST: line read:'%s'\n",line.c_str());
-        line = reader.readLn();
-    };
+        if(reader.eof()) {
+            Serial.printf("Reader returned EOF! :(");
+        }
+
+        while(!reader.eof()) {
+            std::string line = reader.readLn();
+            Serial.printf("%s\n",line.c_str());
+        };
+    }
+    else {
+        Serial.printf("*** ERROR: stream could not be opened!");
+    }
 }
 
-void testFileProperties(MFile* cserverFile) {
-    Serial.printf("FSTEST: %s, isDir = %d\n", cserverFile->path.c_str(), cserverFile->isDirectory());
-    Serial.printf("URL: [%s]\n", cserverFile->url.c_str());
+void dumpFileProperties(MFile* cserverFile) {
+    Serial.println("\n== File properties ==");
+    Serial.printf("Url: %s, isDir = %d\n", cserverFile->url.c_str(), cserverFile->isDirectory());
+    Serial.printf("Path: [%s]\n", cserverFile->path.c_str());
+    Serial.printf("stream src: [%s]\n", cserverFile->streamPath.c_str());
+    Serial.printf("path in stream: [%s]\n", cserverFile->pathInStream.c_str());
+    Serial.printf("File: [%s]\n", cserverFile->name.c_str());
+    Serial.printf("Extension: [%s]\n", cserverFile->extension.c_str());
     Serial.printf("Scheme: [%s]\n", cserverFile->scheme.c_str());
     Serial.printf("Username: [%s]\n", cserverFile->user.c_str());
     Serial.printf("Password: [%s]\n", cserverFile->pass.c_str());
     Serial.printf("Host: [%s]\n", cserverFile->host.c_str());
     Serial.printf("Port: [%s]\n", cserverFile->port.c_str());
-    Serial.printf("Path: [%s]\n", cserverFile->path.c_str());
-    Serial.printf("File: [%s]\n", cserverFile->name.c_str());
-    Serial.printf("Extension: [%s]\n", cserverFile->extension.c_str());
-    // Serial.printf("Query: [%s]\n", cserverFile->query.c_str());
-    // Serial.printf("Fragment: [%s]\n\n", cserverFile->fragment.c_str());
     Serial.printf("-------------------------------\n");
 }
 
 void testDirectory(MFile* dir, bool verbose=false) {
+    testHeader("A directory");
+
+    Serial.printf("* Listing %s\n", dir->url.c_str());
     std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
     while(entry != nullptr) {
         if(verbose)
-            testFileProperties(entry.get());
+            dumpFileProperties(entry.get());
         else
             Serial.printf("%s\n", entry->url.c_str());
         entry.reset(dir->getNextFileInDir());
@@ -77,6 +94,10 @@ void testRecursiveDir(MFile* file, std::string indent) {
 }
 
 void testCopy(MFile* srcFile, MFile* dstFile) {
+    testHeader("Copy file to destination");
+
+    Serial.printf("FROM:%s\nTO:%s\n", srcFile->url.c_str(), dstFile->url.c_str());
+
     char exampleText[]="Proletariusze wszystkich krajow, laczcie sie!";
 
     // test 1 - write some string to a plain file in root dir
@@ -91,9 +112,9 @@ void testCopy(MFile* srcFile, MFile* dstFile) {
         Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
     }
 
-    Serial.println("FSTEST copy: attempt obtain istream");
+    //Serial.println("FSTEST copy: attempt obtain istream");
     std::shared_ptr<MIstream> srcStream(srcFile->inputStream());
-    Serial.println("FSTEST copy: attempt obtain ostream");
+    //Serial.println("FSTEST copy: attempt obtain ostream");
     std::shared_ptr<MOstream> dstStream(dstFile->outputStream());
 
     if(!srcStream->isOpen()) {
@@ -129,26 +150,30 @@ void dumpParts(std::vector<std::string> v) {
         Serial.printf("%s::",(*i).c_str());
 }
 
-void testPaths() {
-    Serial.printf("pa = %s\n", mstr::drop("dupa",2).c_str());
-    Serial.printf("du = %s\n", mstr::dropLast("dupa",2).c_str());
+void testStringFunctions() {
+    testHeader("String functions");
+    Serial.printf("pa == %s\n", mstr::drop("dupa",2).c_str());
+    Serial.printf("du == %s\n", mstr::dropLast("dupa",2).c_str());
+}
 
+void testPaths(MFile* testFile, std::string subDir) {
+    testHeader("Path ops");
+    //std::shared_ptr<MFile> testFile(MFSOwner::File("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL"));
+    dumpFileProperties(testFile);
 
-    std::shared_ptr<MFile> testFile(MFSOwner::File("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL"));
+    Serial.printf("We are in: %s\n",testFile->url.c_str());
 
-    std::shared_ptr<MFile> inDnp(testFile->cd("/inDnp"));
-    Serial.printf("*** inDnp root: '%s'\n", inDnp->url.c_str());
+    std::shared_ptr<MFile> inDnp(testFile->cd("/"+subDir));
+    Serial.printf("- cd /%s = '%s'\n", subDir.c_str(), inDnp->url.c_str());
 
-    std::shared_ptr<MFile> inFlash(testFile->cd("//iFlash"));
-    Serial.printf("*** inFlash root: '%s'\n", inFlash->url.c_str());
+    std::shared_ptr<MFile> inFlash(testFile->cd("//"+subDir));
+    Serial.printf("- cd //%s = '%s'\n", subDir.c_str(), inFlash->url.c_str());
 
-    std::shared_ptr<MFile> parallel(testFile->cd("../inSubdir"));
-    Serial.printf("*** inSubdir root: '%s'\n", parallel->url.c_str());
+    std::shared_ptr<MFile> parallel(testFile->cd("../"+subDir));
+    Serial.printf("- cd ../%s = '%s'\n", subDir.c_str(), parallel->url.c_str());
 
-    std::shared_ptr<MFile> inCie(testFile->cd("inCie"));
-    Serial.printf("*** inCie root: '%s'\n", inCie->url.c_str());
-
-
+    std::shared_ptr<MFile> inCie(testFile->cd(subDir));
+    Serial.printf("- cd %s = '%s'\n", subDir.c_str(), inCie->url.c_str());
 } 
 
 
@@ -234,36 +259,40 @@ void httpGet(char *url)
     }
 }
 
+void runFSTest(std::string dirPath, std::string filePath) {
+    Serial.println("**********************************************************************\n\n");
+    std::shared_ptr<MFile> testDir(MFSOwner::File(dirPath));
+    std::shared_ptr<MFile> testFile(MFSOwner::File(filePath));
+    std::shared_ptr<MFile> destFile(MFSOwner::File("/mltestfile"));
 
-void runTests() {
-    testPaths();
-    // this is a directory for verious directories tests
-    // std::shared_ptr<MFile> testDir(MFSOwner::File("cs:///utilities"));
+    if(testDir != nullptr) {
+        testPaths(testDir.get(),"subDir");
+        testDirectory(testDir.get());
+        //testRecursiveDir(otherFile.get(),""); // fucks upp littleFS?
+    }
+    else {
+        Serial.println("*** WARNING - directory instance couldn't be created!");
+    }
 
-    // // this is a file for tests that run on files
-    // std::shared_ptr<MFile> testFile(MFSOwner::File("cs:///utilities/disk tools/cie.d64/CIE+SERIAL"));
+    if(testFile != nullptr) {
+        testReader(testFile.get());
+        testCopy(testFile.get(), destFile.get());
 
-    // // this is a file for write tests
-    // std::shared_ptr<MFile> destFile(MFSOwner::File("/testfile"));
+        Serial.println("*** Please compare copied file aginst the source:");
+        testReader(destFile.get());
+    }
+    else {
+        Serial.println("*** WARNING - file instance couldn't be created!");
+    }
+    Serial.println("**********************************************************************\n\n");
+}
 
-    // std::shared_ptr<MFile> otherFile(MFSOwner::File("/"));
 
-    // Uncomment as needed
-    //testReader(testFile.get());
-    //testFileProperties(testDir.get());
-    //testDirectory(testDir.get());
 
-    // !!!!!!!!!!!!!!!!
-    // TODO - this function fucks up littlefs, when run next tests will crash meatloaf
-    // si this is probably some bug in dir reading functions of littlefs!
-    // !!!!!!!!!!!!!!!!
-    //testRecursiveDir(otherFile.get(),"");
+void runTestsSuite() {
+    runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    runFSTest("http://jigsaw.w3.org/HTTP/connection.html","");
+    //runFSTest("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL","");
 
-    //testFileProperties(destFile.get());
-
-    //testCopy(testFile.get(), destFile.get());
-
-    htmlStream("http://jigsaw.w3.org/HTTP/connection.html");
-    //httpGet("http://jigsaw.w3.org/HTTP/connection.html");
 }
 

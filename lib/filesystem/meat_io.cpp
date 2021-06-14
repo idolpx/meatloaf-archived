@@ -17,20 +17,6 @@
 #include "string_utils.h"
 
 
-std::string joinNamesToPath(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end) {
-    std::string res;
-
-    if((*start)>=(*end))
-        return std::string();
-
-    for(auto i = (*start); i<(*end); i++) {
-        res+=(*i);
-        if(i<(*end))
-            res+="/";
-    }
-
-    return res.erase(res.length()-1,1);
-}
 
 /********************************************************
  * MFSOwner implementations
@@ -110,7 +96,7 @@ MFile* MFSOwner::File(std::string path) {
         } );
 
         if(foundIter != availableFS.end()) {
-Serial.printf("matched fs: %s [%s]\n", (*foundIter)->symbol, path.c_str());
+Serial.printf("PATH: '%s' is in FS [%s]\n", path.c_str(), (*foundIter)->symbol);
             auto newFile = (*foundIter)->getFile(path);
             newFile->fillPaths(&pathIterator, &begin, &end);
 
@@ -162,12 +148,12 @@ void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::v
 
     //Serial.println("w fillpaths stream pths");
     delay(500);   
-    streamPath = joinNamesToPath(fromStart, matchedElement);
+    streamPath = mstr::joinToString(fromStart, matchedElement, "/");
     //Serial.println("w fillpaths path in stream");   
     delay(500);   
-    pathInStream = joinNamesToPath(matchedElement, last);
+    pathInStream = mstr::joinToString(matchedElement, last, "/");
 
-    Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
+    //Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
 }
 
 MIstream* MFile::inputStream() {

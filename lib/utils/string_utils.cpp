@@ -22,27 +22,27 @@ namespace mstr {
 
 
 
-// trim from start (in place)
-void ltrim(std::string &s)
-{
-    s.erase(
-        s.begin(),
-        std::find_if(s.begin(), s.end(), [](int ch) { return !std::isspace(ch); }));
-}
+    // trim from start (in place)
+    void ltrim(std::string &s)
+    {
+        s.erase(
+            s.begin(),
+            std::find_if(s.begin(), s.end(), [](int ch) { return !std::isspace(ch); }));
+    }
 
-// trim from end (in place)
-void rtrim(std::string &s)
-{
-    s.erase(
-        std::find_if(s.rbegin(), s.rend(), [](int ch) { return !std::isspace(ch); }).base(), s.end());
-}
+    // trim from end (in place)
+    void rtrim(std::string &s)
+    {
+        s.erase(
+            std::find_if(s.rbegin(), s.rend(), [](int ch) { return !std::isspace(ch); }).base(), s.end());
+    }
 
-// trim from both ends (in place)
-void trim(std::string &s)
-{
-    ltrim(s);
-    rtrim(s);
-}
+    // trim from both ends (in place)
+    void trim(std::string &s)
+    {
+        ltrim(s);
+        rtrim(s);
+    }
 
 
 
@@ -141,6 +141,27 @@ void trim(std::string &s)
         parts.push_back(toSplit);
 
         return parts;
+    }
+
+    std::string joinToString(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end, std::string separator) {
+        std::string res;
+
+        if((*start)>=(*end))
+            return std::string();
+
+        for(auto i = (*start); i<(*end); i++) {
+            res+=(*i);
+            if(i<(*end))
+                res+=separator;
+        }
+
+        return res.erase(res.length()-1,1);
+    }
+
+    std::string joinToString(std::vector<std::string> strings, std::string separator) {
+        auto st = strings.begin();
+        auto ed = strings.end();
+        return joinToString(&st, &ed, separator);
     }
 
 }

@@ -73,7 +73,12 @@ private:
 
         auto firstSlash = authPathStripped.find('/');
 
-        path = authPathStripped.substr(firstSlash);
+//Serial.printf("auth path stripped=%s\n",authPathStripped.c_str());
+
+        if(firstSlash != std::string::npos)
+            path = authPathStripped.substr(firstSlash);
+        else
+            path = authPathStripped;
     }
 
 public:
@@ -98,14 +103,21 @@ public:
         }
 
         auto pathParts = mstr::split(path,'/');
+
+//Serial.printf("path parts %s\n", mstr::joinToString(pathParts, "::").c_str());
+
+        //auto last = (pathParts.end())--;
+        
         if(pathParts.size()>1)
-            name = *(pathParts.end()--);
+            name = *(--pathParts.end());
         else
             name = path;
 
         auto nameParts = mstr::split(name,'.');
+        
+        //last = (nameParts.end())--;
         if(nameParts.size()>1)
-            extension = *(nameParts.end()--);
+            extension = *(--nameParts.end());
         else
             extension = "";
     }

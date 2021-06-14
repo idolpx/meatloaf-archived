@@ -429,11 +429,11 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
 
     ledToggle(true);
 
-    Serial.println("before lfs_file_write");
+    //Serial.println("before lfs_file_write");
 
     int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
 
-    Serial.println("after lfs_file_write");
+    //Serial.println("after lfs_file_write");
 
     if (result < 0) {
         ledOFF();
