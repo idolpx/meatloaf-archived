@@ -392,7 +392,7 @@ MFile* CServerFile::getNextFileInDir() {
             return nullptr;
         }
         else {
-            std::string name = line.substr(6,17);
+            std::string name = line.substr(5,15);
             mstr::rtrim(name);
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name);
             //return new CServerFile(path() +"/"+ name);
