@@ -265,7 +265,7 @@ void runFSTest(std::string dirPath, std::string filePath) {
     std::shared_ptr<MFile> testFile(MFSOwner::File(filePath));
     std::shared_ptr<MFile> destFile(MFSOwner::File("/mltestfile"));
 
-    if(testDir != nullptr) {
+    if(!dirPath.empty() && testDir != nullptr) {
         testPaths(testDir.get(),"subDir");
         testDirectory(testDir.get());
         //testRecursiveDir(otherFile.get(),""); // fucks upp littleFS?
@@ -274,11 +274,11 @@ void runFSTest(std::string dirPath, std::string filePath) {
         Serial.println("*** WARNING - directory instance couldn't be created!");
     }
 
-    if(testFile != nullptr) {
+    if(!filePath.empty() && testFile != nullptr) {
         testReader(testFile.get());
         testCopy(testFile.get(), destFile.get());
 
-        Serial.println("*** Please compare copied file aginst the source:");
+        Serial.println("\n\n\n*** Please compare file copied to ML aginst the source:\n\n\n");
         testReader(destFile.get());
     }
     else {
@@ -290,8 +290,8 @@ void runFSTest(std::string dirPath, std::string filePath) {
 
 
 void runTestsSuite() {
-    runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
-    runFSTest("http://jigsaw.w3.org/HTTP/connection.html","");
+    //runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
     //runFSTest("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL","");
 
 }

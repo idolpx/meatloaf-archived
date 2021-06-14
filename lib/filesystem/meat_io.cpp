@@ -96,7 +96,7 @@ MFile* MFSOwner::File(std::string path) {
         } );
 
         if(foundIter != availableFS.end()) {
-Serial.printf("PATH: '%s' is in FS [%s]\n", path.c_str(), (*foundIter)->symbol);
+//Serial.printf("PATH: '%s' is in FS [%s]\n", path.c_str(), (*foundIter)->symbol);
             auto newFile = (*foundIter)->getFile(path);
             newFile->fillPaths(&pathIterator, &begin, &end);
 
@@ -104,7 +104,7 @@ Serial.printf("PATH: '%s' is in FS [%s]\n", path.c_str(), (*foundIter)->symbol);
          }
     };
 
-    //Serial.printf("Little fs fallback\n");
+    //Serial.printf("** warning! %s - Little fs fallback\n", path.c_str());
 
     MFile* newFile = new LittleFile(path);
     newFile->streamPath = path;
