@@ -181,9 +181,6 @@ void setup()
 			}
 		}
 
-		runTestsSuite();
-		Debug_printv("Printing VERBOSE [%d]", 1);
-
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
 		iec.enableDevice(30);
@@ -200,46 +197,6 @@ void setup()
 			}
 		}
 		Serial.println("]");
-
-		// // Set initial d64 image
-		// Dir disk = fileSystem->openDir("/UTILS/FB64.d64");
-		// if (diskCaddy.Insert(disk, false))
-		// {
-		// 	Debug_printf("Disk Mounted: %s", disk.fileName().c_str());
-		// }
-
-		// Serial.println("==================================");
-
-		// File testFile = fileSystem->open(DEVICE_DB, "r");
-		// if (testFile){
-		// 	Serial.println("Read file content!");
-		// 	/**
-		// 	 * File derivate from Stream so you can use all Stream method
-		// 	 * readBytes, findUntil, parseInt, println etc
-		// 	 */
-		// 	Serial.println(testFile.readString());
-		// 	testFile.close();
-		// }else{
-		// 	Serial.println("Problem on read file!");
-		// }
-
-		// testFile = fileSystem->open(DEVICE_DB, "r");
-		// if (testFile){
-		// 	/**
-		// 	 * mode is SeekSet, position is set to offset bytes from the beginning.
-		// 	 * mode is SeekCur, current position is moved by offset bytes.
-		// 	 * mode is SeekEnd, position is set to offset bytes from the end of the file.
-		// 	 * Returns true if position was set successfully.
-		// 	 */
-		// 	Serial.println("Position inside the file at 9 byte!");
-		// 	testFile.seek(9, SeekSet);
-
-		// 	Serial.println("Read file content!");
-		// 	Serial.println(testFile.readStringUntil('\0'));
-		// 	testFile.close();
-		// }else{
-		// 	Serial.println("Problem on read file!");
-		// }
 	}
 
 	// // Setup callbacks for SerialCommand commands
@@ -262,6 +219,8 @@ void setup()
 	pinMode(LED_PIN, OUTPUT); // Configure the onboard LED for output
 	ledON();
 	Serial.println("READY.");
+
+	runTestsSuite();
 }
 
 // ------------------------
