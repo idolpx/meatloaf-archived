@@ -372,7 +372,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else if (m_filename.startsWith(F("HTTP://")) || m_filename.startsWith(F("ML://")) || m_filename.startsWith(F("CS://")))
 	{
-		m_mfile(MFSOwner::File(m_filename.c_str()));
+		m_mfile.reset(MFSOwner::File(m_filename.c_str()));
 
 #ifdef DEBUG
 		Serial.printf("\r\nURL: [%s]\r\n", m_mfile->url().c_str());
