@@ -61,6 +61,7 @@ public:
     size_t size() override ;
     bool mkDir() override ;
     bool remove() override ;
+    MFile* cd(std::string newDir);
 
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override  { return 0; };

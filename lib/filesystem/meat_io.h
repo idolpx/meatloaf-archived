@@ -26,7 +26,7 @@ public:
     MFile(MFile* path, std::string name);
     MFile* parent(std::string);
     MFile* localParent(std::string);
-    MFile* root2(std::string);
+    MFile* root(std::string);
     MFile* localRoot(std::string);
     MFile* cd(std::string newDir);
     //std::string name();

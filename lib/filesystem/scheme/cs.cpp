@@ -52,13 +52,13 @@ bool CServerSessionMgr::command(std::string command) {
 }
 
 size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
-        Serial.println("CServerSessionMgr::read");
+        //Serial.println("CServerSessionMgr::read");
 
     auto rd = m_wifi.read(buf, size);
     int attempts = 5;
     int wait = 500;
     while(rd == 0 && (attempts--)>0) {
-        Serial.printf("Read Attempt %d\n", attempts);
+        //Serial.printf("Read Attempt %d\n", attempts);
         delay(wait);
         wait+=100;
         rd = m_wifi.read(buf, size);
@@ -95,7 +95,7 @@ bool CServerSessionMgr::traversePath(MFile* path) {
     // tricky. First we have to
     // CF / - to go back to root
 
-Serial.printf("Traversing path: %s\n", path->path.c_str());
+//Serial.printf("Traversing path: %s\n", path->path.c_str());
 
     command("cf /");
 
@@ -105,16 +105,16 @@ Serial.printf("Traversing path: %s\n", path->path.c_str());
 
         //MFile::parsePath(&chopped, path->path); - nope this doessn't work and crases in the loop!
 
-        Serial.println("Before loop");
-        Serial.printf("Chopped size:%d\n", chopped.size());
+        //Serial.println("Before loop");
+        //Serial.printf("Chopped size:%d\n", chopped.size());
         delay(500);
 
-        for(int i = 3; i < chopped.size(); i++) {
-            Serial.println("Before chopped deref");
+        for(int i = 1; i < chopped.size(); i++) {
+            //Serial.println("Before chopped deref");
 
             auto part = chopped[i];
             
-            Serial.printf("traverse path part: [%s]\n", part.c_str());
+            //Serial.printf("traverse path part: [%s]\n", part.c_str());
             if(mstr::endsWith(part, ".d64", false)) 
             {
                 // THEN we have to mount the image INSERT image_name
@@ -268,11 +268,32 @@ bool CServerOStream::isOpen() {
  * File impls
  ********************************************************/
 
+
+MFile* CServerFile::cd(std::string newDir) {
+    // maah - don't really know how to handle this!
+    if(newDir[0]=='/' && newDir[1]=='/') {
+        return MFSOwner::File("cs:/"+newDir);
+    }
+    else if(newDir[0]=='/') {
+        return localRoot(mstr::drop(newDir,1));
+    }
+    else if(newDir[0]=='^') {
+        return localParent(mstr::drop(newDir,1));
+    }
+    if(newDir[0]=='.' && newDir[1]=='.') {
+        return localParent(mstr::drop(newDir,3));
+    }
+    else {
+        return MFSOwner::File(url+"/"+newDir);
+    }
+};
+
+
 bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
     // otherwise - false
 
-    Serial.printf("trying to chop %s\n", path.c_str());
+    //Serial.printf("trying to chop %s\n", path.c_str());
 
     auto chopped = mstr::split(path,'/');
     auto second = (chopped.end())-2; // penultimate path part is d64? 

@@ -203,7 +203,7 @@ MFile* MFile::localParent(std::string plus) {
     return MFSOwner::File(parent+"/"+plus);
 };
 
-MFile* MFile::root2(std::string plus) {
+MFile* MFile::root(std::string plus) {
     return new LittleFile("/"+plus);
 };
 
@@ -213,7 +213,7 @@ MFile* MFile::localRoot(std::string plus) {
 
 MFile* MFile::cd(std::string newDir) {
     if(newDir[0]=='/' && newDir[1]=='/') {
-        return root2(mstr::drop(newDir,2));
+        return root(mstr::drop(newDir,2));
     }
     else if(newDir[0]=='/') {
         return localRoot(mstr::drop(newDir,1));
