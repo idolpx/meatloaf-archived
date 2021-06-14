@@ -126,7 +126,7 @@ bool DeviceDB::select(byte new_device)
 
     if (new_device == device)
     {
-        return true;
+        return false;
     }
 
     // Flush record to database

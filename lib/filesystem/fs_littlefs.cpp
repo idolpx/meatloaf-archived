@@ -350,6 +350,8 @@ bool LittleFile::rewindDirectory()
     lfs_info dirent;
     lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
     lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
+
+    media_blocks_free = 0;
     return (rc == 0);
 }
 

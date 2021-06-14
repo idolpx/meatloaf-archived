@@ -448,7 +448,6 @@ boolean  IEC::undoTurnAround(void)
 // Return value, see IEC::ATNCheck definition.
 IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 {
-	byte i = 0;
 
 #ifdef DEBUG_TIMING
 	int pin = IEC_PIN_ATN;
@@ -547,8 +546,8 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 				}
 				
 				atn_cmd.code = c;
-				atn_cmd.command = c bitand 0xF0; // upper nibble, the command itself
-				atn_cmd.channel = c bitand 0x0F; // lower nibble is the channel
+				atn_cmd.command = c bitand 0xF0; // upper nibble, command
+				atn_cmd.channel = c bitand 0x0F; // lower nibble, channel
 
 				if ( cc == ATN_CODE_LISTEN )
 				{
@@ -579,8 +578,6 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 
 		// some delay is required before more ATN business can take place.
 		delayMicroseconds(TIMING_ATN_DELAY);
-
-		atn_cmd.strLen = i;			
 	}
 	else 
 	{

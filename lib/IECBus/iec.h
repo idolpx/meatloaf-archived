@@ -71,7 +71,7 @@ public:
 		byte command;
 		byte channel;
 		byte device;
-		byte str[ATN_CMD_MAX_LENGTH];
+		char str[ATN_CMD_MAX_LENGTH];
 		byte strLen;
 	} ATNCmd;
 
