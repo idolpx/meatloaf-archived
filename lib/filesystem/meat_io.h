@@ -23,7 +23,6 @@ public:
     MFile(std::string path);
     MFile(std::string path, std::string name);
     MFile(MFile* path, std::string name);
-    static std::vector<std::string> chopPath(std::string path);
     MFile* parent(std::string);
     MFile* localParent(std::string);
     MFile* root2(std::string);
@@ -49,7 +48,6 @@ public:
         return istream->pipeTo(ostream.get());
     };
 
-    std::vector<std::string> chop();
 
     virtual bool isDirectory() = 0;
     virtual MIstream* inputStream();

@@ -36,9 +36,6 @@ void util_string_ltrim(std::string &s);
 void util_string_rtrim(std::string &s);
 void util_string_trim(std::string &s);
 
-void util_string_tolower(std::string &s);
-void util_string_toupper(std::string &s);
-
 long util_parseInt(FILE *f, char skipChar);
 long util_parseInt(FILE *f);
 

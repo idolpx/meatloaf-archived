@@ -1,4 +1,6 @@
 #include "string_utils.h"
+#include <algorithm>
+
 
 namespace mstr {
     bool compare_char(char &c1, char &c2)
@@ -79,6 +81,21 @@ namespace mstr {
                 std::equal(s1.begin(), s1.end(), s2.begin(), &compare_char_insensitive) );
 
     }
+
+    // convert to lowercase (in place)
+    void toLower(std::string &s)
+    {
+        std::transform(s.begin(), s.end(), s.begin(),
+                    [](unsigned char c) { return std::tolower(c); });
+    }
+
+    // convert to uppercase (in place)
+    void toUpper(std::string &s)
+    {
+        std::transform(s.begin(), s.end(), s.begin(),
+                    [](unsigned char c) { return std::toupper(c); });
+    }
+
 
 
     std::vector<std::string> split(std::string toSplit, char ch, int limit) {

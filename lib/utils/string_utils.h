@@ -11,8 +11,9 @@ namespace mstr {
     bool startsWith(std::string s, const char *pattern, bool case_sensitive = true);
     bool endsWith(std::string s, const char *pattern, bool case_sensitive = true);
     bool equals(std::string &s1, std::string &s2, bool case_sensitive = true);
-    std::vector<std::string> split(std::string toSplit, char ch, int limit);
-
+    std::vector<std::string> split(std::string toSplit, char ch, int limit = 9999);
+    void toLower(std::string &s);
+    void toUpper(std::string &s);
 }
 
 #endif

@@ -9,19 +9,8 @@
 
 using namespace std;
 
-// convert to lowercase (in place)
-void util_string_tolower(std::string &s)
-{
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-}
 
-// convert to uppercase (in place)
-void util_string_toupper(std::string &s)
-{
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return std::toupper(c); });
-}
+
 
 // trim from start (in place)
 void util_string_ltrim(std::string &s)

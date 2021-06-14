@@ -101,7 +101,7 @@ Serial.printf("Traversing path: %s\n", path->url().c_str());
 
     if(isOK()) {
 
-        std::vector<std::string> chopped = path->chop();
+        std::vector<std::string> chopped = mstr::split(path->url(), '/');
 
         //MFile::parsePath(&chopped, path->path); - nope this doessn't work and crases in the loop!
 
@@ -176,7 +176,6 @@ bool CServerIStream::open() {
         // should we allow loading of * in any directory?
         // then we can LOAD and get available count from first 2 bytes in (LH) endian
         // name here MUST BE UPPER CASE
-        util_string_toupper(file->filename);
         CServerFileSystem::session.command("load "+file->filename);
         // read first 2 bytes with size, low first, but may also reply with: ?500 - ERROR
         uint8_t buffer[2] = { 0, 0 };
@@ -275,7 +274,7 @@ bool CServerFile::isDirectory() {
 
     Serial.printf("trying to chop %s\n", url().c_str());
 
-    auto chopped = MFile::chopPath(url());
+    auto chopped = mstr::split(url(),'/');
     auto second = (chopped.end())-2; // penultimate path part is d64? 
     //auto x = (*second);
     //Serial.printf("isDirectory second from right:%s\n", x.c_str());

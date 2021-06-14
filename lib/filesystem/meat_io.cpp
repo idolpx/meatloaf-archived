@@ -18,18 +18,6 @@
 
 
 
-std::vector<std::string> MFile::chopPath(std::string path) {
-    std::vector<std::string> paths;
-    
-    std::string line;
-    std::stringstream ss(path);
-
-    while(std::getline(ss, line, '/')) {
-        paths.push_back(line);
-    }
-    return paths;
-}
-
 std::string joinNamesToPath(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end) {
     std::string res;
 
@@ -99,15 +87,7 @@ bool MFSOwner::umount(std::string name) {
 }
 
 MFile* MFSOwner::File(std::string path) {
-    std::vector<std::string> paths = MFile::chopPath(path);
-
-    // std::string line;
-
-    // std::stringstream ss(path);
-
-    // while(std::getline(ss, line, '/')) {
-    //     paths.push_back(line);
-    // }
+    std::vector<std::string> paths = mstr::split(path,'/');
 
     auto pathIterator = paths.end();
     auto begin = paths.begin();
@@ -122,7 +102,6 @@ MFile* MFSOwner::File(std::string path) {
         pathIterator--;
 
         auto part = *pathIterator;
-        util_string_toupper(part);
 
         //Serial.printf("testing part '%s'\n", part.c_str());
 
@@ -175,10 +154,6 @@ MFile::MFile(MFile* path, std::string name) : MFile(path->path + "/" + name) {}
 
 bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
-}
-
-std::vector<std::string> MFile::chop() {
-    return chopPath(url());
 }
 
 void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
