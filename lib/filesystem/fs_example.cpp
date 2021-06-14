@@ -1,13 +1,18 @@
-
 #include "fs_example.h"
 
 #include "meat_io.h"
 #include "../../include/make_unique.h"
+#include "../../include/global_defines.h"
 #include "buffered_io.h"
 #include <string>
 #include "../EdUrlParser/EdUrlParser.h"
 #include "stream_writer.h"
 #include "peoples_url_parser.h"
+
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
+
+
 
 void testReader(MFile* readeTest) {
     // /* Test Line reader */
@@ -149,6 +154,90 @@ void testPaths() {
 
 } 
 
+
+void htmlStream(char *url)
+{
+    bool success = true;
+    size_t i = 0;
+    size_t b_len = 1;
+	uint8_t b[b_len];
+    Debug_printv("Opening '%s'\r\n", url);
+    std::shared_ptr<MFile> file(MFSOwner::File(url));
+
+    if (file->exists())
+    {
+        size_t len = file->size();
+        Debug_printv("File exists! size [%d]\r\n", len);
+
+        std::shared_ptr<MIstream> stream(file->inputStream());
+
+		for(i=0;i < len; i++)
+		{
+			success = stream->read(b, b_len);
+			if (success)
+			{
+                Serial.write(b, b_len);
+            }
+        }
+        stream->close();
+        Debug_println("");
+        Debug_printv("%d of %d bytes sent\r\n", i, len);
+    }
+    else
+    {
+        Debug_printv("File does not exist.\r\n");
+    }
+}
+
+void httpGet(char *url)
+{
+    bool success = true;
+    size_t i = 0;
+    WiFiClient client;
+    HTTPClient http;
+    size_t b_len = 1;
+	uint8_t b[1];
+
+    http.setUserAgent("some agent");
+    http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+    http.setRedirectLimit(10);
+
+    Serial.printf("[HTTP] begin... [%s]\n", url);
+    if (http.begin(client, url)) {  // HTTP
+
+      Serial.print("[HTTP] GET...\n");
+      // start connection and send HTTP header
+      int httpCode = http.GET();
+      size_t len = http.getSize();
+
+      // httpCode will be negative on error
+      if (httpCode > 0) {
+        // HTTP header has been send and Server response header has been handled
+        Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+
+        // file found at server
+        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+
+            for(i=0;i < len; i++)
+            {
+                success = client.readBytes(b, b_len);
+                if (success)
+                {
+                    Serial.write(b, b_len);
+                }
+            }
+        }
+      } else {
+        Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+      }
+      client.stop();
+      http.end();
+    } else {
+      Serial.printf("[HTTP} Unable to connect\n");
+    }
+}
+
+
 void runTests() {
     testPaths();
     // this is a directory for verious directories tests
@@ -176,5 +265,8 @@ void runTests() {
     //testFileProperties(destFile.get());
 
     //testCopy(testFile.get(), destFile.get());
+
+    htmlStream("http://jigsaw.w3.org/HTTP/connection.html");
+    //httpGet("http://jigsaw.w3.org/HTTP/connection.html");
 }
 

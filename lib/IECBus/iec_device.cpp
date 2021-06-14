@@ -372,36 +372,36 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else if (m_filename.startsWith(F("HTTP://")) || m_filename.startsWith(F("ML://")) || m_filename.startsWith(F("CS://")))
 	{
-		std::unique_ptr<MFile> ml_file(MFSOwner::File(m_filename.c_str()));
+		m_mfile(MFSOwner::File(m_filename.c_str()));
 
 #ifdef DEBUG
-		Serial.printf("\r\nURL: [%s]\r\n", ml_file->url().c_str());
-		Serial.printf("Root: [%s]\r\n", ml_file->root().c_str());
-		Serial.printf("Base: [%s]\r\n", ml_file->base().c_str());
-		Serial.printf("Scheme: [%s]\r\n", ml_file->scheme.c_str());
-		Serial.printf("Username: [%s]\r\n", ml_file->username.c_str());
-		Serial.printf("Password: [%s]\r\n", ml_file->password.c_str());
-		Serial.printf("Host: [%s]\r\n", ml_file->hostname.c_str());
-		Serial.printf("Port: [%s]\r\n", ml_file->port.c_str());
-		Serial.printf("Path: [%s]\r\n", ml_file->path.c_str());
-		Serial.printf("File: [%s]\r\n", ml_file->filename.c_str());
-		Serial.printf("Extension: [%s]\r\n", ml_file->extension.c_str());
-		Serial.printf("Query: [%s]\r\n", ml_file->query.c_str());
-		Serial.printf("Fragment: [%s]\r\n", ml_file->fragment.c_str());
+		Serial.printf("\r\nURL: [%s]\r\n", m_mfile->url().c_str());
+		Serial.printf("Root: [%s]\r\n", m_mfile->root().c_str());
+		Serial.printf("Base: [%s]\r\n", m_mfile->base().c_str());
+		Serial.printf("Scheme: [%s]\r\n", m_mfile->scheme.c_str());
+		Serial.printf("Username: [%s]\r\n", m_mfile->username.c_str());
+		Serial.printf("Password: [%s]\r\n", m_mfile->password.c_str());
+		Serial.printf("Host: [%s]\r\n", m_mfile->hostname.c_str());
+		Serial.printf("Port: [%s]\r\n", m_mfile->port.c_str());
+		Serial.printf("Path: [%s]\r\n", m_mfile->path.c_str());
+		Serial.printf("File: [%s]\r\n", m_mfile->filename.c_str());
+		Serial.printf("Extension: [%s]\r\n", m_mfile->extension.c_str());
+		Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
+		Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
 #endif
 
 		// Mount url
 		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.partition(0);
-		m_device.url(ml_file->root().c_str());		
-		m_device.path(ml_file->path.c_str());
-		m_filename = ml_file->filename.c_str();
-		m_filetype = ml_file->extension.c_str();
+		m_device.url(m_mfile->root().c_str());		
+		m_device.path(m_mfile->path.c_str());
+		m_filename = m_mfile->filename.c_str();
+		m_filetype = m_mfile->extension.c_str();
 		m_device.archive("");
 		m_device.image("");
 
 		m_openState = O_DIR;
-		if (ml_file->scheme == "HTTP" || m_filename.length())
+		if (m_mfile->scheme == "HTTP" || m_filename.length())
 		{
 			m_openState = O_FILE;
 		}
@@ -678,9 +678,9 @@ void Interface::sendListing()
 	Debug_println("");
 
 	// Send List ITEMS
-	String dirTarget = m_device.url() + m_device.path();
-	std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
-	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
+	//String dirTarget = m_device.url() + m_device.path();
+	//std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
+	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
 	if(entry == nullptr) {
 		ledOFF();
@@ -751,13 +751,13 @@ Serial.println("looping in SendDir");
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->filename.c_str(), space_cnt, "", extension.c_str());
 		}
 		
-		entry.reset(dir->getNextFileInDir());
+		entry.reset(m_mfile->getNextFileInDir());
 
 		ledToggle(true);
 	}
 
 	// Send Listing Footer
-	byte_count += sendFooter(basicPtr, dir->media_blocks_free, dir->media_block_size);
+	byte_count += sendFooter(basicPtr, m_mfile->media_blocks_free, m_mfile->media_block_size);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -849,33 +849,33 @@ void Interface::sendFile()
 				m_filename = entry->filename.c_str();
 		}
 	}
-	String fileTarget = String(m_device.url() + m_device.path() + m_filename);
+	//String fileTarget = String(m_device.url() + m_device.path() + m_filename);
 
-	std::unique_ptr<MFile> file(MFSOwner::File(fileTarget.c_str()));
+	//std::unique_ptr<MFile> m_mfile(MFSOwner::File(fileTarget.c_str()));
 
-	if (!file->exists())
+	if (!m_mfile->exists())
 	{
-		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", fileTarget.c_str());
+		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", m_mfile->url().c_str());
 		m_iec.sendFNF();
 	}
 	else
 	{
-		size_t len = file->size();
-		std::shared_ptr<MIstream> fileIStream(file->inputStream());
+		size_t len = m_mfile->size();
+		std::shared_ptr<MIstream> istream(m_mfile->inputStream());
 
 		// Get file load address
-		fileIStream->read(b, b_len);
+		istream->read(b, b_len);
 		success = m_iec.send(b[0]);
 		load_address = *b & 0x00FF; // low byte
-		fileIStream->read(b, b_len);
+		istream->read(b, b_len);
 		success = m_iec.send(b[0]);
 		load_address = load_address | *b << 8;  // high byte
 		// fseek(file, 0, SEEK_SET);
 
-		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", fileTarget.c_str(), load_address, len);
+		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url().c_str(), load_address, len);
 		for (i = 2; success and i < len; ++i) 
 		{
-			success = fileIStream->read(b, b_len);
+			success = istream->read(b, b_len);
 			if (success)
 			{
 #ifdef DATA_STREAM
@@ -922,7 +922,7 @@ void Interface::sendFile()
 				break;
 			}
 		}
-		fileIStream->close();
+		istream->close();
 		Debug_println("");
 		Debug_printf("%d of %d bytes sent\r\n", i, len);
 
