@@ -28,7 +28,6 @@ public:
     MFile* localParent(std::string);
     MFile* root(std::string);
     MFile* localRoot(std::string);
-    MFile* cd(std::string newDir);
     //std::string name();
     //std::string extension();
 
@@ -49,7 +48,7 @@ public:
         return istream->pipeTo(ostream.get());
     };
 
-
+    virtual MFile* cd(std::string newDir);
     virtual bool isDirectory() = 0;
     virtual MIstream* inputStream();
     virtual MOstream* outputStream() = 0 ; // has to return OPENED stream

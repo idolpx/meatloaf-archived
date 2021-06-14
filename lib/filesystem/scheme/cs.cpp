@@ -271,14 +271,17 @@ bool CServerOStream::isOpen() {
 
 MFile* CServerFile::cd(std::string newDir) {
     // maah - don't really know how to handle this!
+
+    //auto test = "cs:/"+mstr::drop(newDir,1);
+    //Serial.printf("cd in CServerFile! New dir=%s\n", test.c_str());
     if(newDir[0]=='/' && newDir[1]=='/') {
-        return MFSOwner::File("cs:/"+newDir);
+        return MFSOwner::File(mstr::drop(newDir,2));
     }
     else if(newDir[0]=='/') {
-        return localRoot(mstr::drop(newDir,1));
+        return MFSOwner::File("cs:/"+mstr::drop(newDir,1));
     }
     else if(newDir[0]=='^') {
-        return localParent(mstr::drop(newDir,1));
+        return MFSOwner::File("cs:/");
     }
     if(newDir[0]=='.' && newDir[1]=='.') {
         return localParent(mstr::drop(newDir,3));
