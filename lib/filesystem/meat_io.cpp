@@ -201,8 +201,8 @@ MIstream* MFile::inputStream() {
 MFile* MFile::parent(std::string plus) {
     // drop last dir
     // add plus
-    int lastSlash = url().find_last_of('/');
-    std::string newDir = mstr::dropLast(url(), lastSlash) + "/" + plus;
+    int lastSlash = url.find_last_of('/');
+    std::string newDir = mstr::dropLast(url, lastSlash) + "/" + plus;
     return MFSOwner::File(newDir);
 };
 
@@ -210,8 +210,8 @@ MFile* MFile::localParent(std::string plus) {
     // drop last dir
     // check if it isn't shorter than streamPath
     // add plus
-    int lastSlash = url().find_last_of('/');
-    std::string parent = mstr::dropLast(url(), lastSlash);
+    int lastSlash = url.find_last_of('/');
+    std::string parent = mstr::dropLast(url, lastSlash);
     if(parent.length()-streamPath.length()>1)
         parent = streamPath;
     return MFSOwner::File(parent+"/"+plus);
@@ -239,7 +239,7 @@ MFile* MFile::cd(std::string newDir) {
         return localParent(mstr::drop(newDir,3));
     }
     else {
-        return MFSOwner::File(url()+"/"+newDir);
+        return MFSOwner::File(url+"/"+newDir);
     }
 };
 

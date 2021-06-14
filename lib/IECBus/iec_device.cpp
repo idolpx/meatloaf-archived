@@ -375,28 +375,26 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_mfile.reset(MFSOwner::File(m_filename.c_str()));
 
 #ifdef DEBUG
-		Serial.printf("\r\nURL: [%s]\r\n", m_mfile->url().c_str());
-		Serial.printf("Root: [%s]\r\n", m_mfile->root().c_str());
-		Serial.printf("Base: [%s]\r\n", m_mfile->base().c_str());
+		Serial.printf("\r\nURL: [%s]\r\n", m_mfile->url.c_str());
 		Serial.printf("Scheme: [%s]\r\n", m_mfile->scheme.c_str());
-		Serial.printf("Username: [%s]\r\n", m_mfile->username.c_str());
-		Serial.printf("Password: [%s]\r\n", m_mfile->password.c_str());
-		Serial.printf("Host: [%s]\r\n", m_mfile->hostname.c_str());
+		Serial.printf("Username: [%s]\r\n", m_mfile->user.c_str());
+		Serial.printf("Password: [%s]\r\n", m_mfile->pass.c_str());
+		Serial.printf("Host: [%s]\r\n", m_mfile->host.c_str());
 		Serial.printf("Port: [%s]\r\n", m_mfile->port.c_str());
 		Serial.printf("Path: [%s]\r\n", m_mfile->path.c_str());
-		Serial.printf("File: [%s]\r\n", m_mfile->filename.c_str());
+		Serial.printf("File: [%s]\r\n", m_mfile->name.c_str());
 		Serial.printf("Extension: [%s]\r\n", m_mfile->extension.c_str());
-		Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
-		Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
+		// Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
+		// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
 #endif
 
 		// Mount url
 		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
 		m_device.partition(0);
-		m_device.url(m_mfile->root().c_str());		
-		m_device.path(m_mfile->path.c_str());
-		m_filename = m_mfile->filename.c_str();
-		m_filetype = m_mfile->extension.c_str();
+		// m_device.url(m_mfile->root().c_str());		
+		// m_device.path(m_mfile->path.c_str());
+		// m_filename = m_mfile->filename.c_str();
+		// m_filetype = m_mfile->extension.c_str();
 		m_device.archive("");
 		m_device.image("");
 
@@ -720,7 +718,7 @@ Serial.println("looping in SendDir");
 		if (block_cnt > 999)
 			block_spc--;
 
-		byte space_cnt = 21 - (entry->filename.length() + 5);
+		byte space_cnt = 21 - (entry->name.length() + 5);
 		if (space_cnt > 21)
 			space_cnt = 0;
 
@@ -745,10 +743,10 @@ Serial.println("looping in SendDir");
 		}
 
 		// Don't show hidden folders or files
-		Debug_printv("size[%d] name[%s]", entry->size(), entry->filename.c_str());
-		if (entry->filename[0]!='.' || m_show_hidden)
+		Debug_printv("size[%d] name[%s]", entry->size(), entry->name.c_str());
+		if (entry->name[0]!='.' || m_show_hidden)
 		{
-			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->filename.c_str(), space_cnt, "", extension.c_str());
+			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name.c_str(), space_cnt, "", extension.c_str());
 		}
 		
 		entry.reset(m_mfile->getNextFileInDir());
@@ -842,11 +840,11 @@ void Interface::sendFile()
 			{
 				Serial.println("looping in sendFile - why?");
 
-				Debug_printf("\r\nsendFile: %s", entry->filename.c_str());
+				Debug_printf("\r\nsendFile: %s", entry->name.c_str());
 				entry.reset(dir->getNextFileInDir());
 			}
 			if (entry != nullptr)
-				m_filename = entry->filename.c_str();
+				m_filename = entry->name.c_str();
 		}
 	}
 	//String fileTarget = String(m_device.url() + m_device.path() + m_filename);
@@ -855,7 +853,7 @@ void Interface::sendFile()
 
 	if (!m_mfile->exists())
 	{
-		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", m_mfile->url().c_str());
+		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", m_mfile->url.c_str());
 		m_iec.sendFNF();
 	}
 	else
@@ -872,7 +870,7 @@ void Interface::sendFile()
 		load_address = load_address | *b << 8;  // high byte
 		// fseek(file, 0, SEEK_SET);
 
-		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url().c_str(), load_address, len);
+		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
 		for (i = 2; success and i < len; ++i) 
 		{
 			success = istream->read(b, b_len);

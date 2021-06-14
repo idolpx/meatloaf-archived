@@ -95,13 +95,13 @@ bool CServerSessionMgr::traversePath(MFile* path) {
     // tricky. First we have to
     // CF / - to go back to root
 
-Serial.printf("Traversing path: %s\n", path->url().c_str());
+Serial.printf("Traversing path: %s\n", path->path.c_str());
 
     command("cf /");
 
     if(isOK()) {
 
-        std::vector<std::string> chopped = mstr::split(path->url(), '/');
+        std::vector<std::string> chopped = mstr::split(path->path, '/');
 
         //MFile::parsePath(&chopped, path->path); - nope this doessn't work and crases in the loop!
 
@@ -176,7 +176,7 @@ bool CServerIStream::open() {
         // should we allow loading of * in any directory?
         // then we can LOAD and get available count from first 2 bytes in (LH) endian
         // name here MUST BE UPPER CASE
-        CServerFileSystem::session.command("load "+file->filename);
+        CServerFileSystem::session.command("load "+file->name);
         // read first 2 bytes with size, low first, but may also reply with: ?500 - ERROR
         uint8_t buffer[2] = { 0, 0 };
         read(buffer, 2);
@@ -206,7 +206,7 @@ size_t CServerIStream::read(uint8_t* buf, size_t size)  {
     auto bytesRead = CServerFileSystem::session.read(buf, size);
     m_bytesAvailable-=bytesRead;
     m_position+=bytesRead;
-    ledToggle(true);
+    //ledTogg(true);
     return bytesRead;
 };
 
@@ -253,7 +253,7 @@ size_t CServerOStream::write(const uint8_t *buf, size_t size) {
 
     CServerFileSystem::session.command("save fileName,size[,type=PRG,SEQ]");
     m_isOpen = false; // c64 server supports only writing all at once, so this channel has to be marked closed
-    return CServerFileSystem::session.write(file->filename, buf, size);
+    return CServerFileSystem::session.write(file->name, buf, size);
 };
 
 void CServerOStream::flush() {
@@ -272,9 +272,9 @@ bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
     // otherwise - false
 
-    Serial.printf("trying to chop %s\n", url().c_str());
+    Serial.printf("trying to chop %s\n", path.c_str());
 
-    auto chopped = mstr::split(url(),'/');
+    auto chopped = mstr::split(path,'/');
     auto second = (chopped.end())-2; // penultimate path part is d64? 
     //auto x = (*second);
     //Serial.printf("isDirectory second from right:%s\n", x.c_str());
@@ -285,13 +285,13 @@ bool CServerFile::isDirectory() {
 };
 
 MIstream* CServerFile::inputStream() {
-    MIstream* istream = new CServerIStream(url());
+    MIstream* istream = new CServerIStream(url);
     istream->open();   
     return istream;
 }; 
 
 MOstream* CServerFile::outputStream() {
-    MOstream* ostream = new CServerOStream(url());
+    MOstream* ostream = new CServerOStream(url);
     ostream->open();   
     return ostream;
 };
@@ -306,7 +306,7 @@ bool CServerFile::rewindDirectory() {
 
     if(!CServerFileSystem::session.traversePath(this)) return false;
 
-    if(mstr::endsWith(url(), ".d64", false))
+    if(mstr::endsWith(path, ".d64", false))
     {
         dirIsImage = true;
         // to list image contents we have to run
@@ -375,7 +375,7 @@ MFile* CServerFile::getNextFileInDir() {
             mstr::rtrim(name);
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name);
             //return new CServerFile(path() +"/"+ name);
-            return new CServerFile(url() + "/"+ name);
+            return new CServerFile(url + "/"+ name);
 
         }
     } else {
@@ -413,7 +413,7 @@ MFile* CServerFile::getNextFileInDir() {
 
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name.c_str());
 
-            return new CServerFile(url() + "/" + name, 0);
+            return new CServerFile(url + "/" + name, 0);
         }
     }
 };

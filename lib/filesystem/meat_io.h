@@ -9,14 +9,15 @@
 #include "buffered_io.h"
 #include "meat_stream.h"
 #include "../../include/make_unique.h"
-#include "EdUrlParser.h"
+//#include "EdUrlParser.h"
+#include "peoples_url_parser.h"
 #include "string_utils.h"
 
 /********************************************************
  * Universal file
  ********************************************************/
 
-class MFile : public EdUrlParser {
+class MFile : public PeoplesUrlParser {
 public:
     MFile() {}; // only for local FS!!!
     MFile(nullptr_t null) : m_isNull(true) {};

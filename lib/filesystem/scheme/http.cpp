@@ -10,8 +10,8 @@ bool HttpFile::isDirectory() {
 
 MIstream* HttpFile::inputStream() {
     // has to return OPENED stream
-    Serial.printf("HttpFile::inputStream [%s]\n", url().c_str());
-    MIstream* istream = new HttpIStream(url());
+    Serial.printf("HttpFile::inputStream [%s]\n", url.c_str());
+    MIstream* istream = new HttpIStream(url);
     istream->open();   
     return istream;
 } ; 
@@ -22,7 +22,7 @@ MIstream* HttpFile::createIStream(MIstream* is) {
 
 MOstream* HttpFile::outputStream() {
     // has to return OPENED stream
-    MOstream* ostream = new HttpOStream(url());
+    MOstream* ostream = new HttpOStream(url);
     ostream->open();   
     return ostream;
 } ; 
@@ -36,7 +36,7 @@ time_t HttpFile::getCreationTime() {
 } ;
 
 bool HttpFile::exists() {
-    Serial.printf("\nHttpFile::exists: [%s]\n", url().c_str());
+    Serial.printf("\nHttpFile::exists: [%s]\n", url.c_str());
     // we may try open the stream to check if it exists
     std::unique_ptr<MIstream> test(inputStream());
     // remember that MIStream destuctor should close the stream!

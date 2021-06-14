@@ -9,6 +9,7 @@
 #include "string_utils.h"
 
 class PeoplesUrlParser {
+public:
     std::string scheme;
     std::string path;
     std::string user;
@@ -16,6 +17,9 @@ class PeoplesUrlParser {
     std::string host;
     std::string port;
     std::string url;
+    std::string name;
+    std::string extension;
+private:
 
     void parseHostPortPath(std::string userPass) {
         // host.com:port/path/path/path....
@@ -92,6 +96,18 @@ public:
             scheme = "";
             parseAuthorityPath(parts[0]); // user:pass@host.com:port/path/path/path....
         }
+
+        auto pathParts = mstr::split(path,'/');
+        if(pathParts.size()>1)
+            name = *(pathParts.end()--);
+        else
+            name = path;
+
+        auto nameParts = mstr::split(name,'.');
+        if(nameParts.size()>1)
+            extension = *(nameParts.end()--);
+        else
+            extension = "";
     }
 
     // void dump() {

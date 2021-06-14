@@ -145,11 +145,11 @@ bool LittleFile::pathValid(const char *apath)
 
 bool LittleFile::isDirectory()
 {
-    if(localPath=="/" || localPath=="")
+    if(path=="/" || path=="")
         return true;
 
     lfs_info info;
-    int rc = lfs_stat(&LittleFileSystem::lfsStruct, localPath.c_str(), &info);
+    int rc = lfs_stat(&LittleFileSystem::lfsStruct, path.c_str(), &info);
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
 }
 
@@ -159,14 +159,14 @@ MIstream* LittleFile::createIStream(MIstream* is) {
 
 MIstream* LittleFile::inputStream()
 {
-    MIstream* istream = new LittleIStream(localPath);
+    MIstream* istream = new LittleIStream(path);
     istream->open();   
     return istream;
 }
 
 MOstream* LittleFile::outputStream()
 {
-    MOstream* ostream = new LittleOStream(localPath);
+    MOstream* ostream = new LittleOStream(path);
     ostream->open();   
     return ostream;
 }
@@ -174,7 +174,7 @@ MOstream* LittleFile::outputStream()
 time_t LittleFile::getLastWrite()
 {
     time_t ftime = 0;
-    int rc = lfs_getattr(&LittleFileSystem::lfsStruct, localPath.c_str(), 't', (void *)&ftime, sizeof(ftime));
+    int rc = lfs_getattr(&LittleFileSystem::lfsStruct, path.c_str(), 't', (void *)&ftime, sizeof(ftime));
     if (rc != sizeof(ftime))
         ftime = 0; // Error, so clear read value
     return ftime;
@@ -190,7 +190,7 @@ bool LittleFile::mkDir()
     if (m_isNull) {
         return false;
     }
-    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, localPath.c_str());
+    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, path.c_str());
     return (rc==0);
 }
 
@@ -199,23 +199,23 @@ bool LittleFile::exists()
     if (m_isNull) {
         return false;
     }
-    if (localPath=="/" || localPath=="") {
+    if (path=="/" || path=="") {
         return true;
     }
     lfs_info info;
-    int rc = lfs_stat(&LittleFileSystem::lfsStruct, localPath.c_str(), &info);
+    int rc = lfs_stat(&LittleFileSystem::lfsStruct, path.c_str(), &info);
     return rc == 0;
 }
 
 size_t LittleFile::size() {
-    if(m_isNull || localPath=="/" || localPath=="")
+    if(m_isNull || path=="/" || path=="")
         return 0;
     else if(isDirectory()) {
         return 0;
     }
     else {
         auto handle = std::make_unique<LittleHandle>();
-        handle->obtain(LFS_O_RDONLY, localPath);
+        handle->obtain(LFS_O_RDONLY, path);
         size_t size = lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile);
         return size;
     }
@@ -223,13 +223,13 @@ size_t LittleFile::size() {
 
 bool LittleFile::remove() {
     // musi obslugiwac usuwanie plikow i katalogow!
-    int rc = lfs_remove(&LittleFileSystem::lfsStruct, localPath.c_str());
+    int rc = lfs_remove(&LittleFileSystem::lfsStruct, path.c_str());
     if (rc != 0) {
-        DEBUGV("lfs_remove: rc=%d localPath=`%s`\n", rc, localPath);
+        DEBUGV("lfs_remove: rc=%d path=`%s`\n", rc, path);
         return false;
     }
     // Now try and remove any empty subdirs this makes, silently
-    char *pathStr = strdup(localPath.c_str());
+    char *pathStr = strdup(path.c_str());
     if (pathStr) {
         char *ptr = strrchr(pathStr, '/');
         while (ptr) {
@@ -244,7 +244,7 @@ bool LittleFile::remove() {
 
 // bool LittleFile::truncate(size_t size) {
 //     auto handle = std::make_unique<LittleHandle>();
-//     handle->obtain(LFS_O_WRONLY, localPath);
+//     handle->obtain(LFS_O_WRONLY, path);
 //     int rc = lfs_file_truncate(&LittleFileSystem::lfsStruct, &handle->lfsFile, size);
 //     if (rc < 0) {
 //         DEBUGV("lfs_file_truncate rc=%d\n", rc);
@@ -257,7 +257,7 @@ bool LittleFile::rename(const char* pathTo) {
     if (!pathTo || !pathTo[0]) {
         return false;
     }
-    int rc = lfs_rename(&LittleFileSystem::lfsStruct, localPath.c_str(), pathTo);
+    int rc = lfs_rename(&LittleFileSystem::lfsStruct, path.c_str(), pathTo);
     if (rc != 0) {
         DEBUGV("lfs_rename: rc=%d, from=`%s`, to=`%s`\n", rc, pathFrom, pathTo);
         return false;
@@ -356,7 +356,7 @@ bool LittleFile::rewindDirectory()
 MFile* LittleFile::getNextFileInDir()
 {
     if(!dirOpened)
-        openDir(localPath.c_str());
+        openDir(path.c_str());
 
     memset(&_dirent, 0, sizeof(_dirent));
 
@@ -377,7 +377,7 @@ MFile* LittleFile::getNextFileInDir()
     if(!_valid)
         return nullptr;
     else
-        return new LittleFile(this->localPath + ((this->localPath == "/") ? "" : "/") + std::string(_dirent.name)); // due to EdUrlParser shittiness
+        return new LittleFile(this->path + ((this->path == "/") ? "" : "/") + std::string(_dirent.name)); // due to EdUrlParser shittiness
 }
 
 
@@ -600,7 +600,7 @@ void LittleHandle::obtain(int fl, std::string m_path) {
     } else if (rc == 0) {
         lfs_file_sync(&LittleFileSystem::lfsStruct, &lfsFile);
     } else {
-        DEBUGV("LittleFile::open: unknown return code rc=%d fd=%p localPath=`%s` openMode=%d accessMode=%d err=%d\n",
+        DEBUGV("LittleFile::open: unknown return code rc=%d fd=%p path=`%s` openMode=%d accessMode=%d err=%d\n",
                rc, fd, loclaPath, openMode, accessMode, rc);
     }    
 }

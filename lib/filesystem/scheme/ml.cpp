@@ -47,7 +47,7 @@ MFile* MLFile::getNextFileInDir() {
             dirIsOpen = true;
             ledToggle(true);
 
-            std::string fname = base() + urldecode(m_jsonHTTP["name"]).c_str();
+            std::string fname ="http:" + host + "/" + urldecode(m_jsonHTTP["name"]).c_str();
             size_t size = m_jsonHTTP["size"];
             bool dir = m_jsonHTTP["dir"];
 
@@ -75,7 +75,7 @@ bool MLFile::rewindDirectory() {
 //Serial.printf("\r\nRequesting JSON dir from PHP: ");
 
 	//String url("http://c64.meatloaf.cc/api/");
-    String url = std::string("http://" + hostname + "/api/").c_str();
+    String url = std::string("http://" + host + "/api/").c_str();
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
     String post_data = std::string("p=" + path).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
 

@@ -86,7 +86,7 @@ friend class LittleIStream;
 
 public:
     LittleFile(std::string path) {
-        parsePath(path);
+        parseUrl(path);
         if(!pathValid(path.c_str()))
             m_isNull = true;
         else

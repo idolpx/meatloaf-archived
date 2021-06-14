@@ -29,20 +29,17 @@ void testReader(MFile* readeTest) {
 
 void testFileProperties(MFile* cserverFile) {
     Serial.printf("FSTEST: %s, isDir = %d\n", cserverFile->path.c_str(), cserverFile->isDirectory());
-    Serial.printf("URL: [%s]\n", cserverFile->url().c_str());
-    //Serial.printf("Root: [%s]\n", cserverFile->root().c_str());
-    Serial.printf("Base: [%s]\n", cserverFile->base().c_str());
+    Serial.printf("URL: [%s]\n", cserverFile->url.c_str());
     Serial.printf("Scheme: [%s]\n", cserverFile->scheme.c_str());
-    Serial.printf("Username: [%s]\n", cserverFile->username.c_str());
-    Serial.printf("Password: [%s]\n", cserverFile->password.c_str());
-    Serial.printf("Host: [%s]\n", cserverFile->hostname.c_str());
+    Serial.printf("Username: [%s]\n", cserverFile->user.c_str());
+    Serial.printf("Password: [%s]\n", cserverFile->pass.c_str());
+    Serial.printf("Host: [%s]\n", cserverFile->host.c_str());
     Serial.printf("Port: [%s]\n", cserverFile->port.c_str());
     Serial.printf("Path: [%s]\n", cserverFile->path.c_str());
-    Serial.printf("File: [%s]\n", cserverFile->filename.c_str());
+    Serial.printf("File: [%s]\n", cserverFile->name.c_str());
     Serial.printf("Extension: [%s]\n", cserverFile->extension.c_str());
-    Serial.printf("Query: [%s]\n", cserverFile->query.c_str());
-    Serial.printf("Fragment: [%s]\n\n", cserverFile->fragment.c_str());
-    Serial.printf("Local path: [%s]\n\n", cserverFile->localPath.c_str());
+    // Serial.printf("Query: [%s]\n", cserverFile->query.c_str());
+    // Serial.printf("Fragment: [%s]\n\n", cserverFile->fragment.c_str());
     Serial.printf("-------------------------------\n");
 }
 
@@ -53,7 +50,7 @@ void testDirectory(MFile* dir, bool verbose=false) {
         if(verbose)
             testFileProperties(entry.get());
         else
-            Serial.printf("%s\n", entry->url().c_str());
+            Serial.printf("%s\n", entry->url.c_str());
         entry.reset(dir->getNextFileInDir());
     }
 }
@@ -66,12 +63,12 @@ void testRecursiveDir(MFile* file, std::string indent) {
         while(entry != nullptr) {
             if(entry->isDirectory())
             {
-                Serial.printf("%s%s <dir>\n", indent.c_str(), entry->filename.c_str());
+                Serial.printf("%s%s <dir>\n", indent.c_str(), entry->name.c_str());
                 testRecursiveDir(entry.get(), indent+"   ");
             }
             else
             {
-                Serial.printf("%s%s\n", indent.c_str(), entry->filename.c_str());                
+                Serial.printf("%s%s\n", indent.c_str(), entry->name.c_str());                
             }
 
             entry.reset(file->getNextFileInDir());
@@ -140,16 +137,16 @@ void testPaths() {
     std::shared_ptr<MFile> testFile(MFSOwner::File("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL"));
 
     std::shared_ptr<MFile> inDnp(testFile->cd("/inDnp"));
-    Serial.printf("*** inDnp root: '%s'\n", inDnp->url().c_str());
+    Serial.printf("*** inDnp root: '%s'\n", inDnp->url.c_str());
 
     std::shared_ptr<MFile> inFlash(testFile->cd("//iFlash"));
-    Serial.printf("*** inFlash root: '%s'\n", inFlash->url().c_str());
+    Serial.printf("*** inFlash root: '%s'\n", inFlash->url.c_str());
 
     std::shared_ptr<MFile> parallel(testFile->cd("../inSubdir"));
-    Serial.printf("*** inSubdir root: '%s'\n", parallel->url().c_str());
+    Serial.printf("*** inSubdir root: '%s'\n", parallel->url.c_str());
 
     std::shared_ptr<MFile> inCie(testFile->cd("inCie"));
-    Serial.printf("*** inCie root: '%s'\n", inCie->url().c_str());
+    Serial.printf("*** inCie root: '%s'\n", inCie->url.c_str());
 
 
 } 
