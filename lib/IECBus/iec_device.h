@@ -114,7 +114,7 @@ private:
 	IEC::ATNCmd &m_atn_cmd;
 
 	FS *m_fileSystem;
-	std::unique_ptr<MFile> ml_file;
+	std::shared_ptr<MFile> m_mfile;
 	StaticJsonDocument<256> m_jsonHTTP;
 	String m_lineBuffer;
 	//DynamicJsonDocument m_jsonHTTPBuffer;
