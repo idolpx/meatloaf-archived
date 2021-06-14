@@ -33,6 +33,9 @@ public:
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
+    bool isBrowsable() override {
+        return true;
+    }
 
 protected:
     MStream* srcStr;
@@ -61,9 +64,6 @@ public:
     bool remove() override ;
     bool rename(const char* dest);
 
-    bool isBrowsable() override {
-        return true;
-    }
 
 };
 

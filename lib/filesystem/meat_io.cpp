@@ -177,7 +177,7 @@ MIstream* MFile::inputStream() {
 
     std::shared_ptr<MIstream> decodedStream(createIStream(containerStream.get())); // wrap this stream into decodec stream, i.e. unpacked zip files
 
-    if(pathInStream != "" && isBrowsable()) {
+    if(pathInStream != "" && decodedStream->isBrowsable()) {
         // stream is browsable and path was requested, let's skip the stream to requested file
         auto pointedFile = decodedStream->seekNextEntry();
 

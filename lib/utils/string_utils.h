@@ -14,6 +14,9 @@ namespace mstr {
     std::vector<std::string> split(std::string toSplit, char ch, int limit = 9999);
     void toLower(std::string &s);
     void toUpper(std::string &s);
+    void ltrim(std::string &s);
+    void rtrim(std::string &s);
+    void trim(std::string &s);
 }
 
 #endif

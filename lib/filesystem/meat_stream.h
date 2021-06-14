@@ -47,9 +47,11 @@ public:
     virtual size_t read(uint8_t* buf, size_t size) = 0;
     bool pipeTo(MOstream* ostream);
     std::string seekNextEntry() {
-        return nullptr;
+        return "";
     };
 
+    virtual bool isBrowsable() { return false; };
+    virtual bool isRandomAccess() { return false; };
 };
 
 

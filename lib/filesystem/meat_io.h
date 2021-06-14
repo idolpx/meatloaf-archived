@@ -61,8 +61,6 @@ public:
     virtual size_t size() = 0;
     virtual bool remove() = 0;
     virtual bool rename(const char* dest) = 0;
-    virtual bool isBrowsable() { return false; };
-    virtual bool isRandomAccess() { return false; };
 
     virtual ~MFile() {};
 

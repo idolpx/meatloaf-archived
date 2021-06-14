@@ -372,7 +372,7 @@ MFile* CServerFile::getNextFileInDir() {
         }
         else {
             std::string name = line.substr(6,17);
-            util_string_rtrim(name);
+            mstr::rtrim(name);
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name);
             //return new CServerFile(path() +"/"+ name);
             return new CServerFile(url() + "/"+ name);
