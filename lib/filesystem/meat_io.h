@@ -35,8 +35,8 @@ public:
     std::string media_header;
     std::string media_id;
     std::string media_image;
-    uint16_t media_blocks_free;
-    uint16_t media_block_size;
+    uint16_t media_blocks_free = 0;
+    uint16_t media_block_size = 256;
     
 
     bool operator!=(nullptr_t ptr);
