@@ -381,35 +381,6 @@ bool util_wildcard_match(const char *str, const char *pattern)
     return lookup[n][m];
 }
 
-bool util_starts_with(std::string s, const char *pattern, bool case_sensitive)
-{
-    if (s.empty() || pattern == nullptr)
-        return false;
-    if(s.length()<strlen(pattern))
-        return false;
-
-    std::string ss = s.substr(0, strlen(pattern));
-    std::string pp = pattern;
-    if ( case_sensitive )
-        return util_string_compare(ss, pp);
-    else
-        return util_string_compare_case_insensitive(ss, pp);
-}
-
-bool util_ends_with(std::string s, const char *pattern, bool case_sensitive)
-{
-    if (s.empty() || pattern == nullptr)
-        return false;
-    if(s.length()<strlen(pattern))
-        return false;
-
-    std::string ss = s.substr((s.length() - strlen(pattern)));
-    std::string pp = pattern;
-    if ( case_sensitive )
-        return util_string_compare(ss, pp);
-    else
-        return util_string_compare_case_insensitive(ss, pp);
-}
 
 /*
  Concatenates two paths by taking the parent and adding the child at the end.
@@ -546,59 +517,3 @@ void util_replace_all(std::string &str, const std::string &from, const std::stri
     }
 }
 
-/*
- * String Comparision
- */
-bool util_string_compare(std::string &s1, std::string &s2)
-{
-    return ( (s1.size() == s2.size() ) &&
-             std::equal(s1.begin(), s1.end(), s2.begin(), &compare_char) );
-}
-
-/*
- * Case Insensitive String Comparision
- */
-bool util_string_compare_case_insensitive(std::string &s1, std::string &s2)
-{
-    return ( (s1.size() == s2.size() ) &&
-             std::equal(s1.begin(), s1.end(), s2.begin(), &compare_char_insensitive) );
-}
-
-bool compare_char(char &c1, char &c2)
-{
-    if (c1 == c2)
-        return true;
-
-    return false;
-}
-
-bool compare_char_insensitive(char &c1, char &c2)
-{
-    if (c1 == c2)
-        return true;
-    else if (std::toupper(c1) == std::toupper(c2))
-        return true;
-    return false;
-}
-
-std::vector<std::string> split(std::string toSplit, char ch, int limit) {
-    std::vector<std::string> parts;
-
-    limit--;
-
-    while(limit > 0 && toSplit.size()>0) {
-        auto pos = toSplit.find(ch);
-        if(pos == std::string::npos) {
-            parts.push_back(toSplit);
-            return parts;
-        }
-        parts.push_back(toSplit.substr(0, pos));
-
-        toSplit = toSplit.substr(pos+1);
-
-        limit--;
-    }
-    parts.push_back(toSplit);
-
-    return parts;
-}

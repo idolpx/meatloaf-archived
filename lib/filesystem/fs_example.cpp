@@ -25,7 +25,7 @@ void testReader(MFile* readeTest) {
 void testFileProperties(MFile* cserverFile) {
     Serial.printf("FSTEST: %s, isDir = %d\n", cserverFile->path.c_str(), cserverFile->isDirectory());
     Serial.printf("URL: [%s]\n", cserverFile->url().c_str());
-    Serial.printf("Root: [%s]\n", cserverFile->root().c_str());
+    //Serial.printf("Root: [%s]\n", cserverFile->root().c_str());
     Serial.printf("Base: [%s]\n", cserverFile->base().c_str());
     Serial.printf("Scheme: [%s]\n", cserverFile->scheme.c_str());
     Serial.printf("Username: [%s]\n", cserverFile->username.c_str());
@@ -127,8 +127,30 @@ void dumpParts(std::vector<std::string> v) {
         Serial.printf("%s::",(*i).c_str());
 }
 
-void runTests() {
+void testPaths() {
+    Serial.printf("pa = %s\n", mstr::drop("dupa",2).c_str());
+    Serial.printf("du = %s\n", mstr::dropLast("dupa",2).c_str());
 
+
+    std::shared_ptr<MFile> testFile(MFSOwner::File("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL"));
+
+    std::shared_ptr<MFile> inDnp(testFile->cd("/inDnp"));
+    Serial.printf("*** inDnp root: '%s'\n", inDnp->url().c_str());
+
+    std::shared_ptr<MFile> inFlash(testFile->cd("//iFlash"));
+    Serial.printf("*** inFlash root: '%s'\n", inFlash->url().c_str());
+
+    std::shared_ptr<MFile> parallel(testFile->cd("../inSubdir"));
+    Serial.printf("*** inSubdir root: '%s'\n", parallel->url().c_str());
+
+    std::shared_ptr<MFile> inCie(testFile->cd("inCie"));
+    Serial.printf("*** inCie root: '%s'\n", inCie->url().c_str());
+
+
+} 
+
+void runTests() {
+    testPaths();
     // this is a directory for verious directories tests
     // std::shared_ptr<MFile> testDir(MFSOwner::File("cs:///utilities"));
 

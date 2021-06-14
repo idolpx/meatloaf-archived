@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 #include "utils.h"
+#include "string_utils.h"
 
 class PeoplesUrlParser {
     std::string scheme;
@@ -18,17 +19,17 @@ class PeoplesUrlParser {
 
     void parseHostPortPath(std::string userPass) {
         // host.com:port/path/path/path....
-        auto parts = split(userPass,':', 2);
+        auto parts = mstr::split(userPass,':', 2);
 
         if(parts.size()>1) {
             host = parts[0];
-            auto portPath = split(parts[1],'/',2);
+            auto portPath = mstr::split(parts[1],'/',2);
 
             port = portPath[0];
             path = portPath[1];
         }
         else {
-            auto hostPath = split(parts[0],'/',2);
+            auto hostPath = mstr::split(parts[0],'/',2);
             host = hostPath[0];
             path = hostPath[1];
         }
@@ -37,7 +38,7 @@ class PeoplesUrlParser {
     void parseUserPass(std::string userPass) {
         // user:pass
 
-        auto parts = split(userPass,':', 2);
+        auto parts = mstr::split(userPass,':', 2);
 
         user = parts[0];
 
@@ -51,7 +52,7 @@ class PeoplesUrlParser {
 
         std::string authPathStripped = (hasAuthority) ? authPath.substr(2) : authPath;
         if(hasAuthority) {
-            auto parts = split(authPathStripped, '@', 2);
+            auto parts = mstr::split(authPathStripped, '@', 2);
             std::string hostPortPath;
 
             if(parts.size()>1) {
@@ -74,7 +75,7 @@ class PeoplesUrlParser {
 public:
     void parse(std::string u) {
         url = u;
-        auto parts = split(url, ':', 2);
+        auto parts = mstr::split(url, ':', 2);
 
         scheme = "";
         path = "";

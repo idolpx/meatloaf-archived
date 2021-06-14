@@ -14,6 +14,7 @@
 #include <vector>
 #include <sstream>
 #include "utils.h"
+#include "string_utils.h"
 
 
 
@@ -59,7 +60,7 @@ CServerFileSystem csFS;
 
 
 // put all available filesystems in this array - first matching system gets the file!
-std::vector<MFileSystem*> MFSOwner::availableFS{ &d64FS, &dnpFS, &httpFS, &urlFS, &mlFS };
+std::vector<MFileSystem*> MFSOwner::availableFS{ &d64FS, &dnpFS, &urlFS, &mlFS, &httpFS };
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");
@@ -112,7 +113,7 @@ MFile* MFSOwner::File(std::string path) {
     auto begin = paths.begin();
     auto end = paths.end();
 
-    if(util_starts_with(path,"cs:")) {
+    if(mstr::startsWith(path,"cs:", false)) {
         //Serial.printf("CServer path found!\n");
         return csFS.getFile(path);
     }
@@ -223,6 +224,53 @@ MIstream* MFile::inputStream() {
 
     return thisStream;
 };
+
+
+MFile* MFile::parent(std::string plus) {
+    // drop last dir
+    // add plus
+    int lastSlash = url().find_last_of('/');
+    std::string newDir = mstr::dropLast(url(), lastSlash) + "/" + plus;
+    return MFSOwner::File(newDir);
+};
+
+MFile* MFile::localParent(std::string plus) {
+    // drop last dir
+    // check if it isn't shorter than streamPath
+    // add plus
+    int lastSlash = url().find_last_of('/');
+    std::string parent = mstr::dropLast(url(), lastSlash);
+    if(parent.length()-streamPath.length()>1)
+        parent = streamPath;
+    return MFSOwner::File(parent+"/"+plus);
+};
+
+MFile* MFile::root2(std::string plus) {
+    return new LittleFile("/"+plus);
+};
+
+MFile* MFile::localRoot(std::string plus) {
+    return MFSOwner::File(streamPath+"/"+plus);
+};
+
+MFile* MFile::cd(std::string newDir) {
+    if(newDir[0]=='/' && newDir[1]=='/') {
+        return root2(mstr::drop(newDir,2));
+    }
+    else if(newDir[0]=='/') {
+        return localRoot(mstr::drop(newDir,1));
+    }
+    else if(newDir[0]=='^') {
+        return localParent(mstr::drop(newDir,1));
+    }
+    if(newDir[0]=='.' && newDir[1]=='.') {
+        return localParent(mstr::drop(newDir,3));
+    }
+    else {
+        return MFSOwner::File(url()+"/"+newDir);
+    }
+};
+
 
 /********************************************************
  * MStream implementations

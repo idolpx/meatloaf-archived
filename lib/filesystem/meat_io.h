@@ -10,6 +10,7 @@
 #include "meat_stream.h"
 #include "../../include/make_unique.h"
 #include "EdUrlParser.h"
+#include "string_utils.h"
 
 /********************************************************
  * Universal file
@@ -23,11 +24,14 @@ public:
     MFile(std::string path, std::string name);
     MFile(MFile* path, std::string name);
     static std::vector<std::string> chopPath(std::string path);
-
-
+    MFile* parent(std::string);
+    MFile* localParent(std::string);
+    MFile* root2(std::string);
+    MFile* localRoot(std::string);
+    MFile* cd(std::string newDir);
     //std::string name();
-    //std::string path();
     //std::string extension();
+
     std::string media_root;
     std::string media_header;
     std::string media_id;
@@ -92,7 +96,7 @@ public:
     }
 
     static bool byExtension(char* ext, std::string fileName) {
-        return fileName.rfind(ext) != -1 &&  toupper(fileName.rfind(ext)) == toupper(fileName.length()-4);
+        return mstr::endsWith(fileName, ext, false);
     }
 
 protected:

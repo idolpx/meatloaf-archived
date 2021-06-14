@@ -77,7 +77,7 @@ public:
 class DNPFileSystem: public MFileSystem 
 {
     MFile* getFile(std::string path) {
-        //return new DnpFile(path); // causes  undefined reference to `vtable for DnpFile' WTF?!
+        return new LittleFile(path); // causes  undefined reference to `vtable for DnpFile' WTF?!
     };
 
 

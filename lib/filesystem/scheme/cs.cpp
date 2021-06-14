@@ -1,6 +1,7 @@
 #include "cs.h"
 #include "../../include/make_unique.h"
 #include "utils.h"
+#include "string_utils.h"
 
 /********************************************************
  * Client impls
@@ -114,7 +115,7 @@ Serial.printf("Traversing path: %s\n", path->url().c_str());
             auto part = chopped[i];
             
             Serial.printf("traverse path part: [%s]\n", part.c_str());
-            if(util_ends_with(part, ".D64")) 
+            if(mstr::endsWith(part, ".d64", false)) 
             {
                 // THEN we have to mount the image INSERT image_name
                 command("insert "+part);
@@ -278,7 +279,7 @@ bool CServerFile::isDirectory() {
     auto second = (chopped.end())-2; // penultimate path part is d64? 
     //auto x = (*second);
     //Serial.printf("isDirectory second from right:%s\n", x.c_str());
-    if ( util_ends_with(*second, ".D64"))
+    if ( mstr::endsWith(*second, ".d64", false))
         return false;
     else
         return true;
@@ -306,7 +307,7 @@ bool CServerFile::rewindDirectory() {
 
     if(!CServerFileSystem::session.traversePath(this)) return false;
 
-    if(util_ends_with(url(), ".D64"))
+    if(mstr::endsWith(url(), ".d64", false))
     {
         dirIsImage = true;
         // to list image contents we have to run
