@@ -41,6 +41,8 @@ private:
                 path = hostPath[1];                
             }
         }
+        if(mstr::endsWith(path,"/"))
+            path = mstr::drop(path, 1);
     }
 
     void parseUserPass(std::string userPass) {

@@ -24,7 +24,7 @@ public:
     MFile(std::string path);
     MFile(std::string path, std::string name);
     MFile(MFile* path, std::string name);
-    MFile* parent(std::string);
+    MFile* parent(std::string = "");
     MFile* localParent(std::string);
     MFile* root(std::string);
     MFile* localRoot(std::string);

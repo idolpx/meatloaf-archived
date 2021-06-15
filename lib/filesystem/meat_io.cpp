@@ -187,9 +187,17 @@ MIstream* MFile::inputStream() {
 MFile* MFile::parent(std::string plus) {
     // drop last dir
     // add plus
-    int lastSlash = url.find_last_of('/');
-    std::string newDir = mstr::dropLast(url, lastSlash) + "/" + plus;
-    return MFSOwner::File(newDir);
+    if(!path.empty()) {
+        // from here we can go only to flash root!
+        return MFSOwner::File("/");
+    }
+    else {
+        int lastSlash = url.find_last_of('/');
+        std::string newDir = mstr::dropLast(url, lastSlash);
+        if(!plus.empty())
+            newDir+= ("/" + plus);
+        return MFSOwner::File(newDir);
+    }
 };
 
 MFile* MFile::localParent(std::string plus) {
@@ -215,47 +223,106 @@ MFile* MFile::cd(std::string newDir) {
 
     Debug_printv("newDir [%s]", newDir.c_str());
 
+    // OK to clarify - coming here there should be ONLY path or magicSymbol-path combo!
+    // NO "cd:xxxxx", no "/cd:xxxxx" ALLOWED here! ******************
+    //
+    // if you want to support LOAD"CDxxxxxx" just parse/drop the CD BEFORE calling this function
+    // and call it ONLY with the path you want to change into!
+
     // Drop the : if it is included
+    // note AGAIN - it is probably the only char that might be dropped here due to CBM standard
+    // N0:xxxxxxx, but still I think it should be dropped BEFORE entering this proc!
     if(newDir[0]==':') {
         Debug_printv("[:]");
         newDir = mstr::drop(newDir,1);
     }
 
     if(newDir[0]=='/' && newDir[1]=='/') {
-        Debug_printv("[//]");
-        // Go to file system root
-        return root(mstr::drop(newDir,2));
+        if(newDir.size()==2) {
+            // user entered: CD:// or CD//
+            // means: change to the root of roots
+            return MFSOwner::File("/"); // chedked, works ad flash root!
+        }
+        else {
+            // user entered: CD://DIR or CD//DIR
+            // means: change to a dir in root of roots
+            Debug_printv("[//]");
+            return root(mstr::drop(newDir,2));
+        }
     }
     else if(newDir[0]=='/') {
-        Debug_printv("[/]");
-        // Go to container root
-        return localRoot(mstr::drop(newDir,1));
+        if(newDir.size()==1) {
+            // user entered: CD:/ or CD/
+            // means: change to container root
+            // *** might require a fix for flash fs!
+            return MFSOwner::File(streamPath);
+        }
+        else {
+            Debug_printv("[/]");
+            // user entered: CD:/DIR or CD/DIR
+            // means: change to a dir in container root
+            return localRoot(mstr::drop(newDir,1));
+        }
     }
-    else if(newDir[0]=='^') {
-        Debug_printv("[^]");
-        // Back out of current container
-        return localParent(mstr::drop(newDir,1));
-    }
+
+    // *** do we really need that, though? Why not just use '_"? Besides I don't know how to implement such thing! :D
+    // else if(newDir[0]=='^') {
+    //     Debug_printv("[^]");
+    //     // Back out of current container
+    //     return localParent(mstr::drop(newDir,1));
+    // }
+
     else if(newDir[0]=='_') {
-        Debug_printv("[_]");
-        // Go back one directory
-        return localParent(mstr::drop(newDir,1));
+        if(newDir.size()==1) {
+            // user entered: CD:_ or CD_
+            // means: go up one directory
+            return parent();
+        }
+        else {
+            Debug_printv("[_]");
+            // user entered: CD:_DIR or CD_DIR
+            // means: go to a directory in the same directory as this one
+            return parent(mstr::drop(newDir,1));
+        }
     }
     if(newDir[0]=='.' && newDir[1]=='.') {
-        Debug_printv("[..]");
-        // Go back one directory
-        return localParent(mstr::drop(newDir,1));
+        if(newDir.size()==2) {
+            // user entered: CD:.. or CD..
+            // means: go up one directory
+            return parent();
+        }
+        else {
+            Debug_printv("[..]");
+            // user entered: CD:..DIR or CD..DIR
+            // meaning: Go back one directory
+            return localParent(mstr::drop(newDir,2));
+        }
     }
-    if(newDir[0]=='.' && newDir[1]=='/') {
-        Debug_printv("[./]");
-        // Reference to current directory
-        return localParent(mstr::drop(newDir,2));
-    }
-    if(newDir[0]=='~' && newDir[1]=='/') {
-        Debug_printv("[~/]");
-        // Reference to system directory
-        return root("/.sys" + mstr::drop(newDir,1));
+
+    // ain't that redundant?
+    // if(newDir[0]=='.' && newDir[1]=='/') {
+    //     Debug_printv("[./]");
+    //     // Reference to current directory
+    //     return localParent(mstr::drop(newDir,2));
+    // }
+
+    if(newDir[0]=='~' /*&& newDir[1]=='/' let's be consistent!*/) {
+        if(newDir.size() == 1) {
+            // user entered: CD:~ or CD~
+            // meaning: go to the .sys folder
+            return MFSOwner::File("/.sys");
+        }
+        else {
+            Debug_printv("[~]");
+            // user entered: CD:~FOLDER or CD~FOLDER
+            // meaning: go to a folder in .sys folder
+            return MFSOwner::File("/.sys/" + mstr::drop(newDir,1));
+        }
     }    
+    if(newDir.find(':') != std::string::npos) {
+        // I can only guess we're CDing into another url scheme, this means we're changing whole path
+        return MFSOwner::File(newDir);
+    }
     else {
         Debug_printv(">");
         // Add new directory to path

@@ -187,8 +187,8 @@ void testIsDirectory() {
 
 void testUrlParser() {
     dumpFileProperties(MFSOwner::File("ML://C64.MEATLOAF.CC"));
-    dumpFileProperties(MFSOwner::File("/CD:GAMES"));
-    dumpFileProperties(MFSOwner::File("//CD_"));
+    dumpFileProperties(MFSOwner::File("/CD:GAMES")); // this is not URL!!!
+    dumpFileProperties(MFSOwner::File("//CD_")); // this is not URL!!!
 }
 
 void testCD() {

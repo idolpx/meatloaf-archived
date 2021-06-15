@@ -122,6 +122,8 @@ private:
 	bool m_show_load_address;
 	bool m_show_hidden;
 	bool m_hide_extension;
+
+	MFile* guessIncomingPath(std::string commandLne);
 };
 
 #endif

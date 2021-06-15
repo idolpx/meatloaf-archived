@@ -267,6 +267,32 @@ byte Interface::loop(void)
 	return retATN;
 } // handler
 
+MFile* Interface::guessIncomingPath(std::string commandLne)
+{
+	std::string guessedPath = commandLne;
+
+	// first let's check if it doesn't start with a known command token
+	if(mstr::startsWith(commandLne, "cd:", false)) // whould be case sensitive, but I don't know the proper case
+	{
+		guessedPath = mstr::drop(guessedPath, 3);
+	}
+	// TODO more of them?
+
+	// NOW, since user could have requested ANY kind of our suppoerted magic paths like:
+	// LOAD ~/something
+	// LOAD ../something
+	// LOAD //something
+	// we HAVE TO PARSE IT OUR WAY!
+
+	// so, we're getting the current directory 
+	// - again it would be just so much easier if you kept it as MFile inside m_device, not as a string...
+	//   I wouldn't have to recreate it here...
+	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_device.url().c_str()));
+
+	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
+	return currentDir->cd(guessedPath);
+}
+
 void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 {
 	if (m_device.select(atn_cmd.device))
@@ -288,8 +314,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 
 	std::string command = atn_cmd.str;
 
-	std::unique_ptr<MFile> check(MFSOwner::File(m_mfile->url+"/"+command));
-	Debug_printv("entry->url [%s]", check->url.c_str());
+	// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
+	// some shit in check variable!
+	std::unique_ptr<MFile> userWantsThis(guessIncomingPath(command));
+	Debug_printv("entry->url [%s]", userWantsThis->url.c_str());
 	Debug_printv("m_mfile->url [%s]", m_mfile->url.c_str());
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
@@ -297,14 +325,13 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	if (mstr::endsWith(command, "*"))
 	{
 		// Find first program in listing
-		if (m_mfile->path == "/")
+		if (m_mfile->path.empty()) // <---- "/" won't exist, as we are removing trailing /
 		{
 			// If in LittleFS root then set it to FB64
 			m_mfile.reset(MFSOwner::File("/.sys/fb64"));
 		}
 		else
-		{
-			
+		{	
 			std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
 			while (entry != nullptr && entry->isDirectory())
@@ -322,10 +349,12 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_openState = O_DIR;
 		Debug_printv("LOAD $");
 	}
-	else if (check->isDirectory())
+	else if (userWantsThis->isDirectory())
 	{
 		// Enter directory
-		m_mfile.reset(m_mfile->cd(command));
+		// wait, wait! 'check' already has the required directory inside, why do you cd here again?
+		//m_mfile.reset(m_mfile->cd(command));
+		m_mfile.reset(userWantsThis.get());
 		m_openState = O_DIR;
 		Debug_printv("Enter Directory");
 	}
@@ -338,7 +367,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
 
 		// Enter directory
-		m_mfile.reset(m_mfile->cd(mstr::drop(command, 2)));
+		m_mfile.reset(userWantsThis.get());
 		m_openState = O_DIR;
 
 		Debug_printv("after CD");
@@ -357,9 +386,9 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else
 	{
-		m_mfile.reset(MFSOwner::File(check->url));
+		m_mfile.reset(MFSOwner::File(userWantsThis->url));
 		m_openState = O_FILE;
-		Debug_printv("Load File [%s]", check->url.c_str());
+		Debug_printv("Load File [%s]", userWantsThis->url.c_str());
 	}
 
 	if (m_openState == O_DIR)
