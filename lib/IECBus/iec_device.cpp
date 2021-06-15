@@ -51,6 +51,7 @@ void Interface::reset(void)
 {
 	m_openState = O_NOTHING;
 	m_queuedError = ErrIntro;
+	m_mfile.reset(MFSOwner::File(m_device.url().c_str()));
 } // reset
 
 void Interface::sendStatus(void)
@@ -167,11 +168,11 @@ void Interface::sendDeviceStatus()
 	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE    : %d", m_device.device());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "MEDIA     : %d", m_device.media());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "PARTITION : %d", m_device.partition());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_device.url().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_device.path().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_filename.c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_mfile->url.c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_mfile->path.c_str());
+	//sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
+	//sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_mfile->name.c_str());
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -268,193 +269,114 @@ byte Interface::loop(void)
 
 void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 {
-	m_device.select(atn_cmd.device);
-	m_filename = String((char *)atn_cmd.str);
-	m_filename.trim();
-	m_filetype = m_filename.substring(m_filename.lastIndexOf(".") + 1);
-	m_filetype.toUpperCase();
-	if (m_filetype.length() > 4 || m_filetype.length() == m_filename.length())
-		m_filetype = "";
+	if (m_device.select(atn_cmd.device))
+	{
+		m_mfile.reset(MFSOwner::File(m_device.url().c_str()));
+	}
+	Debug_println("");
+	Debug_printv("URL: [%s]", m_mfile->url.c_str());
+	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	Debug_printv("File: [%s]", m_mfile->name.c_str());
+	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+	// Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
+	// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
 
-	Dir local_file = m_fileSystem->openDir(String(m_device.path() + m_filename));
+	std::string command = atn_cmd.str;
+
+	std::unique_ptr<MFile> check(MFSOwner::File(m_mfile->url+"/"+command));
+	Debug_printv("entry->url [%s]", check->url.c_str());
+	Debug_printv("m_mfile->url [%s]", m_mfile->url.c_str());
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
-	if (m_filename.startsWith(F("$")))
-	{
-		m_openState = O_DIR;
-	}
-	else if (local_file.isDirectory())
-	{
-		// Enter directory
-		Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
-		m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
-		m_openState = O_DIR;
-	}
-	else if (m_filename.startsWith(F("CD")))
-	{
-		uint8_t pos = 3;
-		if (m_filename.endsWith(F("^"))) // Switch to local root
-		{
-			m_device.url("");
-			m_device.path("");
-			m_device.archive("");
-			m_device.image("");
-		}
-		else if (m_filename.endsWith(F("_")))
-		{
-			// Go back a directory
-			// If at root of image, umount image
-			// If at root of archive, unmount archive
-			// If at root of url, unmount url
-			if (m_device.path() == "/")
-			{
-				if (m_device.archive().length())
-				{
-					// Unmount archive file
-					m_device.archive("");
-				}
-				else if (m_device.image().length())
-				{
-					// Unmount image file
-					m_device.image("");
-				}
-				else if (m_device.url().length())
-				{
-					// Unmount url
-					m_device.url("");
-				}				
-			}
 
-			pos = m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1;
-			m_device.path(m_device.path().substring(0, pos));			
-		}
-		else if (m_filename.length() > 3)
+	if (mstr::endsWith(command, "*"))
+	{
+		// Find first program in listing
+		if (m_mfile->path == "/")
 		{
-
-			// Switch to root
-			// If image is mounted, go to image root
-			// If archive is mounted, go to archive root
-			// If url is mounted, go to url root
-			if (m_filename.startsWith(F("CD//"))) 
-			{
-				pos = 4;
-				m_device.path("");
-				m_device.archive("");
-				m_device.image("");
-			}
-			else if (m_filename.startsWith(F("CD:")))
-			{
-				pos = 3;
-			}
-			else if (atn_cmd.channel == 0x0F)
-			{
-				// Support wedge syntax without ":"
-				pos = 2;
-			}
-
-			// Enter directory
-			m_device.path(m_device.path() + m_filename.substring(pos) + F("/"));
+			// If in LittleFS root then set it to FB64
+			m_mfile.reset(MFSOwner::File("/.sys/fb64"));
 		}
 		else
 		{
-			pos = 0;
+			
+			std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
+
+			while (entry != nullptr && entry->isDirectory())
+			{
+				entry.reset(m_mfile->getNextFileInDir());
+			}
+			if (entry != nullptr)
+				m_mfile.reset(MFSOwner::File(entry->url));
 		}
-
-		if (atn_cmd.channel == 0x00 && pos > 0)
-		{
-			m_openState = O_DIR;
-		}
+		m_openState = O_FILE;
+		Debug_printv("LOAD *");
 	}
-	else if (m_filetype.startsWith(F("URL")) && m_filetype.length() > 0)
+	if (mstr::startsWith(command, "$"))
 	{
-		// Load URL file
-		m_openState = O_URL;
-	}
-	else if (m_filename.startsWith(F("HTTP://")) || m_filename.startsWith(F("ML://")) || m_filename.startsWith(F("CS://")))
-	{
-		m_mfile.reset(MFSOwner::File(m_filename.c_str()));
-
-#ifdef DEBUG
-		Serial.printf("\r\nURL: [%s]\r\n", m_mfile->url.c_str());
-		Serial.printf("Scheme: [%s]\r\n", m_mfile->scheme.c_str());
-		Serial.printf("Username: [%s]\r\n", m_mfile->user.c_str());
-		Serial.printf("Password: [%s]\r\n", m_mfile->pass.c_str());
-		Serial.printf("Host: [%s]\r\n", m_mfile->host.c_str());
-		Serial.printf("Port: [%s]\r\n", m_mfile->port.c_str());
-		Serial.printf("Path: [%s]\r\n", m_mfile->path.c_str());
-		Serial.printf("File: [%s]\r\n", m_mfile->name.c_str());
-		Serial.printf("Extension: [%s]\r\n", m_mfile->extension.c_str());
-		// Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
-		// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
-#endif
-
-		// Mount url
-		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-		m_device.partition(0);
-		// m_device.url(m_mfile->root().c_str());		
-		// m_device.path(m_mfile->path.c_str());
-		// m_filename = m_mfile->filename.c_str();
-		// m_filetype = m_mfile->extension.c_str();
-		m_device.archive("");
-		m_device.image("");
-
 		m_openState = O_DIR;
-		if (m_mfile->scheme == "HTTP" || m_filename.length())
-		{
-			m_openState = O_FILE;
-		}
+		Debug_printv("LOAD $");
 	}
-	else if (String(F(ARCHIVE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
+	else if (check->isDirectory())
 	{
-		// Mount archive file
-		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-		m_device.archive(m_filename);
-		m_device.image("");
-
+		// Enter directory
+		m_mfile.reset(m_mfile->cd(command));
 		m_openState = O_DIR;
+		Debug_printv("Enter Directory");
 	}
-	else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
+	else if (mstr::startsWith(command, "CD", false))
 	{
-		// Mount image file
-		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-		m_device.image(m_filename);
+		Debug_printv("before CD");
+		Debug_printv("command [%s]", command.c_str());
+		Debug_printv("url [%s]", m_mfile->url.c_str());
+		Debug_printv("path [%s]", m_mfile->path.c_str());
+		Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
 
+		// Enter directory
+		m_mfile.reset(m_mfile->cd(mstr::drop(command, 2)));
 		m_openState = O_DIR;
+
+		Debug_printv("after CD");
+		Debug_printv("command [%s]", command.c_str());
+		Debug_printv("url [%s]", m_mfile->url.c_str());
+		Debug_printv("path [%s]", m_mfile->path.c_str());
+		Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
 	}
-	else if (m_filename.startsWith(F("@INFO")))
+	else if (mstr::startsWith(command, "@INFO", false))
 	{
-		m_filename = "";
 		m_openState = O_DEVICE_INFO;
 	}
-	else if (m_filename.startsWith(F("@STAT")))
+	else if (mstr::startsWith(command, "@STAT", false))
 	{
-		m_filename = "";
 		m_openState = O_DEVICE_STATUS;
 	}
 	else
 	{
+		m_mfile.reset(MFSOwner::File(check->url));
 		m_openState = O_FILE;
+		Debug_printv("Load File [%s]", check->url.c_str());
 	}
 
 	if (m_openState == O_DIR)
 	{
-		m_filename = "$";
-		m_filetype = "";
 		m_atn_cmd.str[0] = '\0';
 		m_atn_cmd.strLen = 0;
 	}
 
 	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nARCHIVE[%s]\nIMAGE[%s]\nFILENAME[%s]\nFILETYPE[%s]\nCOMMAND[%s]\r\n", 
+	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILENAME[%s]\nFILETYPE[%s]\nCOMMAND[%s]\r\n", 
 					m_device.device(), 
 					m_device.media(), 
 					m_device.partition(), 
-					m_device.url().c_str(), 
-					m_device.path().c_str(),
-					m_device.archive().c_str(), 
-					m_device.image().c_str(), 
-					m_filename.c_str(), 
-					m_filetype.c_str(), 
+					m_mfile->url.c_str(), 
+					m_mfile->path.c_str(),
+					m_mfile->name.c_str(),
+					m_mfile->extension.c_str(),
 					atn_cmd.str
 	);
 
@@ -570,7 +492,6 @@ void Interface::handleATNCmdClose()
 	//Serial.printf("\r\nIEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str());
 	Debug_printf("\r\n=================================\r\n\r\n");
 
-	m_filename = "";
 } // handleATNCmdClose
 
 // send single basic line, including heading basic pointer and terminating zero.
@@ -625,33 +546,37 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 {
 	uint16_t byte_count = 0;
+	bool sent_info = false;
 
 	// Send List HEADER
 	//byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 	byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "%s", header.c_str());
 
 	// Send Extra INFO
-	if (m_device.url().length())
+	if (m_mfile->url.size())
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[URL]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.url().c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_mfile->url.c_str());
+		sent_info = true;
 	}
-	if (m_device.path().length() > 1)
+	if (m_mfile->path.size() > 1)
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[PATH]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.path().c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_mfile->path.c_str());
+		sent_info = true;
 	}
-	if (m_device.archive().length() > 1)
-	{
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[ARCHIVE]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.archive().c_str());
-	}
-	if (m_device.image().length() > 1)
+	// if (m_device.archive().length() > 1)
+	// {
+	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[ARCHIVE]");
+	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.archive().c_str());
+	// }
+	if (m_mfile->media_image.size())
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[IMAGE]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.image().c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_mfile->media_image.c_str());
+		sent_info = true;
 	}
-	if (m_device.url().length() + m_device.path().length() > 1)
+	if (sent_info)
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"-------------------\" NFO", 0, "");
 	}
@@ -676,8 +601,6 @@ void Interface::sendListing()
 	Debug_println("");
 
 	// Send List ITEMS
-	//String dirTarget = m_device.url() + m_device.path();
-	//std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
 	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
 	if(entry == nullptr) {
@@ -689,26 +612,23 @@ void Interface::sendListing()
 	// Send Listing Header
 	char buffer[100];
 	byte space_cnt = 0;
-	//if (dir->media_header.size() == 0)
+	if (m_mfile->media_header.size() == 0)
 	{
 		// Set device default Listing Header
 		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
 		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A\0", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 	}
-	// else
-	// {
-	// 	space_cnt = (16 - dir->media_header.size()) / 2;
-	// 	sprintf(buffer, "\"%*s%s%*s\" %s\0", space_cnt, "", dir->media_header.c_str(), space_cnt, "", dir->media_id.c_str());
-	// }
+	else
+	{
+		space_cnt = (16 - m_mfile->media_header.size()) / 2;
+		sprintf(buffer, "\"%*s%s%*s\" %s\x00", space_cnt, "", m_mfile->media_header.c_str(), space_cnt, "", m_mfile->media_id.c_str());
+	}
 	byte_count += sendHeader(basicPtr, buffer);
 	
 
 	// Send Directory Items
 	while(entry != nullptr)
 	{
-
-
-Serial.println("looping in SendDir");
 		uint16_t block_cnt = entry->size() / 256;
 		byte block_spc = 3;
 		if (block_cnt > 9)
@@ -743,7 +663,7 @@ Serial.println("looping in SendDir");
 		}
 
 		// Don't show hidden folders or files
-		Debug_printv("size[%d] name[%s]", entry->size(), entry->name.c_str());
+		//Debug_printv("size[%d] name[%s]", entry->size(), entry->name.c_str());
 		if (entry->name[0]!='.' || m_show_hidden)
 		{
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name.c_str(), space_cnt, "", extension.c_str());
@@ -781,12 +701,12 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_
 		byte_count += sendLine(basicPtr, 0, "%*s\"===================\" NFO", 0, "");
 	}
 	
-	if (m_device.url().length() == 0)
-	{
-		FSInfo64 fs_info;
-		m_fileSystem->info64(fs_info);
-		blocks_free = fs_info.totalBytes - fs_info.usedBytes;
-	}
+	// if (m_device.url().length() == 0)
+	// {
+	// 	FSInfo64 fs_info;
+	// 	m_fileSystem->info64(fs_info);
+	// 	blocks_free = fs_info.totalBytes - fs_info.usedBytes;
+	// }
 	byte_count = sendLine(basicPtr, blocks_free, "BLOCKS FREE.");
 	return byte_count;
 	// #elif defined(USE_SPIFFS)
@@ -814,39 +734,6 @@ void Interface::sendFile()
 	// Update device database
 	m_device.save();
 
-	// Find first program
-	if (m_filename.endsWith("*"))
-	{
-		m_filename = "";
-
-		if (
-			m_device.url().length() == 0 &&
-			m_device.path() == "/" && 
-			m_device.archive().length() == 0 && 
-			m_device.image().length() == 0
-		)
-		{
-			m_filename = ".sys/fb64";
-		}
-		else
-		{
-			//Dir dir = m_fileSystem->openDir(m_device.path());
-			String dirTarget = m_device.url() + m_device.path();
-			std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
-			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
-
-			// you should check entry here for nullptr - if it's null then do FNF instead!
-			while (entry != nullptr/* why this?! && entry->isDirectory()*/)
-			{
-				Serial.println("looping in sendFile - why?");
-
-				Debug_printf("\r\nsendFile: %s", entry->name.c_str());
-				entry.reset(dir->getNextFileInDir());
-			}
-			if (entry != nullptr)
-				m_filename = entry->name.c_str();
-		}
-	}
 	//String fileTarget = String(m_device.url() + m_device.path() + m_filename);
 
 	//std::unique_ptr<MFile> m_mfile(MFSOwner::File(fileTarget.c_str()));
@@ -936,29 +823,29 @@ void Interface::sendFile()
 
 void Interface::saveFile()
 {
-	String outFile = String(m_device.path() + m_filename);
-	byte b;
+	// String outFile = String(m_device.path() + m_filename);
+	// byte b;
 
-	Debug_printf("\r\nsaveFile: %s", outFile.c_str());
+	// Debug_printf("\r\nsaveFile: %s", outFile.c_str());
 
-	File file = m_fileSystem->open(outFile, "w");
-	//	noInterrupts();
-	if (!file.available())
-	{
-		Debug_printf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
-	}
-	else
-	{
-		boolean done = false;
-		// Recieve bytes until a EOI is detected
-		do
-		{
-			b = m_iec.receive();
-			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
+	// File file = m_fileSystem->open(outFile, "w");
+	// //	noInterrupts();
+	// if (!file.available())
+	// {
+	// 	Debug_printf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
+	// }
+	// else
+	// {
+	// 	boolean done = false;
+	// 	// Recieve bytes until a EOI is detected
+	// 	do
+	// 	{
+	// 		b = m_iec.receive();
+	// 		done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
 
-			file.write(b);
-		} while (not done);
-		file.close();
-	}
+	// 		file.write(b);
+	// 	} while (not done);
+	// 	file.close();
+	// }
 	//	interrupts();
 } // saveFile

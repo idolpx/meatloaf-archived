@@ -19,6 +19,7 @@
 #define DEVICE_DB_H
 
 #include "../../include/global_defines.h"
+#include "meat_io.h"
 
 #include <ArduinoJson.h>
 

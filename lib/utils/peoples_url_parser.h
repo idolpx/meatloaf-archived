@@ -22,6 +22,7 @@ public:
 private:
 
     void parseHostPortPath(std::string userPass) {
+        Serial.printf("parseHostPortPath [%s]\n", userPass.c_str());
         // host.com:port/path/path/path....
         auto parts = mstr::split(userPass,':', 2);
 
@@ -34,8 +35,11 @@ private:
         }
         else {
             auto hostPath = mstr::split(parts[0],'/',2);
-            host = hostPath[0];
-            path = hostPath[1];
+            if(hostPath.size()>1)
+            {
+                host = hostPath[0];
+                path = hostPath[1];                
+            }
         }
     }
 
@@ -93,6 +97,7 @@ public:
         host = "";
         port = "";
 
+        Serial.printf("url [%s] parts.size [%d]\n", u.c_str(), parts.size());
         if(parts.size()>1) {
             scheme = parts[0]; // http
             parseAuthorityPath(parts[1]); // user:pass@host.com:port/path/path/path....
