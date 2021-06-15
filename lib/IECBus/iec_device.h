@@ -118,6 +118,8 @@ private:
 	//DynamicJsonDocument m_jsonHTTPBuffer;
 
 	DeviceDB m_device;
+
+	std::string m_device_status = "00, " PRODUCT_ID " [" FW_VERSION "], 00, 00";
 	bool m_show_date;
 	bool m_show_load_address;
 	bool m_show_hidden;

@@ -56,17 +56,21 @@ void Interface::reset(void)
 
 void Interface::sendStatus(void)
 {
-	byte i, readResult;
+	size_t i;
 
-	String status = String("00, OK, 00, 08");
+	std::string status = m_device_status;
+	if (status.size() == 0)
+		status = "00, OK, 00, 00";
 
-	Debug_printf("\r\nsendStatus: ");
-	// Length does not include the CR, write all but the last one should be with EOI.
-	for (i = 0; i < readResult - 2; ++i)
+	Debug_printv("status: %s", status.c_str());
+	for (i = 0; i < status.length(); ++i)
 		m_iec.send(status[i]);
 
 	// ...and last byte in string as with EOI marker.
 	m_iec.sendEOI(status[i]);
+
+	// Clear the status message
+	m_device_status.clear();
 } // sendStatus
 
 void Interface::sendDeviceInfo()
@@ -286,7 +290,7 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 	// we HAVE TO PARSE IT OUR WAY!
 
 	// so, we're getting the current directory
-	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_device.url().c_str()));
+	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
 
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
 	return currentDir->cd(guessedPath);
