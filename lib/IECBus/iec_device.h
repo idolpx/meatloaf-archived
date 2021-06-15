@@ -118,7 +118,10 @@ private:
 	//DynamicJsonDocument m_jsonHTTPBuffer;
 
 	DeviceDB m_device;
+	bool m_show_date;
+	bool m_show_load_address;
 	bool m_show_hidden;
+	bool m_hide_extension;
 };
 
 #endif

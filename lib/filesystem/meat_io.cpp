@@ -212,19 +212,53 @@ MFile* MFile::localRoot(std::string plus) {
 };
 
 MFile* MFile::cd(std::string newDir) {
+
+    Debug_printv("newDir [%s]", newDir.c_str());
+
+    // Drop the : if it is included
+    if(newDir[0]==':') {
+        Debug_printv("[:]");
+        newDir = mstr::drop(newDir,1);
+    }
+
     if(newDir[0]=='/' && newDir[1]=='/') {
+        Debug_printv("[//]");
+        // Go to file system root
         return root(mstr::drop(newDir,2));
     }
     else if(newDir[0]=='/') {
+        Debug_printv("[/]");
+        // Go to container root
         return localRoot(mstr::drop(newDir,1));
     }
     else if(newDir[0]=='^') {
+        Debug_printv("[^]");
+        // Back out of current container
+        return localParent(mstr::drop(newDir,1));
+    }
+    else if(newDir[0]=='_') {
+        Debug_printv("[_]");
+        // Go back one directory
         return localParent(mstr::drop(newDir,1));
     }
     if(newDir[0]=='.' && newDir[1]=='.') {
-        return localParent(mstr::drop(newDir,3));
+        Debug_printv("[..]");
+        // Go back one directory
+        return localParent(mstr::drop(newDir,1));
     }
+    if(newDir[0]=='.' && newDir[1]=='/') {
+        Debug_printv("[./]");
+        // Reference to current directory
+        return localParent(mstr::drop(newDir,2));
+    }
+    if(newDir[0]=='~' && newDir[1]=='/') {
+        Debug_printv("[~/]");
+        // Reference to system directory
+        return root("/.sys" + mstr::drop(newDir,1));
+    }    
     else {
+        Debug_printv(">");
+        // Add new directory to path
         return MFSOwner::File(url+"/"+newDir);
     }
 };

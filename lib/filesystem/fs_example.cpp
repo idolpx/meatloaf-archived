@@ -186,6 +186,7 @@ void testIsDirectory() {
 }
 
 void testUrlParser() {
+    dumpFileProperties(MFSOwner::File("ML://C64.MEATLOAF.CC"));
     dumpFileProperties(MFSOwner::File("/CD:GAMES"));
     dumpFileProperties(MFSOwner::File("//CD_"));
 }
@@ -324,6 +325,6 @@ void runTestsSuite() {
     
     //testIsDirectory();
     testUrlParser();
-    testCD();
+    //testCD();
 }
 

@@ -272,25 +272,25 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	if (m_device.select(atn_cmd.device))
 	{
 		m_mfile.reset(MFSOwner::File(m_device.url().c_str()));
-
-#ifdef DEBUG
-		Debug_printv("\r\nURL: [%s]\r\n", m_mfile->url.c_str());
-		Debug_printv("Scheme: [%s]\r\n", m_mfile->scheme.c_str());
-		Debug_printv("Username: [%s]\r\n", m_mfile->user.c_str());
-		Debug_printv("Password: [%s]\r\n", m_mfile->pass.c_str());
-		Debug_printv("Host: [%s]\r\n", m_mfile->host.c_str());
-		Debug_printv("Port: [%s]\r\n", m_mfile->port.c_str());
-		Debug_printv("Path: [%s]\r\n", m_mfile->path.c_str());
-		Debug_printv("File: [%s]\r\n", m_mfile->name.c_str());
-		Debug_printv("Extension: [%s]\r\n", m_mfile->extension.c_str());
-		// Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
-		// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
-#endif
 	}
+	Debug_println("");
+	Debug_printv("URL: [%s]", m_mfile->url.c_str());
+	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	Debug_printv("File: [%s]", m_mfile->name.c_str());
+	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+	// Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
+	// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
+
 	std::string command = atn_cmd.str;
 
-	auto dir_check = MFSOwner::File(m_mfile->url + "/" + command);
-	Debug_printv("dir_check [%s]", dir_check->url.c_str());
+	std::unique_ptr<MFile> check(MFSOwner::File(m_mfile->url+"/"+command));
+	Debug_printv("entry->url [%s]", check->url.c_str());
+	Debug_printv("m_mfile->url [%s]", m_mfile->url.c_str());
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
@@ -300,7 +300,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		if (m_mfile->path == "/")
 		{
 			// If in LittleFS root then set it to FB64
-			m_mfile.reset(MFSOwner::File("//.sys/fb64"));
+			m_mfile.reset(MFSOwner::File("/.sys/fb64"));
 		}
 		else
 		{
@@ -314,22 +314,38 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			if (entry != nullptr)
 				m_mfile.reset(MFSOwner::File(entry->url));
 		}
+		m_openState = O_FILE;
+		Debug_printv("LOAD *");
 	}
 	if (mstr::startsWith(command, "$"))
 	{
 		m_openState = O_DIR;
+		Debug_printv("LOAD $");
 	}
-	else if (dir_check->isDirectory())
+	else if (check->isDirectory())
 	{
 		// Enter directory
 		m_mfile.reset(m_mfile->cd(command));
 		m_openState = O_DIR;
+		Debug_printv("Enter Directory");
 	}
 	else if (mstr::startsWith(command, "CD", false))
 	{
+		Debug_printv("before CD");
+		Debug_printv("command [%s]", command.c_str());
+		Debug_printv("url [%s]", m_mfile->url.c_str());
+		Debug_printv("path [%s]", m_mfile->path.c_str());
+		Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
+
 		// Enter directory
-		m_mfile.reset(m_mfile->cd(command.substr(2)));
+		m_mfile.reset(m_mfile->cd(mstr::drop(command, 2)));
 		m_openState = O_DIR;
+
+		Debug_printv("after CD");
+		Debug_printv("command [%s]", command.c_str());
+		Debug_printv("url [%s]", m_mfile->url.c_str());
+		Debug_printv("path [%s]", m_mfile->path.c_str());
+		Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
 	}
 	else if (mstr::startsWith(command, "@INFO", false))
 	{
@@ -341,8 +357,9 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else
 	{
-		m_mfile.reset(dir_check);
+		m_mfile.reset(MFSOwner::File(check->url));
 		m_openState = O_FILE;
+		Debug_printv("Load File [%s]", check->url.c_str());
 	}
 
 	if (m_openState == O_DIR)
@@ -584,8 +601,6 @@ void Interface::sendListing()
 	Debug_println("");
 
 	// Send List ITEMS
-	//String dirTarget = m_device.url() + m_device.path();
-	//std::unique_ptr<MFile> dir(MFSOwner::File(dirTarget.c_str()));
 	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
 	if(entry == nullptr) {
@@ -597,17 +612,17 @@ void Interface::sendListing()
 	// Send Listing Header
 	char buffer[100];
 	byte space_cnt = 0;
-	//if (dir->media_header.size() == 0)
+	if (m_mfile->media_header.size() == 0)
 	{
 		// Set device default Listing Header
 		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
 		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A\0", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 	}
-	// else
-	// {
-	// 	space_cnt = (16 - dir->media_header.size()) / 2;
-	// 	sprintf(buffer, "\"%*s%s%*s\" %s\0", space_cnt, "", dir->media_header.c_str(), space_cnt, "", dir->media_id.c_str());
-	// }
+	else
+	{
+		space_cnt = (16 - m_mfile->media_header.size()) / 2;
+		sprintf(buffer, "\"%*s%s%*s\" %s\x00", space_cnt, "", m_mfile->media_header.c_str(), space_cnt, "", m_mfile->media_id.c_str());
+	}
 	byte_count += sendHeader(basicPtr, buffer);
 	
 
