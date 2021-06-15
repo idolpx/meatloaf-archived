@@ -78,6 +78,7 @@ private:
 	void reset(void);
 
 	void sendStatus(void);
+	void sendFileNotFound(void);
 	void sendDeviceInfo(void);
 	void sendDeviceStatus(void);
 
@@ -119,7 +120,7 @@ private:
 
 	DeviceDB m_device;
 
-	std::string m_device_status = "00, " PRODUCT_ID " [" FW_VERSION "], 00, 00";
+	std::string m_device_status;
 	bool m_show_date;
 	bool m_show_load_address;
 	bool m_show_hidden;

@@ -51,6 +51,7 @@ void Interface::reset(void)
 {
 	m_openState = O_NOTHING;
 	m_queuedError = ErrIntro;
+	m_device_status = "73, " PRODUCT_ID " [" FW_VERSION "], 00, 00";
 	m_mfile.reset(MFSOwner::File(m_device.url().c_str()));
 } // reset
 
@@ -63,7 +64,7 @@ void Interface::sendStatus(void)
 		status = "00, OK, 00, 00";
 
 	Debug_printv("status: %s", status.c_str());
-	for (i = 0; i < status.length(); ++i)
+	for (i = 0; i < status.length()-1; ++i)
 		m_iec.send(status[i]);
 
 	// ...and last byte in string as with EOI marker.
@@ -72,6 +73,12 @@ void Interface::sendStatus(void)
 	// Clear the status message
 	m_device_status.clear();
 } // sendStatus
+
+void Interface::sendFileNotFound(void)
+{
+	m_device_status = "62, FILE NOT FOUND, 00, 00";
+	m_iec.sendFNF();
+}
 
 void Interface::sendDeviceInfo()
 {
@@ -275,7 +282,10 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 {
 	std::string guessedPath = commandLne;
 
-	// first let's check if it doesn't start with a known command token
+	// get the current directory
+	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
+
+	// check to see if it starts with a known command token
 	if(mstr::startsWith(commandLne, "CD", false)) // would be case sensitive, but I don't know the proper case
 	{
 		guessedPath = mstr::drop(guessedPath, 2);
@@ -288,9 +298,6 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 	// LOAD ../something
 	// LOAD //something
 	// we HAVE TO PARSE IT OUR WAY!
-
-	// so, we're getting the current directory
-	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
 
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
 	return currentDir->cd(guessedPath);
@@ -437,7 +444,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 		{
 		case O_NOTHING:
 			// Say file not found
-			m_iec.sendFNF();
+			sendFileNotFound();
 			break;
 
 		case O_INFO:
@@ -459,7 +466,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 		case O_FILE_ERR:
 			// FIXME: interface with Host for error info.
 			//sendListing(/*&send_file_err*/);
-			m_iec.sendFNF();
+			sendFileNotFound();
 			break;
 
 		case O_DEVICE_INFO:
@@ -491,7 +498,7 @@ void Interface::handleATNCmdCodeDataListen()
 	if (not lengthOrResult or '>' not_eq serCmdIOBuf[0])
 	{
 		// FIXME: Check what the drive does here when things go wrong. FNF is probably not right.
-		m_iec.sendFNF();
+		sendFileNotFound();
 		strcpy_P(serCmdIOBuf, "response not sync.");
 	}
 	else
@@ -513,7 +520,7 @@ void Interface::handleATNCmdCodeDataListen()
 		if (ErrOK == m_queuedError)
 			saveFile();
 		//		else // FIXME: Check what the drive does here when saving goes wrong. FNF is probably not right. Dummyread entire buffer from CBM?
-		//			m_iec.sendFNF();
+		//			sendFileNotFound();
 	}
 } // handleATNCmdCodeDataListen
 
@@ -637,7 +644,7 @@ void Interface::sendListing()
 
 	if(entry == nullptr) {
 		ledOFF();
-		m_iec.sendFNF();
+		sendFileNotFound();
 		return;
 	}
 
@@ -773,7 +780,7 @@ void Interface::sendFile()
 	if (!m_mfile->exists())
 	{
 		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", m_mfile->url.c_str());
-		m_iec.sendFNF();
+		sendFileNotFound();
 	}
 	else
 	{
