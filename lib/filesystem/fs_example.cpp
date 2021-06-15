@@ -174,8 +174,21 @@ void testPaths(MFile* testFile, std::string subDir) {
 
     std::shared_ptr<MFile> inCie(testFile->cd(subDir));
     Serial.printf("- cd %s = '%s'\n", subDir.c_str(), inCie->url.c_str());
-} 
+}
 
+void testIsDirectory() {
+    std::shared_ptr<MFile> testDir(MFSOwner::File("/NOTADIR/"));
+    Debug_printv("dir [%s] exists [%d]",testDir->url.c_str(), testDir->isDirectory());
+    testDir.reset(MFSOwner::File("/.sys"));
+    Debug_printv("dir [%s] exists [%d]",testDir->url.c_str(), testDir->isDirectory());
+    testDir.reset(MFSOwner::File("/.sys/"));
+    Debug_printv("dir [%s] exists [%d]",testDir->url.c_str(), testDir->isDirectory());
+}
+
+void testUrlParser() {
+    dumpFileProperties(MFSOwner::File("/CD:GAMES"));
+    dumpFileProperties(MFSOwner::File("//CD_"));
+}
 
 void htmlStream(char *url)
 {
@@ -293,10 +306,13 @@ void runTestsSuite() {
     // working, uncomment if you want
     //runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
     //runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
-    runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
+    //runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
     
     // not working yet, DO NOT UNCOMMENT!!!
-    //runFSTest("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL","");
+    //runFSTest("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL","");    
+    
+    //testIsDirectory();
+    testUrlParser();
 
 }
 
