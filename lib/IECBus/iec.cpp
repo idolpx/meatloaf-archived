@@ -732,10 +732,12 @@ bool IEC::send(uint8_t data)
 //
 bool IEC::sendEOI(uint8_t data)
 {
+#ifdef DATA_STREAM
+	Debug_printf("%.2X ", data);
+#endif	
 	Debug_printf("\r\nEOI Sent!");
-	if(sendByte(data, true)) {
-		//Debug_print("true");
-
+	if(sendByte(data, true)) 
+	{
 		// As we have just send last byte, turn bus back around
 		if(undoTurnAround())
 		{
@@ -743,7 +745,6 @@ bool IEC::sendEOI(uint8_t data)
 		}
 	}
 
-	//Debug_print("false");
 	return false;
 } // sendEOI
 
@@ -767,17 +768,17 @@ bool IEC::sendFNF()
 
 
 
-bool IEC::isDeviceEnabled(const byte deviceNumber)
+bool IEC::isDeviceEnabled(const uint8_t deviceNumber)
 {
 	return (enabledDevices & (1<<deviceNumber));
 } // isDeviceEnabled
 
-void IEC::enableDevice(const byte deviceNumber)
+void IEC::enableDevice(const uint8_t deviceNumber)
 {
 	enabledDevices |= 1UL << deviceNumber;
 } // enableDevice
 
-void IEC::disableDevice(const byte deviceNumber)
+void IEC::disableDevice(const uint8_t deviceNumber)
 {
 	enabledDevices &= ~(1UL << deviceNumber);
 } // disableDevice
