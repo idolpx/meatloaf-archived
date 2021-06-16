@@ -374,7 +374,7 @@ bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
     // otherwise - false
 
-    Debug_printv("trying to chop [%s]", path.c_str());
+    //Debug_printv("trying to chop [%s]", path.c_str());
 
     auto chopped = mstr::split(path,'/');
 
@@ -448,7 +448,6 @@ bool CServerFile::rewindDirectory() {
         if(!CServerFileSystem::session.breader->eof()) {
             media_header = line.substr(2, line.find_last_of("]")-1);
             media_id = "C=SVR";
-            media_blocks_free = 65536;
             dirIsOpen = true;
 
             return true;
@@ -467,6 +466,10 @@ MFile* CServerFile::getNextFileInDir() {
 
     std::string name;
     size_t size;
+    std::string new_url = url;
+
+    if(url.size()>4) // If we are not at root then add additional "/"
+        new_url += "/";
 
     if(dirIsImage) {
         auto line = CServerFileSystem::session.breader->readLn();
@@ -492,9 +495,10 @@ MFile* CServerFile::getNextFileInDir() {
             name = line.substr(5,15);
             size = atoi(line.substr(0, line.find_first_of(" ")).c_str());
             mstr::rtrim(name);
-            //Serial.printf("xx: %s -- %s\n", line.c_str(), name);
+            Debug_printv("xx: %s -- %s %d", line.c_str(), name.c_str(), size);
             //return new CServerFile(path() +"/"+ name);
-            return new CServerFile(url + "/"+ name, size);
+            new_url += name;
+            return new CServerFile(new_url, size);
         }
     } else {
         auto line = CServerFileSystem::session.breader->readLn();
@@ -530,9 +534,12 @@ MFile* CServerFile::getNextFileInDir() {
                 size = 683;
             }
 
-            //Serial.printf("xx: %s -- %s\n", line.c_str(), name.c_str());
+            Debug_printv("\nurl[%s] name[%s] size[%d]\n", url.c_str(), name.c_str(), size);
             if(name.size() > 0)
-                return new CServerFile(url + "/" + name, size);
+            {
+                new_url += name;
+                return new CServerFile(new_url, size);                
+            }
             else
                 return nullptr;
         }

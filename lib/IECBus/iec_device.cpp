@@ -719,23 +719,23 @@ void Interface::sendListing()
 	// Send Listing Header
 	char buffer[100];
 	byte space_cnt = 0;
-	if (m_mfile->media_header.size() == 0)
+	// if (m_mfile->media_header.size() == 0)
 	{
 		// Set device default Listing Header
 		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
 		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A\0", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 	}
-	else
-	{
-		space_cnt = (16 - m_mfile->media_header.size()) / 2;
-		sprintf(buffer, "\"%*s%s%*s\" %s\x00", space_cnt, "", m_mfile->media_header.c_str(), space_cnt, "", m_mfile->media_id.c_str());
-	}
+	// else
+	// {
+	// 	space_cnt = (16 - m_mfile->media_header.size()) / 2;
+	// 	sprintf(buffer, "\"%*s%s%*s\" %s\x00", space_cnt, "", m_mfile->media_header.c_str(), space_cnt, "", m_mfile->media_id.c_str());
+	// }
 	byte_count += sendHeader(basicPtr, buffer);
 	
 	// Send Directory Items
 	while(entry != nullptr)
 	{
-		uint16_t block_cnt = entry->size();
+		uint16_t block_cnt = entry->size() / m_mfile->media_block_size;
 		byte block_spc = 3;
 		if (block_cnt > 9)
 			block_spc--;
