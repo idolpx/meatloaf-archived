@@ -377,15 +377,25 @@ bool CServerFile::isDirectory() {
     Debug_printv("trying to chop [%s]", path.c_str());
 
     auto chopped = mstr::split(path,'/');
-    //auto second = (chopped.end())-2; // penultimate path part is d64? 
-    auto second = chopped.end()-2;
-    
-    //auto x = (*second);
-    Debug_printv("isDirectory second from right: [%s]", (*second).c_str());
-    if ( mstr::endsWith((*second), ".d64", false))
-        return false;
-    else
+
+    if(path.empty()) {
+        // rood dir is a dir
         return true;
+    }
+    if(chopped.size() == 1) {
+        // we might be in an imaga in the root
+        return mstr::endsWith((chopped[0]), ".d64", false);
+    }
+    if(chopped.size()>1) {
+        auto second = chopped.end()-2;
+        
+        //auto x = (*second);
+        Debug_printv("isDirectory second from right: [%s]", (*second).c_str());
+        if ( mstr::endsWith((*second), ".d64", false))
+            return false;
+        else
+            return true;
+    }
 };
 
 MIstream* CServerFile::inputStream() {

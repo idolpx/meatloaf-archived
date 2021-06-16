@@ -338,6 +338,6 @@ void runTestsSuite() {
     
     //testIsDirectory();
     //testUrlParser();
-    testCD();
+    //testCD();
 }
 
