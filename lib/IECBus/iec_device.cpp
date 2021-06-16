@@ -404,17 +404,6 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	{
 		m_mfile.reset(MFSOwner::File(m_device.url().c_str()));
 	}
-	Debug_println("");
-	Debug_printv("URL: [%s]", m_mfile->url.c_str());
-	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
-	Debug_printv("Username: [%s]", m_mfile->user.c_str());
-	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
-	Debug_printv("Host: [%s]", m_mfile->host.c_str());
-	Debug_printv("Port: [%s]", m_mfile->port.c_str());
-	Debug_printv("Path: [%s]", m_mfile->path.c_str());
-	Debug_printv("File: [%s]", m_mfile->name.c_str());
-	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
-
 	// Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
 	// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
 
@@ -518,6 +507,21 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 					m_mfile->extension.c_str(),
 					atn_cmd.str
 	);
+	
+	Debug_println("");
+	Debug_printv("-------------------------------");
+	Debug_printv("URL: [%s]", m_mfile->url.c_str());
+    Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
+    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
+	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	Debug_printv("File: [%s]", m_mfile->name.c_str());
+	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+    Debug_printv("-------------------------------");
 
 } // handleATNCmdCodeOpen
 
