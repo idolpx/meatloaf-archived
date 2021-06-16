@@ -25,7 +25,7 @@ class MLFile: public HttpFile {
 
 public:
     MLFile(std::string path, size_t size = 0, bool isDir = false): 
-    HttpFile(path), m_isDir(isDir), m_size(size)  
+    HttpFile(path), m_size(size), m_isDir(isDir)  
     {
         if(path.back() == '/')
             m_isDir = true;
