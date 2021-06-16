@@ -735,7 +735,7 @@ void Interface::sendListing()
 	// Send Directory Items
 	while(entry != nullptr)
 	{
-		uint16_t block_cnt = entry->size() / 256;
+		uint16_t block_cnt = entry->size();
 		byte block_spc = 3;
 		if (block_cnt > 9)
 			block_spc--;
