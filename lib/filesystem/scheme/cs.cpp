@@ -361,9 +361,11 @@ MFile* CServerFile::cd(std::string newDir) {
         return MFSOwner::File(newDir);
     }
     else {
-        Debug_printv(">");
         // Add new directory to path
-        return MFSOwner::File(url+"/"+newDir);
+        if(mstr::endsWith(url,"/"))
+            return MFSOwner::File(url+newDir);
+        else
+            return MFSOwner::File(url+"/"+newDir);
     }
 };
 
@@ -376,10 +378,11 @@ bool CServerFile::isDirectory() {
 
     auto chopped = mstr::split(path,'/');
     //auto second = (chopped.end())-2; // penultimate path part is d64? 
-    auto second = chopped.back();
+    auto second = chopped.end()-2;
+    
     //auto x = (*second);
-    Debug_printv("isDirectory second from right: [%s]", second.c_str());
-    if ( mstr::endsWith(second, ".d64", false))
+    Debug_printv("isDirectory second from right: [%s]", (*second).c_str());
+    if ( mstr::endsWith((*second), ".d64", false))
         return false;
     else
         return true;

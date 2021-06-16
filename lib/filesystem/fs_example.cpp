@@ -200,6 +200,19 @@ void testCD() {
     Debug_printv("cd(..) dir [%s]",testDir->url.c_str());
     testDir.reset(testDir->cd("_"));
     Debug_printv("cd(_) dir [%s]",testDir->url.c_str());
+
+    Serial.println("A chain of CDs");
+    // make a folder called GAMES on root of flash
+    testDir.reset(MFSOwner::File("/"));
+    Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
+    // then on the 64   LOAD"CD:GAMES",8
+    testDir.reset(testDir->cd("games"));
+    Serial.printf("I'm in %s, changing to _\n", testDir->url.c_str());
+    // then LOAD"CD_",8
+    testDir.reset(testDir->cd("_"));
+    Serial.printf("I'm in %s, now\n", testDir->url.c_str());
+    // then LOAD"CD:GAMES",8
+
 }
 
 void htmlStream(char *url)
@@ -316,15 +329,15 @@ void runFSTest(std::string dirPath, std::string filePath) {
 
 void runTestsSuite() {
     // working, uncomment if you want
-    //runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
-    //runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
+    // runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    // runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
     //runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
     
     // not working yet, DO NOT UNCOMMENT!!!
     //runFSTest("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL","");    
     
     //testIsDirectory();
-    testUrlParser();
-    //testCD();
+    //testUrlParser();
+    testCD();
 }
 

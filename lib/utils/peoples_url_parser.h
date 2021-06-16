@@ -21,76 +21,87 @@ public:
     std::string extension;
 private:
 
-    void parseHostPortPath(std::string userPass) {
-        Serial.printf("parseHostPortPath [%s]\n", userPass.c_str());
-        // host.com:port/path/path/path....
-        auto parts = mstr::split(userPass,':', 2);
+    void processHostPort(std::string hostPort) {
+        auto byColon = mstr::split(hostPort,':',2);
+        host = byColon[0];
+        if(byColon.size()>1) {
+            port = byColon[1];
+        }
+    }
 
-        if(parts.size()>1) {
-            host = parts[0];
-            auto portPath = mstr::split(parts[1],'/',2);
+    void processAuthorityPath(std::string authorityPath) {
+        //             /path
+        // authority:80/path
+        // authority:100
+        // authority
+        auto bySlash = mstr::split(authorityPath,'/',2);
+ 
+        processHostPort(bySlash[0]);
+        if(bySlash.size()>1) {
+            // hasPath
+            path = bySlash[1];
+        }
 
-            port = portPath[0];
-            path = portPath[1];
+    }
+
+    void processUserPass(std::string userPass) {
+        // user:pass
+        auto byColon = mstr::split(userPass,':',2);
+        if(byColon.size()==1) {
+            user = byColon[0];
         }
         else {
-            auto hostPath = mstr::split(parts[0],'/',2);
-            if(hostPath.size()>1)
-            {
-                host = hostPath[0];
-                path = hostPath[1];                
-            }
-        }
-        if(mstr::endsWith(path,"/"))
-            path = mstr::drop(path, 1);
-    }
-
-    void parseUserPass(std::string userPass) {
-        // user:pass
-
-        auto parts = mstr::split(userPass,':', 2);
-
-        user = parts[0];
-
-        if(parts.size()>1) {
-            pass = parts[1];
+            user = byColon[0];
+            pass = byColon[1];
         }
     }
 
-    void parseAuthorityPath(std::string authPath) {
-        bool hasAuthority = authPath[0]=='/' && authPath[1]=='/';
+    void processAuthority(std::string pastTheColon) {
+        // //user:pass@/path
+        // //user:pass@authority:80/path
+        // //          authority:100
+        // //          authority:30/path            
+        auto byAtSign = mstr::split(pastTheColon,'@', 2);
 
-        std::string authPathStripped = (hasAuthority) ? authPath.substr(2) : authPath;
-        if(hasAuthority) {
-            auto parts = mstr::split(authPathStripped, '@', 2);
-            std::string hostPortPath;
-
-            if(parts.size()>1) {
-                // we have user/pass part
-                parseUserPass(parts[0]); // user:pass
-                hostPortPath = parts[1]; // host.com:port/path/path/path....
-            }
-            else {
-                // we just have host/port
-                hostPortPath = parts[0]; // host.com:port/path/path/path....
-            }
-            parseHostPortPath(hostPortPath);
+        if(byAtSign.size()==1) {
+            // just addres, port, path
+            processAuthorityPath(mstr::drop(byAtSign[0],2));
         }
+        else {
+            // user:pass
+            processUserPass(mstr::drop(byAtSign[0],2));
+            // address, port, path
+            processAuthorityPath(byAtSign[1]);
+        }
+    }
 
-        auto firstSlash = authPathStripped.find('/');
+    void trimPath() {
+        while(mstr::endsWith(path,"/")) {
+            path=mstr::dropLast(path,1);
+        }
+    }
 
-//Serial.printf("auth path stripped=%s\n",authPathStripped.c_str());
+    void fillInNameExt() {
+        auto pathParts = mstr::split(path,'/');
 
-        if(firstSlash != std::string::npos)
-            path = authPathStripped.substr(firstSlash);
+        if(pathParts.size()>1)
+            name = *(--pathParts.end());
         else
-            path = authPathStripped;
-    }
+            name = path;
 
+        auto nameParts = mstr::split(name,'.');
+        
+        if(nameParts.size()>1)
+            extension = *(--nameParts.end());
+        else
+            extension = "";
+
+    }
 public:
     void parseUrl(std::string u) {
         url = u;
-        auto parts = mstr::split(url, ':', 2);
+
+        auto byColon = mstr::split(url, ':', 2);
 
         scheme = "";
         path = "";
@@ -99,34 +110,39 @@ public:
         host = "";
         port = "";
 
-        Serial.printf("url [%s] parts.size [%d]\n", u.c_str(), parts.size());
-        if(parts.size()>1) {
-            scheme = parts[0]; // http
-            parseAuthorityPath(parts[1]); // user:pass@host.com:port/path/path/path....
+        if(byColon.size()==1) {
+            // no scheme, good old local path
+            path = byColon[0];
+            trimPath();
+            fillInNameExt();
+            return;
+        }
+
+        scheme = byColon[0];
+
+        auto pastTheColon = byColon[1]; // don't visualise!
+
+        if(pastTheColon[0]=='/' && pastTheColon[1]=='/') {
+            // //user:pass@/path
+            // //user:pass@authority:80/path
+            // //authority:100
+            // //authority:30/path            
+
+            processAuthority(pastTheColon);
+            trimPath();
+            fillInNameExt();
+            return;
         }
         else {
-            scheme = "";
-            parseAuthorityPath(parts[0]); // user:pass@host.com:port/path/path/path....
+            // we have just a plain old path
+            // /path
+            // user@server
+            // etc.
+            path = pastTheColon;
+            trimPath();
+            fillInNameExt();
+            return;
         }
-
-        auto pathParts = mstr::split(path,'/');
-
-//Serial.printf("path parts %s\n", mstr::joinToString(pathParts, "::").c_str());
-
-        //auto last = (pathParts.end())--;
-        
-        if(pathParts.size()>1)
-            name = *(--pathParts.end());
-        else
-            name = path;
-
-        auto nameParts = mstr::split(name,'.');
-        
-        //last = (nameParts.end())--;
-        if(nameParts.size()>1)
-            extension = *(--nameParts.end());
-        else
-            extension = "";
     }
 
     // void dump() {
