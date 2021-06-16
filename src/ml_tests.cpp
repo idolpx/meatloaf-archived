@@ -352,5 +352,8 @@ void runTestsSuite() {
     //testIsDirectory();
     //testUrlParser();
     //testCD();
+
+    htmlStream("HTTP://MEATLOAF.CC");  // Doesn't work
+    htmlStream("http://MEATLOAF.CC");  // Works!!!
 }
 
