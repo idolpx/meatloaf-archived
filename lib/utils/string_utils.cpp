@@ -176,4 +176,53 @@ namespace mstr {
         return joinToString(&st, &ed, separator);
     }
 
+
+    std::string urlEncode(std::string s) {
+        std::string new_str = "";
+        char c;
+        int ic;
+        const char* chars = s.c_str();
+        char bufHex[10];
+        int len = strlen(chars);
+
+        for(int i=0;i<len;i++){
+            c = chars[i];
+            ic = c;
+            // uncomment this if you want to encode spaces with +
+            if (c==' ') new_str += '+';   
+            else if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') new_str += c;
+            else {
+                sprintf(bufHex,"%X",c);
+                if(ic < 16) 
+                    new_str += "%0"; 
+                else
+                    new_str += "%";
+                new_str += bufHex;
+            }
+        }
+        return new_str;
+    }
+
+    std::string urlDecode(std::string s){
+        std::string ret;
+        char ch;
+        int i, ii, len = s.length();
+
+        for (i=0; i < len; i++){
+            if(s[i] != '%'){
+                if(s[i] == '+')
+                    ret += ' ';
+                else
+                    ret += s[i];
+            }else{
+                sscanf(s.substr(i + 1, 2).c_str(), "%x", &ii);
+                ch = static_cast<char>(ii);
+                ret += ch;
+                i = i + 2;
+            }
+        }
+        return ret;
+    }
+
+
 }

@@ -20,7 +20,8 @@ namespace mstr {
     void replaceAll(std::string &s, const std::string &search, const std::string &replace);
     std::string joinToString(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end, std::string separator);
     std::string joinToString(std::vector<std::string>, std::string separator);
-
+    std::string urlEncode(std::string s);
+    std::string urlDecode(std::string s);
 }
 
 #endif
