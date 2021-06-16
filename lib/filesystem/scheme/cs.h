@@ -50,8 +50,8 @@ private:
     size_t m_size;
 
 public:
-    CServerFile(std::string path, size_t size = 0): MFile(path) {
-        m_size = size;
+    CServerFile(std::string path, size_t size = 0): MFile(path), m_size(size) 
+    {
     };
 
     bool isDirectory() override;
