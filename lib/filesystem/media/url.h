@@ -55,7 +55,7 @@ public:
 
     MFile* cd(std::string newDir) override {
         // cding into urlfile will always just point you to the link read from contents of the file...
-        return pointedFile.get();
+        return getPointed();
     }
 
 private:
