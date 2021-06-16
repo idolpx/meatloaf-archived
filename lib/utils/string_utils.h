@@ -17,6 +17,7 @@ namespace mstr {
     void ltrim(std::string &s);
     void rtrim(std::string &s);
     void trim(std::string &s);
+    void replaceAll(std::string &s, const std::string &search, const std::string &replace);
     std::string joinToString(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end, std::string separator);
     std::string joinToString(std::vector<std::string>, std::string separator);
 
