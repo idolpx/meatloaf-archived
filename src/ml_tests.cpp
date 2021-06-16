@@ -2,7 +2,7 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
 
-#include "fs_example.h"
+#include "ml_tests.h"
 #include "meat_io.h"
 #include "../../include/make_unique.h"
 #include "../../include/global_defines.h"
@@ -206,13 +206,26 @@ void testCD() {
     testDir.reset(MFSOwner::File("/"));
     Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
     // then on the 64   LOAD"CD:GAMES",8
-    testDir.reset(testDir->cd("games"));
+    testDir.reset(testDir->cd("GAMES"));
     Serial.printf("I'm in %s, changing to _\n", testDir->url.c_str());
     // then LOAD"CD_",8
     testDir.reset(testDir->cd("_"));
-    Serial.printf("I'm in %s, now\n", testDir->url.c_str());
+    Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
     // then LOAD"CD:GAMES",8
-
+    testDir.reset(testDir->cd("GAMES"));
+    Serial.printf("I'm in %s, changing to _\n", testDir->url.c_str());
+    // then LOAD"CD_",8
+    testDir.reset(testDir->cd("_"));
+    Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
+    // then LOAD"CD:GAMES",8
+    testDir.reset(testDir->cd("GAMES"));
+    Serial.printf("I'm in %s, changing to _\n", testDir->url.c_str());
+    // then LOAD"CD_",8
+    testDir.reset(testDir->cd("_"));
+    Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
+    // then LOAD"CD:GAMES",8
+    testDir.reset(testDir->cd("GAMES"));
+    Serial.printf("I'm in %s\n", testDir->url.c_str());
 }
 
 void htmlStream(char *url)
