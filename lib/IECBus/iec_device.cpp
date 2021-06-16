@@ -319,6 +319,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	Debug_printv("Path: [%s]", m_mfile->path.c_str());
 	Debug_printv("File: [%s]", m_mfile->name.c_str());
 	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+
 	// Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
 	// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
 
@@ -724,7 +725,7 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_
 
 void Interface::sendFile()
 {
-	uint16_t i = 0;
+	size_t i = 0;
 	bool success = true;
 
 	uint16_t bi = 0;
@@ -740,7 +741,7 @@ void Interface::sendFile()
 	// Update device database
 	m_device.save();
 
-	size_t len = m_mfile->size();
+	size_t len = m_mfile->size() - 1;
 	std::shared_ptr<MIstream> istream(m_mfile->inputStream());
 
 	// Get file load address
@@ -750,10 +751,9 @@ void Interface::sendFile()
 	istream->read(b, b_len);
 	success = m_iec.send(b[0]);
 	load_address = load_address | *b << 8;  // high byte
-	// fseek(file, 0, SEEK_SET);
 
 	Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
-	for (i = 2; success and i < len; ++i) 
+	for (i = 2; success and i <= len; i++)
 	{
 		success = istream->read(b, b_len);
 		if (success)
@@ -765,7 +765,7 @@ void Interface::sendFile()
 				load_address += 8;
 			}
 #endif
-			if (i == len - 1)
+			if (i == len)
 			{
 				success = m_iec.sendEOI(b[0]); // indicate end of file.
 			}
@@ -793,6 +793,10 @@ void Interface::sendFile()
 			{
 				ledToggle(true);
 			}
+		}
+		else
+		{
+			Debug_printf("success [%d] i[%d] len[%d]", success, i, len);
 		}
 
 		// Exit if ATN is pulled while sending
