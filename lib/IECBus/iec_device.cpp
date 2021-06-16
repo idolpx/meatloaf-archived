@@ -775,7 +775,7 @@ void Interface::sendFile()
 			}
 
 #ifdef DATA_STREAM
-		// Show ASCII Data
+			// Show ASCII Data
 			if (b[0] < 32 || b[0] >= 127) 
 			b[0] = 46;
 
@@ -829,18 +829,17 @@ void Interface::saveFile()
 	char ba[9];
 	ba[8] = '\0';
 #endif
-	// std::shared_ptr<MFile> dstFile(MFSOwner::File(m_mfile->url.c_str()));
-	// std::shared_ptr<MOstream> dstStream(dstFile->outputStream());
 
+	std::shared_ptr<MOstream> ostream(m_mfile->outputStream());
 	Debug_printv("\n[%s]", m_mfile->url.c_str());
 
-    // if(!dstStream->isOpen()) {
-    //     Debug_printv("couldn't open a stream for writing");
-    //     return;
-    // }
-    // else 
-	// {
-	// 	// Stream is open!  Let's save this!
+    if(!ostream->isOpen()) {
+        Debug_printv("couldn't open a stream for writing");
+        return;
+    }
+    else 
+	{
+	 	// Stream is open!  Let's save this!
 
 		// Get file load address
 		b[0] = m_iec.receive();
@@ -864,12 +863,12 @@ void Interface::saveFile()
 			b[0] = m_iec.receive();
 			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
 
-			//dstStream->write(b, b_len);
+			ostream->write(b, b_len);
 			
 			i++;
 
 #ifdef DATA_STREAM
-		// Show ASCII Data
+			// Show ASCII Data
 			if (b[0] < 32 || b[0] >= 127) 
 			b[0] = 46;
 
@@ -887,10 +886,11 @@ void Interface::saveFile()
 				ledToggle(true);
 			}
 		} while (not done);
-    //}
-	Debug_printf("\n%d bytes received", i);
+    }
+    ostream->close(); // nor required, closes automagically
+
+	Debug_printf("\n%d bytes received\n", i);
+	ledON();
 
 	// TODO: Handle errorFlag
-
-//    dstStream->close(); // nor required, closes automagically
 } // saveFile
