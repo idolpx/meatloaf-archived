@@ -824,6 +824,8 @@ void Interface::saveFile()
 	uint16_t load_address = 0;
 	size_t b_len = 1;
 	uint8_t b[b_len];
+	uint8_t ll[b_len];
+	uint8_t lh[b_len];
 
 #ifdef DATA_STREAM
 	char ba[9];
@@ -831,7 +833,7 @@ void Interface::saveFile()
 #endif
 
 	std::shared_ptr<MOstream> ostream(m_mfile->outputStream());
-	Debug_printv("\n[%s]", m_mfile->url.c_str());
+	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", m_mfile->url.c_str());
 
     if(!ostream->isOpen()) {
         Debug_printv("couldn't open a stream for writing");
@@ -842,16 +844,23 @@ void Interface::saveFile()
 	 	// Stream is open!  Let's save this!
 
 		// Get file load address
-		b[0] = m_iec.receive();
-		load_address = *b & 0x00FF; // low byte
-		//ostream->write(b, b_len);
-		b[0] = m_iec.receive();
-		load_address = load_address | *b << 8;  // high byte
-		//ostream->write(b, b_len);
+		ll[0] = m_iec.receive();
+		load_address = *ll & 0x00FF; // low byte
+		lh[0] = m_iec.receive();
+		load_address = load_address | *lh << 8;  // high byte
 
 		// Recieve bytes until a EOI is detected
 		do
 		{
+			// Save Load Address
+			if (i == 0)
+			{
+				ostream->write(ll, b_len);
+				ostream->write(lh, b_len);
+				i += 2;
+				Debug_println("]");
+			}
+
 #ifdef DATA_STREAM
 			if (bi == 0)
 			{
@@ -861,11 +870,10 @@ void Interface::saveFile()
 #endif
 
 			b[0] = m_iec.receive();
-			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
-
 			ostream->write(b, b_len);
-			
 			i++;
+
+			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
 
 #ifdef DATA_STREAM
 			// Show ASCII Data
