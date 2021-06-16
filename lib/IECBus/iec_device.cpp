@@ -323,6 +323,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
 
 	std::string command = atn_cmd.str;
+	m_openState = O_NOTHING;
 
 	// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
 	// some shit in check variable!
@@ -396,9 +397,12 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else
 	{
+		Debug_printv("Load File [%s]", new_mfile->url.c_str());
 		m_mfile.reset(MFSOwner::File(new_mfile->url));
 		m_openState = O_FILE;
-		Debug_printv("Load File [%s]", new_mfile->url.c_str());
+
+		if(!m_mfile->exists())
+			m_openState = O_NOTHING;
 	}
 
 	if (m_openState == O_DIR)
@@ -464,8 +468,6 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 			break;
 
 		case O_FILE_ERR:
-			// FIXME: interface with Host for error info.
-			//sendListing(/*&send_file_err*/);
 			sendFileNotFound();
 			break;
 
@@ -485,43 +487,9 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 
 void Interface::handleATNCmdCodeDataListen()
 {
-	byte lengthOrResult;
-	boolean wasSuccess = false;
+	Debug_printv("[%s]", m_mfile->url.c_str());
 
-	// process response into m_queuedError.
-	// Response: ><code in binary><CR>
-
-	serCmdIOBuf[0] = 0;
-
-	Debug_printf("\r\nhandleATNCmdCodeDataListen: %s", serCmdIOBuf);
-
-	if (not lengthOrResult or '>' not_eq serCmdIOBuf[0])
-	{
-		// FIXME: Check what the drive does here when things go wrong. FNF is probably not right.
-		sendFileNotFound();
-		strcpy_P(serCmdIOBuf, "response not sync.");
-	}
-	else
-	{
-		if (lengthOrResult = Serial.readBytes(serCmdIOBuf, 2))
-		{
-			if (2 == lengthOrResult)
-			{
-				lengthOrResult = serCmdIOBuf[0];
-				wasSuccess = true;
-			}
-			else
-			{
-				//Log(Error, FAC_IFACE, serCmdIOBuf);
-			}
-		}
-		m_queuedError = wasSuccess ? lengthOrResult : ErrSerialComm;
-
-		if (ErrOK == m_queuedError)
-			saveFile();
-		//		else // FIXME: Check what the drive does here when saving goes wrong. FNF is probably not right. Dummyread entire buffer from CBM?
-		//			sendFileNotFound();
-	}
+	saveFile();
 } // handleATNCmdCodeDataListen
 
 void Interface::handleATNCmdClose()
@@ -630,15 +598,6 @@ void Interface::sendListing()
 	uint16_t byte_count = 0;
 	std::string extension = "DIR";
 
-	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
-
-	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-	byte_count += 2;
-	Debug_println("");
-
 	// Send List ITEMS
 	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
@@ -647,6 +606,15 @@ void Interface::sendListing()
 		sendFileNotFound();
 		return;
 	}
+
+	// Reset basic memory pointer:
+	uint16_t basicPtr = C64_BASIC_START;
+
+	// Send load address
+	m_iec.send(C64_BASIC_START bitand 0xff);
+	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	byte_count += 2;
+	Debug_println("");
 
 	// Send Listing Header
 	char buffer[100];
@@ -664,7 +632,6 @@ void Interface::sendListing()
 	}
 	byte_count += sendHeader(basicPtr, buffer);
 	
-
 	// Send Directory Items
 	while(entry != nullptr)
 	{
@@ -773,118 +740,157 @@ void Interface::sendFile()
 	// Update device database
 	m_device.save();
 
-	//String fileTarget = String(m_device.url() + m_device.path() + m_filename);
+	size_t len = m_mfile->size();
+	std::shared_ptr<MIstream> istream(m_mfile->inputStream());
 
-	//std::unique_ptr<MFile> m_mfile(MFSOwner::File(fileTarget.c_str()));
+	// Get file load address
+	istream->read(b, b_len);
+	success = m_iec.send(b[0]);
+	load_address = *b & 0x00FF; // low byte
+	istream->read(b, b_len);
+	success = m_iec.send(b[0]);
+	load_address = load_address | *b << 8;  // high byte
+	// fseek(file, 0, SEEK_SET);
 
-	if (!m_mfile->exists())
+	Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
+	for (i = 2; success and i < len; ++i) 
 	{
-		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", m_mfile->url.c_str());
-		sendFileNotFound();
-	}
-	else
-	{
-		size_t len = m_mfile->size();
-		std::shared_ptr<MIstream> istream(m_mfile->inputStream());
-
-		// Get file load address
-		istream->read(b, b_len);
-		success = m_iec.send(b[0]);
-		load_address = *b & 0x00FF; // low byte
-		istream->read(b, b_len);
-		success = m_iec.send(b[0]);
-		load_address = load_address | *b << 8;  // high byte
-		// fseek(file, 0, SEEK_SET);
-
-		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
-		for (i = 2; success and i < len; ++i) 
+		success = istream->read(b, b_len);
+		if (success)
 		{
-			success = istream->read(b, b_len);
-			if (success)
+#ifdef DATA_STREAM
+			if (bi == 0)
 			{
-#ifdef DATA_STREAM
-				if (bi == 0)
-				{
-					Debug_printf(":%.4X ", load_address);
-					load_address += 8;
-				}
+				Debug_printf(":%.4X ", load_address);
+				load_address += 8;
+			}
 #endif
-				if (i == len - 1)
-				{
-					success = m_iec.sendEOI(b[0]); // indicate end of file.
-				}
-				else
-				{
-					success = m_iec.send(b[0]);
-				}
+			if (i == len - 1)
+			{
+				success = m_iec.sendEOI(b[0]); // indicate end of file.
+			}
+			else
+			{
+				success = m_iec.send(b[0]);
+			}
 
 #ifdef DATA_STREAM
-			// Show ASCII Data
-				if (b[0] < 32 || b[0] >= 127) 
-				b[0] = 46;
+		// Show ASCII Data
+			if (b[0] < 32 || b[0] >= 127) 
+			b[0] = 46;
 
-				ba[bi++] = b[0];
+			ba[bi++] = b[0];
 
-				if(bi == 8)
-				{
+			if(bi == 8)
+			{
 				size_t t = (i * 100) / len;
-					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
+				Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
 				bi = 0;
-				}
+			}
 #endif
-				// Toggle LED
-				if (i % 50 == 0)
-				{
-					ledToggle(true);
-				}
-			}
-
-			// Exit if ATN is pulled while sending
-			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
+			// Toggle LED
+			if (i % 50 == 0)
 			{
-				success = true;
-				break;
+				ledToggle(true);
 			}
 		}
-		istream->close();
-		Debug_println("");
-		Debug_printf("%d of %d bytes sent\r\n", i, len);
 
-		ledON();
-
-		if (!success || i != len)
+		// Exit if ATN is pulled while sending
+		if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
 		{
-			Debug_println("sendFile: Transfer aborted!");
+			success = true;
+			break;
 		}
+	}
+	istream->close();
+	Debug_println("");
+	Debug_printf("%d of %d bytes sent\r\n", i, len);
+
+	ledON();
+
+	if (!success || i != len)
+	{
+		Debug_println("sendFile: Transfer aborted!");
 	}
 } // sendFile
 
 
 void Interface::saveFile()
 {
-	// String outFile = String(m_device.path() + m_filename);
-	// byte b;
+	uint16_t i = 0;
+	bool done = false;
 
-	// Debug_printf("\r\nsaveFile: %s", outFile.c_str());
+	uint16_t bi = 0;
+	uint16_t load_address = 0;
+	size_t b_len = 1;
+	uint8_t b[b_len];
 
-	// File file = m_fileSystem->open(outFile, "w");
-	// //	noInterrupts();
-	// if (!file.available())
+#ifdef DATA_STREAM
+	char ba[9];
+	ba[8] = '\0';
+#endif
+	// std::shared_ptr<MFile> dstFile(MFSOwner::File(m_mfile->url.c_str()));
+	// std::shared_ptr<MOstream> dstStream(dstFile->outputStream());
+
+	Debug_printv("\n[%s]", m_mfile->url.c_str());
+
+    // if(!dstStream->isOpen()) {
+    //     Debug_printv("couldn't open a stream for writing");
+    //     return;
+    // }
+    // else 
 	// {
-	// 	Debug_printf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
-	// }
-	// else
-	// {
-	// 	boolean done = false;
-	// 	// Recieve bytes until a EOI is detected
-	// 	do
-	// 	{
-	// 		b = m_iec.receive();
-	// 		done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
+	// 	// Stream is open!  Let's save this!
 
-	// 		file.write(b);
-	// 	} while (not done);
-	// 	file.close();
-	// }
-	//	interrupts();
+		// Get file load address
+		b[0] = m_iec.receive();
+		load_address = *b & 0x00FF; // low byte
+		//ostream->write(b, b_len);
+		b[0] = m_iec.receive();
+		load_address = load_address | *b << 8;  // high byte
+		//ostream->write(b, b_len);
+
+		// Recieve bytes until a EOI is detected
+		do
+		{
+#ifdef DATA_STREAM
+			if (bi == 0)
+			{
+				Debug_printf(":%.4X ", load_address);
+				load_address += 8;
+			}
+#endif
+
+			b[0] = m_iec.receive();
+			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
+
+			//dstStream->write(b, b_len);
+			
+			i++;
+
+#ifdef DATA_STREAM
+		// Show ASCII Data
+			if (b[0] < 32 || b[0] >= 127) 
+			b[0] = 46;
+
+			ba[bi++] = b[0];
+
+			if(bi == 8)
+			{
+				Debug_printf(" %s (%d)\r\n", ba, i);
+				bi = 0;
+			}
+#endif
+			// Toggle LED
+			if (i % 50 == 0)
+			{
+				ledToggle(true);
+			}
+		} while (not done);
+    //}
+	Debug_printf("\n%d bytes received", i);
+
+	// TODO: Handle errorFlag
+
+//    dstStream->close(); // nor required, closes automagically
 } // saveFile

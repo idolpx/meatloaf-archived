@@ -27,7 +27,7 @@ IEC::IEC() :
 
 // Set all IEC_signal lines in the correct mode
 //
-boolean  IEC::init()
+bool IEC::init()
 {
 	// make sure the output states are initially LOW
 	release(IEC_PIN_ATN);
@@ -52,7 +52,7 @@ boolean  IEC::init()
 	return true;
 } // init
 
-byte  IEC::timeoutWait(byte iecPIN, IECline lineStatus)
+byte IEC::timeoutWait(byte iecPIN, IECline lineStatus)
 {
 	uint16_t t = 0;
 	
@@ -98,7 +98,7 @@ byte  IEC::timeoutWait(byte iecPIN, IECline lineStatus)
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-byte  IEC::receiveByte(void)
+uint8_t IEC::receiveByte(void)
 {
 	m_state = noFlags;
 
@@ -118,7 +118,7 @@ byte  IEC::receiveByte(void)
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
 	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
 	// without  the Clock line going to true, it has a special task to perform: note EOI.
-	byte n = 0;
+	uint8_t n = 0;
 	while(status(IEC_PIN_CLK) == released && (n < 20)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
@@ -179,7 +179,7 @@ byte  IEC::receiveByte(void)
 #if defined(ESP8266)
 	ESP.wdtFeed();
 #endif
-	byte data = 0;
+	uint8_t data = 0;
 	for(n = 0; n < 8; n++) {
 		data >>= 1;
 
@@ -230,7 +230,7 @@ byte  IEC::receiveByte(void)
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-boolean  IEC::sendByte(byte data, boolean signalEOI)
+bool IEC::sendByte(uint8_t data, boolean signalEOI)
 {
 	//m_state = noFlags;
 
@@ -305,7 +305,7 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 #if defined(ESP8266)
 	ESP.wdtFeed();
 #endif	
-	for(byte n = 0; n < 8; n++) 
+	for(uint8_t n = 0; n < 8; n++) 
 	{
 		// FIXME: Here check whether data pin goes low, if so end (enter cleanup)!
 
@@ -355,7 +355,7 @@ boolean  IEC::sendByte(byte data, boolean signalEOI)
 
 
 // IEC turnaround
-boolean  IEC::turnAround(void)
+bool IEC::turnAround(void)
 {
 	/*
 	TURNAROUND
@@ -396,7 +396,7 @@ boolean  IEC::turnAround(void)
 
 // this routine will set the direction on the bus back to normal
 // (the way it was when the computer was switched on)
-boolean  IEC::undoTurnAround(void)
+bool IEC::undoTurnAround(void)
 {
 	pull(IEC_PIN_DATA);
 	delayMicroseconds(TIMING_BIT);
@@ -446,7 +446,7 @@ boolean  IEC::undoTurnAround(void)
  * nobody to talk to.
  */
 // Return value, see IEC::ATNCheck definition.
-IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
+IEC::ATNCheck IEC::checkATN(ATNCmd& atn_cmd)
 {
 
 #ifdef DEBUG_TIMING
@@ -589,7 +589,7 @@ IEC::ATNCheck  IEC::checkATN(ATNCmd& atn_cmd)
 	return ATN_IDLE;
 } // checkATN
 
-IEC::ATNCheck  IEC::deviceListen(ATNCmd& atn_cmd)
+IEC::ATNCheck IEC::deviceListen(ATNCmd& atn_cmd)
 {
 	byte i=0;
 	ATNCommand c;
@@ -656,7 +656,7 @@ IEC::ATNCheck  IEC::deviceListen(ATNCmd& atn_cmd)
 
 // }
 
-IEC::ATNCheck  IEC::deviceTalk(ATNCmd& atn_cmd)
+IEC::ATNCheck IEC::deviceTalk(ATNCmd& atn_cmd)
 {
 	byte i = 0;
 	ATNCommand c;
@@ -706,17 +706,20 @@ IEC::ATNCheck  IEC::deviceTalk(ATNCmd& atn_cmd)
 
 // IEC_receive receives a byte
 //
-byte  IEC::receive()
+uint8_t IEC::receive()
 {
-	byte data;
+	uint8_t data;
 	data = receiveByte();
+#ifdef DATA_STREAM
+	Debug_printf("%.2X ", data);
+#endif
 	return data;
 } // receive
 
 
 // IEC_send sends a byte
 //
-boolean  IEC::send(byte data)
+bool IEC::send(uint8_t data)
 {
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
@@ -727,7 +730,7 @@ boolean  IEC::send(byte data)
 
 // Same as IEC_send, but indicating that this is the last byte.
 //
-boolean  IEC::sendEOI(byte data)
+bool IEC::sendEOI(uint8_t data)
 {
 	Debug_printf("\r\nEOI Sent!");
 	if(sendByte(data, true)) {
@@ -747,7 +750,7 @@ boolean  IEC::sendEOI(byte data)
 
 // A special send command that informs file not found condition
 //
-boolean  IEC::sendFNF()
+bool IEC::sendFNF()
 {
 	// Message file not found by just releasing lines
 	release(IEC_PIN_DATA);
@@ -764,7 +767,7 @@ boolean  IEC::sendFNF()
 
 
 
-bool  IEC::isDeviceEnabled(const byte deviceNumber)
+bool IEC::isDeviceEnabled(const byte deviceNumber)
 {
 	return (enabledDevices & (1<<deviceNumber));
 } // isDeviceEnabled
@@ -779,7 +782,7 @@ void IEC::disableDevice(const byte deviceNumber)
 	enabledDevices &= ~(1UL << deviceNumber);
 } // disableDevice
 
-IEC::IECState  IEC::state() const
+IEC::IECState IEC::state() const
 {
 	return static_cast<IECState>(m_state);
 } // state

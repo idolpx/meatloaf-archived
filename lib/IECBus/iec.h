@@ -19,7 +19,6 @@
 #define IEC_H
 
 #include <Arduino.h>
-//#include "../../include/global_defines.h"
 #include "../../include/global_defines.h"
 #include "../../include/cbmdefines.h"
 #include "../../include/petscii.h"
@@ -67,19 +66,19 @@ public:
 
 	typedef struct _tagATNCMD
 	{
-		byte code;
-		byte command;
-		byte channel;
-		byte device;
+		uint8_t code;
+		uint8_t command;
+		uint8_t channel;
+		uint8_t device;
 		char str[ATN_CMD_MAX_LENGTH];
-		byte strLen;
+		uint8_t strLen;
 	} ATNCmd;
 
 	IEC();
 	~IEC() {}
 
 	// Initialise iec driver
-	boolean init();
+	bool init();
 
 	// Checks if CBM is sending an attention message. If this is the case,
 	// the message is recieved and stored in atn_cmd.
@@ -87,26 +86,26 @@ public:
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typicall
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
-//	boolean checkRESET();
+//	bool checkRESET();
 
 	// Sends a byte. The communication must be in the correct state: a load command
 	// must just have been recieved. If something is not OK, FALSE is returned.
-	boolean send(byte data);
+	bool send(byte data);
 
 	// Same as IEC_send, but indicating that this is the last byte.
-	boolean sendEOI(byte data);
+	bool sendEOI(byte data);
 
 	// A special send command that informs file not found condition
-	boolean sendFNF();
+	bool sendFNF();
 
 	// Recieves a byte
-	byte receive();
+	uint8_t receive();
 
 	// Enabled Device Bit Mask
 	uint32_t enabledDevices;
-	bool isDeviceEnabled(const byte deviceNumber);
-	void enableDevice(const byte deviceNumber);
-	void disableDevice(const byte deviceNumber);
+	bool isDeviceEnabled(const uint8_t deviceNumber);
+	void enableDevice(const uint8_t deviceNumber);
+	void disableDevice(const uint8_t deviceNumber);
 
 	IECState state() const;
 
@@ -141,11 +140,11 @@ private:
 	ATNCheck deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
 	ATNCheck deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
 
-	byte timeoutWait(byte iecPIN, IECline lineStatus);
-	byte receiveByte(void);
-	boolean sendByte(byte data, boolean signalEOI);
-	boolean turnAround(void);
-	boolean undoTurnAround(void);
+	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus);
+	uint8_t receiveByte(void);
+	bool sendByte(uint8_t data, bool signalEOI);
+	bool turnAround(void);
+	bool undoTurnAround(void);
 
 
 	inline void ICACHE_RAM_ATTR espPinMode(uint8_t pin, uint8_t mode) {
@@ -184,7 +183,7 @@ private:
 	}
 
 	// communication must be reset
-	byte m_state;
+	uint8_t m_state;
 };
 
 #endif
