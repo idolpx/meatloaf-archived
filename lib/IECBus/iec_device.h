@@ -81,6 +81,8 @@ private:
 	void sendFileNotFound(void);
 	void sendDeviceInfo(void);
 	void sendDeviceStatus(void);
+	void setDeviceStatus(int number, int track=0, int sector=0);
+
 
 	void sendListing(void);
 	void sendListingHTTP(void);

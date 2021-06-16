@@ -51,9 +51,16 @@ void Interface::reset(void)
 {
 	m_openState = O_NOTHING;
 	m_queuedError = ErrIntro;
-	m_device_status = "73, " PRODUCT_ID " [" FW_VERSION "], 00, 00";
+	setDeviceStatus(73);
 	m_mfile.reset(MFSOwner::File(m_device.url().c_str()));
 } // reset
+
+
+void Interface::sendFileNotFound(void)
+{
+	setDeviceStatus(62);
+	m_iec.sendFNF();
+}
 
 void Interface::sendStatus(void)
 {
@@ -74,11 +81,99 @@ void Interface::sendStatus(void)
 	m_device_status.clear();
 } // sendStatus
 
-void Interface::sendFileNotFound(void)
+void Interface::setDeviceStatus(int number, int track, int sector)
 {
-	m_device_status = "62, FILE NOT FOUND, 00, 00";
-	m_iec.sendFNF();
+	switch(number)
+	{
+		// 1 - FILES SCRATCHED - number scratched in track variable
+		case 1:
+			m_device_status = "01, FILES SCRATCHED, 00, 00";		
+			break;
+		// 20 READ ERROR
+		case 20:
+			m_device_status = "20, FILE NOT OPEN, 00, 00";		
+			break;
+		// 26 WRITE PROTECT ON
+		case 26:
+			m_device_status = "26, WRITE PROTECT ON, 00, 00";
+			break;
+		// 30 SYNTAX ERROR - in arguments
+		case 30:
+			m_device_status = "30, SYNTAX ERROR, 00, 00";
+			break;
+		// 31 SYNTAX ERROR - unknown command
+		case 31:
+			m_device_status = "31, SYNTAX ERROR, 00, 00";
+			break;
+		// 33 S.E. - invalid pattern
+		case 33:
+			m_device_status = "33, SYNTAX ERROR, 00, 00";
+			break;
+		// 34 S.E. - no file name given
+		case 34:
+			m_device_status = "34, SYNTAX ERROR, 00, 00";
+			break;
+		// 50 RECORD NOT PRESENT - eof
+		case 50:
+			m_device_status = "50, RECORD NOT PRESENT, 00, 00";
+			break;
+		// 60 WRITE FILE OPEN - trying to open for wrtiting a file that is open for writing
+		case 60:
+			m_device_status = "60, WRITE FILE OPEN, 00, 00";
+			break;
+		// 61 FILE NOT OPEN
+		case 61:
+			m_device_status = "61, FILE NOT OPEN, 00, 00";
+			break;
+		// 62 FILE NOT FOUND
+		case 62:
+			m_device_status = "62, FILE NOT FOUND, 00, 00";
+			break;
+		// 63 FILE EXISTS
+		case 63:
+			m_device_status = "63, FILE EXISTS, 00, 00";
+			break;
+		// 65 NO BLOCK - for B-A
+		case 65:
+			m_device_status = "65, NO BLOCK, 00, 00";
+			break;
+		// 73 boot message: device name, rom version etc.
+		case 73:
+			m_device_status = "73, " PRODUCT_ID " [" FW_VERSION "], 00, 00";
+			break;
+		// 74 DRIVE NOT READY - also drive out of memory
+		case 74:
+			m_device_status = "74, DRIVE NOT READY, 00, 00";
+			break;
+		// 77 SELECTED PARTITION ILLEGAL
+		case 77:
+			m_device_status = "77, SELECTED PARTITION ILLEGAL, 00, 00";
+			break;
+		// 78 BUFFER TOO SMALL (sd2iec buffer ops)
+		case 78:
+			m_device_status = "78, BUFFER TOO SMALL, 00, 00";
+			break;
+		// 8x 64HDD errors
+		// case 8:
+		// 	break;
+		// 89 COMMAND NOT SUPPORTED
+		case 89:
+			m_device_status = "89, COMMAND NOT SUPPORTED, 00, 00";
+			break;
+		// 91 64HDD device activated
+		case 91:
+			m_device_status = "91, DEVICE ACTIVATED, 00, 00";
+			break;
+		case 125:
+			m_device_status = "125, NETWORK TIMEOUT, 00, 00";
+			break;
+		case 126:
+			m_device_status = "126, NODE NOT FOUND, 00, 00";
+			break;
+
+	}
 }
+
 
 void Interface::sendDeviceInfo()
 {
