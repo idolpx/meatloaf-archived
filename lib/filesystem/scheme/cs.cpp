@@ -95,26 +95,29 @@ bool CServerSessionMgr::traversePath(MFile* path) {
     // tricky. First we have to
     // CF / - to go back to root
 
-//Serial.printf("Traversing path: %s\n", path->path.c_str());
+    Debug_printv("Traversing path: [%s]", path->path.c_str());
 
     command("cf /");
 
     if(isOK()) {
 
+        if(path->path.compare("/") == 0)
+            return true;
+
         std::vector<std::string> chopped = mstr::split(path->path, '/');
 
         //MFile::parsePath(&chopped, path->path); - nope this doessn't work and crases in the loop!
 
-        //Serial.println("Before loop");
-        //Serial.printf("Chopped size:%d\n", chopped.size());
+        Debug_printv("Before loop");
+        Debug_printv("Chopped size:%d\n", chopped.size());
         delay(500);
 
         for(int i = 1; i < chopped.size(); i++) {
-            //Serial.println("Before chopped deref");
+            Debug_printv("Before chopped deref");
 
             auto part = chopped[i];
             
-            //Serial.printf("traverse path part: [%s]\n", part.c_str());
+            Debug_printv("traverse path part: [%s]\n", part.c_str());
             if(mstr::endsWith(part, ".d64", false)) 
             {
                 // THEN we have to mount the image INSERT image_name
@@ -272,21 +275,94 @@ bool CServerOStream::isOpen() {
 MFile* CServerFile::cd(std::string newDir) {
     // maah - don't really know how to handle this!
 
-    //auto test = "cs:/"+mstr::drop(newDir,1);
-    //Serial.printf("cd in CServerFile! New dir=%s\n", test.c_str());
+    // Drop the : if it is included
+    if(newDir[0]==':') {
+        Debug_printv("[:]");
+        newDir = mstr::drop(newDir,1);
+    }
+
+    Debug_printv("cd in CServerFile! New dir [%s]\n", newDir.c_str());
     if(newDir[0]=='/' && newDir[1]=='/') {
-        return MFSOwner::File(mstr::drop(newDir,2));
+        if(newDir.size()==2) {
+            // user entered: CD:// or CD//
+            // means: change to the root of roots
+            return MFSOwner::File("/"); // chedked, works ad flash root!
+        }
+        else {
+            // user entered: CD://DIR or CD//DIR
+            // means: change to a dir in root of roots
+            Debug_printv("[//]");
+            return root(mstr::drop(newDir,2));
+        }
     }
     else if(newDir[0]=='/') {
-        return MFSOwner::File("cs:/"+mstr::drop(newDir,1));
+        if(newDir.size()==1) {
+            // user entered: CD:/ or CD/
+            // means: change to container root
+            // *** might require a fix for flash fs!
+            return MFSOwner::File(streamPath);
+        }
+        else {
+            Debug_printv("[/]");
+            // user entered: CD:/DIR or CD/DIR
+            // means: change to a dir in container root
+            return MFSOwner::File("cs:/"+mstr::drop(newDir,1));
+        }
     }
-    else if(newDir[0]=='^') {
-        return MFSOwner::File("cs:/");
+    else if(newDir[0]=='_') {
+        if(newDir.size()==1) {
+            // user entered: CD:_ or CD_
+            // means: go up one directory
+            return parent();
+        }
+        else {
+            Debug_printv("[_]");
+            // user entered: CD:_DIR or CD_DIR
+            // means: go to a directory in the same directory as this one
+            return parent(mstr::drop(newDir,1));
+        }
     }
     if(newDir[0]=='.' && newDir[1]=='.') {
-        return localParent(mstr::drop(newDir,3));
+        if(newDir.size()==2) {
+            // user entered: CD:.. or CD..
+            // means: go up one directory
+            return parent();
+        }
+        else {
+            Debug_printv("[..]");
+            // user entered: CD:..DIR or CD..DIR
+            // meaning: Go back one directory
+            return localParent(mstr::drop(newDir,2));
+        }
+    }
+
+    // ain't that redundant?
+    // if(newDir[0]=='.' && newDir[1]=='/') {
+    //     Debug_printv("[./]");
+    //     // Reference to current directory
+    //     return localParent(mstr::drop(newDir,2));
+    // }
+
+    if(newDir[0]=='~' /*&& newDir[1]=='/' let's be consistent!*/) {
+        if(newDir.size() == 1) {
+            // user entered: CD:~ or CD~
+            // meaning: go to the .sys folder
+            return MFSOwner::File("/.sys");
+        }
+        else {
+            Debug_printv("[~]");
+            // user entered: CD:~FOLDER or CD~FOLDER
+            // meaning: go to a folder in .sys folder
+            return MFSOwner::File("/.sys/" + mstr::drop(newDir,1));
+        }
+    }    
+    if(newDir.find(':') != std::string::npos) {
+        // I can only guess we're CDing into another url scheme, this means we're changing whole path
+        return MFSOwner::File(newDir);
     }
     else {
+        Debug_printv(">");
+        // Add new directory to path
         return MFSOwner::File(url+"/"+newDir);
     }
 };
@@ -296,13 +372,14 @@ bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
     // otherwise - false
 
-    //Serial.printf("trying to chop %s\n", path.c_str());
+    Debug_printv("trying to chop [%s]", path.c_str());
 
     auto chopped = mstr::split(path,'/');
-    auto second = (chopped.end())-2; // penultimate path part is d64? 
+    //auto second = (chopped.end())-2; // penultimate path part is d64? 
+    auto second = chopped.back();
     //auto x = (*second);
-    //Serial.printf("isDirectory second from right:%s\n", x.c_str());
-    if ( mstr::endsWith(*second, ".d64", false))
+    Debug_printv("isDirectory second from right: [%s]", second.c_str());
+    if ( mstr::endsWith(second, ".d64", false))
         return false;
     else
         return true;
@@ -358,13 +435,13 @@ bool CServerFile::rewindDirectory() {
         if(!CServerFileSystem::session.breader->eof()) {
             media_header = line.substr(2, line.find_last_of("]")-1);
             media_id = "C=SVR";
+            media_blocks_free = 65536;
             dirIsOpen = true;
 
             return true;
         }
         else 
             return false;
-        
     }
 };
 
@@ -374,6 +451,9 @@ MFile* CServerFile::getNextFileInDir() {
 
     if(!dirIsOpen)
         return nullptr;
+
+    std::string name;
+    size_t size;
 
     if(dirIsImage) {
         auto line = CServerFileSystem::session.breader->readLn();
@@ -391,16 +471,17 @@ MFile* CServerFile::getNextFileInDir() {
             return nullptr;
         }
         if(line.find("BLOCKS FREE.")!=std::string::npos) {
+            media_blocks_free = atoi(line.substr(0, line.find_first_of(" ")).c_str());
             dirIsOpen = false;
             return nullptr;
         }
         else {
-            std::string name = line.substr(5,15);
+            name = line.substr(5,15);
+            size = atoi(line.substr(0, line.find_first_of(" ")).c_str());
             mstr::rtrim(name);
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name);
             //return new CServerFile(path() +"/"+ name);
-            return new CServerFile(url + "/"+ name);
-
+            return new CServerFile(url + "/"+ name, size);
         }
     } else {
         auto line = CServerFileSystem::session.breader->readLn();
@@ -426,23 +507,28 @@ MFile* CServerFile::getNextFileInDir() {
             return nullptr;
         }
         else {
-            std::string name;
 
             if((*line.begin())=='[') {
                 name = line.substr(1,line.length()-3);
+                size = 0;
             }
             else {
                 name = line.substr(0, line.length()-1);
+                size = 683;
             }
 
             //Serial.printf("xx: %s -- %s\n", line.c_str(), name.c_str());
-
-            return new CServerFile(url + "/" + name, 0);
+            if(name.size() > 0)
+                return new CServerFile(url + "/" + name, size);
+            else
+                return nullptr;
         }
     }
 };
 
-bool CServerFile::exists() {} ;
+bool CServerFile::exists() {
+    return true;
+} ;
 
 size_t CServerFile::size() {
     return m_size;
