@@ -794,10 +794,6 @@ void Interface::sendFile()
 				ledToggle(true);
 			}
 		}
-		else
-		{
-			Debug_printf("success [%d] i[%d] len[%d]", success, i, len);
-		}
 
 		// Exit if ATN is pulled while sending
 		if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
