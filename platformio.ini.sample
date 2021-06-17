@@ -27,6 +27,7 @@ monitor_speed = 921600
 monitor_filters = default, esp8266_exception_decoder
 lib_deps = 
     ArduinoJson
+    ArduinoWebsockets
 
 build_type = debug
 
