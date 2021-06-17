@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "FS.h"
-#include "../../include/make_unique.h"
+//#include "../../include/make_unique.h"
 
 /********************************************************
  * Universal streams
@@ -13,7 +13,9 @@ class MStream
 {
 public:
     virtual bool seek(uint32_t pos, SeekMode mode) = 0;
-    virtual bool seek(uint32_t pos) = 0;
+    virtual bool seek(uint32_t pos) {
+        return seek(pos, SeekSet);
+    }
     virtual size_t position() = 0;
     virtual void close() = 0;
     virtual bool open() = 0;

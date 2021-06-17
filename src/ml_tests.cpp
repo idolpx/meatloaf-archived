@@ -4,7 +4,7 @@
 
 #include "ml_tests.h"
 #include "meat_io.h"
-#include "../../include/make_unique.h"
+//#include "../../include/make_unique.h"
 #include "../../include/global_defines.h"
 #include "buffered_io.h"
 #include "line_reader_writer.h"
@@ -228,7 +228,7 @@ void testCD() {
     Serial.printf("I'm in %s\n", testDir->url.c_str());
 }
 
-void htmlStream(char *url)
+void httpStream(char *url)
 {
     bool success = true;
     size_t i = 0;

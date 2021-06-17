@@ -64,11 +64,8 @@ bool DeviceDB::init(String db_file)
         }
         else
         {
-#if defined(ESP32)
             uint8_t buffer[RECORD_SIZE] = { 0 };
-#elif defined(ESP8266)
-            const char buffer[RECORD_SIZE] = { 0 };
-#endif
+
             for(byte i = 0; i < 31; i++) // 22 devices x 2 media = 44 records x 256 bytes = 11264 total bytes
             {
                 sprintf( (char *)buffer, "{\"device\":%d,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}", i );

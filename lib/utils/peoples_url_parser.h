@@ -7,6 +7,7 @@
 #include <sstream>
 #include "utils.h"
 #include "string_utils.h"
+#include "../../include/global_defines.h"
 
 class PeoplesUrlParser {
 public:
@@ -19,11 +20,13 @@ public:
     std::string url;
     std::string name;
     std::string extension;
+
 private:
 
     void processHostPort(std::string hostPort) {
         auto byColon = mstr::split(hostPort,':',2);
         host = byColon[0];
+        mstr::toLower(host);
         if(byColon.size()>1) {
             port = byColon[1];
         }
@@ -75,10 +78,11 @@ private:
         }
     }
 
-    void trimPath() {
+    void cleanPath() {
         while(mstr::endsWith(path,"/")) {
             path=mstr::dropLast(path,1);
         }
+        mstr::replaceAll(path, "//", "/");
     }
 
     void fillInNameExt() {
@@ -97,9 +101,50 @@ private:
             extension = "";
 
     }
+
 public:
+
+    std::string root(void)
+    {
+        // set root URL
+        std::string root = scheme + "://";
+        if ( user.size() )
+        {
+            root += user;
+            if ( pass.size() )
+                root += ':' + pass;
+            root += '@';
+        }
+        root += host;
+        if ( port.size() )
+            root += ':' + port;
+
+        return root;
+    }
+
+    std::string base(void)
+    {
+        // set base URL
+        return root() + path;
+    }
+
+    std::string rebuildUrl(void)
+    {
+        // set full URL
+        url = base();
+        url += name;
+        // if ( query.size() )
+        //     url += '?' + query;
+        // if ( fragment.size() )
+        //     url += '#' + fragment;
+
+        return url;
+    }
+
     void parseUrl(std::string u) {
         url = u;
+
+        //Debug_printv("Before [%s]", url.c_str());
 
         auto byColon = mstr::split(url, ':', 2);
 
@@ -113,12 +158,13 @@ public:
         if(byColon.size()==1) {
             // no scheme, good old local path
             path = byColon[0];
-            trimPath();
+            cleanPath();
             fillInNameExt();
             return;
         }
 
         scheme = byColon[0];
+        mstr::toLower(scheme);
 
         auto pastTheColon = byColon[1]; // don't visualise!
 
@@ -129,9 +175,6 @@ public:
             // //authority:30/path            
 
             processAuthority(pastTheColon);
-            trimPath();
-            fillInNameExt();
-            return;
         }
         else {
             // we have just a plain old path
@@ -139,10 +182,12 @@ public:
             // user@server
             // etc.
             path = pastTheColon;
-            trimPath();
-            fillInNameExt();
-            return;
         }
+        cleanPath();
+        fillInNameExt();
+        //rebuildUrl();
+        //Debug_printv("After [%s]", url.c_str());
+        return;        
     }
 
     // void dump() {
@@ -151,7 +196,6 @@ public:
     //     printf("path: %s\n", path.c_str());
     //     printf("user pass: %s -- %s\n", user.c_str(), pass.c_str());
     // }
-
 
 };
 

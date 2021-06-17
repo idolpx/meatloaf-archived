@@ -34,7 +34,7 @@ build_flags =
     -D USE_LITTLEFS
 
 [env:d1_mini]
-platform = espressif8266@^2.6.3
+platform = espressif8266
 board = d1_mini
 ; set frequency to 160MHz
 board_build.f_cpu = 160000000L
@@ -42,14 +42,14 @@ board_build.filesystem = littlefs
 
 
 [env:d1_mini_pro]
-platform = espressif8266@^2.6.3
+platform = espressif8266
 board = d1_mini_pro
 ; set frequency to 160MHz
 board_build.f_cpu = 160000000L
 board_build.filesystem = littlefs
 
 [env:nodemcuv2]
-platform = espressif8266@^2.6.3
+platform = espressif8266
 board = nodemcuv2
 ; set frequency to 160MHz
 board_build.f_cpu = 160000000L
