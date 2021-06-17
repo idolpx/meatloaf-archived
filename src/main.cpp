@@ -162,8 +162,9 @@ void setup()
 		{
 			Serial.printf("WebDAV %s: '%s': %d%%\n", receive ? "recv" : "send", name, percent);
 		});
-		server.addHook(hookWebDAVForWebserver("/.www", dav));
+		server.addHook(hookWebDAVForWebserver("/", dav));
 		server.begin();
+		server.addHandler()
 		Serial.println("HTTP server started");
 		Serial.println("WebDAV server started");
 
@@ -184,21 +185,21 @@ void setup()
 		}
 
 		// Setup IEC Bus
-		iec.enabledDevices = DEVICE_MASK;
-		iec.enableDevice(30);
-		iec.init();
-		Serial.println("IEC Bus Initialized");
+		// iec.enabledDevices = DEVICE_MASK;
+		// iec.enableDevice(30);
+		// iec.init();
+		// Serial.println("IEC Bus Initialized");
 
-		drive.begin();
-		Serial.print("Virtual Device(s) Started: [ ");
-		for (byte i = 0; i < 31; i++)
-		{
-			if (iec.isDeviceEnabled(i))
-			{
-				Serial.printf("%.02d ", i);
-			}
-		}
-		Serial.println("]");
+		// drive.begin();
+		// Serial.print("Virtual Device(s) Started: [ ");
+		// for (byte i = 0; i < 31; i++)
+		// {
+		// 	if (iec.isDeviceEnabled(i))
+		// 	{
+		// 		Serial.printf("%.02d ", i);
+		// 	}
+		// }
+		// Serial.println("]");
 	}
 
 	// // Setup callbacks for SerialCommand commands
@@ -238,7 +239,7 @@ void loop()
 	//cli.readSerial();
 	modem.service();
 	
-	drive.loop();
+	//drive.loop();
 }
 
 // void isrCheckATN()
