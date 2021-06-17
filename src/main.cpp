@@ -22,11 +22,15 @@
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
-//#include <ESP8266WebServer.h>
+#include <ESP8266WebServer.h>
 #endif
 
-#include <ESPWebDAV.h>
-//#include <WebDav4WebServer.h>
+//#include <ESPWebDAV.h>
+#include <WebDav4WebServer.h>
+
+#if !WEBSERVER_HAS_HOOK
+#error This sketch needs ESP8266WebServer::HookFunction and ESP8266WebServer::addHook
+#endif
 
 #include "global_defines.h"
 
@@ -75,10 +79,10 @@
 
 //#include "zimodem/zimodem.h"
 
-//ESP8266WebServer server(80);
-//ESPWebDAVCore dav;
-WiFiServer tcp(80);
-ESPWebDAV dav;
+ESP8266WebServer server(80);
+ESPWebDAVCore dav;
+//WiFiServer tcp(80);
+//ESPWebDAV dav;
 
 String statusMessage;
 bool initFailed = false;
@@ -150,35 +154,33 @@ void setup()
 	{
 		Serial.println("Flash File System started");
 
-		// start the WebDAV server
-		tcp.begin();
-		dav.begin(&tcp, fileSystem);
+		// Start the Web Server with WebDAV
+		//tcp.begin();
+		//dav.begin(&tcp, fileSystem);
+		dav.begin(fileSystem);
 		dav.setTransferStatusCallback([](const char* name, int percent, bool receive)
 		{
 			Serial.printf("WebDAV %s: '%s': %d%%\n", receive ? "recv" : "send", name, percent);
 		});
-		//server.addHook(hookWebDAVForWebserver("/.www", dav));
-		//server.begin();
+		server.addHook(hookWebDAVForWebserver("/.www", dav));
+		server.begin();
+		Serial.println("HTTP server started");
+		Serial.println("WebDAV server started");
 
+		// mDNS INIT
+		if (MDNS.begin(HOSTNAME))
 		{
-			//Serial.println("HTTP server started");
-			Serial.println("WebDAV server started");
-
-			// mDNS INIT
-			if (MDNS.begin(HOSTNAME))
-			{
-				MDNS.addService("http", "tcp", SERVER_PORT);
-				Serial.println("mDNS service started");
-				Serial.print(">>> http://");
-				Serial.print(HOSTNAME);
-				Serial.println(".local");
-			}
-			else
-			{
-				Serial.println("mDNS service failed to start");
-				Serial.print(">>> http://");
-				Serial.println(WiFi.localIP());
-			}
+			MDNS.addService("http", "tcp", SERVER_PORT);
+			Serial.println("mDNS service started");
+			Serial.print(">>> http://");
+			Serial.print(HOSTNAME);
+			Serial.println(".local");
+		}
+		else
+		{
+			Serial.println("mDNS service failed to start");
+			Serial.print(">>> http://");
+			Serial.println(WiFi.localIP());
 		}
 
 		// Setup IEC Bus
@@ -230,8 +232,8 @@ void loop()
 	MDNS.update();
 #endif
 
-	//server.handleClient();
-	dav.handleClient();
+	server.handleClient();
+	//dav.handleClient();
 
 	//cli.readSerial();
 	modem.service();

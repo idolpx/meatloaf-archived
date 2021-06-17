@@ -26,7 +26,6 @@ private:
     void processHostPort(std::string hostPort) {
         auto byColon = mstr::split(hostPort,':',2);
         host = byColon[0];
-        mstr::toLower(host);
         if(byColon.size()>1) {
             port = byColon[1];
         }
@@ -164,7 +163,6 @@ public:
         }
 
         scheme = byColon[0];
-        mstr::toLower(scheme);
 
         auto pastTheColon = byColon[1]; // don't visualise!
 
