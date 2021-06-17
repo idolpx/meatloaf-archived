@@ -1,3 +1,7 @@
+// ML:// - Meatloaf Server Protocol
+// 
+
+
 #ifndef MEATFILE_DEFINES_FSML_H
 #define MEATFILE_DEFINES_FSML_H
 
@@ -29,6 +33,9 @@ public:
     {
         if(path.back() == '/')
             m_isDir = true;
+
+        parseUrl(path);
+        Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
     };
     ~MLFile();
 

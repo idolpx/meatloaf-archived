@@ -1,3 +1,5 @@
+// Hypertext Transfer Protocol
+
 #ifndef MEATFILE_DEFINES_FSHTTP_H
 #define MEATFILE_DEFINES_FSHTTP_H
 
@@ -76,7 +78,7 @@ class HttpIStream: public MIstream {
 
 public:
     HttpIStream(std::string path) {
-        m_http.setUserAgent("user_agent");
+        m_http.setUserAgent(USER_AGENT);
         m_http.setTimeout(10000);
         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         m_http.setRedirectLimit(10);
@@ -115,7 +117,7 @@ class HttpOStream: public MOstream {
 public:
     // MStream methods
     HttpOStream(std::string path) {
-        m_http.setUserAgent("user_agent");
+        m_http.setUserAgent(USER_AGENT);
         m_http.setTimeout(10000);
         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         m_http.setRedirectLimit(10);
