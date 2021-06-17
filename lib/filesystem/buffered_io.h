@@ -63,11 +63,8 @@ class BufferedReader {
 
     //bool secondHalf = false;
 
-    #if defined(ESP32)
     uint8_t buffer[BUFFER_SIZE] = { 0 };
-    #else //defined(ESP8266)
-    char buffer[BUFFER_SIZE] = { 0 };
-    #endif
+
 protected:
     MBuffer mbuffer;
     bool eofOccured = false;
