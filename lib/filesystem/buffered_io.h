@@ -12,9 +12,10 @@
  ********************************************************/
 
 class MBuffer {
-    int len = 0;
+    bool handmade = false;
 
 protected:
+    int len = 0;
     char* buffer; // will point to buffered reader internal buffer
 
 public:
@@ -24,13 +25,19 @@ public:
 
     MBuffer() {};
 
-    char operator [](int idx) {
+    char& operator [](int idx) {
         return buffer[idx];
     }
 
-    // MBuffer(int size) {
-    //     buffer
-    // };
+    MBuffer(int size) {
+        handmade = true;
+        buffer = new char[size];
+    };
+
+    ~MBuffer() {
+        if(handmade)
+            delete [] buffer;
+    }
 
     friend class BufferedReader;
     friend class BufferedWriter;
@@ -42,7 +49,7 @@ protected:
 
 public:
     MBufferConst(std::string str): buffer(str.c_str()) {
-
+        len = str.length();
     };
 };
 
@@ -113,7 +120,7 @@ public:
 
 class BufferedWriter {
     MOstream* ostream;
-    bool secondHalf = false;
+    //bool secondHalf = false;
 
 public:
     BufferedWriter(MOstream* os) : ostream(os) { 

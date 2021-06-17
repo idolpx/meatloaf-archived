@@ -3,7 +3,7 @@
 
 #include "meat_io.h"
 #include "WiFiClient.h"
-#include "stream_writer.h"
+#include "line_reader_writer.h"
 #include "../../include/global_defines.h"
 #include "utils.h"
 
