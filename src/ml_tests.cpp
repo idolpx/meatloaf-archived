@@ -353,7 +353,8 @@ void runTestsSuite() {
     //testUrlParser();
     //testCD();
 
-    htmlStream("HTTP://MEATLOAF.CC");  // Doesn't work
-    htmlStream("http://MEATLOAF.CC");  // Works!!!
+    //htmlStream("HTTP://MEATLOAF.CC");  // Doesn't work
+    //htmlStream("http://MEATLOAF.CC");  // Works!!!
+    //htmlStream("http://meatloaf.cc");  // Works!!!
 }
 
