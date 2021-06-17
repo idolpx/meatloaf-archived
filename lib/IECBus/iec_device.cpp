@@ -840,8 +840,8 @@ void Interface::sendFile()
 	// Update device database
 	m_device.save();
 
-	size_t len = m_mfile->size() - 1;
 	std::shared_ptr<MIstream> istream(m_mfile->inputStream());
+	size_t len = istream->available() - 1;
 
 	// Get file load address
 	istream->read(b, b_len);
