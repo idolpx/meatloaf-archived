@@ -2,6 +2,28 @@
 #define MEATFILE_STREAM_WRITER_H
 
 #include "buffered_io.h"
+#include "../../include/petscii.h"
+
+class StringCodec {
+public:
+    virtual uint8_t toLocal(uint8_t ch)=0;
+    virtual uint8_t toForeign(uint8_t ch)=0;
+};
+
+class PETSCIICodec: public StringCodec {
+    virtual uint8_t toLocal(uint8_t ch) override {
+        return petscii2ascii(ch);
+    };
+
+    virtual uint8_t toForeign(uint8_t ch) override {
+        return ascii2petscii(ch);
+    };
+};
+
+namespace strcodec {
+    static PETSCIICodec petscii;
+};
+
 
 class StreamWriter: public BufferedWriter {
 public:
@@ -18,6 +40,30 @@ public:
     bool printLn(std::string line) {
         MBufferConst buffer(line+delimiter);
         return write(&buffer);    
+    }
+
+    bool print(std::string line, StringCodec* codec) {
+        auto l = line.length();
+        MBufferConst buffer(line);
+        MBuffer encoded(l);
+
+        for(int i=0; i<l; i++) {
+            encoded[i] = codec->toForeign(buffer[i]);
+        }
+
+        return write(&encoded);        
+    }
+
+    bool printLn(std::string line, StringCodec* codec) {
+        auto l = line.length();
+        MBufferConst buffer(line+delimiter);
+        MBuffer encoded(l+1);
+
+        for(int i=0; i<l; i++) {
+            encoded[i] = codec->toForeign(buffer[i]);
+        }
+
+        return write(&encoded);    
     }
 };
 
@@ -40,7 +86,7 @@ public:
         return buffPos >= mbuffer.length() && BufferedReader::eof();
     }
 
-    std::string readLn() {
+    std::string readLn(StringCodec* codec = nullptr) {
         if(buffPos==0 && mbuffer.length()==0 && BufferedReader::eof()) {
             //Serial.printf("FSTEST: returning from first condition\n");
             return "";
@@ -63,7 +109,10 @@ public:
                     return lineBuilder;
                 } else {
                     //Serial.printf("%d:",buffPos);
-                    lineBuilder+=mbuffer[buffPos];
+                    if(codec != nullptr)
+                        lineBuilder+=codec->toLocal(mbuffer[buffPos]);
+                    else
+                        lineBuilder+=mbuffer[buffPos];
                 }
             }
         } while(!eof());

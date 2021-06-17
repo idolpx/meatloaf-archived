@@ -7,7 +7,7 @@
 #include "../../include/make_unique.h"
 #include "../../include/global_defines.h"
 #include "buffered_io.h"
-#include "stream_writer.h"
+#include "line_reader_writer.h"
 
 
 void testHeader(std::string testName) {
@@ -358,3 +358,8 @@ void runTestsSuite() {
     //htmlStream("http://meatloaf.cc");  // Works!!!
 }
 
+void streamTranslationExample(StreamWriter* writer, StreamReader* reader) {
+    writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
+
+    auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right here!
+}
