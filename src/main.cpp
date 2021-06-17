@@ -27,6 +27,7 @@
 
 #include <ESPWebDAV.h>
 //#include <WebDav4WebServer.h>
+#include <ArduinoWebsockets.h>
 
 #include "global_defines.h"
 
@@ -67,6 +68,8 @@
 #include "meat_io.h"
 #include "ml_tests.h"
 
+using namespace websockets;
+
 //void ICACHE_RAM_ATTR isrCheckATN();
 
 //#include "IECBus/Drive.h"
@@ -79,6 +82,7 @@
 //ESPWebDAVCore dav;
 WiFiServer tcp(80);
 ESPWebDAV dav;
+WebsocketsClient ws;
 
 String statusMessage;
 bool initFailed = false;
@@ -180,6 +184,23 @@ void setup()
 				Serial.println(WiFi.localIP());
 			}
 		}
+
+
+		// try to connect to Websockets server
+		bool connected = ws.connect("ws.meatloaf.cc", 8080, "/");
+		if(connected) {
+			Serial.println("Connecetd!");
+			ws.send("Hello Server");
+		} else {
+			Serial.println("Not Connected!");
+		}
+		
+		// run callback when messages are received
+		ws.onMessage([&](WebsocketsMessage message) {
+			Serial.print("Got Message: ");
+			Serial.println(message.data());
+		});
+
 
 		// Setup IEC Bus
 		iec.enabledDevices = DEVICE_MASK;
