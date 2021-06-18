@@ -1,3 +1,6 @@
+// a scheme for handling Commodore Server
+// see: https://www.commodoreserver.com/BlogEntryView.asp?EID=9D133160E7C344A398EC1F45AEF4BF32
+
 #ifndef MEATFILE_DEFINES_SCHEME_CS_H
 #define MEATFILE_DEFINES_SCHEME_CS_H
 
@@ -6,10 +9,6 @@
 #include "line_reader_writer.h"
 #include "../../include/global_defines.h"
 #include "utils.h"
-
-// a scheme for handling Commodore Server
-// see: https://www.commodoreserver.com/BlogEntryView.asp?EID=9D133160E7C344A398EC1F45AEF4BF32
-
 
 class CServerSessionMgr {
     WiFiClient m_wifi;

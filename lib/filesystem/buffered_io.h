@@ -25,6 +25,25 @@ public:
 
     MBuffer() {};
 
+    bool seek(uint32_t pos, SeekMode mode) {
+        switch (mode) {
+            case SeekSet:
+                buffer = &buffer[0] + pos;
+                break;
+
+            case SeekCur:
+                buffer = *&buffer + pos;
+                break;
+            
+            case SeekEnd:
+                buffer = &buffer[len] - pos;
+                break;
+        }
+    };
+    bool seek(uint32_t pos) {
+        return seek(pos, SeekSet);
+    }
+
     char& operator [](int idx) {
         return buffer[idx];
     }
@@ -63,11 +82,8 @@ class BufferedReader {
 
     //bool secondHalf = false;
 
-    #if defined(ESP32)
     uint8_t buffer[BUFFER_SIZE] = { 0 };
-    #else //defined(ESP8266)
-    char buffer[BUFFER_SIZE] = { 0 };
-    #endif
+
 protected:
     MBuffer mbuffer;
     bool eofOccured = false;
@@ -108,6 +124,15 @@ public:
             refillBuffer();
 
         return &mbuffer;
+    }
+    uint8_t readByte() {
+        if(!eofOccured)
+            refillBuffer();
+
+        uint32_t i = 1;
+        uint8_t b = mbuffer[0];
+        mbuffer.seek(i, SeekCur);
+        return b;
     }
     bool eof() {
         return eofOccured;

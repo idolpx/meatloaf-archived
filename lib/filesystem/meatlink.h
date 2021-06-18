@@ -15,11 +15,7 @@ class MeatLink {
 
         if( m_fileSystem->exists(m_fileName) )
         {
-            #if defined(ESP32)
             uint8_t buffer[RECORD_SIZE] = { 0 };
-            #elif defined(ESP8266)
-            char buffer[RECORD_SIZE] = { 0 };
-            #endif
 
             Serial.printf("Getting meatlink [%s]", linkFileName.c_str());
             File f_link = m_fileSystem->open(m_fileName, "r+");
@@ -42,11 +38,8 @@ class MeatLink {
 
         if(f_linkFile)
         {
-#if defined(ESP32)
             uint8_t buffer[RECORD_SIZE] = { 0 };
-#elif defined(ESP8266)
-            const char buffer[RECORD_SIZE] = { 0 };
-#endif
+
             sprintf( (char *)buffer, "%s", url.c_str() );
             f_linkFile.write(buffer, RECORD_SIZE);
 

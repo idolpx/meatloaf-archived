@@ -1,9 +1,13 @@
+// ML:// - Meatloaf Server Protocol
+// 
+
+
 #ifndef MEATFILE_DEFINES_FSML_H
 #define MEATFILE_DEFINES_FSML_H
 
 #include "meat_io.h"
 #include "scheme/http.h"
-#include "../../include/make_unique.h"
+//#include "../../include/make_unique.h"
 #include "../../include/global_defines.h"
 #include "helpers.h"
 #include <ESP8266HTTPClient.h>
@@ -29,6 +33,9 @@ public:
     {
         if(path.back() == '/')
             m_isDir = true;
+
+        parseUrl(path);
+        Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
     };
     ~MLFile();
 
