@@ -360,5 +360,5 @@ void runTestsSuite() {
 void streamTranslationExample(StreamWriter* writer, StreamReader* reader) {
     writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
 
-    auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right here!
+    auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !
 }
