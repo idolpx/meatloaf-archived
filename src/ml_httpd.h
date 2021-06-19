@@ -29,24 +29,11 @@
 #endif
 
 
-#include "../include/global_defines.h"
-#include "meat_io.h"
-
-
-static const char TEXT_PLAIN[] PROGMEM = "text/plain";
-static const char FS_INIT_ERROR[] PROGMEM = "FS INIT ERROR";
-static const char FILE_NOT_FOUND[] PROGMEM = "FileNotFound";
-
-
-ESP8266WebServer server ( 80 );
-ESPWebDAVCore dav;
-//WiFiServer tcp(80);
-//ESPWebDAV dav;
-
 class MLHttpd
 {
     private:
 
+        static constexpr char* fsName = "LittleFS";
         static bool fsOK;
         static String unsupportedFiles;
 
@@ -73,12 +60,18 @@ class MLHttpd
         static void handleNotFound();
         static void handleGetEdit();
 
+	static FS *m_fileSystem;
+
     public:
-        MLHttpd(int port);
+        MLHttpd(FS *fileSystem)
+        {
+	        m_fileSystem = fileSystem;
+        };
         ~MLHttpd();
 
         static void setup ( void );
         static void handleClient();
+
 };
 
 #endif
