@@ -25,24 +25,31 @@ public:
 
     MBuffer() {};
 
-    bool seek(uint32_t pos, SeekMode mode) {
-        switch (mode) {
-            case SeekSet:
-                buffer = &buffer[0] + pos;
-                break;
+    uint8_t getByte() {
+        auto b = buffer[0];
+        buffer++;
+        len--;
+        return b;
+    }    
 
-            case SeekCur:
-                buffer = *&buffer + pos;
-                break;
+    // bool seek(uint32_t pos, SeekMode mode) {
+    //     switch (mode) {
+    //         case SeekSet:
+    //             buffer = &buffer[0] + pos;
+    //             break;
+
+    //         case SeekCur:
+    //             buffer = *&buffer + pos;
+    //             break;
             
-            case SeekEnd:
-                buffer = &buffer[len] - pos;
-                break;
-        }
-    };
-    bool seek(uint32_t pos) {
-        return seek(pos, SeekSet);
-    }
+    //         case SeekEnd:
+    //             buffer = &buffer[len] - pos;
+    //             break;
+    //     }
+    // };
+    // bool seek(uint32_t pos) {
+    //     return seek(pos, SeekSet);
+    // }
 
     char& operator [](int idx) {
         return buffer[idx];
@@ -80,12 +87,10 @@ class BufferedReader {
     MIstream* istream = nullptr;
     std::function<int(uint8_t* buf, size_t size)> readFn;
 
-    //bool secondHalf = false;
-
-    uint8_t buffer[BUFFER_SIZE] = { 0 };
+    uint8_t rawBuffer[BUFFER_SIZE] = { 0 };
 
 protected:
-    MBuffer mbuffer;
+    MBuffer smartBuffer;
     bool eofOccured = false;
 
     void refillBuffer() {
@@ -97,16 +102,16 @@ protected:
         if(istream != nullptr) {
                 //        Serial.println("read from stream!");
 
-            mbuffer.len = istream->read((uint8_t*)buffer, BUFFER_SIZE);
+            smartBuffer.len = istream->read((uint8_t*)rawBuffer, BUFFER_SIZE);
         }
         else {
                   //      Serial.println("read from lambda!");
-            mbuffer.len = readFn((uint8_t*)buffer, BUFFER_SIZE);
+            smartBuffer.len = readFn((uint8_t*)rawBuffer, BUFFER_SIZE);
     ///        Serial.println("Read lambda launched ok!");
         }
 
-        mbuffer.buffer = (char *)buffer;
-        eofOccured = (mbuffer.len == 0) || (istream != nullptr && istream->available() == 0);
+        smartBuffer.buffer = (char *)rawBuffer;
+        eofOccured = (smartBuffer.len == 0) || (istream != nullptr && istream->available() == 0);
        //             Serial.println("refillBuffer ok!");
 
     }
@@ -123,17 +128,26 @@ public:
         if(!eofOccured)
             refillBuffer();
 
-        return &mbuffer;
+        return &smartBuffer;
     }
+
     uint8_t readByte() {
-        if(!eofOccured)
+        if(smartBuffer.length()==0 && !eofOccured)
             refillBuffer();
 
-        uint32_t i = 1;
-        uint8_t b = mbuffer[0];
-        mbuffer.seek(i, SeekCur);
-        return b;
+        return smartBuffer.getByte();
     }
+
+    // uint8_t readByte() {
+    //     if(!eofOccured)
+    //         refillBuffer();
+
+    //     uint32_t i = 1;
+    //     uint8_t b = mbuffer[0];
+    //     mbuffer.seek(i, SeekCur);
+    //     return b;
+    // }
+
     bool eof() {
         return eofOccured;
     }
