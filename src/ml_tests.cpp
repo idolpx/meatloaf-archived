@@ -363,3 +363,9 @@ void streamTranslationExample(StreamWriter* writer, StreamReader* reader) {
 
     auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right here!
 }
+
+void zipStreamExample()
+{
+    zipios::ZipFile zf;
+
+}

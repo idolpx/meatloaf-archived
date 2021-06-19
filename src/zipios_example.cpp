@@ -29,7 +29,7 @@
  * \include zipios_example.cpp
  */
 
-#include "zipios/zipfile.hpp"
+#include "zipfile.hpp"
 
 
 int main(int argc, char *argv[])
