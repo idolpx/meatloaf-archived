@@ -62,7 +62,10 @@ public:
     }
 
     uint8_t toPetscii() {
-
+        for(int i = 0; i<256; i++) {
+            if(utf8map[i]==ch)
+                return i;
+        }
     }
 };
 
