@@ -140,6 +140,7 @@ inline static void ledOFF()
 #define Debug_print(...)
 #define Debug_println(...)
 #define Debug_printf(...)
+#define Debug_printv(...)
 #endif
 
 // Enable this for a timing test pattern on ATN, CLK, DATA, SRQ pins
