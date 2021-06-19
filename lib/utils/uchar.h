@@ -3,7 +3,7 @@
 #include <sstream>
 
 void test() {
-    auto kratka = Utf8Char(0x2592);
+    auto kratka = U8Char(0x2592);
     auto asUtfStream = kratka.toUtf8();
 
 auto a = asUtfStream[0];
@@ -20,7 +20,29 @@ auto a = asUtfStream[0];
     
 }
 
-class Utf8Char {
+/*
+utf8 to petscii:
+
+std::stringstream sstream(aLineOfText);
+auto readFn = [&sstream]() {
+    char c;
+    ss.read(&c, 1);
+    return c;
+};
+
+U8Char uchar(readFn);
+// in petscii - utf8 table find a utf8 and return petscii
+
+petscii to utf8:
+
+find utf8 u at index p in petscii
+
+U8Char uchar(u);
+u.toUtf8(); a string of up to 3 chars
+
+*/
+
+class U8Char {
     //std::u16string str;
 
     void fromUtf8Stream(const std::function<uint8_t()>& getByte) {
@@ -46,8 +68,8 @@ class Utf8Char {
 
 public:
     char16_t ch;
-    Utf8Char(uint16_t c): ch(c) {};
-    Utf8Char(const std::function<uint8_t()>& getByte) {
+    U8Char(uint16_t codepoint): ch(codepoint) {};
+    U8Char(const std::function<uint8_t()>& getByte) {
         fromUtf8Stream(getByte);
     }
 
