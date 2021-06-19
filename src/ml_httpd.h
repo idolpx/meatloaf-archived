@@ -37,11 +37,12 @@ static const char TEXT_PLAIN[] PROGMEM = "text/plain";
 static const char FS_INIT_ERROR[] PROGMEM = "FS INIT ERROR";
 static const char FILE_NOT_FOUND[] PROGMEM = "FileNotFound";
 
-class MLHttpd : public ESP8266WebServer
+class MLHttpd
 {
     private:
 
         static ESPWebDAVCore dav;
+        static ESP8266WebServer server;
         //WiFiServer tcp(80);
         //ESPWebDAV dav;
 
@@ -52,7 +53,9 @@ class MLHttpd : public ESP8266WebServer
 
 
     public:
-        MLHttpd(int port): ESP8266WebServer ( port ) {};
+        MLHttpd(int port) {
+                server = ESP8266WebServer( port );
+        };
         ~MLHttpd();
 
         static void setup ( void );

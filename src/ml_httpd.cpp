@@ -29,29 +29,29 @@
 
 void MLHttpd::replyOK()
 {
-    send ( 200, FPSTR ( TEXT_PLAIN ), "" );
+    server.send ( 200, FPSTR ( TEXT_PLAIN ), "" );
 }
 
 void MLHttpd::replyOKWithMsg ( String msg )
 {
-    send ( 200, FPSTR ( TEXT_PLAIN ), msg );
+    server.send ( 200, FPSTR ( TEXT_PLAIN ), msg );
 }
 
 void MLHttpd::replyNotFound ( String msg )
 {
-    send ( 404, FPSTR ( TEXT_PLAIN ), msg );
+    server.send ( 404, FPSTR ( TEXT_PLAIN ), msg );
 }
 
 void MLHttpd::replyBadRequest ( String msg )
 {
     Debug_println ( msg );
-    send ( 400, FPSTR ( TEXT_PLAIN ), msg + "\r\n" );
+    server.send ( 400, FPSTR ( TEXT_PLAIN ), msg + "\r\n" );
 }
 
 void MLHttpd::replyServerError ( String msg )
 {
     Debug_println ( msg );
-    send ( 500, FPSTR ( TEXT_PLAIN ), msg + "\r\n" );
+    server.send ( 500, FPSTR ( TEXT_PLAIN ), msg + "\r\n" );
 }
 
 #ifdef USE_SPIFFS
@@ -118,7 +118,7 @@ void MLHttpd::handleStatus()
     json += unsupportedFiles;
     json += "\"}";
 
-    send ( 200, "application/json", json );
+    server.send ( 200, "application/json", json );
 }
 
 
@@ -133,12 +133,12 @@ void MLHttpd::handleFileList()
         return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
     }
 
-    if ( !hasArg ( "dir" ) )
+    if ( !server.hasArg ( "dir" ) )
     {
         return replyBadRequest ( F ( "DIR ARG MISSING" ) );
     }
 
-    String path = arg ( "dir" );
+    String path = server.arg ( "dir" );
 
     if ( path != "/" && !fileSystem->exists ( path ) )
     {
@@ -150,9 +150,9 @@ void MLHttpd::handleFileList()
     path.clear();
 
     // use HTTP/1.1 Chunked response to avoid building a huge temporary string
-    if ( !chunkedResponseModeStart ( 200, "text/json" ) )
+    if ( !server.chunkedResponseModeStart ( 200, "text/json" ) )
     {
-        send ( 505, F ( "text/html" ), F ( "HTTP1.1 required" ) );
+        server.send ( 505, F ( "text/html" ), F ( "HTTP1.1 required" ) );
         return;
     }
 
@@ -175,9 +175,9 @@ void MLHttpd::handleFileList()
 
         if ( output.length() )
         {
-            // send string from previous iteration
+            // server.send string from previous iteration
             // as an HTTP chunk
-            sendContent ( output );
+            server.sendContent ( output );
             output = ',';
         }
         else
@@ -212,10 +212,10 @@ void MLHttpd::handleFileList()
         output += "\"}";
     }
 
-    // send last string
+    // server.send last string
     output += "]";
-    sendContent ( output );
-    chunkedResponseFinalize();
+    server.sendContent ( output );
+    server.chunkedResponseFinalize();
 }
 
 
@@ -239,7 +239,7 @@ bool MLHttpd::handleFileRead ( String path )
 
     String contentType;
 
-    if ( hasArg ( "download" ) )
+    if ( server.hasArg ( "download" ) )
     {
         contentType = F ( "application/octet-stream" );
     }
@@ -258,7 +258,7 @@ bool MLHttpd::handleFileRead ( String path )
     {
         File file = fileSystem->open ( path, "r" );
 
-        if ( streamFile ( file, contentType ) != file.size() )
+        if ( server.streamFile ( file, contentType ) != file.size() )
         {
             Debug_println ( "Sent less data than expected!" );
         }
@@ -311,7 +311,7 @@ void MLHttpd::handleFileCreate()
         return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
     }
 
-    String path = arg ( "path" );
+    String path = server.arg ( "path" );
 
     if ( path.isEmpty() )
     {
@@ -337,7 +337,7 @@ void MLHttpd::handleFileCreate()
         return replyBadRequest ( F ( "PATH FILE EXISTS" ) );
     }
 
-    String src = arg ( "src" );
+    String src = server.arg ( "src" );
 
     if ( src.isEmpty() )
     {
@@ -461,7 +461,7 @@ void MLHttpd::handleFileDelete()
         return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
     }
 
-    String path = arg ( 0 );
+    String path = server.arg ( 0 );
 
     if ( path.isEmpty() || path == "/" )
     {
@@ -490,12 +490,12 @@ void MLHttpd::handleFileUpload()
         return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
     }
 
-    if ( uri() != "/edit" )
+    if ( server.uri() != "/edit" )
     {
         return;
     }
 
-    HTTPUpload &upload = upload();
+    HTTPUpload &upload = server.upload();
 
     if ( upload.status == UPLOAD_FILE_START )
     {
@@ -555,7 +555,7 @@ void MLHttpd::handleNotFound()
         return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
     }
 
-    String uri = ESP8266WebServer::urlDecode ( uri() ); // required to read paths with blanks
+    String uri = ESP8266WebServer::urlDecode ( server.uri() ); // required to read paths with blanks
 
     if ( handleFileRead ( uri ) )
     {
@@ -568,22 +568,22 @@ void MLHttpd::handleNotFound()
     message = F ( "Error: File not found\n\nURI: " );
     message += uri;
     message += F ( "\nMethod: " );
-    message += ( method() == HTTP_GET ) ? "GET" : "POST";
+    message += ( server.method() == HTTP_GET ) ? "GET" : "POST";
     message += F ( "\nArguments: " );
-    message += args();
+    message += server.args();
     message += '\n';
 
-    for ( uint8_t i = 0; i < args(); i++ )
+    for ( uint8_t i = 0; i < server.args(); i++ )
     {
         message += F ( " NAME:" );
-        message += argName ( i );
+        message += server.argName ( i );
         message += F ( "\n VALUE:" );
-        message += arg ( i );
+        message += server.arg ( i );
         message += '\n';
     }
 
     message += "path=";
-    message += arg ( "path" );
+    message += server.arg ( "path" );
     message += '\n';
     Debug_print ( message );
 
@@ -604,8 +604,8 @@ void MLHttpd::handleGetEdit()
     }
 
 #ifdef INCLUDE_FALLBACK_INDEX_HTM
-    sendHeader ( F ( "Content-Encoding" ), "gzip" );
-    send ( 200, "text/html", index_htm_gz, index_htm_gz_len );
+    server.sendHeader ( F ( "Content-Encoding" ), "gzip" );
+    server.send ( 200, "text/html", index_htm_gz, index_htm_gz_len );
 #else
     replyNotFound ( FPSTR ( FILE_NOT_FOUND ) );
 #endif
@@ -643,39 +643,39 @@ void MLHttpd::setup ( void )
     dav.begin ( fileSystem );
     dav.setTransferStatusCallback ( [] ( const char *name, int percent, bool receive )
     {
-        Serial.printf ( "WebDAV %s: '%s': %d%%\n", receive ? "recv" : "send", name, percent );
+        Serial.printf ( "WebDAV %s: '%s': %d%%\n", receive ? "recv" : "server.send", name, percent );
     } );
-    addHook ( hookWebDAVForWebserver ( "/", dav ) );
+    server.addHook ( hookWebDAVForWebserver ( "/", dav ) );
 
     ////////////////////////////////
     // WEB SERVER INIT
 
     // Filesystem status
-    on ( "/status", HTTP_GET, handleStatus );
+    server.on ( "/status", HTTP_GET, handleStatus );
 
     // List directory
-    on ( "/list", HTTP_GET, handleFileList );
+    server.on ( "/list", HTTP_GET, handleFileList );
 
     // Load editor
-    on ( "/edit", HTTP_GET, handleGetEdit );
+    server.on ( "/edit", HTTP_GET, handleGetEdit );
 
     // Create file
-    on ( "/edit",  HTTP_PUT, handleFileCreate );
+    server.on ( "/edit",  HTTP_PUT, handleFileCreate );
 
     // Delete file
-    on ( "/edit",  HTTP_DELETE, handleFileDelete );
+    server.on ( "/edit",  HTTP_DELETE, handleFileDelete );
 
     // Upload file
     // - first callback is called after the request has ended with all parsed arguments
     // - second callback handles file upload at that location
-    on ( "/edit",  HTTP_POST, replyOK, handleFileUpload );
+    server.on ( "/edit",  HTTP_POST, replyOK, handleFileUpload );
 
     // Default handler for all URIs not defined above
     // Use it to read files from filesystem
-    onNotFound ( handleNotFound );
+    server.onNotFound ( handleNotFound );
 
     // Start server
-    begin();
+    server.begin();
 
     Serial.println ( "HTTP server started" );
     Serial.println ( "WebDAV server started" );
