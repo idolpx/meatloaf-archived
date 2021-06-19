@@ -1,44 +1,72 @@
 #include <memory>
 #include <string>
+#include <sstream>
 
-class Utf8 {
-    char16_t ch;
+void test() {
+    auto kratka = Utf8Char(0x2592);
+    auto asUtfStream = kratka.toUtf8();
 
-    void toChar16(const std::function<uint8_t()>& getByte) {
-        uint8_t byte = getByte(); // getByte()
-        if((byte >> 7) == 0)
-            // 0x00 do 0x7F            – bity 0xxxxxxx, gdzie kolejne „x” to bity – licząc od najwyższego
-            ch = byte;
-        else if((byte >> 5) == 0b110) {
-            // 0x80 do 0x7FF           – bity 110xxxxx 10xxxxxx
-            uint16_t part0 = (byte & 0b11111) << 6;
-            uint16_t part1 = getByte() & 0b111111;
-            ch = part0 | part1;
+auto a = asUtfStream[0];
 
-        }
-        else if((byte >> 4) == 0b1110) {
-            // 0x800 do 0xFFFF         – bity 1110xxxx 10xxxxxx 10xxxxxx
-            uint16_t part0 = (byte & 0b1111) << 12;
-            uint16_t part1 = (getByte() & 0b111111) << 6;
-            uint16_t part2 = getByte() & 0b111111;
-            ch = part0 | part1 | part2;
-        }
-        else
-            ch = 0;
+    std::stringstream ss(asUtfStream);
+    auto readFn = [&ss]() {
+        char c;
+        ss.read(&c, 1);
+        return c;
     };
+
+    auto decoded(readFn);
+
+    
+}
+
+class Utf8Char {
+    //std::u16string str;
+
+    void fromUtf8Stream(const std::function<uint8_t()>& getByte) {
+        uint8_t byte = getByte();
+        if(byte<=0x7f) {
+            ch = byte;
+        }
+        else if((byte & 0b11100000) == 0b11000000) {
+            uint16_t hi =  ((uint16_t)(byte & 0b1111)) << 6;
+            uint16_t lo = (getByte() & 0b111111);
+            ch = hi | lo;
+        }
+        else if((byte & 0b11110000) == 0b11100000) {
+            uint16_t hi = ((uint16_t)(byte & 0b111)) << 12;
+            uint16_t mi = ((uint16_t)(getByte() & 0b111111)) << 6;
+            uint16_t lo = getByte() & 0b111111;
+            ch = hi | mi | lo;
+        }
+        else {
+            ch = 0;
+        }
+    };
+
+public:
+    char16_t ch;
+    Utf8Char(uint16_t c): ch(c) {};
+    Utf8Char(const std::function<uint8_t()>& getByte) {
+        fromUtf8Stream(getByte);
+    }
 
     std::string toUtf8() {
         if(ch>=0x00 && ch<=0x7f) {
-            // 0x00 do 0x7F            – bity 0xxxxxxx, gdzie kolejne „x” to bity – licząc od najwyższego
-            //return std::string((char)ch);
+            return std::string(1, char(ch));
         }
         else if(ch>=0x80 && ch<=0x7ff) {
-            // 0x80 do 0x7FF           – bity 110xxxxx 10xxxxxx
-
+            auto upper = (ch>>6) & 0b11111 | 0b11000000; 
+            char lower = ch & 0b111111 | 0b10000000; 
+            char arr[] = { (char)upper, (char)lower, '\0'};
+            return std::string(arr);
         }
         else {
-            // 0x800 do 0xFFFF         – bity 1110xxxx 10xxxxxx 10xxxxxx
-
+            auto lower = (uint8_t)ch & 0b00111111 | 0b10000000;
+            auto mid = (uint8_t)(ch>>6) & 0b00111111 | 0b10000000;
+            auto hi = (uint8_t)(ch>>12) & 0b00111111 | 0b11100000;
+            char arr[] = { (char)hi, (char)mid, (char)lower, '\0'};
+            return std::string(arr);
         }
     }
 };

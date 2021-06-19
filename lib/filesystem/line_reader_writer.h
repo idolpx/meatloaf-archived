@@ -102,17 +102,17 @@ public:
                 read();
             }
 
-            for(; buffPos<mbuffer.length(); buffPos++) {
-                if(mbuffer[buffPos]==delimiter) {
+            for(; buffPos<smartBuffer.length(); buffPos++) {
+                if(smartBuffer[buffPos]==delimiter) {
                     //Serial.printf("delimiter '%c'found, buffer pos %d:\n", delimiter, buffPos);
                     buffPos++;
                     return lineBuilder;
                 } else {
                     //Serial.printf("%d:",buffPos);
                     if(codec != nullptr)
-                        lineBuilder+=codec->toLocal(mbuffer[buffPos]);
+                        lineBuilder+=codec->toLocal(smartBuffer[buffPos]);
                     else
-                        lineBuilder+=mbuffer[buffPos];
+                        lineBuilder+=smartBuffer[buffPos];
                 }
             }
         } while(!eof());
