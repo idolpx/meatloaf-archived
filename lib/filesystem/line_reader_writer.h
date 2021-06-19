@@ -83,11 +83,11 @@ public:
     }
 
     bool eof() {
-        return buffPos >= mbuffer.length() && BufferedReader::eof();
+        return buffPos >= smartBuffer.length() && BufferedReader::eof();
     }
 
     std::string readLn(StringCodec* codec = nullptr) {
-        if(buffPos==0 && mbuffer.length()==0 && BufferedReader::eof()) {
+        if(buffPos==0 && smartBuffer.length()==0 && BufferedReader::eof()) {
             //Serial.printf("FSTEST: returning from first condition\n");
             return "";
         }
@@ -96,7 +96,7 @@ public:
 //Serial.printf("FSTEST: wchodze do realn przy buffPos=%d, buf.len=%d, eof=%d\n", buffPos, mbuffer.length(), eof());
         do {
             // we read through the whole buffer? Let's get more!
-            if(buffPos >= mbuffer.length() && !BufferedReader::eof()) {
+            if(buffPos >= smartBuffer.length() && !BufferedReader::eof()) {
 //Serial.printf("FSTEST: doczytywanie bufora\n");
                 buffPos=0;
                 read();
