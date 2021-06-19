@@ -4,6 +4,10 @@
 #include "buffered_io.h"
 #include "../../include/petscii.h"
 
+/********************************************************
+ * Simple string codec
+ ********************************************************/
+
 class StringCodec {
 public:
     virtual uint8_t toLocal(uint8_t ch)=0;
@@ -24,6 +28,9 @@ namespace strcodec {
     static PETSCIICodec petscii;
 };
 
+/********************************************************
+ * Stream writer
+ ********************************************************/
 
 class StreamWriter: public BufferedWriter {
 public:
@@ -67,6 +74,10 @@ public:
     }
 };
 
+/********************************************************
+ * Stream reader
+ ********************************************************/
+
 class StreamReader: public BufferedReader {
     int buffPos;
     std::string lineBuilder;
@@ -74,13 +85,9 @@ class StreamReader: public BufferedReader {
 public:
     char delimiter = '\n';
 
-    StreamReader(MIstream* is) : BufferedReader(is), buffPos(0), lineBuilder("") { 
-        //read();
-    };
+    StreamReader(MIstream* is) : BufferedReader(is), buffPos(0), lineBuilder("") { };
     
-    StreamReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {
-        //read();
-    }
+    StreamReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {}
 
     bool eof() {
         return buffPos >= smartBuffer.length() && BufferedReader::eof();
