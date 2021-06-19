@@ -37,28 +37,21 @@ static const char TEXT_PLAIN[] PROGMEM = "text/plain";
 static const char FS_INIT_ERROR[] PROGMEM = "FS INIT ERROR";
 static const char FILE_NOT_FOUND[] PROGMEM = "FileNotFound";
 
+
+ESP8266WebServer server ( 80 );
+ESPWebDAVCore dav;
+//WiFiServer tcp(80);
+//ESPWebDAV dav;
+
 class MLHttpd
 {
     private:
 
-        static ESPWebDAVCore dav;
-        static ESP8266WebServer server;
-        //WiFiServer tcp(80);
-        //ESPWebDAV dav;
-
         static bool fsOK;
-        const String unsupportedFiles = String();
+        static String unsupportedFiles;
 
         static File uploadFile;
 
-
-    public:
-        MLHttpd(int port) {
-                server = ESP8266WebServer( port );
-        };
-        ~MLHttpd();
-
-        static void setup ( void );
         static void replyOK();
         static void replyOKWithMsg ( String msg );
         static void replyNotFound ( String msg );
@@ -80,6 +73,12 @@ class MLHttpd
         static void handleNotFound();
         static void handleGetEdit();
 
+    public:
+        MLHttpd(int port);
+        ~MLHttpd();
+
+        static void setup ( void );
+        static void handleClient();
 };
 
 #endif

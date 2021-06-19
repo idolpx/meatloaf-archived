@@ -612,6 +612,11 @@ void MLHttpd::handleGetEdit()
 
 }
 
+void MLHttpd::handleClient ( void )
+{
+    server.handleClient();
+}
+
 void MLHttpd::setup ( void )
 {
 
