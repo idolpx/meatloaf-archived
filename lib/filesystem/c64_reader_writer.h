@@ -6,9 +6,9 @@
 
 
 class U8Char {
-    //std::u16string str;
-
     static const char16_t utf8map[];
+
+    const char missing = '?';
 
     void fromUtf8Stream(StreamReader* reader) {
         uint8_t byte = reader->readByte();
@@ -43,7 +43,10 @@ public:
     }
 
     std::string toUtf8() {
-        if(ch>=0x00 && ch<=0x7f) {
+        if(ch==0) {
+            return std::string(1, missing);
+        }
+        else if(ch>=0x01 && ch<=0x7f) {
             return std::string(1, char(ch));
         }
         else if(ch>=0x80 && ch<=0x7ff) {
@@ -66,6 +69,7 @@ public:
             if(utf8map[i]==ch)
                 return i;
         }
+        return missing;
     }
 };
 
@@ -85,9 +89,11 @@ public:
 
     bool print(std::string line) {
         // line is utf-8, convert to petscii
+        StreamReader* a; // TODO create string reader!
+
         std::string converted;
-        for(int i=0; i<line.length(); i++) {
-            U8Char codePoint(nullptr); // get a stream from line string!
+        while(!a->eof()) {
+            U8Char codePoint(a);
             converted+=codePoint.toPetscii();
         }
         MBufferConst buffer(converted);
