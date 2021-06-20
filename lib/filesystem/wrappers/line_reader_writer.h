@@ -1,8 +1,8 @@
 #ifndef MEATFILE_STREAM_WRITER_H
 #define MEATFILE_STREAM_WRITER_H
 
-#include "wrappers/buffered_io.h"
-#include "../../include/petscii.h"
+#include "buffered_io.h"
+#include "../../../include/petscii.h"
 
 /********************************************************
  * Simple string codec

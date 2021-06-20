@@ -4,7 +4,7 @@
 //#define RECORD_SIZE 256
 #define BUFFER_SIZE 512
 
-#include "meat_io.h"
+#include "../meat_io.h"
 #include "meat_stream.h"
 
 /********************************************************

@@ -1,9 +1,16 @@
 #ifndef MEATFILE_C64STREAM_WRITER_H
 #define MEATFILE_C64STREAM_WRITER_H
 
-#include "wrappers/buffered_io.h"
-#include "wrappers/line_reader_writer.h"
+#include "buffered_io.h"
+#include "line_reader_writer.h"
 
+
+/********************************************************
+ * U8Char
+ * 
+ * A minimal wide char implementation that can handle UTF8
+ * and convert it to PETSCII
+ ********************************************************/
 
 class U8Char {
     static const char16_t utf8map[];
@@ -14,7 +21,7 @@ class U8Char {
         uint8_t byte = reader->readByte();
         if(byte<=0x7f) {
             ch = byte;
-        }
+        }   
         else if((byte & 0b11100000) == 0b11000000) {
             uint16_t hi =  ((uint16_t)(byte & 0b1111)) << 6;
             uint16_t lo = (reader->readByte() & 0b111111);
@@ -73,11 +80,10 @@ public:
     }
 };
 
-
 /********************************************************
  * Stream writer
  * 
- *  We have some UTF8 text and want to save it to PETSCII
+ * For writing UTF8 streams to PETSCII-talking devices
  ********************************************************/
 
 class C64LinedWriter: public LinedWriter {
@@ -108,7 +114,7 @@ public:
 /********************************************************
  * Stream reader
  * 
- * We have some PETSCII on C64, we need to get it in UTF8
+ * For reading PETSCII encoded steams into UTF8 lines of text
  ********************************************************/
 
 class C64LinedReader: public LinedReader {
