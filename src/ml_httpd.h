@@ -33,7 +33,7 @@ class MLHttpd
 {
     private:
 
-        static constexpr char* fsName = "LittleFS";
+        //static constexpr char* fsName = "LittleFS";
         static bool fsOK;
         static String unsupportedFiles;
 
@@ -60,13 +60,8 @@ class MLHttpd
         static void handleNotFound();
         static void handleGetEdit();
 
-	static FS *m_fileSystem;
-
     public:
-        MLHttpd(FS *fileSystem)
-        {
-	        m_fileSystem = fileSystem;
-        };
+        MLHttpd();
         ~MLHttpd();
 
         static void setup ( void );

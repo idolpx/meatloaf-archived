@@ -23,6 +23,7 @@
 
 #include "ml_httpd.h"
 
+#include "../include/global_fs.h"
 #include "meat_io.h"
 
 static const char TEXT_PLAIN[] PROGMEM = "text/plain";
@@ -108,12 +109,12 @@ void MLHttpd::handleStatus()
     json.reserve ( 128 );
 
     json = "{\"type\":\"";
-    json += fsName;
+    json += "LittleFS";
     json += "\", \"isOk\":";
 
     if ( fsOK )
     {
-        m_fileSystem->info ( fs_info );
+        fileSystem->info ( fs_info );
         json += F ( "\"true\", \"totalBytes\":\"" );
         json += fs_info.totalBytes;
         json += F ( "\", \"usedBytes\":\"" );
@@ -151,13 +152,13 @@ void MLHttpd::handleFileList()
 
     String path = server.arg ( "dir" );
 
-    if ( path != "/" && !m_fileSystem->exists ( path ) )
+    if ( path != "/" && !fileSystem->exists ( path ) )
     {
         return replyBadRequest ( "BAD PATH" );
     }
 
     Debug_println ( String ( "handleFileList: " ) + path );
-    Dir dir = m_fileSystem->openDir ( path );
+    Dir dir = fileSystem->openDir ( path );
     path.clear();
 
     // use HTTP/1.1 Chunked response to avoid building a huge temporary string
@@ -259,15 +260,15 @@ bool MLHttpd::handleFileRead ( String path )
         contentType = mime::getContentType ( path );
     }
 
-    if ( !m_fileSystem->exists ( path ) )
+    if ( !fileSystem->exists ( path ) )
     {
         // File not found, try gzip version
         path = path + ".gz";
     }
 
-    if ( m_fileSystem->exists ( path ) )
+    if ( fileSystem->exists ( path ) )
     {
-        File file = m_fileSystem->open ( path, "r" );
+        File file = fileSystem->open ( path, "r" );
 
         if ( server.streamFile ( file, contentType ) != file.size() )
         {
@@ -288,7 +289,7 @@ bool MLHttpd::handleFileRead ( String path )
 */
 String MLHttpd::lastExistingParent ( String path )
 {
-    while ( !path.isEmpty() && !m_fileSystem->exists ( path ) )
+    while ( !path.isEmpty() && !fileSystem->exists ( path ) )
     {
         if ( path.lastIndexOf ( '/' ) > 0 )
         {
@@ -343,7 +344,7 @@ void MLHttpd::handleFileCreate()
         return replyBadRequest ( "BAD PATH" );
     }
 
-    if ( m_fileSystem->exists ( path ) )
+    if ( fileSystem->exists ( path ) )
     {
         return replyBadRequest ( F ( "PATH FILE EXISTS" ) );
     }
@@ -360,7 +361,7 @@ void MLHttpd::handleFileCreate()
             // Create a folder
             path.remove ( path.length() - 1 );
 
-            if ( !m_fileSystem->mkdir ( path ) )
+            if ( !fileSystem->mkdir ( path ) )
             {
                 return replyServerError ( F ( "MKDIR FAILED" ) );
             }
@@ -368,7 +369,7 @@ void MLHttpd::handleFileCreate()
         else
         {
             // Create a file
-            File file = m_fileSystem->open ( path, "w" );
+            File file = fileSystem->open ( path, "w" );
 
             if ( file )
             {
@@ -396,7 +397,7 @@ void MLHttpd::handleFileCreate()
             return replyBadRequest ( "BAD SRC" );
         }
 
-        if ( !m_fileSystem->exists ( src ) )
+        if ( !fileSystem->exists ( src ) )
         {
             return replyBadRequest ( F ( "SRC FILE NOT FOUND" ) );
         }
@@ -413,7 +414,7 @@ void MLHttpd::handleFileCreate()
             src.remove ( src.length() - 1 );
         }
 
-        if ( !m_fileSystem->rename ( src, path ) )
+        if ( !fileSystem->rename ( src, path ) )
         {
             return replyServerError ( F ( "RENAME FAILED" ) );
         }
@@ -434,19 +435,19 @@ void MLHttpd::handleFileCreate()
 */
 void MLHttpd::deleteRecursive ( String path )
 {
-    File file = m_fileSystem->open ( path, "r" );
+    File file = fileSystem->open ( path, "r" );
     bool isDir = file.isDirectory();
     file.close();
 
     // If it's a plain file, delete it
     if ( !isDir )
     {
-        m_fileSystem->remove ( path );
+        fileSystem->remove ( path );
         return;
     }
 
     // Otherwise delete its contents first
-    Dir dir = m_fileSystem->openDir ( path );
+    Dir dir = fileSystem->openDir ( path );
 
     while ( dir.next() )
     {
@@ -454,7 +455,7 @@ void MLHttpd::deleteRecursive ( String path )
     }
 
     // Then delete the folder itself
-    m_fileSystem->rmdir ( path );
+    fileSystem->rmdir ( path );
 }
 
 
@@ -481,7 +482,7 @@ void MLHttpd::handleFileDelete()
 
     Debug_println ( String ( "handleFileDelete: " ) + path );
 
-    if ( !m_fileSystem->exists ( path ) )
+    if ( !fileSystem->exists ( path ) )
     {
         return replyNotFound ( FPSTR ( FILE_NOT_FOUND ) );
     }
@@ -519,7 +520,7 @@ void MLHttpd::handleFileUpload()
         }
 
         Debug_println ( String ( "handleFileUpload Name: " ) + filename );
-        uploadFile = m_fileSystem->open ( filename, "w" );
+        uploadFile = fileSystem->open ( filename, "w" );
 
         if ( !uploadFile )
         {
@@ -633,7 +634,7 @@ void MLHttpd::setup ( void )
 
 #ifdef USE_SPIFFS
     // Debug: dump on console contents of filesystem with no filter and check filenames validity
-    Dir dir = m_fileSystem->openDir ( "" );
+    Dir dir = fileSystem->openDir ( "" );
     Debug_println ( F ( "List of files at root of filesystem:" ) );
 
     while ( dir.next() )
@@ -656,7 +657,7 @@ void MLHttpd::setup ( void )
 #endif
 
     // WebDAV Server Setup
-    dav.begin ( m_fileSystem );
+    dav.begin ( fileSystem );
     dav.setTransferStatusCallback ( [] ( const char *name, int percent, bool receive )
     {
         Serial.printf ( "WebDAV %s: '%s': %d%%\n", receive ? "recv" : "server.send", name, percent );
