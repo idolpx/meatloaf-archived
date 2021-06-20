@@ -73,6 +73,7 @@ class BufferedReader {
 protected:
     MBuffer smartBuffer;
     bool eofOccured = false;
+    size_t m_available = 0;
 
     void refillBuffer() {
         //secondHalf = !secondHalf;
@@ -98,7 +99,7 @@ protected:
     }
 
 public:
-    BufferedReader(MIstream* is) : istream(is) { 
+    BufferedReader(MIstream* is) : istream(is), m_available(is->available()) { 
     };
 
     BufferedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : readFn(fn) {
@@ -109,6 +110,8 @@ public:
         if(!eofOccured)
             refillBuffer();
 
+        m_available-=smartBuffer.length();
+
         return &smartBuffer;
     }
 
@@ -116,11 +119,17 @@ public:
         if(smartBuffer.length()==0 && !eofOccured)
             refillBuffer();
 
+        m_available--;
+
         return smartBuffer.getByte();
     }
 
     bool eof() {
         return eofOccured;
+    }
+
+    size_t available() {
+        return m_available;
     }
 };
 
@@ -138,6 +147,11 @@ public:
     int write(MBuffer* buffer) {
         return ostream->write((uint8_t*)buffer->buffer, buffer->length());
     }
+    bool writeByte(uint8_t byteToWrite) 
+    {
+        ostream->write(&byteToWrite, 1);
+    }
+
 };
 
 

@@ -9,7 +9,7 @@
 class IECDevice {
     // FIRST you have to wrap iec data into our I/OStream API
     // THEN you have to initialize below two with such IOStreams:
-    MOstream* iecOstream; // TODO this will be a special OStream class that does a pause before sending the last character
+    MOstream* iecOstream; // TODO
     MIstream* iecIstream; // TODO
 
     // This method transfers a file from any path to IEC device, converting it on the fly if it is a TXT file
@@ -24,9 +24,13 @@ class IECDevice {
             writer.reset(new BufferedWriter(iecOstream));
         }
 
-        while(!reader->eof()) {
-            writer->write(reader->read());
+        while(reader->available()>1) {
+            writer->writeByte(reader->readByte());
         }
+        // now let's do the EOF signaling pause...
+
+        // and send the last byte;
+        writer->writeByte(reader->readByte());
     }
 
     // This metod will save a stream from IEC device to any path, converting it on the fly if it is a text file
