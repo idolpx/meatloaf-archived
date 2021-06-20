@@ -12,9 +12,25 @@ class IECDevice {
     MOstream* iecOstream; // TODO
     MIstream* iecIstream; // TODO
 
+    void signalError(int number, int track=0, int sector=0) {
+        // send iec error here like in:
+        // void Interface::setDeviceStatus(int number, int track, int sector)
+
+
+    }
+
     // This method transfers a file from any path to IEC device, converting it on the fly if it is a TXT file
     bool transferFile(MFile* srcPath) {
-        std::unique_ptr<BufferedReader> reader(new BufferedReader(srcPath->inputStream()));
+        //auto istream = srcPath->inputStream();
+        std::unique_ptr<MIstream> istream(srcPath->inputStream());
+
+        // or istream.get() ???
+        if(istream == nullptr) {
+            signalError(69); // file not found
+            return false;
+        }
+
+        std::unique_ptr<BufferedReader> reader(new BufferedReader(istream.get()));
         std::unique_ptr<BufferedWriter> writer;
 
         if(mstr::equals(srcPath->extension, "txt", false)) {
@@ -24,19 +40,39 @@ class IECDevice {
             writer.reset(new BufferedWriter(iecOstream));
         }
 
-        while(reader->available()>1) {
+        while(reader->available()>1 && !reader->eof()) {
+            bool result = writer->writeByte(reader->readByte());
+            if(!result) {
+                signalError(72); // write error
+                return false;
+            }
+        }
+        if(reader->available() > 1) {
+            // this is eof, not the last char!!!
+            signalError(70); // timeout reading
+            return false;
+        }
+        else {
+            // now let's do the EOF signaling pause...
+            delay(10);
+            // and send the last byte;
             writer->writeByte(reader->readByte());
         }
-        // now let's do the EOF signaling pause...
-
-        // and send the last byte;
-        writer->writeByte(reader->readByte());
+        return true;
     }
 
     // This metod will save a stream from IEC device to any path, converting it on the fly if it is a text file
     bool receiveFile(MFile* dstPath) {
+        std::unique_ptr<MOstream> ostream(dstPath->outputStream());
+
+        // or ostream.get() ???
+        if(ostream == nullptr) {
+            signalError(80); // error saving!
+            return false;
+        }
+
         std::unique_ptr<BufferedReader> reader;
-        std::unique_ptr<BufferedWriter> writer(new BufferedWriter(dstPath->outputStream()));
+        std::unique_ptr<BufferedWriter> writer(new BufferedWriter(ostream.get()));
 
         if(mstr::equals(dstPath->extension, "txt", false)) {
             reader.reset(new C64LinedReader(iecIstream));
@@ -46,8 +82,18 @@ class IECDevice {
         }
 
         while(!reader->eof()) {
-            writer->write(reader->read());
+            bool result = writer->write(reader->read());
+            if(!result) {
+                signalError(72); // write error
+                return false;
+            }
         }
+        if(reader->available() > 0) {
+            // this is eof, not the last char!!!
+            signalError(70); // timeout
+            return false;
+        }
+
     }
 };
 

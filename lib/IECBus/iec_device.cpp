@@ -171,7 +171,6 @@ void Interface::setDeviceStatus(int number, int track, int sector)
 		case 126:
 			m_device_status = "126, NODE NOT FOUND, 00, 00";
 			break;
-
 	}
 }
 
