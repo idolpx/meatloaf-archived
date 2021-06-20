@@ -32,25 +32,6 @@ public:
         return b;
     }    
 
-    // bool seek(uint32_t pos, SeekMode mode) {
-    //     switch (mode) {
-    //         case SeekSet:
-    //             buffer = &buffer[0] + pos;
-    //             break;
-
-    //         case SeekCur:
-    //             buffer = *&buffer + pos;
-    //             break;
-            
-    //         case SeekEnd:
-    //             buffer = &buffer[len] - pos;
-    //             break;
-    //     }
-    // };
-    // bool seek(uint32_t pos) {
-    //     return seek(pos, SeekSet);
-    // }
-
     char& operator [](int idx) {
         return buffer[idx];
     }
@@ -137,16 +118,6 @@ public:
 
         return smartBuffer.getByte();
     }
-
-    // uint8_t readByte() {
-    //     if(!eofOccured)
-    //         refillBuffer();
-
-    //     uint32_t i = 1;
-    //     uint8_t b = mbuffer[0];
-    //     mbuffer.seek(i, SeekCur);
-    //     return b;
-    // }
 
     bool eof() {
         return eofOccured;

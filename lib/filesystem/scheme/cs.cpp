@@ -21,7 +21,7 @@ void CServerSessionMgr::connect() {
     if(breader==nullptr && rc != 0) {
         // do not initialize in constructor - compiler bug!
         Serial.println("breader ---- INIT!");
-        breader = new StreamReader([this](uint8_t* buffer, size_t size)->int  {
+        breader = new LinedReader([this](uint8_t* buffer, size_t size)->int  {
             //Serial.println("Lambda read start");
             int x = this->read(buffer, size);
             //Serial.printf("Lambda read %d\n",x);

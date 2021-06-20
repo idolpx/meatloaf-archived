@@ -35,7 +35,7 @@
 #include "iec.h"
 #include "device_db.h"
 #include "meat_io.h"
-#include "buffered_io.h"
+#include "wrappers/buffered_io.h"
 #include "EdUrlParser.h"
 #include "MemoryInfo.h"
 #include "helpers.h"

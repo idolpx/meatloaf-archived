@@ -1,7 +1,7 @@
 #ifndef MEATFILE_STREAM_WRITER_H
 #define MEATFILE_STREAM_WRITER_H
 
-#include "buffered_io.h"
+#include "wrappers/buffered_io.h"
 #include "../../include/petscii.h"
 
 /********************************************************
@@ -32,11 +32,11 @@ namespace strcodec {
  * Stream writer
  ********************************************************/
 
-class StreamWriter: public BufferedWriter {
+class LinedWriter: public BufferedWriter {
 public:
     char delimiter = '\n';
 
-    StreamWriter(MOstream* os) : BufferedWriter(os) { 
+    LinedWriter(MOstream* os) : BufferedWriter(os) { 
     };
 
     bool print(std::string line) {
@@ -78,16 +78,16 @@ public:
  * Stream reader
  ********************************************************/
 
-class StreamReader: public BufferedReader {
+class LinedReader: public BufferedReader {
     int buffPos;
     std::string lineBuilder;
 
 public:
     char delimiter = '\n';
 
-    StreamReader(MIstream* is) : BufferedReader(is), buffPos(0), lineBuilder("") { };
+    LinedReader(MIstream* is) : BufferedReader(is), buffPos(0), lineBuilder("") { };
     
-    StreamReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {}
+    LinedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {}
 
     bool eof() {
         return buffPos >= smartBuffer.length() && BufferedReader::eof();

@@ -1,8 +1,8 @@
 #ifndef MEATFILE_C64STREAM_WRITER_H
 #define MEATFILE_C64STREAM_WRITER_H
 
-#include "buffered_io.h"
-#include "line_reader_writer.h"
+#include "wrappers/buffered_io.h"
+#include "wrappers/line_reader_writer.h"
 
 
 class U8Char {
@@ -10,7 +10,7 @@ class U8Char {
 
     const char missing = '?';
 
-    void fromUtf8Stream(StreamReader* reader) {
+    void fromUtf8Stream(LinedReader* reader) {
         uint8_t byte = reader->readByte();
         if(byte<=0x7f) {
             ch = byte;
@@ -34,7 +34,7 @@ class U8Char {
 public:
     char16_t ch;
     U8Char(uint16_t codepoint): ch(codepoint) {};
-    U8Char(StreamReader* reader) {
+    U8Char(LinedReader* reader) {
         fromUtf8Stream(reader);
     }
     
@@ -80,16 +80,16 @@ public:
  *  We have some UTF8 text and want to save it to PETSCII
  ********************************************************/
 
-class C64StreamWriter: public StreamWriter {
+class C64LinedWriter: public LinedWriter {
 public:
     char delimiter = '\n';
 
-    C64StreamWriter(MOstream* os) : StreamWriter(os) { 
+    C64LinedWriter(MOstream* os) : LinedWriter(os) { 
     };
 
     bool print(std::string line) {
         // line is utf-8, convert to petscii
-        StreamReader* a; // TODO create string reader!
+        LinedReader* a; // TODO create string reader!
 
         std::string converted;
         while(!a->eof()) {
@@ -111,19 +111,19 @@ public:
  * We have some PETSCII on C64, we need to get it in UTF8
  ********************************************************/
 
-class C64StreamReader: public StreamReader {
+class C64LinedReader: public LinedReader {
     int buffPos;
     std::string lineBuilder;
 
 public:
     char delimiter = '\n';
 
-    C64StreamReader(MIstream* is) : StreamReader(is), buffPos(0), lineBuilder("") { };
+    C64LinedReader(MIstream* is) : LinedReader(is), buffPos(0), lineBuilder("") { };
     
-    C64StreamReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : StreamReader(fn), buffPos(0), lineBuilder("") {}
+    C64LinedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : LinedReader(fn), buffPos(0), lineBuilder("") {}
 
     std::string readLn() {
-        auto line = StreamReader::readLn();
+        auto line = LinedReader::readLn();
 
         std::string converted;
 

@@ -6,8 +6,8 @@
 #include "meat_io.h"
 //#include "../../include/make_unique.h"
 #include "../../include/global_defines.h"
-#include "buffered_io.h"
-#include "line_reader_writer.h"
+#include "wrappers/buffered_io.h"
+#include "wrappers/line_reader_writer.h"
 
 
 void testHeader(std::string testName) {
@@ -25,7 +25,7 @@ void testReader(MFile* readeTest) {
     std::shared_ptr<MIstream> readerStream(readeTest->inputStream());
 
     if(readerStream->isOpen()) {
-        StreamReader reader(readerStream.get());
+        LinedReader reader(readerStream.get());
 
         if(reader.eof()) {
             Serial.printf("Reader returned EOF! :(");
@@ -358,7 +358,7 @@ void runTestsSuite() {
     //htmlStream("http://meatloaf.cc");  // Works!!!
 }
 
-void streamTranslationExample(StreamWriter* writer, StreamReader* reader) {
+void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
     writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
 
     auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !

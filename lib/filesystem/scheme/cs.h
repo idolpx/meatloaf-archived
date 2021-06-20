@@ -6,7 +6,7 @@
 
 #include "meat_io.h"
 #include "WiFiClient.h"
-#include "line_reader_writer.h"
+#include "wrappers/line_reader_writer.h"
 #include "../../include/global_defines.h"
 #include "utils.h"
 
@@ -35,7 +35,7 @@ public:
     void flush() {
         m_wifi.flush();
     }
-    StreamReader* breader;
+    LinedReader* breader;
 };
 
 /********************************************************

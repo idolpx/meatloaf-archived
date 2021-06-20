@@ -3,7 +3,7 @@
 
 #include "meat_io.h"
 #include "EdUrlParser.h"
-#include "line_reader_writer.h"
+#include "wrappers/line_reader_writer.h"
 //#include "../../include/make_unique.h"
 
 
@@ -64,7 +64,7 @@ private:
     MFile* getPointed() {
         if(pointedFile == nullptr) {
             std::unique_ptr<MIstream> istream(inputStream());
-            auto reader = std::make_unique<StreamReader>(istream.get());
+            auto reader = std::make_unique<LinedReader>(istream.get());
             auto linkUrl = reader->readLn();
             pointedFile.reset(MFSOwner::File(linkUrl));
         }

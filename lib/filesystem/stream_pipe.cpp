@@ -1,4 +1,4 @@
-#include "buffered_io.h"
+#include "wrappers/buffered_io.h"
 
 bool MIstream::pipeTo(MOstream* ostream) {
     auto br = std::make_unique<BufferedReader>(this);
