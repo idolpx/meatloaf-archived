@@ -32,10 +32,10 @@
 #include "iec.h"
 #include "iec_device.h"
 #include "ESPModem.h"
-#include "ml_httpd.h"
+//#include "ml_httpd.h"
 #include "ml_tests.h"
 
-MLHttpd www;
+//MLHttpd www;
 
 //void IRAM_ATTR isrCheckATN();
 
@@ -118,7 +118,7 @@ void setup()
         Serial.println ( "Flash File System started" );
 
         // Start the Web Server with WebDAV
-        www.setup();
+        //www.setup();
 
 
         // mDNS INIT
@@ -184,7 +184,7 @@ void loop()
     MDNS.update();
 #endif
 
-    www.handleClient();
+    //www.handleClient();
 
     //cli.readSerial();
     modem.service();
