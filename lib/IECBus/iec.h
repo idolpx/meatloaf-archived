@@ -147,7 +147,7 @@ private:
 	bool undoTurnAround(void);
 
 
-	inline void ICACHE_RAM_ATTR espPinMode(uint8_t pin, uint8_t mode) {
+	inline void IRAM_ATTR espPinMode(uint8_t pin, uint8_t mode) {
 #if defined(ESP8266)		
 		if(mode == OUTPUT){
 			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
@@ -163,7 +163,7 @@ private:
 #endif
 	}
 
-	inline void ICACHE_RAM_ATTR espDigitalWrite(uint8_t pin, uint8_t val) {
+	inline void IRAM_ATTR espDigitalWrite(uint8_t pin, uint8_t val) {
 #if defined(ESP8266)
 		if(val) GPOS = (1 << pin);
 		else GPOC = (1 << pin);
@@ -172,7 +172,7 @@ private:
 #endif
 	}
 
-	inline int ICACHE_RAM_ATTR espDigitalRead(uint8_t pin) {
+	inline int IRAM_ATTR espDigitalRead(uint8_t pin) {
 		int val = -1;
 #if defined(ESP8266)
 		val = GPIP(pin);

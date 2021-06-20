@@ -27,16 +27,17 @@
 #define UPDATE_URL "http://meatloaf.cc/fw/meatloaf.4MB.bin"
 //#define UPDATE_URL      "http://meatloaf.cc/fw/meatloaf.16MB.bin"
 #define DEVICE_DB "/.sys/devices.db"
+
 #define HOSTNAME "meatloaf"
-#define SERVER_PORT 80   // WebDAV Server Port
+#define SERVER_PORT 80   // HTTPd & WebDAV Server Port
 #define LISTEN_PORT 6400 // Listen to this if not connected. Set to zero to disable.
 
 //#define DEVICE_MASK 0b01111111111111111111111111110000 //  Devices 4-30 are enabled by default
 #define DEVICE_MASK   0b00000000000000000000111100000000 //  Devices 8-11
 //#define DEVICE_MASK   0b00000000000000000000111000000000 //  Devices 9-11
-#define IMAGE_TYPES   "D64|D71|D80|D81|D82|D8B|G64|X64|Z64|TAP|T64|TCRT|CRT|D1M|D2M|D4M|DHD|HDD|DNP|DFI|M2I|NIB"
-#define FILE_TYPES    "C64|PRG|P00|SEQ|S00|USR|U00|REL|R00"
-#define ARCHIVE_TYPES "7Z|GZ|ZIP|RAR"
+//#define IMAGE_TYPES   "D64|D71|D80|D81|D82|D8B|G64|X64|Z64|TAP|T64|TCRT|CRT|D1M|D2M|D4M|DHD|HDD|DNP|DFI|M2I|NIB"
+//#define FILE_TYPES    "C64|PRG|P00|SEQ|S00|USR|U00|REL|R00"
+//#define ARCHIVE_TYPES "7Z|GZ|ZIP|RAR"
 
 // ESP8266 GPIO to C64 User Port
 #define TX_PIN               TX  // TX   //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
@@ -168,5 +169,7 @@ inline static void ledOFF()
 #elif defined USE_SDFS
 #define FS_TYPE "SDFS"
 #endif
+
+
 
 #endif // GLOBAL_DEFINES_H

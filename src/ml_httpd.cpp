@@ -23,6 +23,18 @@
 
 #include "ml_httpd.h"
 
+#include "../include/global_fs.h"
+#include "meat_io.h"
+
+static const char TEXT_PLAIN[] PROGMEM = "text/plain";
+static const char FS_INIT_ERROR[] PROGMEM = "FS INIT ERROR";
+static const char FILE_NOT_FOUND[] PROGMEM = "FileNotFound";
+
+
+ESP8266WebServer server ( 80 );
+ESPWebDAVCore dav;
+//WiFiServer tcp(80);
+//ESPWebDAV dav;
 
 ////////////////////////////////
 // Utils to return HTTP codes, and determine content-type
@@ -97,7 +109,7 @@ void MLHttpd::handleStatus()
     json.reserve ( 128 );
 
     json = "{\"type\":\"";
-    json += fsName;
+    json += "LittleFS";
     json += "\", \"isOk\":";
 
     if ( fsOK )
@@ -610,6 +622,11 @@ void MLHttpd::handleGetEdit()
     replyNotFound ( FPSTR ( FILE_NOT_FOUND ) );
 #endif
 
+}
+
+void MLHttpd::handleClient ( void )
+{
+    server.handleClient();
 }
 
 void MLHttpd::setup ( void )
