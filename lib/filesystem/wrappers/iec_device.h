@@ -36,6 +36,19 @@ class IECDevice {
         if(mstr::equals(srcPath->extension, "txt", false)) {
             writer.reset(new C64LinedWriter(iecOstream));
             // we can skip the BOM here, EF BB BF for UTF8
+            auto b = reader->readByte();
+            if(b != 0xef)
+                writer->writeByte(b); // not BOM
+            else {
+                b = reader->readByte();
+                if(b != 0xbb)
+                    writer->writeByte(b); // not BOM
+                else {
+                    b = reader->readByte();
+                    if(b != 0xbf)
+                        writer->writeByte(b); // not BOM
+                }
+            }
         }
         else {
             writer.reset(new BufferedWriter(iecOstream));
@@ -77,6 +90,9 @@ class IECDevice {
         if(mstr::equals(dstPath->extension, "txt", false)) {
             reader.reset(new C64LinedReader(iecIstream));
             // we can also write BOM bytes here, EF BB BF for UTF8
+            writer->writeByte(0xef);
+            writer->writeByte(0xbb);
+            writer->writeByte(0xbf);
         }
         else {
             reader.reset(new BufferedReader(iecIstream));
