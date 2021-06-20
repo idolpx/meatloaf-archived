@@ -355,7 +355,7 @@ bool util_wildcard_match(const char *str, const char *pattern)
  Results are copied into dest.
  FALSE is returned if the buffer is not big enough to hold the two parts.
 */
-bool util_concat_paths(char *dest, const char *parent, const char *child, int dest_size)
+bool util_concat_paths(char *dest, const char *parent, const char *child, size_t dest_size)
 {
     if (dest == nullptr)
         return false;
@@ -366,13 +366,13 @@ bool util_concat_paths(char *dest, const char *parent, const char *child, int de
         if (child == nullptr)
             return false;
 
-        int l = strlen(child);
+        size_t l = strlen(child);
 
         return l == strlcpy(dest, child, dest_size);
     }
 
     // Copy the parent string in first
-    int plen = strlcpy(dest, parent, dest_size);
+    size_t plen = strlcpy(dest, parent, dest_size);
 
     // Make sure we have room left after copying the parent
     if (plen >= dest_size - 3) // Allow for a minimum of a slash, one char, and NULL
@@ -394,7 +394,7 @@ bool util_concat_paths(char *dest, const char *parent, const char *child, int de
         if (child[0] == '/' && child[0] == '\\')
             child++;
 
-        int clen = strlcpy(dest + plen, child, dest_size - plen);
+        size_t clen = strlcpy(dest + plen, child, dest_size - plen);
 
         // Verify we were able to copy the whole thing
         if (clen != strlen(child))
@@ -409,10 +409,10 @@ bool util_concat_paths(char *dest, const char *parent, const char *child, int de
 
 void util_dump_bytes(uint8_t *buff, uint32_t buff_size)
 {
-    int bytes_per_line = 16;
-    for (int j = 0; j < buff_size; j += bytes_per_line)
+    uint32_t bytes_per_line = 16;
+    for (uint32_t j = 0; j < buff_size; j += bytes_per_line)
     {
-        for (int k = 0; (k + j) < buff_size && k < bytes_per_line; k++)
+        for (uint32_t k = 0; (k + j) < buff_size && k < bytes_per_line; k++)
             Debug_printf("%02X ", buff[k + j]);
         Debug_println();
     }
@@ -443,16 +443,16 @@ string util_remove_spaces(const string &s)
 
 void util_strip_nonascii(string &s)
 {
-    for (int i = 0; i < s.size(); i++)
+    for (size_t i = 0; i < s.size(); i++)
     {
         if (s[i] > 0x7F)
             s[i] = 0x00;
     }
 }
 
-void util_clean_devicespec(uint8_t *buf, unsigned short len)
+void util_clean_devicespec(size_t *buf, size_t len)
 {
-    for (int i = 0; i < len; i++)
+    for (size_t i = 0; i < len; i++)
         if (buf[i] == 0x9b)
             buf[i] = 0x00;
 }

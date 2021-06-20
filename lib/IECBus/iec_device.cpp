@@ -37,7 +37,7 @@ Interface::Interface(IEC &iec, FS *fileSystem)
 	  m_device(fileSystem)
 {
 	m_fileSystem = fileSystem;
-	DeviceDB *m_device = new DeviceDB(fileSystem);
+
 	reset();
 } // ctor
 
@@ -45,6 +45,7 @@ bool Interface::begin()
 {
 	m_device.init(String(DEVICE_DB));
 	//m_device.check();
+	return true;
 }
 
 void Interface::reset(void)
@@ -312,7 +313,7 @@ byte Interface::loop(void)
 	{
 		//Debug_printf("\r\n[ERROR]");
 		reset();
-		retATN == IEC::ATN_IDLE;
+		retATN = IEC::ATN_IDLE;
 	}
 	// Did anything happen from the host side?
 	else if (retATN not_eq IEC::ATN_IDLE)
@@ -723,7 +724,7 @@ void Interface::sendListing()
 	{
 		// Set device default Listing Header
 		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
-		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A\0", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 	}
 	// else
 	// {

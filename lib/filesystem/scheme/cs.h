@@ -51,7 +51,7 @@ private:
 public:
     CServerFile(std::string path, size_t size = 0): MFile(path), m_size(size) 
     {
-        media_blocks_free = 65536;
+        media_blocks_free = 65535;
         media_block_size = 1; // blocks are already calculated
         parseUrl(path);
         Debug_printv("path[%s] size[%d]", path.c_str(), size);
