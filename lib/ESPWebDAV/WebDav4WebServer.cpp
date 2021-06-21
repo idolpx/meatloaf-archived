@@ -7,6 +7,15 @@ WebServer::HookFunction hookWebDAVForWebserver(const String& davRootDir, ESPWebD
 {
     return [&dav, davRootDir](const String & method, const String & url, WiFiClient * client, WebServer::ContentTypeFunction contentType)
     {
+        DBG_PRINT("method: [%s], url: [%s], contentType: [%s]", method.c_str(), url.c_str(), contentType);
+
+        if (url == "/")
+        {
+            DBG_PRINT("WE ARE AT ROOT!");
+            //url = "/.www/index.html";
+        }
+
+        //if (url.indexOf("/.www") > -1 || )
         if (url.indexOf(davRootDir) != 0)
         {
             DBG_PRINT("CLIENT_REQUEST_CAN_CONTINUE, %s is not seen in %s", davRootDir.c_str(), url.c_str());
