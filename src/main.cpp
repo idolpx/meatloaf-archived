@@ -665,7 +665,8 @@ void handleNotFound()
         return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
     }
 
-    String uri = ESP8266WebServer::urlDecode ( www.uri() ); // required to read paths with blanks
+    String uri = WebServer::urlDecode ( www.uri() ); // required to read paths with blanks
+
 
     if ( handleFileRead ( uri ) )
     {

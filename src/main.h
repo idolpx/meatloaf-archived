@@ -15,13 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(ESP32)
-#include <WiFi.h>
-#include <ESPmDNS.h>
-#elif defined(ESP8266)
+
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
+#define WebServer ESP8266WebServer
+#elif defined(ESP32)
+#include <WiFi.h>
+#include <ESPmDNS.h>
+#include <WebServer.h>
 #endif
 
 #include "../include/global_defines.h"
@@ -39,9 +42,9 @@ FS *fileSystem = &SPIFFS;
 SPIFFSConfig fileSystemConfig = SPIFFSConfig();
 #endif
 #elif defined USE_LITTLEFS
+const char *fsName = "LittleFS";
 #if defined(ESP8266)
 #include <LittleFS.h>
-const char *fsName = "LittleFS";
 FS *fileSystem = &LittleFS;
 LittleFSConfig fileSystemConfig = LittleFSConfig();
 #endif
@@ -102,7 +105,7 @@ ESPModem modem;
 #error This sketch needs ESP8266WebServer::HookFunction and ESP8266WebServer::addHook
 #endif
 
-ESP8266WebServer www ( SERVER_PORT );
+WebServer www ( SERVER_PORT );
 ESPWebDAVCore dav;
 
 bool fsOK;

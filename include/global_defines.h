@@ -129,9 +129,9 @@ inline static void ledOFF()
 #ifndef DEBUG_PORT
 #define DEBUG_PORT Serial
 #endif
-#if defined(ARDUINO_ARCH_ESP8266) || defined(CORE_MOCK)
+#if defined(ESP8266) || defined(CORE_MOCK)
 #define pathToFileName(p) p
-#endif //ARDUINO_ARCH_ESP8266
+#endif //ESP8266
 #ifdef DEBUG
 #define Debug_print(...) DEBUG_PORT.print(__VA_ARGS__)
 #define Debug_println(...) DEBUG_PORT.println(__VA_ARGS__)

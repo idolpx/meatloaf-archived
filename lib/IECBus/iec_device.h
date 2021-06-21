@@ -18,8 +18,14 @@
 #ifndef IECDEVICE_H
 #define IECDEVICE_H
 
+
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#elif defined(ESP32)
+#include <WiFi.h>
+#include <HTTPClient.h>
+#endif
 
 #if defined(USE_SPIFFS)
 #include <SPIFFS.h>
