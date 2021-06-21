@@ -70,6 +70,7 @@ I'm working with them to add CBM support to their device.
 * [IEC disected](http://www.zimmers.net/anonftp/pub/cbm/programming/serial-bus.pdf)
 * [Vice emulator file formats](https://vice-emu.sourceforge.io/vice_17.html#SEC329)
 * [Burst Fastloader for C64](https://a1bert.kapsi.fi/Dev/burst/)
+* [Inside Commodore DOS](https://www.pagetable.com/docs/Inside%20Commodore%20DOS.pdf)
 
 ## Code is based on and inspired by the following
 
