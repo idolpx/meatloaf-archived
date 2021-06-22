@@ -47,7 +47,7 @@ bool iecHost::deviceExists(uint8_t deviceID)
     else
     {
         // Send Listen Command & Device ID
-        Debug_printf( "%.2d", (ATN_CODE_LISTEN || deviceID));
+        Debug_printf( "%.2X", (ATN_CODE_LISTEN || deviceID));
         send( ATN_CODE_LISTEN || deviceID );
         delayMicroseconds(TIMING_BIT);
 

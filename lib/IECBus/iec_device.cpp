@@ -384,6 +384,8 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 	if(mstr::startsWith(commandLne, "CD", false)) // would be case sensitive, but I don't know the proper case
 	{
 		guessedPath = mstr::drop(guessedPath, 2);
+		if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
+			guessedPath = mstr::drop(guessedPath, 1);
 		Debug_printv("Guessed Path: [%s]", guessedPath.c_str());
 	}
 	// TODO more of them?
@@ -410,12 +412,6 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	std::string command = atn_cmd.str;
 	m_openState = O_NOTHING;
 
-	// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
-	// some shit in check variable!
-	std::unique_ptr<MFile> new_mfile(guessIncomingPath(command));
-	Debug_printv("entry->url [%s]", new_mfile->url.c_str());
-	Debug_printv("m_mfile->url [%s]", m_mfile->url.c_str());
-
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
 	if (mstr::endsWith(command, "*"))
@@ -434,43 +430,15 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			{
 				entry.reset(m_mfile->getNextFileInDir());
 			}
-			if (entry != nullptr)
-				m_mfile.reset(MFSOwner::File(new_mfile->url));
+			m_mfile.reset(MFSOwner::File(entry->url));
 		}
 		m_openState = O_FILE;
-		Debug_printv("LOAD *");
+		Debug_printv("LOAD * [%s]", m_mfile->url.c_str());
 	}
 	if (mstr::startsWith(command, "$"))
 	{
 		m_openState = O_DIR;
 		Debug_printv("LOAD $");
-	}
-	else if (new_mfile->isDirectory())
-	{
-		// Enter directory
-		// wait, wait! 'check' already has the required directory inside, why do you cd here again?
-		//m_mfile.reset(m_mfile->cd(command));
-		m_mfile.reset(MFSOwner::File(new_mfile->url));
-		m_openState = O_DIR;
-		Debug_printv("Enter Directory");
-	}
-	else if (mstr::startsWith(command, "CD", false))
-	{
-		Debug_printv("before CD");
-		Debug_printv("command [%s]", command.c_str());
-		Debug_printv("url [%s]", m_mfile->url.c_str());
-		Debug_printv("path [%s]", m_mfile->path.c_str());
-		Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
-
-		// Enter directory
-		m_mfile.reset(MFSOwner::File(new_mfile->url));
-		m_openState = O_DIR;
-
-		Debug_printv("after CD");
-		Debug_printv("command [%s]", command.c_str());
-		Debug_printv("url [%s]", m_mfile->url.c_str());
-		Debug_printv("path [%s]", m_mfile->path.c_str());
-		Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
 	}
 	else if (mstr::startsWith(command, "@INFO", false))
 	{
@@ -482,13 +450,51 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else
 	{
-		Debug_printv("Load File [%s]", new_mfile->url.c_str());
-		m_mfile.reset(MFSOwner::File(new_mfile->url));
-		m_openState = O_FILE;
+		// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
+		// some shit in check variable!
+		std::unique_ptr<MFile> new_mfile(guessIncomingPath(command));
+		Debug_printv("entry->url [%s]", new_mfile->url.c_str());
+		Debug_printv("m_mfile->url [%s]", m_mfile->url.c_str());
 
-		if(!m_mfile->exists())
-			m_openState = O_NOTHING;
+		if (mstr::startsWith(command, "CD", false))
+		{
+			
+			Debug_printv("before CD");
+			Debug_printv("command [%s]", command.c_str());
+			Debug_printv("url [%s]", m_mfile->url.c_str());
+			Debug_printv("path [%s]", m_mfile->path.c_str());
+			Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
+
+			// Enter directory
+			m_mfile.reset(MFSOwner::File(new_mfile->url));
+			m_openState = O_DIR;
+
+			Debug_printv("after CD");
+			Debug_printv("command [%s]", command.c_str());
+			Debug_printv("url [%s]", m_mfile->url.c_str());
+			Debug_printv("path [%s]", m_mfile->path.c_str());
+			Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
+		}
+		else if (new_mfile->isDirectory())
+		{
+			// Enter directory
+			// wait, wait! 'check' already has the required directory inside, why do you cd here again?
+			//m_mfile.reset(m_mfile->cd(command));
+			m_mfile.reset(MFSOwner::File(new_mfile->url));
+			m_openState = O_DIR;
+			Debug_printv("Enter Directory");
+		}
+		else
+		{
+			Debug_printv("Load File [%s]", new_mfile->url.c_str());
+			m_mfile.reset(MFSOwner::File(new_mfile->url));
+			m_openState = O_FILE;
+
+			if(!m_mfile->exists())
+				m_openState = O_NOTHING;
+		}
 	}
+
 
 	if (m_openState == O_DIR)
 	{
