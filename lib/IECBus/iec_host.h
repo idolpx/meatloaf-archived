@@ -18,5 +18,24 @@
 #ifndef IECHOST_H
 #define IECHOST_H
 
+#include <Arduino.h>
+
+#include "../../include/global_defines.h"
+#include "../../include/cbmdefines.h"
+#include "../../include/petscii.h"
+
+#include "iec.h"
+
+class iecHost: public IEC
+{
+private:
+
+public:
+    bool deviceExists(uint8_t deviceID);
+    void getStatus(uint8_t deviceID);
+    void dumpSector(uint8_t sector);
+    void dumpTrack(uint8_t track);
+
+};
 
 #endif // IECHOST_H

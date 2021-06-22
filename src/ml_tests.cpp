@@ -9,16 +9,27 @@
 
 #include "ml_tests.h"
 #include "meat_io.h"
+#include "iec_host.h"
 #include "../../include/global_defines.h"
 #include "../../include/make_unique.h"
 #include "wrappers/buffered_io.h"
 #include "wrappers/line_reader_writer.h"
 
 
+
 void testHeader(std::string testName) {
     Serial.println("\n\n******************************");
     Serial.printf("* TESTING: %s\n", testName.c_str());
     Serial.println("******************************\n");
+}
+
+void testDiscoverDevices()
+{
+    size_t d = 4;
+    iecHost iec;
+    testHeader("Query Bus for Devices");
+    for(d; d<31; d++)
+        iec.deviceExists(d);
 }
 
 void testReader(MFile* readeTest) {
@@ -343,7 +354,11 @@ void runFSTest(std::string dirPath, std::string filePath) {
     Serial.println("**********************************************************************\n\n");
 }
 
+void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
+    writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
 
+    auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !
+}
 
 void runTestsSuite() {
     // working, uncomment if you want
@@ -361,10 +376,6 @@ void runTestsSuite() {
     //htmlStream("HTTP://MEATLOAF.CC");  // Doesn't work
     //htmlStream("http://MEATLOAF.CC");  // Works!!!
     //htmlStream("http://meatloaf.cc");  // Works!!!
-}
 
-void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
-    writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
-
-    auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !
+    //testDiscoverDevices();
 }

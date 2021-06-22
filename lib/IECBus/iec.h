@@ -19,6 +19,7 @@
 #define IEC_H
 
 #include <Arduino.h>
+
 #include "../../include/global_defines.h"
 #include "../../include/cbmdefines.h"
 #include "../../include/petscii.h"
@@ -140,6 +141,7 @@ private:
 	ATNCheck deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
 	ATNCheck deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
 
+protected:
 	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus);
 	uint8_t receiveByte(void);
 	bool sendByte(uint8_t data, bool signalEOI);
