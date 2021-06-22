@@ -2,8 +2,13 @@
 #define MEATFILE_DEFINES_FSLITTLE_H
 
 #include "meat_io.h"
+#if defined(ESP8266)
 #include "../lib/littlefs/lfs.h"
+#elif defined(ESP32)
+#include "lfs.h"
+#endif
 #include "../../include/global_defines.h"
+#include "../../include/make_unique.h"
 #include "EdUrlParser.h"
 
 
