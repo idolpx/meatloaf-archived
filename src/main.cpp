@@ -206,9 +206,7 @@ void handleStatus()
     String json;
     json.reserve ( 128 );
 
-    json = "{\"type\":\"";
-    json += fsName;
-    json += "\", \"isOk\":";
+    json = "{\"type\":\"" FS_TYPE "\", \"isOk\":";
 
     if ( fsOK )
     {

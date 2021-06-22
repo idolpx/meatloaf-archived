@@ -1,6 +1,11 @@
-#include <string>
+#if defined(ESP8266)
 #include <ESP8266HTTPClient.h>
+#elif defined(ESP32)
+#include <HTTPClient.h>
+#endif
 #include <WiFiClient.h>
+
+#include <string>
 
 #include "ml_tests.h"
 #include "meat_io.h"

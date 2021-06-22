@@ -28,9 +28,16 @@
 #endif
 
 #if defined(USE_SPIFFS)
+#include <FS.h>
+#if defined(ESP32)
 #include <SPIFFS.h>
+#endif
 #elif defined(USE_LITTLEFS)
+#if defined(ESP8266)
 #include <LittleFS.h>
+#elif defined(ESP32)
+#include <LITTLEFS.h>
+#endif
 #endif
 
 #include "../../include/global_defines.h"

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
+#include "../include/global_defines.h"
 
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
@@ -27,34 +28,29 @@
 #include <WebServer.h>
 #endif
 
-#include "../include/global_defines.h"
-
 // Setup FileSystem Object
 #if defined(USE_SPIFFS)
-#if defined(ESP32)
-#include <SPIFFS.h>
-#endif
 #include <FS.h>
-const char *fsName = "SPIFFS";
-FS *fileSystem = &SPIFFS;
-
+#define FS_TYPE "SPIFFS"
 #if defined(ESP8266)
 SPIFFSConfig fileSystemConfig = SPIFFSConfig();
+#elif defined(ESP32)
+#include <SPIFFS.h>
 #endif
+FS *fileSystem = &SPIFFS;
 #elif defined USE_LITTLEFS
-const char *fsName = "LittleFS";
+#define FS_TYPE "LittleFS"
 #if defined(ESP8266)
 #include <LittleFS.h>
 FS *fileSystem = &LittleFS;
 LittleFSConfig fileSystemConfig = LittleFSConfig();
-#endif
-#if defined(ESP32)
+#elif defined(ESP32)
 #include <LITTLEFS.h>
 FS *fileSystem = &LITTLEFS;
 #endif
 #elif defined USE_SDFS
 #include <SDFS.h>
-const char *fsName = "SDFS";
+#define FS_TYPE "SDFS"
 FS *fileSystem = &SDFS;
 SDFSConfig fileSystemConfig = SDFSConfig();
 // fileSystemConfig.setCSPin(chipSelectPin);
