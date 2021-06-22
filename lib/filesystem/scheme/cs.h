@@ -1,14 +1,17 @@
 // a scheme for handling Commodore Server
 // see: https://www.commodoreserver.com/BlogEntryView.asp?EID=9D133160E7C344A398EC1F45AEF4BF32
 
-#ifndef MEATFILE_DEFINES_SCHEME_CS_H
-#define MEATFILE_DEFINES_SCHEME_CS_H
+#ifndef MEATFILESYSTEM_SCHEME_CS
+#define MEATFILESYSTEM_SCHEME_CS
 
+#include "../../include/global_defines.h"
+#include "../../include/make_unique.h"
 #include "meat_io.h"
 #include "WiFiClient.h"
 #include "wrappers/line_reader_writer.h"
-#include "../../include/global_defines.h"
 #include "utils.h"
+#include "string_utils.h"
+
 
 class CServerSessionMgr {
     WiFiClient m_wifi;
@@ -158,4 +161,4 @@ public:
 };
 
 
-#endif
+#endif /* MEATFILESYSTEM_SCHEME_CS */

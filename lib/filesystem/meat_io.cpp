@@ -1,6 +1,6 @@
 #include "meat_io.h"
 
-#include <flash_hal.h>
+//#include <flash_hal.h>
 
 #include "MIOException.h"
 #include "fs_littlefs.h"

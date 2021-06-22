@@ -5,8 +5,13 @@
 
 #include "meat_io.h"
 #include "../../include/global_defines.h"
+#if defined(ESP32)
+#include <WiFi.h>
+#include <HTTPClient.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-
+#endif
 
 /********************************************************
  * File implementations

@@ -1,6 +1,4 @@
 #include "cs.h"
-#include "utils.h"
-#include "string_utils.h"
 
 /********************************************************
  * Client impls

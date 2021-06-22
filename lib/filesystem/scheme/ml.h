@@ -9,7 +9,16 @@
 #include "scheme/http.h"
 #include "../../include/global_defines.h"
 #include "helpers.h"
+
+#if defined(ESP32)
+#include <WiFi.h>
+#include <HTTPClient.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#endif
+
+
 #include <ArduinoJson.h>
 
 

@@ -10,6 +10,7 @@
 #include "ml_tests.h"
 #include "meat_io.h"
 #include "../../include/global_defines.h"
+#include "../../include/make_unique.h"
 #include "wrappers/buffered_io.h"
 #include "wrappers/line_reader_writer.h"
 
