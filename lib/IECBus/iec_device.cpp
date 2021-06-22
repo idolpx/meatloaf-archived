@@ -377,6 +377,8 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 {
 	std::string guessedPath = commandLne;
 
+	Debug_printv("[%s]", guessedPath.c_str());
+
 	// get the current directory
 	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
 
@@ -395,6 +397,8 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 	// LOAD ../something
 	// LOAD //something
 	// we HAVE TO PARSE IT OUR WAY!
+
+	Debug_printv("[%s]", guessedPath.c_str());
 
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
 	return currentDir->cd(guessedPath);

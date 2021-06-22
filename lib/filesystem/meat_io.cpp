@@ -141,18 +141,16 @@ bool MFile::operator!=(nullptr_t ptr) {
 }
 
 void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
-    //Serial.println("w fillpaths");   
+    Debug_println("w fillpaths");   
 
     (*matchedElement)++;
 
-    //Serial.println("w fillpaths stream pths");
-    delay(500);   
+    Debug_println("w fillpaths stream pths");
     streamPath = mstr::joinToString(fromStart, matchedElement, "/");
-    //Serial.println("w fillpaths path in stream");   
-    delay(500);   
+    Debug_println("w fillpaths path in stream");   
     pathInStream = mstr::joinToString(matchedElement, last, "/");
 
-    //Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
+    Debug_printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
 }
 
 MIstream* MFile::inputStream() {
@@ -297,12 +295,9 @@ MFile* MFile::cd(std::string newDir) {
         return MFSOwner::File(newDir);
     }
     else {
-        Debug_printv(">");
+        Debug_printv("> url[%s] newDir[%s]", url.c_str(), newDir.c_str());
         // Add new directory to path
-        if(mstr::endsWith(url,"/"))
-            return MFSOwner::File(url+newDir);
-        else
-            return MFSOwner::File(url+"/"+newDir);
+        return MFSOwner::File(url+"/"+newDir);
     }
 };
 

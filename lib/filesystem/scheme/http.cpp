@@ -57,6 +57,21 @@ size_t HttpFile::size() {
     return size;
 };
 
+void HttpFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
+    //Serial.println("w fillpaths");   
+
+    (*matchedElement)++;
+
+    //Serial.println("w fillpaths stream pths");
+    //streamPath = mstr::joinToString(fromStart, matchedElement, "/");
+    streamPath = url;
+    //Serial.println("w fillpaths path in stream");   
+    //pathInStream = mstr::joinToString(matchedElement, last, "/");
+    pathInStream = "";
+
+    //Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
+}
+
 // void HttpFile::addHeader(const String& name, const String& value, bool first, bool replace) {
 //     //m_http.addHeader
 // }

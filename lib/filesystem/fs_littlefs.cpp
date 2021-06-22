@@ -357,6 +357,7 @@ bool LittleFile::rewindDirectory()
 
 MFile* LittleFile::getNextFileInDir()
 {
+    Debug_printf("path[%s] ", path.c_str());
     if(!dirOpened)
         openDir(path.c_str());
 

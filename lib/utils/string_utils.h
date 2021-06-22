@@ -5,6 +5,8 @@
 #include <vector>
 #include <cstring>
 
+#include "../../include/global_defines.h"
+
 namespace mstr {
     std::string drop(std::string str, int count);
     std::string dropLast(std::string str, int count);

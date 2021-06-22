@@ -208,18 +208,18 @@ void testUrlParser() {
 }
 
 void testCD() {
-    std::shared_ptr<MFile> testDir(MFSOwner::File("/.sys"));
-    Debug_printv("dir [%s]",testDir->url.c_str());
-    testDir.reset(testDir->cd("_"));
-    Debug_printv("cd(_) dir [%s]",testDir->url.c_str());
-    testDir.reset(testDir->cd(".."));
-    Debug_printv("cd(..) dir [%s]",testDir->url.c_str());
-    testDir.reset(testDir->cd("_"));
-    Debug_printv("cd(_) dir [%s]",testDir->url.c_str());
+    std::shared_ptr<MFile> testDir(MFSOwner::File(""));
+    // Debug_printv("dir [%s]",testDir->url.c_str());
+    // testDir.reset(testDir->cd("_"));
+    // Debug_printv("cd(_) dir [%s]",testDir->url.c_str());
+    // testDir.reset(testDir->cd(".."));
+    // Debug_printv("cd(..) dir [%s]",testDir->url.c_str());
+    // testDir.reset(testDir->cd("_"));
+    // Debug_printv("cd(_) dir [%s]",testDir->url.c_str());
 
     Serial.println("A chain of CDs");
     // make a folder called GAMES on root of flash
-    testDir.reset(MFSOwner::File("/"));
+    //testDir.reset(MFSOwner::File(""));
     Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
     // then on the 64   LOAD"CD:GAMES",8
     testDir.reset(testDir->cd("GAMES"));
