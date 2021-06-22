@@ -73,6 +73,8 @@ bool MFSOwner::umount(std::string name) {
 MFile* MFSOwner::File(std::string path) {
     std::vector<std::string> paths = mstr::split(path,'/');
 
+    Debug_printv("path[%s]", path.c_str());
+
     auto pathIterator = paths.end();
     auto begin = paths.begin();
     auto end = paths.end();
@@ -95,15 +97,16 @@ MFile* MFSOwner::File(std::string path) {
         } );
 
         if(foundIter != availableFS.end()) {
-//Serial.printf("PATH: '%s' is in FS [%s]\n", path.c_str(), (*foundIter)->symbol);
+            Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), (*foundIter)->symbol);
             auto newFile = (*foundIter)->getFile(path);
+            Debug_printv("newFile: '%s'", newFile->url.c_str());
             newFile->fillPaths(&pathIterator, &begin, &end);
 
             return newFile;
          }
     };
 
-    //Serial.printf("** warning! %s - Little fs fallback\n", path.c_str());
+    Debug_printv("** warning! %s - Little fs fallback", path.c_str());
 
     MFile* newFile = new LittleFile(path);
     newFile->streamPath = path;
@@ -141,16 +144,16 @@ bool MFile::operator!=(nullptr_t ptr) {
 }
 
 void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
-    Debug_println("w fillpaths");   
+    // Debug_println("w fillpaths");   
 
     (*matchedElement)++;
 
-    Debug_println("w fillpaths stream pths");
+    // Debug_println("w fillpaths stream pths");
     streamPath = mstr::joinToString(fromStart, matchedElement, "/");
-    Debug_println("w fillpaths path in stream");   
+    // Debug_println("w fillpaths path in stream");   
     pathInStream = mstr::joinToString(matchedElement, last, "/");
 
-    Debug_printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
+    //Debug_printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
 }
 
 MIstream* MFile::inputStream() {

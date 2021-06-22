@@ -43,7 +43,7 @@ public:
             m_isDir = true;
 
         parseUrl(path);
-        Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
+        // Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
     };
     ~MLFile();
 
@@ -73,7 +73,7 @@ public:
 class MLFileSystem: public MFileSystem 
 {
     MFile* getFile(std::string path) override {
-        Debug_printv("MLFileSystem::getFile(%s)", path.c_str());
+        // Debug_printv("MLFileSystem::getFile(%s)", path.c_str());
         return new MLFile(path);
     }
 

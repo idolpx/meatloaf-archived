@@ -57,19 +57,20 @@ void testReader(MFile* readeTest) {
     }
 }
 
-void dumpFileProperties(MFile* cserverFile) {
+void dumpFileProperties(MFile* testMFile) {
     Serial.println("\n== File properties ==");
-    Serial.printf("Url: %s, isDir = %d\n", cserverFile->url.c_str(), cserverFile->isDirectory());
-    Serial.printf("Path: [%s]\n", cserverFile->path.c_str());
-    Serial.printf("stream src: [%s]\n", cserverFile->streamPath.c_str());
-    Serial.printf("path in stream: [%s]\n", cserverFile->pathInStream.c_str());
-    Serial.printf("File: [%s]\n", cserverFile->name.c_str());
-    Serial.printf("Extension: [%s]\n", cserverFile->extension.c_str());
-    Serial.printf("Scheme: [%s]\n", cserverFile->scheme.c_str());
-    Serial.printf("Username: [%s]\n", cserverFile->user.c_str());
-    Serial.printf("Password: [%s]\n", cserverFile->pass.c_str());
-    Serial.printf("Host: [%s]\n", cserverFile->host.c_str());
-    Serial.printf("Port: [%s]\n", cserverFile->port.c_str());
+    Serial.printf("Url: %s, isDir = %d\n", testMFile->url.c_str(), testMFile->isDirectory());
+    Serial.printf("Scheme: [%s]\n", testMFile->scheme.c_str());
+    Serial.printf("Username: [%s]\n", testMFile->user.c_str());
+    Serial.printf("Password: [%s]\n", testMFile->pass.c_str());
+    Serial.printf("Host: [%s]\n", testMFile->host.c_str());
+    Serial.printf("Port: [%s]\n", testMFile->port.c_str());    
+    Serial.printf("Path: [%s]\n", testMFile->path.c_str());
+    Serial.printf("stream src: [%s]\n", testMFile->streamPath.c_str());
+    Serial.printf("path in stream: [%s]\n", testMFile->pathInStream.c_str());
+    Serial.printf("File: [%s]\n", testMFile->name.c_str());
+    Serial.printf("Extension: [%s]\n", testMFile->extension.c_str());
+    Serial.printf("Size: [%d]\n", testMFile->size());
     Serial.printf("-------------------------------\n");
 }
 
@@ -202,9 +203,22 @@ void testIsDirectory() {
 }
 
 void testUrlParser() {
-    dumpFileProperties(MFSOwner::File("ML://C64.MEATLOAF.CC"));
-    dumpFileProperties(MFSOwner::File("/CD:GAMES")); // this is not URL!!!
-    dumpFileProperties(MFSOwner::File("//CD_")); // this is not URL!!!
+    // Local File System
+    testDirectory(MFSOwner::File("CCGMS"), true);
+    testDirectory(MFSOwner::File("GAMES"), true);
+    testDirectory(MFSOwner::File("/GAMES"), true);
+
+    // URL
+    testDirectory(MFSOwner::File("CS:/"), true);
+    testDirectory(MFSOwner::File("CS://"), true);
+    testDirectory(MFSOwner::File("HTTP://GOOGLE.COM"), true);
+    testDirectory(MFSOwner::File("ML://C64.MEATLOAF.CC"), true);
+
+    // Network Protocol
+    testDirectory(MFSOwner::File("WS://GS.MEATLOAF.CC"), true);
+
+    // Special File Type
+    testDirectory(MFSOwner::File("C64.ML.CC.URL"), true);
 }
 
 void testCD() {
@@ -370,7 +384,7 @@ void runTestsSuite() {
     //runFSTest("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL","");    
     
     //testIsDirectory();
-    //testUrlParser();
+    testUrlParser();
     //testCD();
 
     //htmlStream("HTTP://MEATLOAF.CC");  // Doesn't work

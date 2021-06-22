@@ -387,7 +387,7 @@ bool CServerFile::isDirectory() {
         auto second = chopped.end()-2;
         
         //auto x = (*second);
-        Debug_printv("isDirectory second from right: [%s]", (*second).c_str());
+        // Debug_printv("isDirectory second from right: [%s]", (*second).c_str());
         if ( mstr::endsWith((*second), ".d64", false))
             return false;
         else
@@ -531,7 +531,7 @@ MFile* CServerFile::getNextFileInDir() {
                 size = 683;
             }
 
-            Debug_printv("\nurl[%s] name[%s] size[%d]\n", url.c_str(), name.c_str(), size);
+            // Debug_printv("\nurl[%s] name[%s] size[%d]\n", url.c_str(), name.c_str(), size);
             if(name.size() > 0)
             {
                 new_url += name;

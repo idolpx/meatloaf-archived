@@ -160,19 +160,19 @@ namespace mstr {
 
         if((*start)>=(*end))
         {
-            Debug_printv("start >= end");
+            //Debug_printv("start >= end");
             return std::string();
         }
             
 
         for(auto i = (*start); i<(*end); i++) 
         {
-            Debug_printv("b %d res [%s]", i, res.c_str());
+            //Debug_printv("b %d res [%s]", i, res.c_str());
             res+=(*i);
             if(i<(*end))
                 res+=separator;
 
-            Debug_printv("a %d res [%s]", i, res.c_str());
+            //Debug_printv("a %d res [%s]", i, res.c_str());
         }
 
         return res.erase(res.length()-1,1);
