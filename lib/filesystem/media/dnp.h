@@ -5,10 +5,38 @@
 #include "LittleFS.h"
 #include <string>
 
+#include "../../include/global_defines.h"
+
+
+/********************************************************
+ * Files implementations
+ ********************************************************/
+
+class DNPFile: public MFile {
+public:
+    DNPFile(std::string path);
+    MIstream* createIStream(MIstream* src) override { return 0; };;
+
+    MFile* cd(std::string newDir) override;
+    bool isDirectory() override { return true; };
+    MIstream* inputStream() override { return 0; }; // has to return OPENED stream
+    MOstream* outputStream() override { return 0; }; // has to return OPENED stream
+    time_t getLastWrite() override { return 0; };
+    time_t getCreationTime() override { return 0; };
+    bool rewindDirectory() { return true; } ;
+    MFile* getNextFileInDir() override { return 0; };
+    bool mkDir() override { return false; };
+    bool exists() override { return true; };
+    size_t size() override { return 0; };
+    bool remove() override { return false; };
+    bool rename(const char* dest) { return false; };
+
+};
+
+
 /********************************************************
  * Streams implementations
  ********************************************************/
-
 class DNPIStream: public MIstream {
 public:
     DNPIStream(MIstream* srcStream): srcStr(srcStream) {
@@ -41,31 +69,6 @@ protected:
 
 };
 
-/********************************************************
- * Files implementations
- ********************************************************/
-
-class DnpFile: public MFile {
-public:
-    DnpFile(std::string path) : MFile(path) {};
-    MIstream* createIStream(MIstream* src) override;
-
-    bool isDirectory() override;
-    MIstream* inputStream() override ; // has to return OPENED stream
-    MOstream* outputStream() override ; // has to return OPENED stream
-    time_t getLastWrite() override ;
-    time_t getCreationTime() override ;
-    bool rewindDirectory() override ;
-    MFile* getNextFileInDir() override ;
-    bool mkDir() override ;
-    bool exists() override ;
-    size_t size() override ;
-    bool remove() override ;
-    bool rename(const char* dest);
-
-
-};
-
 
 /********************************************************
  * FS implementations
@@ -73,9 +76,9 @@ public:
 
 class DNPFileSystem: public MFileSystem 
 {
-    MFile* getFile(std::string path) {
-        return new LittleFile(path); // causes  undefined reference to `vtable for DnpFile' WTF?!
-    };
+    MFile* getFile(std::string path) override {
+        return new DNPFile(path); // causes  undefined reference to `vtable for DNPFile' WTF?!
+    }
 
 
 public:

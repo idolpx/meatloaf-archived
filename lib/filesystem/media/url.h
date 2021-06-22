@@ -2,49 +2,36 @@
 #define MEATFILE_DEFINES_URLFILE_H
 
 #include "meat_io.h"
-#include "EdUrlParser.h"
+//#include "EdUrlParser.h"
 #include "wrappers/line_reader_writer.h"
 
 /********************************************************
  * File implementations
  ********************************************************/
 
-class UrlFile : public MFile {
+class URLFile: public MFile {
 public:
-    UrlFile(std::string path) : MFile(path) {};
-    MIstream* createIStream(MIstream* src) override;
+    URLFile(std::string path) : MFile(path) {};
+    MIstream* createIStream(MIstream* src) override { return 0; };
+
+    MFile* cd(std::string newDir) override ;
     bool isDirectory() override { return true; };
+    MIstream* inputStream() override { return 0; }; // has to return OPENED stream
+    MOstream* outputStream() override { return 0; }; // has to return OPENED stream
+    time_t getLastWrite() override { return 0; };
+    time_t getCreationTime() override { return 0; };
     bool rewindDirectory() { return true; } ;
-    MFile* getNextFileInDir() override ;
+    MFile* getNextFileInDir() override { return 0; };
     bool mkDir() override { return false; };
     bool exists() override { return true; };
-
-    // all these below are achievable with some trickery
-    time_t getLastWrite() override ;
-    time_t getCreationTime() override ;
     size_t size() override { return 0; };
     bool remove() override { return false; };
     bool rename(const char* dest) { return false; };
 
-    MFile* cd(std::string newDir) override {
-        // cding into urlfile will always just point you to the link read from contents of the file...
-        Debug_printv("[%s]", newDir.c_str());
-        return getPointed();
-    }
-
 private:
     std::unique_ptr<MFile> pointedFile;
 
-    MFile* getPointed() {
-        if(pointedFile == nullptr) {
-            std::unique_ptr<MIstream> istream(inputStream());
-            auto reader = std::make_unique<LinedReader>(istream.get());
-            auto linkUrl = reader->readLn();
-            Debug_printv("[%s]", linkUrl.c_str());
-            pointedFile.reset(MFSOwner::File(linkUrl));
-        }
-        return pointedFile.get();
-    }
+    MFile* getPointed();
 
 };
 
@@ -55,10 +42,9 @@ private:
 
 class URLFileSystem: public MFileSystem 
 {
-    MFile* getFile(std::string path) {
-        //return new URLFile(path); // causes  undefined reference to `vtable for URLFile' WTF?!
-    };
-
+    MFile* getFile(std::string path) override {
+        return new URLFile(path); // causes  undefined reference to `vtable for URLFile' WTF?!
+    }
 
 public:
     URLFileSystem(): MFileSystem("URL"){}
