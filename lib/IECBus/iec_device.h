@@ -48,11 +48,12 @@
 #include "device_db.h"
 #include "meat_io.h"
 #include "wrappers/buffered_io.h"
-#include "EdUrlParser.h"
 #include "MemoryInfo.h"
 #include "helpers.h"
 #include "utils.h"
 #include "string_utils.h"
+
+//#include "doscmd.h"
 
 enum OpenState
 {
@@ -69,7 +70,7 @@ enum OpenState
 class Interface
 {
 public:
-	Interface(IEC &iec, FS *fileSystem);
+	Interface(IEC &iec);
 	virtual ~Interface() {}
 
 	bool begin();
@@ -87,17 +88,13 @@ private:
 	void sendDeviceStatus(void);
 	void setDeviceStatus(int number, int track=0, int sector=0);
 
-
-	void sendListing(void);
-	void sendListingHTTP(void);
 	uint16_t sendHeader(uint16_t &basicPtr, std::string header);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...);
 	uint16_t sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size);
-	void sendFile(void);
-	void sendFileHTTP(void);
-
-	void saveFile(void);
+	void sendListing(std::string path);
+	void sendFile(std::string url);
+	void saveFile(std::string url);
 
 	// handler helpers.
 	void handleATNCmdCodeOpen(IEC::ATNCmd &cmd);
@@ -118,13 +115,13 @@ private:
 	// atn command buffer struct
 	IEC::ATNCmd &m_atn_cmd;
 
-	FS *m_fileSystem;
-	std::shared_ptr<MFile> m_mfile;
-	StaticJsonDocument<256> m_jsonHTTP;
-	String m_lineBuffer;
+	//std::shared_ptr<MFile> m_mfile;
+	//StaticJsonDocument<256> m_jsonHTTP;
+	//String m_lineBuffer;
 	//DynamicJsonDocument m_jsonHTTPBuffer;
 
 	DeviceDB m_device;
+	std::string m_filename;
 
 	std::string m_device_status;
 	bool m_show_date;

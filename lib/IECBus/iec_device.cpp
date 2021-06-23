@@ -30,13 +30,11 @@ namespace
 	char serCmdIOBuf[MAX_BYTES_PER_REQUEST];
 
 } // unnamed namespace
-Interface::Interface(IEC &iec, FS *fileSystem)
+Interface::Interface(IEC &iec)
 	: m_iec(iec),
 	m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
 	m_device(0)
 {
-	m_fileSystem = fileSystem;
-
 	reset();
 } // ctor
 
@@ -50,7 +48,7 @@ void Interface::reset(void)
 	m_openState = O_NOTHING;
 	m_queuedError = ErrIntro;
 	setDeviceStatus(73);
-	m_mfile.reset(MFSOwner::File(m_device.url().c_str()));
+	//m_device.reset();
 } // reset
 
 
@@ -184,8 +182,8 @@ void Interface::sendDeviceInfo()
 	uint16_t basicPtr = C64_BASIC_START;
 
 	// #if defined(USE_LITTLEFS)
-	FSInfo64 fs_info;
-	m_fileSystem->info64(fs_info);
+	//FSInfo64 fs_info;
+	//m_fileSystem->info64(fs_info);
 	// #endif
 	char floatBuffer[10]; // buffer
 	dtostrf(getFragmentation(), 3, 2, floatBuffer);
@@ -230,14 +228,12 @@ void Interface::sendDeviceInfo()
 	//sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
 
-	// FILE SYSTEM
-	sendLine(basicPtr, 0, CBM_DEL_DEL "FILE SYSTEM ---");
-	sendLine(basicPtr, 0, CBM_DEL_DEL "TYPE       : %s", FS_TYPE);
-	//  #if defined(USE_LITTLEFS)
-	sendLine(basicPtr, 0, CBM_DEL_DEL "SIZE       : %5d B", fs_info.totalBytes);
-	sendLine(basicPtr, 0, CBM_DEL_DEL "USED       : %5d B", fs_info.usedBytes);
-	sendLine(basicPtr, 0, CBM_DEL_DEL "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
-	//  #endif
+	// // FILE SYSTEM
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "FILE SYSTEM ---");
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "TYPE       : %s", FS_TYPE);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "SIZE       : %5d B", fs_info.totalBytes);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "USED       : %5d B", fs_info.usedBytes);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
 
 	// NETWORK
 	sendLine(basicPtr, 0, CBM_DEL_DEL "NETWORK ---");
@@ -253,7 +249,7 @@ void Interface::sendDeviceInfo()
 	m_iec.send(0);
 	m_iec.sendEOI(0);
 
-	// ledON();
+	ledON();
 } // sendDeviceInfo
 
 void Interface::sendDeviceStatus()
@@ -275,11 +271,11 @@ void Interface::sendDeviceStatus()
 	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE    : %d", m_device.device());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "MEDIA     : %d", m_device.media());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "PARTITION : %d", m_device.partition());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_mfile->url.c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_mfile->path.c_str());
-	//sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
-	//sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_mfile->name.c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_device.url().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_device.path().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_filename.c_str());
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -381,7 +377,7 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 	Debug_printv("[%s]", guessedPath.c_str());
 
 	// get the current directory
-	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
+	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_device.path()));
 
 	// check to see if it starts with a known command token
 	if(mstr::startsWith(commandLne, "CD", false)) // would be case sensitive, but I don't know the proper case
@@ -407,12 +403,7 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 
 void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 {
-	if (m_device.select(atn_cmd.device))
-	{
-		m_mfile.reset(MFSOwner::File(m_device.url().c_str()));
-	}
-	// Serial.printf("Query: [%s]\r\n", m_mfile->query.c_str());
-	// Serial.printf("Fragment: [%s]\r\n", m_mfile->fragment.c_str());
+	m_device.select(atn_cmd.device);
 
 	std::string command = atn_cmd.str;
 	m_openState = O_NOTHING;
@@ -422,23 +413,25 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	if (mstr::endsWith(command, "*"))
 	{
 		// Find first program in listing
-		if (m_mfile->path.empty()) // <---- "/" won't exist, as we are removing trailing /
+		if (m_device.url().empty()) // <---- "/" won't exist, as we are removing trailing /
 		{
 			// If in LittleFS root then set it to FB64
-			m_mfile.reset(MFSOwner::File("/.sys/fb64"));
+			m_device.path("/.sys/");
+			m_filename = "fb64";
 		}
 		else
 		{	
-			std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
+			std::unique_ptr<MFile> dir(MFSOwner::File(m_device.path()));
+			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 			while (entry != nullptr && entry->isDirectory())
 			{
-				entry.reset(m_mfile->getNextFileInDir());
+				entry.reset(dir->getNextFileInDir());
 			}
-			m_mfile.reset(MFSOwner::File(entry->url));
+			m_filename = entry->name;
 		}
 		m_openState = O_FILE;
-		Debug_printv("LOAD * [%s]", m_mfile->url.c_str());
+		Debug_printv("LOAD * [%s]", m_filename.c_str());
 	}
 	if (mstr::startsWith(command, "$"))
 	{
@@ -458,45 +451,33 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
 		// some shit in check variable!
 		std::unique_ptr<MFile> new_mfile(guessIncomingPath(command));
-		Debug_printv("entry->url [%s]", new_mfile->url.c_str());
-		Debug_printv("m_mfile->url [%s]", m_mfile->url.c_str());
 
 		if (mstr::startsWith(command, "CD", false))
 		{
 			
 			Debug_printv("before CD");
-			Debug_printv("command [%s]", command.c_str());
-			Debug_printv("url [%s]", m_mfile->url.c_str());
-			Debug_printv("path [%s]", m_mfile->path.c_str());
-			Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
+			Debug_printv("url [%s]", m_device.url().c_str());
+			Debug_printv("path [%s]", m_device.path().c_str());
 
 			// Enter directory
-			m_mfile.reset(MFSOwner::File(new_mfile->url));
+			m_device.path(new_mfile->url);
 			m_openState = O_DIR;
 
 			Debug_printv("after CD");
-			Debug_printv("command [%s]", command.c_str());
-			Debug_printv("url [%s]", m_mfile->url.c_str());
-			Debug_printv("path [%s]", m_mfile->path.c_str());
-			Debug_printv("stream_path [%s]", m_mfile->streamPath.c_str());
+			Debug_printv("url [%s]", m_device.url().c_str());
+			Debug_printv("path [%s]", m_device.path().c_str());
 		}
 		else if (new_mfile->isDirectory())
 		{
 			// Enter directory
-			// wait, wait! 'check' already has the required directory inside, why do you cd here again?
-			//m_mfile.reset(m_mfile->cd(command));
-			m_mfile.reset(MFSOwner::File(new_mfile->url));
+			m_device.path(new_mfile->url);
 			m_openState = O_DIR;
-			Debug_printv("Enter Directory");
 		}
 		else
 		{
-			Debug_printv("Load File [%s]", new_mfile->url.c_str());
-			m_mfile.reset(MFSOwner::File(new_mfile->url));
+			m_filename = command;
 			m_openState = O_FILE;
-
-			if(!m_mfile->exists())
-				m_openState = O_NOTHING;
+			Debug_printv("Load File [%s]", m_filename.c_str());
 		}
 	}
 
@@ -508,31 +489,29 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 
 	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILENAME[%s]\nFILETYPE[%s]\nCOMMAND[%s]\r\n", 
+	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nCOMMAND[%s]\r\n", 
 					m_device.device(), 
 					m_device.media(), 
 					m_device.partition(), 
-					m_mfile->url.c_str(), 
-					m_mfile->path.c_str(),
-					m_mfile->name.c_str(),
-					m_mfile->extension.c_str(),
+					m_device.url().c_str(), 
+					m_device.path().c_str(),
 					atn_cmd.str
 	);
 	
-	Debug_println("");
-	Debug_printv("-------------------------------");
-	Debug_printv("URL: [%s]", m_mfile->url.c_str());
-    Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
-    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
-	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
-	Debug_printv("Username: [%s]", m_mfile->user.c_str());
-	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
-	Debug_printv("Host: [%s]", m_mfile->host.c_str());
-	Debug_printv("Port: [%s]", m_mfile->port.c_str());
-	Debug_printv("Path: [%s]", m_mfile->path.c_str());
-	Debug_printv("File: [%s]", m_mfile->name.c_str());
-	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
-    Debug_printv("-------------------------------");
+	// Debug_println("");
+	// Debug_printv("-------------------------------");
+	// Debug_printv("URL: [%s]", m_mfile->url.c_str());
+    // Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
+    // Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
+	// Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	// Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	// Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	// Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	// Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	// Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	// Debug_printv("File: [%s]", m_mfile->name.c_str());
+	// Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+    // Debug_printv("-------------------------------");
 
 } // handleATNCmdCodeOpen
 
@@ -565,17 +544,17 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 		case O_INFO:
 			// Reset and send SD card info
 			reset();
-			sendListing();
+			sendListing(m_device.url());
 			break;
 
 		case O_FILE:
 			// Send file
-			sendFile();
+			sendFile(m_device.url());
 			break;
 
 		case O_DIR:
 			// Send listing
-			sendListing();
+			sendListing(m_device.url());
 			break;
 
 		case O_FILE_ERR:
@@ -598,9 +577,9 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 
 void Interface::handleATNCmdCodeDataListen()
 {
-	Debug_printv("[%s]", m_mfile->url.c_str());
+	Debug_printv("[%s]", m_device.url().c_str());
 
-	saveFile();
+	saveFile(m_device.url());
 } // handleATNCmdCodeDataListen
 
 void Interface::handleATNCmdClose()
@@ -702,7 +681,7 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 	return byte_count;
 }
 
-void Interface::sendListing()
+void Interface::sendListing(std::string path)
 {
 	Debug_printf("\r\nsendListing:\r\n");
 
@@ -710,7 +689,8 @@ void Interface::sendListing()
 	std::string extension = "DIR";
 
 	// Send List ITEMS
-	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
+	std::unique_ptr<MFile> dir(MFSOwner::File(path));
+	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 	if(entry == nullptr) {
 		ledOFF();
@@ -746,7 +726,7 @@ void Interface::sendListing()
 	// Send Directory Items
 	while(entry != nullptr)
 	{
-		uint16_t block_cnt = entry->size() / m_mfile->media_block_size;
+		uint16_t block_cnt = entry->size() / dir->media_block_size;
 		byte block_spc = 3;
 		if (block_cnt > 9)
 			block_spc--;
@@ -786,13 +766,13 @@ void Interface::sendListing()
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name.c_str(), space_cnt, "", extension.c_str());
 		}
 		
-		entry.reset(m_mfile->getNextFileInDir());
+		entry.reset(dir->getNextFileInDir());
 
 		ledToggle(true);
 	}
 
 	// Send Listing Footer
-	byte_count += sendFooter(basicPtr, m_mfile->media_blocks_free, m_mfile->media_block_size);
+	byte_count += sendFooter(basicPtr, dir->media_blocks_free, dir->media_block_size);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -833,7 +813,7 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_
 }
 
 
-void Interface::sendFile()
+void Interface::sendFile(std::string url)
 {
 	size_t i = 0;
 	bool success = true;
@@ -851,8 +831,9 @@ void Interface::sendFile()
 	// Update device database
 	m_device.save();
 
-	Debug_printv("[%s]", m_mfile->path.c_str());
-	std::shared_ptr<MIstream> istream(m_mfile->inputStream());
+	Debug_printv("[%s]", url.c_str());
+	std::unique_ptr<MFile> file(MFSOwner::File(url));
+	std::shared_ptr<MIstream> istream(file->inputStream());
 	size_t len = istream->available() - 1;
 
 	// Get file load address
@@ -863,7 +844,7 @@ void Interface::sendFile()
 	success = m_iec.send(b[0]);
 	load_address = load_address | *b << 8;  // high byte
 
-	Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
+	Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
 	for (i = 2; success and i <= len; i++)
 	{
 		success = istream->read(b, b_len);
@@ -926,7 +907,7 @@ void Interface::sendFile()
 } // sendFile
 
 
-void Interface::saveFile()
+void Interface::saveFile(std::string url)
 {
 	uint16_t i = 0;
 	bool done = false;
@@ -943,8 +924,9 @@ void Interface::saveFile()
 	ba[8] = '\0';
 #endif
 
-	std::shared_ptr<MOstream> ostream(m_mfile->outputStream());
-	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", m_mfile->url.c_str());
+	std::unique_ptr<MFile> file(MFSOwner::File(url));
+	std::shared_ptr<MOstream> ostream(file->outputStream());
+	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", file->url.c_str());
 
     if(!ostream->isOpen()) {
         Debug_printv("couldn't open a stream for writing");

@@ -81,7 +81,7 @@ String statusMessage;
 bool initFailed = false;
 
 static IEC iec;
-static Interface drive ( iec, fileSystem );
+static Interface drive ( iec );
 
 
 //Zimodem modem;
