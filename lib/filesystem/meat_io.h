@@ -64,6 +64,7 @@ public:
 
     std::string streamPath;
     std::string pathInStream;
+
 protected:
     virtual MIstream* createIStream(MIstream* src) = 0;
     bool m_isNull;
@@ -78,7 +79,7 @@ friend class MFSOwner;
 
 class MFileSystem {
 public:
-    MFileSystem(char* symbol);
+    MFileSystem(const char* symbol);
     virtual ~MFileSystem() = 0;
     virtual bool mount() { return true; };
     virtual bool umount() { return true; };
@@ -88,12 +89,12 @@ public:
         return m_isMounted;
     }
 
-    static bool byExtension(char* ext, std::string fileName) {
+    static bool byExtension(const char* ext, std::string fileName) {
         return mstr::endsWith(fileName, ext, false);
     }
 
 protected:
-    char* symbol;
+    const char* symbol;
     bool m_isMounted;
 
     friend class MFSOwner;

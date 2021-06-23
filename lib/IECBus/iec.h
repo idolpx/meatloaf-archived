@@ -111,20 +111,20 @@ public:
 	IECState state() const;
 
 	// true => PULL => DIGI_LOW
-	inline void pull(int pinNumber)
+	inline void pull(uint8_t pinNumber)
 	{
 		espPinMode(pinNumber, OUTPUT);
 		espDigitalWrite(pinNumber, LOW);
 	}
 
 	// false => RELEASE => DIGI_HIGH
-	inline void release(int pinNumber)
+	inline void release(uint8_t pinNumber)
 	{
 		espPinMode(pinNumber, OUTPUT);
 		espDigitalWrite(pinNumber, HIGH);
 	}
 
-	inline IECline status(int pinNumber)
+	inline IECline status(uint8_t pinNumber)
 	{
 		// To be able to read line we must be set to input, not driving.
 		espPinMode(pinNumber, INPUT);

@@ -23,46 +23,37 @@
 
 #include <ArduinoJson.h>
 
-#if defined(USE_SPIFFS)
-#include <SPIFFS.h>
-#elif defined(USE_LITTLEFS)
-#include <LittleFS.h>
-#endif
-
-#define RECORD_SIZE 256
+#define RECORD_SIZE 512
 
 class DeviceDB
 {
 public:
-    DeviceDB(FS *fileSystem);
+    DeviceDB(uint8_t device);
     ~DeviceDB();
 
-    bool init(String database);
-    bool check();
     bool save();
 
-    String database;
+    std::string config_file;
 
-    byte device();
-    void device(byte device);
-    byte media();
-    void media(byte media);
-    byte partition();
-    void partition(byte partition);
-    String url();
-    void url(String url);
-    String path();
-    void path(String path);
-    String archive();
-    void archive(String archive);
-    String image();
-    void image(String image);
+    uint8_t device();
+    void device(uint8_t device);
+    uint8_t media();
+    void media(uint8_t media);
+    uint8_t partition();
+    void partition(uint8_t partition);
+    std::string url();
+    void url(std::string url);
+    std::string path();
+    void path(std::string path);
+    std::string archive();
+    void archive(std::string archive);
+    std::string image();
+    void image(std::string image);
 
-    bool select(byte device);
+    bool select(uint8_t device);
 
 private:
     bool m_dirty;
-    FS* m_fileSystem;
     StaticJsonDocument<RECORD_SIZE> m_device;
 };
 

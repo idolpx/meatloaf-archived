@@ -12,8 +12,8 @@
 class URLFile: public MFile {
 public:
     URLFile(std::string path) : MFile(path) {};
-    MIstream* createIStream(MIstream* src) override { return 0; };
 
+    MIstream* createIStream(MIstream* src) override { return 0; };
     MFile* cd(std::string newDir) override ;
     bool isDirectory() override { return true; };
     MIstream* inputStream() override { return 0; }; // has to return OPENED stream
@@ -31,8 +31,7 @@ public:
 private:
     std::unique_ptr<MFile> pointedFile;
 
-    MFile* getPointed();
-
+    MFile* getPointed();   
 };
 
 
@@ -43,6 +42,7 @@ private:
 class URLFileSystem: public MFileSystem 
 {
     MFile* getFile(std::string path) override {
+        Debug_printv("URLFile [%s]", path.c_str());
         return new URLFile(path); // causes  undefined reference to `vtable for URLFile' WTF?!
     }
 

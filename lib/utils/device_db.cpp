@@ -16,11 +16,10 @@
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 #include "device_db.h"
 
-DeviceDB::DeviceDB(FS* fileSystem)
+DeviceDB::DeviceDB(uint8_t device)
 {
-	m_fileSystem = fileSystem;
+    select(device);
     m_dirty = false;
-
 } // constructor
 
 DeviceDB::~DeviceDB()
@@ -28,222 +27,116 @@ DeviceDB::~DeviceDB()
 
 } // destructor
 
-bool DeviceDB::init(String db_file)
+
+bool DeviceDB::select(uint8_t new_deviceID)
 {
-    database = db_file;
+    uint8_t device = m_device["device"];
 
-    // initialize DB file
-    Serial.println("Initialize device database");
-    if( !m_fileSystem->exists(database) )
+    if ( device == new_deviceID )
     {
-        // Does folder exist? If not, create it
-        int index = -1;
-        int index2;
-        String path;
-
-#if defined(USE_LITTLEFS)
-        do
-        {
-            index = database.indexOf('/', index + 1);
-            index2 = database.indexOf('/', index + 1);
-            path = database.substring(0, index2);
-            if( !m_fileSystem->exists(path) && index2 > 0)
-            {
-                //Serial.printf("%d %d: %s\r\n", index, index2, path.c_str());
-                m_fileSystem->mkdir(path);
-            }
-        } while (index2 > -1);
-#endif
-
-        Serial.printf("Creating Device Database [%s]\r\n", database.c_str());
-        File f_database = m_fileSystem->open(database, "w+");
-        if(!f_database)
-        {
-            Serial.printf("Error creating database.\r\n");
-            return false;
-        }
-        else
-        {
-            uint8_t buffer[RECORD_SIZE] = { 0 };
-
-            for(byte i = 0; i < 31; i++) // 22 devices x 2 media = 44 records x 256 bytes = 11264 total bytes
-            {
-                sprintf( (char *)buffer, "{\"device\":%d,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}", i );
-                f_database.write(buffer, RECORD_SIZE);
-                Serial.printf("Writing Record %d: %s\r\n", i, buffer);                    
-            }
-            Serial.printf("Database created!\r\n");
-        }
-        f_database.close();
-    }
-    return true;
-}
-
-bool DeviceDB::check()
-{
-    Serial.printf("Checking Device Database [%s]", database.c_str());
-    File f_database = m_fileSystem->open(database, "r+");
-    if(!f_database)
-    {
-        Debug_printf("\r\nDeviceDB::init unsable to open DB: %s", database.c_str());
         return false;
+    }
+
+    // Save current config
+    save();
+
+    config_file = SYSTEM_DIR "device." + std::to_string(new_deviceID) + ".conf";
+    std::shared_ptr<MFile> file(MFSOwner::File(config_file));
+
+    Debug_printv("config_file[%s]", config_file.c_str());
+    if ( file->exists() )
+    {
+        // // Load Device Settings
+        // std::shared_ptr<MIstream> istream(file->inputStream());
+        // deserializeJson(m_device, istream);
+        Debug_printv("loaded");
     }
     else
     {
-        uint32_t offset;
-        for(byte i=0; i < 31; i++)
-        {
-            // Select new record
-            offset = i * RECORD_SIZE;
-            if (f_database.seek( offset, SeekSet ))
-            {
-                Debug_printf("\r\nDeviceDB::init seek: %d, %.4X\r\n", i, offset);
-
-                // Parse JSON object
-                DeserializationError error = deserializeJson(m_device, f_database);
-                if (error) {
-                    Serial.print(F("\r\ndeserializeJson() failed: "));
-                    Serial.println(error.c_str());
-                }
-                else
-                {
-                    Debug_println(m_device.as<String>().c_str());
-                }
-            }
-        }
-        f_database.close();
-    }
-    return true;
-}
-
-bool DeviceDB::select(byte new_device)
-{
-    uint32_t offset;
-    byte device = m_device["device"];
-
-    if (new_device == device)
-    {
-        return false;
+        // Create New Settings
+        deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
+        m_device["id"] = new_deviceID;
+        Debug_printv("created");
     }
 
-    // Flush record to database
-    save();
-
-    File f_database = m_fileSystem->open(database, "r+");
-
-    // Select new record
-    offset = new_device * RECORD_SIZE;
-    f_database.seek( offset, SeekSet );
-    Debug_printf("\r\nDeviceDB::select seek: %d, %.4X", new_device, offset);
-
-    // Parse JSON object
-    DeserializationError error = deserializeJson(m_device, f_database);
-    if (error) {
-        Serial.print(F("\r\ndeserializeJson() failed: "));
-        Serial.println(error.c_str());
-        return false;
-    }
-    //m_device["device"] = new_device;
-
-    f_database.close();
     return true;
 }
 
 bool DeviceDB::save()
 {
     // Only save if dirty
-    // if ( m_dirty )
-    // {
-    //     uint32_t offset;
-    //     byte device = m_device["device"];
+    if ( m_dirty )
+    {
+        Debug_printv("saved [%s]", config_file.c_str());
+        // std::shared_ptr<MFile> file(MFSOwner::File(config_file));
+        // if ( file->exists() )
+        //     file->remove();
 
-    //     File f_database = m_fileSystem->open(database, "r+");
-
-    //     offset = device * RECORD_SIZE;
-    //     Debug_printf("\r\nDeviceDB::select m_dirty: %d, %.4X", device, offset);
-    //     f_database.seek( offset, SeekSet );
-    // #if defined(ESP32)
-    //     f_database.write((const uint8_t *)m_device.as<String>().c_str(),strlen(m_device.as<String>().c_str()));
-    // #elif defined(ESP8266)
-    //     f_database.write(m_device.as<String>().c_str());
-    // #endif
-    //     m_dirty = false;
-    //     f_database.close();
-    // }
+        // std::shared_ptr<MOstream> ostream(file->outputStream());
+        // serializeJson(m_device, ostream); 
+    }
 
     return true;
 }
 
-byte DeviceDB::device()
+uint8_t DeviceDB::device()
 {
     return m_device["device"];
 }
-void DeviceDB::device(byte device)
+void DeviceDB::device(uint8_t device)
 {
-    if(device != m_device["device"])
-    {
-        select(device);
-        m_device["device"] = device;
-    }
+    select(device);
 }
 
-byte DeviceDB::media()
+uint8_t DeviceDB::media()
 {
     return m_device["media"];
 }
-void DeviceDB::media(byte media)
+void DeviceDB::media(uint8_t media)
 {
     m_device["media"] = media;
 }
-byte DeviceDB::partition()
+uint8_t DeviceDB::partition()
 {
     return m_device["partition"];
 }
-void DeviceDB::partition(byte partition)
+void DeviceDB::partition(uint8_t partition)
 {
     m_device["partition"] = partition;
 }
-String DeviceDB::url()
+std::string DeviceDB::url()
 {
     return m_device["url"];
 }
-void DeviceDB::url(String url)
+void DeviceDB::url(std::string url)
 {
     m_device["url"] = url;
     m_dirty = true;
 }
-String DeviceDB::path()
+std::string DeviceDB::path()
 {
     return m_device["path"];
 }
-void DeviceDB::path(String path)
+void DeviceDB::path(std::string path)
 {
-    path.replace("///", "/");
-    path.replace("//", "/");
-    if ( path == NULL)
-        path = "/";
     m_device["path"] = path;
     m_dirty = true;
 }
-String DeviceDB::archive()
+std::string DeviceDB::archive()
 {
     return m_device["archive"];
 }
-void DeviceDB::archive(String archive)
+void DeviceDB::archive(std::string archive)
 {
-    if ( archive == NULL)
-        archive = "";
     m_device["archive"] = archive;
     m_dirty = true;
 }
-String DeviceDB::image()
+std::string DeviceDB::image()
 {
     return m_device["image"];
 }
-void DeviceDB::image(String image)
+void DeviceDB::image(std::string image)
 {
-    if ( image == NULL)
-        image = "";
     m_device["image"] = image;
     m_dirty = true;
 }

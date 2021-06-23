@@ -30,11 +30,10 @@ namespace
 	char serCmdIOBuf[MAX_BYTES_PER_REQUEST];
 
 } // unnamed namespace
-
 Interface::Interface(IEC &iec, FS *fileSystem)
 	: m_iec(iec),
-	  m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])), 
-	  m_device(fileSystem)
+	m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
+	m_device(0)
 {
 	m_fileSystem = fileSystem;
 
@@ -43,8 +42,6 @@ Interface::Interface(IEC &iec, FS *fileSystem)
 
 bool Interface::begin()
 {
-	m_device.init(String(DEVICE_DB));
-	//m_device.check();
 	return true;
 }
 
@@ -72,8 +69,12 @@ void Interface::sendStatus(void)
 		status = "00, OK, 00, 00";
 
 	Debug_printv("status: %s", status.c_str());
+	Debug_print("[");
+	
 	for (i = 0; i < status.length()-1; ++i)
 		m_iec.send(status[i]);
+
+	Debug_println("]");
 
 	// ...and last byte in string as with EOI marker.
 	m_iec.sendEOI(status[i]);
@@ -670,16 +671,16 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 	byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "%s", header.c_str());
 
 	// Send Extra INFO
-	if (m_mfile->url.size())
+	if (m_device.url().size())
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[URL]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_mfile->url.c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.url().c_str());
 		sent_info = true;
 	}
-	if (m_mfile->path.size() > 1)
+	if (m_device.path().size() > 1)
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[PATH]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_mfile->path.c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.path().c_str());
 		sent_info = true;
 	}
 	// if (m_device.archive().length() > 1)
@@ -687,10 +688,10 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[ARCHIVE]");
 	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.archive().c_str());
 	// }
-	if (m_mfile->media_image.size())
+	if (m_device.image().size())
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[IMAGE]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_mfile->media_image.c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.image().c_str());
 		sent_info = true;
 	}
 	if (sent_info)
@@ -850,6 +851,7 @@ void Interface::sendFile()
 	// Update device database
 	m_device.save();
 
+	Debug_printv("[%s]", m_mfile->path.c_str());
 	std::shared_ptr<MIstream> istream(m_mfile->inputStream());
 	size_t len = istream->available() - 1;
 

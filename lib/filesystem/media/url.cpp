@@ -7,7 +7,9 @@ MFile* URLFile::cd(std::string newDir) {
     return getPointed();
 };
 
+
 MFile* URLFile::getPointed() {
+    Debug_printv("[%s]", path.c_str());
     if(pointedFile == nullptr) {
         std::unique_ptr<MIstream> istream(inputStream());
         auto reader = std::make_unique<LinedReader>(istream.get());

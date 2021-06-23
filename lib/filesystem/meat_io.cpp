@@ -106,7 +106,7 @@ MFile* MFSOwner::File(std::string path) {
          }
     };
 
-    Debug_printv("** warning! %s - Little fs fallback", path.c_str());
+    //Debug_printv("** warning! %s - Little fs fallback", path.c_str());
 
     MFile* newFile = new LittleFile(path);
     newFile->streamPath = path;
@@ -120,7 +120,7 @@ MFile* MFSOwner::File(std::string path) {
  * MFileSystem implementations
  ********************************************************/
 
-MFileSystem::MFileSystem(char* s)
+MFileSystem::MFileSystem(const char* s)
 {
     symbol = s;
 }

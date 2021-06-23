@@ -384,7 +384,7 @@ void runTestsSuite() {
     //runFSTest("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL","");    
     
     //testIsDirectory();
-    testUrlParser();
+    //testUrlParser();
     //testCD();
 
     //htmlStream("HTTP://MEATLOAF.CC");  // Doesn't work

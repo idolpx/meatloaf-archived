@@ -15,7 +15,7 @@
 class DNPFile: public MFile {
 public:
     DNPFile(std::string path);
-    MIstream* createIStream(MIstream* src) override { return 0; };;
+    MIstream* createIStream(MIstream* src) override { return 0; };
 
     MFile* cd(std::string newDir) override;
     bool isDirectory() override { return true; };
