@@ -123,6 +123,24 @@ int LittleFileSystem::lfs_flash_sync(const struct lfs_config *c) {
  * MFile implementations
  ********************************************************/
 
+MFile* LittleFile::cd(std::string newDir) {
+    if(newDir[0]=='/') {
+        if(newDir.size()==1) {
+            // user entered: CD:/ or CD/
+            // means: change to container root
+            // *** might require a fix for flash fs!
+            return MFSOwner::File("/");
+        }
+        else {
+            // user entered: CD:/DIR or CD/DIR
+            // means: change to a dir in container root
+            return MFSOwner::File("/"+newDir);
+        }
+    }
+    else
+        return MFile::cd(newDir);
+};
+
 void LittleFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
     streamPath = url;
     pathInStream = "";
