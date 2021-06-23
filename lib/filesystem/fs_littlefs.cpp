@@ -123,6 +123,11 @@ int LittleFileSystem::lfs_flash_sync(const struct lfs_config *c) {
  * MFile implementations
  ********************************************************/
 
+void LittleFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
+    streamPath = url;
+    pathInStream = "";
+}
+
 bool LittleFile::pathValid(const char *apath) 
 {
     while (*apath) {

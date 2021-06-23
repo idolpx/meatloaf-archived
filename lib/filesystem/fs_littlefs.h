@@ -100,6 +100,7 @@ public:
     //     Serial.printf("*** Destroying littlefile %s\n",localPath.c_str());
     // }
 
+    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
     bool isDirectory() override;
     MIstream* inputStream() override ; // has to return OPENED stream
     MOstream* outputStream() override ; // has to return OPENED stream

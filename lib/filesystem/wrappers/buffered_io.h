@@ -19,22 +19,7 @@ protected:
     char* buffer; // will point to buffered reader internal buffer
 
 public:
-    int length() {
-        return len;
-    }
-
     MBuffer() {};
-
-    uint8_t getByte() {
-        auto b = buffer[0];
-        buffer++;
-        len--;
-        return b;
-    }    
-
-    char& operator [](int idx) {
-        return buffer[idx];
-    }
 
     MBuffer(int size) {
         handmade = true;
@@ -44,6 +29,21 @@ public:
     ~MBuffer() {
         if(handmade)
             delete [] buffer;
+    }
+
+    char& operator [](int idx) {
+        return buffer[idx];
+    }
+
+    uint8_t getByte() {
+        auto b = buffer[0];
+        buffer++;
+        len--;
+        return b;
+    }    
+
+    int length() {
+        return len;
     }
 
     friend class BufferedReader;
@@ -76,26 +76,15 @@ protected:
     size_t m_available = 0;
 
     void refillBuffer() {
-        //secondHalf = !secondHalf;
-        //uint8_t* window = (secondHalf) ? (uint8_t*)buffer : (uint8_t*)(buffer+RECORD_SIZE);
-
-           // Serial.println("Refill buffer before read!");
-
         if(istream != nullptr) {
-                //        Serial.println("read from stream!");
-
             smartBuffer.len = istream->read((uint8_t*)rawBuffer, BUFFER_SIZE);
         }
         else {
-                  //      Serial.println("read from lambda!");
             smartBuffer.len = readFn((uint8_t*)rawBuffer, BUFFER_SIZE);
-    ///        Serial.println("Read lambda launched ok!");
         }
 
         smartBuffer.buffer = (char *)rawBuffer;
         eofOccured = (smartBuffer.len == 0) || (istream != nullptr && istream->available() == 0);
-       //             Serial.println("refillBuffer ok!");
-
     }
 
 public:
@@ -139,20 +128,19 @@ public:
 
 class BufferedWriter {
     MOstream* ostream;
-    //bool secondHalf = false;
 
 public:
     BufferedWriter(MOstream* os) : ostream(os) { 
     };
+
     int write(MBuffer* buffer) {
         return ostream->write((uint8_t*)buffer->buffer, buffer->length());
     }
+    
     bool writeByte(uint8_t byteToWrite) 
     {
         ostream->write(&byteToWrite, 1);
     }
-
 };
-
 
 #endif
