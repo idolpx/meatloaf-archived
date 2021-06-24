@@ -131,10 +131,12 @@ bool MLFile::rewindDirectory() {
 
 
 bool MLIStream::open() {
+    PeoplesUrlParser urlParser;
+    urlParser.parseUrl(url);
 
-    String ml_url = std::string("http://" + host + "/api/").c_str();
+    String ml_url = std::string("http://" + urlParser.host + "/api/").c_str();
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-    String post_data = std::string("p=" + mstr::urlEncode(path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
+    String post_data = std::string("p=" + mstr::urlEncode(urlParser.path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
 
 
     bool initOk = m_http.begin(m_file, url.c_str());

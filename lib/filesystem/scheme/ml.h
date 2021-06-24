@@ -5,11 +5,6 @@
 #ifndef MEATFILE_DEFINES_FSML_H
 #define MEATFILE_DEFINES_FSML_H
 
-#include "meat_io.h"
-#include "scheme/http.h"
-#include "../../include/global_defines.h"
-#include "helpers.h"
-
 #if defined(ESP32)
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -18,9 +13,13 @@
 #include <ESP8266HTTPClient.h>
 #endif
 
-
 #include <ArduinoJson.h>
 
+#include "meat_io.h"
+#include "scheme/http.h"
+#include "../../include/global_defines.h"
+#include "helpers.h"
+#include "peoples_url_parser.h"
 
 /********************************************************
  * File
@@ -32,8 +31,8 @@ class MLFile: public HttpFile {
     WiFiClient m_file;
 	HTTPClient m_http;
     StaticJsonDocument<256> m_jsonHTTP;
-    bool m_isDir;
-    size_t m_size;
+    size_t m_size = 0;    
+    bool m_isDir = false;
 
 public:
     MLFile(std::string path, size_t size = 0, bool isDir = false): 
