@@ -6,431 +6,793 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Meatloaf is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
 
-#if defined(ESP32)
-#include <WiFi.h>
-#include <ESPmDNS.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
-#endif
-
-#include "global_defines.h"
-
-// Setup FileSystem Object
-#if defined(USE_SPIFFS)
-	#if defined(ESP32)
-		#include <SPIFFS.h>
-	#endif
-	#include <FS.h>
-	FS* fileSystem = &SPIFFS;
-	
-	#if defined(ESP8266)
-		SPIFFSConfig fileSystemConfig = SPIFFSConfig();
-	#endif
-#elif defined USE_LITTLEFS
-	#if defined(ESP8266)
-		#include <LittleFS.h>
-		FS* fileSystem = &LittleFS;
-		LittleFSConfig fileSystemConfig = LittleFSConfig();	
-	#endif
-	#if defined(ESP32)
-		#include <LITTLEFS.h>
-		FS* fileSystem = &LITTLEFS;
-	#endif
-#elif defined USE_SDFS
-	#include <SDFS.h>
-	#define CHIP_SELECT_PIN	15
-	#define SPI_SETTINGS SPI_FULL_SPEED
-	FS* fileSystem = &SDFS;
-	SDFSConfig fileSystemConfig = SDFSConfig();	
-#else
-	#error Please select a filesystem first by uncommenting one of the "#define USE_xxx" lines at the beginning of the sketch.
-#endif
-
-#include "iec.h"
-#include "iec_device.h"
-#include "ESPModem.h"
-#include "ESPWebDAV.h"
-//#include "SerialCommand.h"
-
-//void ICACHE_RAM_ATTR isrCheckATN();
-
-//#include "IECBus/Drive.h"
-//#include "IECBus/DiskImage.h"
-//#include "IECBus/DiskCaddy.h"
-
-//#include "zimodem/zimodem.h"
-
-// SerialCommand cli;
-
-ESPWebDAV dav;
-String statusMessage;
-bool initFailed = false;
-
-static IEC iec;
-static Interface drive(iec, fileSystem);
-
-// Drive drive;
-// DiskImage diskImage;
-// DiskCaddy diskCaddy;
-
-//Zimodem modem;
-ESPModem modem;
-
-#if defined(ESP8266)
-ADC_MODE(ADC_VCC); // Set ADC for Voltage Monitoring
-#endif
-
-// enum class statemachine
-// {
-//     none,
-//     check_atn
-// };
-// statemachine state = statemachine::none;
-//uint8_t state_int;
-//String state_string;
+#include "main.h"
 
 // ------------------------
 void setup()
 {
-	// ------------------------
-	// WiFi.mode(WIFI_STA);
-	// WiFi.setPhyMode(WIFI_PHY_MODE_11N);
-	// WiFi.hostname(HOSTNAME);
-	delay(1000);
-	//Serial.begin(115200); // for debug
-	// WiFi.begin(ssid, password);
-	// Serial.println("");
 
-	// // Wait for connection
-	// while(WiFi.status() != WL_CONNECTED) {
-	// 	delay(500);
-	// 	Serial.print(".");
-	// }
+    delay ( 1000 );
 
-	// Serial.println("");
-	// Serial.print (F("Connected : ")); Serial.println(ssid);
-	// Serial.print (F("IP address: ")); Serial.println(WiFi.localIP());
-	// //Serial.print ("RSSI: "); Serial.println(WiFi.RSSI());
-	// //Serial.print ("Mode: "); Serial.println(WiFi.getPhyMode());
-	// Serial.println("");
+    // Setup Modem
+    modem.setup();
 
-	// Setup Modem
-	//modem.fileSystem = fileSystem;
-	modem.setup();
 
-	Serial.printf("\r\n\r\n==============================\r\n");
-	Serial.printf("   %s %s\r\n", PRODUCT_ID, FW_VERSION);
-	Serial.println("------------------------------");
+    Serial.println ( "\r\n\r\n==============================" );
+    Serial.println ( "   " PRODUCT_ID " " FW_VERSION );
+    Serial.println ( "------------------------------" );
 
-	modem.start();
+    modem.start();
 
 #if defined(ESP8266)
-	// initialize selected file system
-	fileSystemConfig.setAutoFormat(AUTO_FORMAT);
+    // initialize selected file system
+    fileSystemConfig.setAutoFormat ( AUTO_FORMAT );
 #if defined USE_SDFS
-	fileSystemConfig.setCSPin(CHIP_SELECT_PIN);
-	fileSystemConfig.setSPI(SPI_SETTINGS);
+    fileSystemConfig.setCSPin ( CHIP_SELECT_PIN );
+    fileSystemConfig.setSPI ( SPI_SETTINGS );
 #endif
-	fileSystem->setConfig(fileSystemConfig);
+    fileSystem->setConfig ( fileSystemConfig );
 #endif
 
 #if defined(ESP8266)
-	if (!fileSystem->begin())
+
+    if ( !fileSystem->begin() )
 #elif defined(ESP32) && defined(USE_LITTLEFS)
-	if (!LITTLEFS.begin()) // not sure why pointer is not working
+    if ( !LITTLEFS.begin() ) // not sure why pointer is not working
 #else
-	if (!SPIFFS.begin()) // not sure why pointer is not working
+    if ( !SPIFFS.begin() ) // not sure why pointer is not working
 #endif
-	{
-		// File System failed
-		statusMessage = "Failed to initialize file system";
-		Serial.print(F("ERROR: "));
-		Serial.println(statusMessage);
-		initFailed = true;
-	}
-	else
-	{
-		Serial.println(F("Flash File System started"));
+    {
+        // File System failed
+        statusMessage = "Failed to initialize file system";
+        Serial.print ( "ERROR: " );
+        Serial.println ( statusMessage );
+        initFailed = true;
+    }
+    else
+    {
+        Serial.println ( "Flash File System started" );
 
-		// start the WebDAV server
-		if (!dav.init(SERVER_PORT, fileSystem))
-		{
-			Serial.println(F("ERROR: WebDAV Server failed"));
-			initFailed = true;
-		}
-		else
-		{
-			Serial.println(F("WebDAV server started"));
+        // Start the Web Server with WebDAV
+        setupWWW();
 
-			// mDNS INIT
-			if (MDNS.begin(HOSTNAME))
-			{
-				MDNS.addService("http", "tcp", SERVER_PORT);
-				Serial.println(F("mDNS service started"));
-				Serial.print(F(">>> http://"));
-				Serial.print(HOSTNAME);
-				Serial.println(F(".local"));
-			}
-			else
-			{
-				Serial.println(F("mDNS service failed to start"));
-				Serial.print(F(">>> http://"));
-				Serial.println(WiFi.localIP());
-			}
-		}
 
-		// Setup IEC Bus
-		iec.enabledDevices = DEVICE_MASK;
-		iec.init();
-		Serial.println(F("IEC Bus Initialized"));
+        // mDNS INIT
+        if ( MDNS.begin ( HOSTNAME ) )
+        {
+            MDNS.addService ( "http", "tcp", SERVER_PORT );
+            Serial.println ( "mDNS service started" );
+            Serial.println ( ">>> http://" HOSTNAME ".local" );
+        }
+        else
+        {
+            Serial.println ( "mDNS service failed to start" );
+            Serial.print ( ">>> http://" );
+            Serial.println ( WiFi.localIP() );
+        }
 
-		drive.begin();
-		Serial.print(F("Virtual Device(s) Started: [ "));
-		for (byte i = 0; i < 31; i++)
-		{
-			if (iec.isDeviceEnabled(i))
-			{
-				Serial.printf("%.02d ", i);
-			}
-		}
-		Serial.println("]");
+        // Setup IEC Bus
+        iec.enabledDevices = DEVICE_MASK;
+        iec.enableDevice(30);
+        iec.init();
+        Serial.println("IEC Bus Initialized");
 
-		// // Set initial d64 image
-		// Dir disk = fileSystem->openDir("/UTILS/FB64.d64");
-		// if (diskCaddy.Insert(disk, false))
-		// {
-		// 	Debug_printf("Disk Mounted: %s", disk.fileName().c_str());
-		// }
+        drive.begin();
+        Serial.print("Virtual Device(s) Started: [ ");
+        for (byte i = 0; i < 31; i++)
+        {
+         if (iec.isDeviceEnabled(i))
+         {
+             Serial.printf("%.02d ", i);
+         }
+        }
+        Serial.println("]");
 
-		// 	Serial.println("==================================");
 
-		// 	File testFile = fileSystem->open(DEVICE_DB, "r");
-		// 	if (testFile){
-		// 		Serial.println("Read file content!");
-		// 		/**
-		// 		 * File derivate from Stream so you can use all Stream method
-		// 		 * readBytes, findUntil, parseInt, println etc
-		// 		 */
-		// 		Serial.println(testFile.readString());
-		// 		testFile.close();
-		// 	}else{
-		// 		Serial.println("Problem on read file!");
-		// 	}
+        //  attachInterrupt(digitalPinToInterrupt(IEC_PIN_ATN), isrCheckATN, FALLING);
+        //  attachInterrupt(digitalPinToInterrupt(IEC_PIN_ATN), isrATNRising, RISING);
+    }
 
-		// 	testFile = fileSystem->open(DEVICE_DB, "r");
-		// 	if (testFile){
-		// 		/**
-		// 		 * mode is SeekSet, position is set to offset bytes from the beginning.
-		// 		 * mode is SeekCur, current position is moved by offset bytes.
-		// 		 * mode is SeekEnd, position is set to offset bytes from the end of the file.
-		// 		 * Returns true if position was set successfully.
-		// 		 */
-		// 		Serial.println("Position inside the file at 9 byte!");
-		// 		testFile.seek(9, SeekSet);
 
-		// 		Serial.println("Read file content!");
-		// 		Serial.println(testFile.readStringUntil('\0'));
-		// 		testFile.close();
-		// 	}else{
-		// 		Serial.println("Problem on read file!");
-		// 	}
-	}
+    pinMode ( LED_PIN, OUTPUT ); // Configure the onboard LED for output
+    ledON();
+    Serial.println ( "READY." );
 
-	// // Setup callbacks for SerialCommand commands
-	// cli.addDefaultHandler(unrecognized);  	// Handler for command that isn't matched  (says "What?")
-
-	// cli.addCommand("on",LED_on);          	// Turns LED on
-	// cli.addCommand("off",LED_off);        	// Turns LED off
-	// cli.addCommand("hello",SayHello);     	// Echos the string argument back
-	// cli.addCommand("p",process_command);  	// Converts two arguments to integers and echos them back
-
-	// cli.addCommand("$", listDirectory);
-	// cli.addCommand("iec", iecCommand);
-
-	// cli.addCommand("cat", catFile);
-	// cli.addCommand("help", showHelp);
-
-	//	attachInterrupt(digitalPinToInterrupt(IEC_PIN_ATN), isrCheckATN, FALLING);
-	//	attachInterrupt(digitalPinToInterrupt(IEC_PIN_ATN), isrATNRising, RISING);
-
-	pinMode(LED_PIN, OUTPUT); // Configure the onboard LED for output
-	ledON();
-	Serial.println(F("READY."));
+    runTestsSuite();
 }
 
 // ------------------------
 void loop()
 {
-	// ------------------------
-	drive.loop();
-	// switch ( state )
-	// {
-	//     case statemachine::check_atn:
-	// 		Debug_printf("\r\nstatemachine::atn_falling");
-	// 		if ( drive.loop() == 0 )
-	// 		{
-	// 			state = statemachine::none;
-	// 		}
-	//         break;
-
-	//     default:
-	//         break;
-	// }
-
-	if (dav.isClientWaiting())
-	{
-		if (initFailed)
-			return dav.rejectClient(statusMessage);
-
-		// call handle if server was initialized properly
-		dav.handleClient();
-	}
-
 #if defined(ESP8266)
-	MDNS.update();
+    MDNS.update();
 #endif
 
-	//cli.readSerial();
-	modem.service();
+    www.handleClient();
+    modem.service();
+    drive.loop();
+    //cli.readSerial();
 }
 
 // void isrCheckATN()
 // {
-// 	state = statemachine::check_atn;
-// 	iec.init();
+//  state = statemachine::check_atn;
+//  iec.init();
 // }
 
-// void LED_on()
-// {
-//   Serial.println("LED on");
-//   digitalWrite(LED_PIN, LED_ON);
-// }
 
-// void LED_off()
-// {
-//   Serial.println("LED off");
-//   digitalWrite(LED_PIN, LED_OFF);
-// }
 
-// void SayHello()
-// {
-//   char *arg;
-//   arg = cli.next();    // Get the next argument from the SerialCommand object buffer
-//   if (arg != NULL)      // As long as it existed, take it
-//   {
-//     Serial.print("Hello ");
-//     Serial.println(arg);
-//   }
-//   else {
-//     Serial.println("Hello, whoever you are");
-//   }
-// }
 
-// void process_command()
-// {
-//   uint8_t aNumber;
-//   char *arg;
 
-//   Serial.println("We're in process_command");
-//   arg = cli.next();
-//   if (arg != NULL)
-//   {
-//     aNumber=atoi(arg);    // Converts a char string to an integer
-//     Serial.print("First argument was: ");
-//     Serial.println(aNumber);
-//   }
-//   else {
-//     Serial.println("No arguments");
-//   }
+////////////////////////////////
+// Utils to return HTTP codes, and determine content-type
 
-//   arg = cli.next();
-//   if (arg != NULL)
-//   {
-//     aNumber=atol(arg);
-//     Serial.print("Second argument was: ");
-//     Serial.println(aNumber);
-//   }
-//   else {
-//     Serial.println("No second argument");
-//   }
+void replyOK()
+{
+    www.send ( 200, FPSTR ( TEXT_PLAIN ), "" );
+}
 
-// }
+void replyOKWithMsg ( String msg )
+{
+    www.send ( 200, FPSTR ( TEXT_PLAIN ), msg );
+}
 
-// // This gets set as the default handler, and gets called when no other command matches.
-// void unrecognized()
-// {
-//   Serial.println("What?");
-// }
+void replyNotFound ( String msg )
+{
+    www.send ( 404, FPSTR ( TEXT_PLAIN ), msg );
+}
 
-// void listDirectory()
-// {
-// 	Dir dir = fileSystem->openDir("/");
-// 	// or Dir dir = LittleFS.openDir("/data");
-// 	while (dir.next()) {
-// 		//Serial.print(dir.fileName());
-// 		if(dir.fileSize()) {
-// 			File f = dir.openFile("r");
-// 			Debug_printf("%s\t%d\r\n", dir.fileName().c_str(), (f.size()/256));
-// 		}
-// 		else
-// 		{
-// 			Debug_printf("%s\r\n", dir.fileName().c_str());
-// 		}
-// 	}
-// }
+void replyBadRequest ( String msg )
+{
+    Debug_println ( msg );
+    www.send ( 400, FPSTR ( TEXT_PLAIN ), msg + "\r\n" );
+}
 
-// void iecCommand()
-// {
-//   char *arg;
-//   arg = cli.next();    // Get the next argument from the SerialCommand object buffer
+void replyServerError ( String msg )
+{
+    Debug_println ( msg );
+    www.send ( 500, FPSTR ( TEXT_PLAIN ), msg + "\r\n" );
+}
 
-//   if (strcmp_P(arg, "init"))
-//   {
-// 	  iec.init();
-// 	  Serial.printf_P("IEC Interface initialized\r\n");
-//   }
+#ifdef USE_SPIFFS
+/*
+   Checks filename for character combinations that are not supported by FSBrowser (alhtough valid on SPIFFS).
+   Returns an empty String if supported, or detail of error(s) if unsupported
+*/
+String checkForUnsupportedPath ( String filename )
+{
+    String error = String();
 
-// }
+    if ( !filename.startsWith ( "/" ) )
+    {
+        error += F ( "!NO_LEADING_SLASH! " );
+    }
 
-// void readFile(char *filename)
-// {
-// 	uint16_t i;
-// 	char b[1];
+    if ( filename.indexOf ( "//" ) != -1 )
+    {
+        error += F ( "!DOUBLE_SLASH! " );
+    }
 
-// 	File file = fileSystem->open(filename, "r");
-// 	if (!file.available())
-// 	{
-// 		Debug_printf("\r\nFile Not Found: %s\r\n", filename);
-// 	}
-// 	else
-// 	{
-// 		size_t len = file.size();
-// 		Debug_printf("\r\n[%s] (%d bytes)\r\n================================\r\n", filename, len);
-// 		for(i = 0; i < len; i++) {
-// 			file.readBytes(b, sizeof(b));
-// 			Serial.print(b);
-// 		}
-// 		file.close();
-// 	}
-// } // readFile
+    if ( filename.endsWith ( "/" ) )
+    {
+        error += F ( "!TRAILING_SLASH! " );
+    }
 
-// void catFile()
-// {
-//   	readFile(cli.next());
-// } // catFile
+    return error;
+}
+#endif
 
-// void showHelp()
-// {
-//   	readFile((char *)"/WWW/HELP.TXT");
-// } // showHelp
+
+////////////////////////////////
+// Request handlers
+
+/*
+   Return the FS type, status and size info
+*/
+void handleStatus()
+{
+    Debug_println ( "handleStatus" );
+    FSInfo fs_info;
+    String json;
+    json.reserve ( 128 );
+
+    json = "{\"type\":\"" FS_TYPE "\", \"isOk\":";
+
+    if ( fsOK )
+    {
+        fileSystem->info ( fs_info );
+        json += F ( "\"true\", \"totalBytes\":\"" );
+        json += fs_info.totalBytes;
+        json += F ( "\", \"usedBytes\":\"" );
+        json += fs_info.usedBytes;
+        json += "\"";
+    }
+    else
+    {
+        json += "\"false\"";
+    }
+
+    json += F ( ",\"unsupportedFiles\":\"" );
+    json += unsupportedFiles;
+    json += "\"}";
+
+    www.send ( 200, "application/json", json );
+}
+
+
+/*
+   Return the list of files in the directory specified by the "dir" query string parameter.
+   Also demonstrates the use of chunked responses.
+*/
+void handleFileList()
+{
+    if ( !fsOK )
+    {
+        return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
+    }
+
+    if ( !www.hasArg ( "dir" ) )
+    {
+        return replyBadRequest ( F ( "DIR ARG MISSING" ) );
+    }
+
+    String path = www.arg ( "dir" );
+
+    if ( path != "/" && !fileSystem->exists ( path ) )
+    {
+        return replyBadRequest ( "BAD PATH" );
+    }
+
+    Debug_println ( String ( "handleFileList: " ) + path );
+    Dir dir = fileSystem->openDir ( path );
+    path.clear();
+
+    // use HTTP/1.1 Chunked response to avoid building a huge temporary string
+    if ( !www.chunkedResponseModeStart ( 200, "text/json" ) )
+    {
+        www.send ( 505, F ( "text/html" ), F ( "HTTP1.1 required" ) );
+        return;
+    }
+
+    // use the same string for every line
+    String output;
+    output.reserve ( 64 );
+
+    while ( dir.next() )
+    {
+#ifdef USE_SPIFFS
+        String error = checkForUnsupportedPath ( dir.fileName() );
+
+        if ( error.length() > 0 )
+        {
+            Debug_println ( String ( "Ignoring " ) + error + dir.fileName() );
+            continue;
+        }
+
+#endif
+
+        if ( output.length() )
+        {
+            // www.send string from previous iteration
+            // as an HTTP chunk
+            www.sendContent ( output );
+            output = ',';
+        }
+        else
+        {
+            output = '[';
+        }
+
+        output += "{\"type\":\"";
+
+        if ( dir.isDirectory() )
+        {
+            output += "dir";
+        }
+        else
+        {
+            output += F ( "file\",\"size\":\"" );
+            output += dir.fileSize();
+        }
+
+        output += F ( "\",\"name\":\"" );
+
+        // Always return names without leading "/"
+        if ( dir.fileName() [0] == '/' )
+        {
+            output += & ( dir.fileName() [1] );
+        }
+        else
+        {
+            output += dir.fileName();
+        }
+
+        output += "\"}";
+    }
+
+    // www.send last string
+    output += "]";
+    www.sendContent ( output );
+    www.chunkedResponseFinalize();
+}
+
+
+/*
+   Read the given file from the filesystem and stream it back to the client
+*/
+bool handleFileRead ( String path )
+{
+    Debug_println ( String ( "handleFileRead: " ) + path );
+
+    if ( !fsOK )
+    {
+        replyServerError ( FPSTR ( FS_INIT_ERROR ) );
+        return true;
+    }
+
+    if ( path.endsWith ( "/" ) )
+    {
+        path += "index.htm";
+    }
+
+    String contentType;
+
+    if ( www.hasArg ( "download" ) )
+    {
+        contentType = F ( "application/octet-stream" );
+    }
+    else
+    {
+        contentType = mime::getContentType ( path );
+    }
+
+    if ( !fileSystem->exists ( path ) )
+    {
+        // File not found, try gzip version
+        path = path + ".gz";
+    }
+
+    if ( fileSystem->exists ( path ) )
+    {
+        File file = fileSystem->open ( path, "r" );
+
+        if ( www.streamFile ( file, contentType ) != file.size() )
+        {
+            Debug_println ( "Sent less data than expected!" );
+        }
+
+        file.close();
+        return true;
+    }
+
+    return false;
+}
+
+
+/*
+   As some FS (e.g. LittleFS) delete the parent folder when the last child has been removed,
+   return the path of the closest parent still existing
+*/
+String lastExistingParent ( String path )
+{
+    while ( !path.isEmpty() && !fileSystem->exists ( path ) )
+    {
+        if ( path.lastIndexOf ( '/' ) > 0 )
+        {
+            path = path.substring ( 0, path.lastIndexOf ( '/' ) );
+        }
+        else
+        {
+            path = String();  // No slash => the top folder does not exist
+        }
+    }
+
+    Debug_println ( String ( "Last existing parent: " ) + path );
+    return path;
+}
+
+/*
+   Handle the creation/rename of a new file
+   Operation      | req.responseText
+   ---------------+--------------------------------------------------------------
+   Create file    | parent of created file
+   Create folder  | parent of created folder
+   Rename file    | parent of source file
+   Move file      | parent of source file, or remaining ancestor
+   Rename folder  | parent of source folder
+   Move folder    | parent of source folder, or remaining ancestor
+*/
+void handleFileCreate()
+{
+    if ( !fsOK )
+    {
+        return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
+    }
+
+    String path = www.arg ( "path" );
+
+    if ( path.isEmpty() )
+    {
+        return replyBadRequest ( F ( "PATH ARG MISSING" ) );
+    }
+
+#ifdef USE_SPIFFS
+
+    if ( checkForUnsupportedPath ( path ).length() > 0 )
+    {
+        return replyServerError ( F ( "INVALID FILENAME" ) );
+    }
+
+#endif
+
+    if ( path == "/" )
+    {
+        return replyBadRequest ( "BAD PATH" );
+    }
+
+    if ( fileSystem->exists ( path ) )
+    {
+        return replyBadRequest ( F ( "PATH FILE EXISTS" ) );
+    }
+
+    String src = www.arg ( "src" );
+
+    if ( src.isEmpty() )
+    {
+        // No source specified: creation
+        Debug_println ( String ( "handleFileCreate: " ) + path );
+
+        if ( path.endsWith ( "/" ) )
+        {
+            // Create a folder
+            path.remove ( path.length() - 1 );
+
+            if ( !fileSystem->mkdir ( path ) )
+            {
+                return replyServerError ( F ( "MKDIR FAILED" ) );
+            }
+        }
+        else
+        {
+            // Create a file
+            File file = fileSystem->open ( path, "w" );
+
+            if ( file )
+            {
+                file.write ( ( const char * ) 0 );
+                file.close();
+            }
+            else
+            {
+                return replyServerError ( F ( "CREATE FAILED" ) );
+            }
+        }
+
+        if ( path.lastIndexOf ( '/' ) > -1 )
+        {
+            path = path.substring ( 0, path.lastIndexOf ( '/' ) );
+        }
+
+        replyOKWithMsg ( path );
+    }
+    else
+    {
+        // Source specified: rename
+        if ( src == "/" )
+        {
+            return replyBadRequest ( "BAD SRC" );
+        }
+
+        if ( !fileSystem->exists ( src ) )
+        {
+            return replyBadRequest ( F ( "SRC FILE NOT FOUND" ) );
+        }
+
+        Debug_println ( String ( "handleFileCreate: " ) + path + " from " + src );
+
+        if ( path.endsWith ( "/" ) )
+        {
+            path.remove ( path.length() - 1 );
+        }
+
+        if ( src.endsWith ( "/" ) )
+        {
+            src.remove ( src.length() - 1 );
+        }
+
+        if ( !fileSystem->rename ( src, path ) )
+        {
+            return replyServerError ( F ( "RENAME FAILED" ) );
+        }
+
+        replyOKWithMsg ( lastExistingParent ( src ) );
+    }
+}
+
+
+/*
+   Delete the file or folder designed by the given path.
+   If it's a file, delete it.
+   If it's a folder, delete all nested contents first then the folder itself
+
+   IMPORTANT NOTE: using recursion is generally not recommended on embedded devices and can lead to crashes (stack overflow errors).
+   This use is just for demonstration purpose, and FSBrowser might crash in case of deeply nested filesystems.
+   Please don't do this on a production system.
+*/
+void deleteRecursive ( String path )
+{
+    File file = fileSystem->open ( path, "r" );
+    bool isDir = file.isDirectory();
+    file.close();
+
+    // If it's a plain file, delete it
+    if ( !isDir )
+    {
+        fileSystem->remove ( path );
+        return;
+    }
+
+    // Otherwise delete its contents first
+    Dir dir = fileSystem->openDir ( path );
+
+    while ( dir.next() )
+    {
+        deleteRecursive ( path + '/' + dir.fileName() );
+    }
+
+    // Then delete the folder itself
+    fileSystem->rmdir ( path );
+}
+
+
+/*
+   Handle a file deletion request
+   Operation      | req.responseText
+   ---------------+--------------------------------------------------------------
+   Delete file    | parent of deleted file, or remaining ancestor
+   Delete folder  | parent of deleted folder, or remaining ancestor
+*/
+void handleFileDelete()
+{
+    if ( !fsOK )
+    {
+        return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
+    }
+
+    String path = www.arg ( 0 );
+
+    if ( path.isEmpty() || path == "/" )
+    {
+        return replyBadRequest ( "BAD PATH" );
+    }
+
+    Debug_println ( String ( "handleFileDelete: " ) + path );
+
+    if ( !fileSystem->exists ( path ) )
+    {
+        return replyNotFound ( FPSTR ( FILE_NOT_FOUND ) );
+    }
+
+    deleteRecursive ( path );
+
+    replyOKWithMsg ( lastExistingParent ( path ) );
+}
+
+/*
+   Handle a file upload request
+*/
+void handleFileUpload()
+{
+    if ( !fsOK )
+    {
+        return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
+    }
+
+    if ( www.uri() != "/edit" )
+    {
+        return;
+    }
+
+    HTTPUpload &upload = www.upload();
+
+    if ( upload.status == UPLOAD_FILE_START )
+    {
+        String filename = upload.filename;
+
+        // Make sure paths always start with "/"
+        if ( !filename.startsWith ( "/" ) )
+        {
+            filename = "/" + filename;
+        }
+
+        Debug_println ( String ( "handleFileUpload Name: " ) + filename );
+        uploadFile = fileSystem->open ( filename, "w" );
+
+        if ( !uploadFile )
+        {
+            return replyServerError ( F ( "CREATE FAILED" ) );
+        }
+
+        Debug_println ( String ( "Upload: START, filename: " ) + filename );
+    }
+    else if ( upload.status == UPLOAD_FILE_WRITE )
+    {
+        if ( uploadFile )
+        {
+            size_t bytesWritten = uploadFile.write ( upload.buf, upload.currentSize );
+
+            if ( bytesWritten != upload.currentSize )
+            {
+                return replyServerError ( F ( "WRITE FAILED" ) );
+            }
+        }
+
+        Debug_println ( String ( "Upload: WRITE, Bytes: " ) + upload.currentSize );
+    }
+    else if ( upload.status == UPLOAD_FILE_END )
+    {
+        if ( uploadFile )
+        {
+            uploadFile.close();
+        }
+
+        Debug_println ( String ( "Upload: END, Size: " ) + upload.totalSize );
+    }
+}
+
+
+/*
+   The "Not Found" handler catches all URI not explicitly declared in code
+   First try to find and return the requested file from the filesystem,
+   and if it fails, return a 404 page with debug information
+*/
+void handleNotFound()
+{
+    if ( !fsOK )
+    {
+        return replyServerError ( FPSTR ( FS_INIT_ERROR ) );
+    }
+
+    String uri = WebServer::urlDecode ( www.uri() ); // required to read paths with blanks
+
+
+    if ( handleFileRead ( uri ) )
+    {
+        return;
+    }
+
+    // Dump debug data
+    String message;
+    message.reserve ( 100 );
+    message = F ( "Error: File not found\n\nURI: " );
+    message += uri;
+    message += F ( "\nMethod: " );
+    message += ( www.method() == HTTP_GET ) ? "GET" : "POST";
+    message += F ( "\nArguments: " );
+    message += www.args();
+    message += '\n';
+
+    for ( uint8_t i = 0; i < www.args(); i++ )
+    {
+        message += F ( " NAME:" );
+        message += www.argName ( i );
+        message += F ( "\n VALUE:" );
+        message += www.arg ( i );
+        message += '\n';
+    }
+
+    message += "path=";
+    message += www.arg ( "path" );
+    message += '\n';
+    Debug_print ( message );
+
+    return replyNotFound ( message );
+}
+
+/*
+   This specific handler returns the index.htm (or a gzipped version) from the /edit folder.
+   If the file is not present but the flag INCLUDE_FALLBACK_INDEX_HTM has been set, falls back to the version
+   embedded in the program code.
+   Otherwise, fails with a 404 page with debug information
+*/
+void handleGetEdit()
+{
+    if ( handleFileRead ( F ( "/edit/index.htm" ) ) )
+    {
+        return;
+    }
+
+#ifdef INCLUDE_FALLBACK_INDEX_HTM
+    www.sendHeader ( F ( "Content-Encoding" ), "gzip" );
+    www.send ( 200, "text/html", index_htm_gz, index_htm_gz_len );
+#else
+    replyNotFound ( FPSTR ( FILE_NOT_FOUND ) );
+#endif
+
+}
+
+
+void setupWWW ( void )
+{
+
+#ifdef USE_SPIFFS
+    // Debug: dump on console contents of filesystem with no filter and check filenames validity
+    Dir dir = fileSystem->openDir ( "" );
+    Debug_println ( F ( "List of files at root of filesystem:" ) );
+
+    while ( dir.next() )
+    {
+        String error = checkForUnsupportedPath ( dir.fileName() );
+        String fileInfo = dir.fileName() + ( dir.isDirectory() ? " [DIR]" : String ( " (" ) + dir.fileSize() + "b)" );
+        Debug_println ( error + fileInfo );
+
+        if ( error.length() > 0 )
+        {
+            unsupportedFiles += error + fileInfo + '\n';
+        }
+    }
+
+    Debug_println();
+
+    // Keep the "unsupportedFiles" variable to show it, but clean it up
+    unsupportedFiles.replace ( "\n", "<br/>" );
+    unsupportedFiles = unsupportedFiles.substring ( 0, unsupportedFiles.length() - 5 );
+#endif
+
+    // WebDAV Server Setup
+    dav.begin ( fileSystem );
+    dav.setTransferStatusCallback ( [] ( const char *name, int percent, bool receive )
+    {
+        Serial.printf ( "WebDAV %s: '%s': %d%%\n", receive ? "recv" : "send", name, percent );
+    } );
+
+
+    ////////////////////////////////
+    // WEB SERVER INIT
+
+    // Filesystem status
+    www.on ( "/status", HTTP_GET, handleStatus );
+
+    // List directory
+    www.on ( "/list", HTTP_GET, handleFileList );
+
+    // Load editor
+    www.on ( "/edit", HTTP_GET, handleGetEdit );
+
+    // Create file
+    www.on ( "/edit",  HTTP_PUT, handleFileCreate );
+
+    // Delete file
+    www.on ( "/edit",  HTTP_DELETE, handleFileDelete );
+
+    // Upload file
+    // - first callback is called after the request has ended with all parsed arguments
+    // - second callback handles file upload at that location
+    www.on ( "/edit",  HTTP_POST, replyOK, handleFileUpload );
+
+    // Default handler for all URIs not defined above
+    // Use it to read files from filesystem
+    www.onNotFound ( handleNotFound );
+
+    // Set WebDAV hook
+    www.addHook ( hookWebDAVForWebserver ( "/", dav ) );
+
+    // Start Server
+    www.begin();
+
+    Serial.println ( "HTTP Server started" );
+    Serial.println ( "WebDAV Server started" );
+
+}
+
+

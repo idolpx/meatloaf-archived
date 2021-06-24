@@ -30,46 +30,149 @@ namespace
 	char serCmdIOBuf[MAX_BYTES_PER_REQUEST];
 
 } // unnamed namespace
-
-Interface::Interface(IEC &iec, FS *fileSystem)
-	: m_iec(iec)
-	  // NOTE: Householding with RAM bytes: We use the middle of serial buffer for the ATNCmd buffer info.
-	  // This is ok and won't be overwritten by actual serial data from the host, this is because when this ATNCmd data is in use
-	  // only a few bytes of the actual serial data will be used in the buffer.
-	  ,
-	  m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])), m_device(fileSystem)
-//,  m_jsonHTTPBuffer(1024)
+Interface::Interface(IEC &iec)
+	: m_iec(iec),
+	m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
+	m_device(0)
 {
-	m_fileSystem = fileSystem;
 	reset();
 } // ctor
 
 bool Interface::begin()
 {
-	m_device.init(String(DEVICE_DB));
-	//m_device.check();
+	return true;
 }
 
 void Interface::reset(void)
 {
 	m_openState = O_NOTHING;
 	m_queuedError = ErrIntro;
+	setDeviceStatus(73);
+	//m_device.reset();
 } // reset
+
+
+void Interface::sendFileNotFound(void)
+{
+	setDeviceStatus(62);
+	m_iec.sendFNF();
+}
 
 void Interface::sendStatus(void)
 {
-	byte i, readResult;
+	size_t i;
 
-	String status = String("00, OK, 00, 08");
+	std::string status = m_device_status;
+	if (status.size() == 0)
+		status = "00, OK, 00, 00";
 
-	Debug_printf("\r\nsendStatus: ");
-	// Length does not include the CR, write all but the last one should be with EOI.
-	for (i = 0; i < readResult - 2; ++i)
+	Debug_printv("status: %s", status.c_str());
+	Debug_print("[");
+	
+	for (i = 0; i < status.length()-1; ++i)
 		m_iec.send(status[i]);
+
+	Debug_println("]");
 
 	// ...and last byte in string as with EOI marker.
 	m_iec.sendEOI(status[i]);
+
+	// Clear the status message
+	m_device_status.clear();
 } // sendStatus
+
+void Interface::setDeviceStatus(int number, int track, int sector)
+{
+	switch(number)
+	{
+		// 1 - FILES SCRATCHED - number scratched in track variable
+		case 1:
+			m_device_status = "01, FILES SCRATCHED, 00, 00";		
+			break;
+		// 20 READ ERROR
+		case 20:
+			m_device_status = "20, FILE NOT OPEN, 00, 00";		
+			break;
+		// 26 WRITE PROTECT ON
+		case 26:
+			m_device_status = "26, WRITE PROTECT ON, 00, 00";
+			break;
+		// 30 SYNTAX ERROR - in arguments
+		case 30:
+			m_device_status = "30, SYNTAX ERROR, 00, 00";
+			break;
+		// 31 SYNTAX ERROR - unknown command
+		case 31:
+			m_device_status = "31, SYNTAX ERROR, 00, 00";
+			break;
+		// 33 S.E. - invalid pattern
+		case 33:
+			m_device_status = "33, SYNTAX ERROR, 00, 00";
+			break;
+		// 34 S.E. - no file name given
+		case 34:
+			m_device_status = "34, SYNTAX ERROR, 00, 00";
+			break;
+		// 50 RECORD NOT PRESENT - eof
+		case 50:
+			m_device_status = "50, RECORD NOT PRESENT, 00, 00";
+			break;
+		// 60 WRITE FILE OPEN - trying to open for wrtiting a file that is open for writing
+		case 60:
+			m_device_status = "60, WRITE FILE OPEN, 00, 00";
+			break;
+		// 61 FILE NOT OPEN
+		case 61:
+			m_device_status = "61, FILE NOT OPEN, 00, 00";
+			break;
+		// 62 FILE NOT FOUND
+		case 62:
+			m_device_status = "62, FILE NOT FOUND, 00, 00";
+			break;
+		// 63 FILE EXISTS
+		case 63:
+			m_device_status = "63, FILE EXISTS, 00, 00";
+			break;
+		// 65 NO BLOCK - for B-A
+		case 65:
+			m_device_status = "65, NO BLOCK, 00, 00";
+			break;
+		// 73 boot message: device name, rom version etc.
+		case 73:
+			m_device_status = "73, " PRODUCT_ID " [" FW_VERSION "], 00, 00";
+			break;
+		// 74 DRIVE NOT READY - also drive out of memory
+		case 74:
+			m_device_status = "74, DRIVE NOT READY, 00, 00";
+			break;
+		// 77 SELECTED PARTITION ILLEGAL
+		case 77:
+			m_device_status = "77, SELECTED PARTITION ILLEGAL, 00, 00";
+			break;
+		// 78 BUFFER TOO SMALL (sd2iec buffer ops)
+		case 78:
+			m_device_status = "78, BUFFER TOO SMALL, 00, 00";
+			break;
+		// 8x 64HDD errors
+		// case 8:
+		// 	break;
+		// 89 COMMAND NOT SUPPORTED
+		case 89:
+			m_device_status = "89, COMMAND NOT SUPPORTED, 00, 00";
+			break;
+		// 91 64HDD device activated
+		case 91:
+			m_device_status = "91, DEVICE ACTIVATED, 00, 00";
+			break;
+		case 125:
+			m_device_status = "125, NETWORK TIMEOUT, 00, 00";
+			break;
+		case 126:
+			m_device_status = "126, NODE NOT FOUND, 00, 00";
+			break;
+	}
+}
+
 
 void Interface::sendDeviceInfo()
 {
@@ -79,8 +182,8 @@ void Interface::sendDeviceInfo()
 	uint16_t basicPtr = C64_BASIC_START;
 
 	// #if defined(USE_LITTLEFS)
-	FSInfo64 fs_info;
-	m_fileSystem->info64(fs_info);
+	//FSInfo64 fs_info;
+	//m_fileSystem->info64(fs_info);
 	// #endif
 	char floatBuffer[10]; // buffer
 	dtostrf(getFragmentation(), 3, 2, floatBuffer);
@@ -91,64 +194,62 @@ void Interface::sendDeviceInfo()
 	Debug_println("");
 
 	// Send List HEADER
-	sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
+	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// CPU
-	sendLine(basicPtr, 0, "SYSTEM ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "SYSTEM ---");
 	String sdk = String(ESP.getSdkVersion());
 	sdk.toUpperCase();
-	sendLine(basicPtr, 0, "SDK VER    : %s", sdk.c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "SDK VER    : %s", sdk.c_str());
 	//sendLine(basicPtr, 0, "BOOT VER   : %08X", ESP.getBootVersion());
 	//sendLine(basicPtr, 0, "BOOT MODE  : %08X", ESP.getBootMode());
 	//sendLine(basicPtr, 0, "CHIP ID    : %08X", ESP.getChipId());
-	sendLine(basicPtr, 0, "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
-	sendLine(basicPtr, 0, "CYCLES     : %u", ESP.getCycleCount());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "CYCLES     : %u", ESP.getCycleCount());
 
 	// POWER
-	sendLine(basicPtr, 0, "POWER ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "POWER ---");
 	//sendLine(basicPtr, 0, "VOLTAGE    : %d.%d V", ( ESP.getVcc() / 1000 ), ( ESP.getVcc() % 1000 ));
 
 	// RAM
-	sendLine(basicPtr, 0, "MEMORY ---");
-	sendLine(basicPtr, 0, "RAM SIZE   : %5d B", getTotalMemory());
-	sendLine(basicPtr, 0, "RAM FREE   : %5d B", getTotalAvailableMemory());
-	sendLine(basicPtr, 0, "RAM >BLK   : %5d B", getLargestAvailableBlock());
-	sendLine(basicPtr, 0, "RAM FRAG   : %s %%", floatBuffer);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "MEMORY ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM SIZE   : %5d B", getTotalMemory());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM FREE   : %5d B", getTotalAvailableMemory());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM >BLK   : %5d B", getLargestAvailableBlock());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM FRAG   : %s %%", floatBuffer);
 
 	// ROM
-	sendLine(basicPtr, 0, "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
-	sendLine(basicPtr, 0, "ROM USED   : %5d B", ESP.getSketchSize());
-	sendLine(basicPtr, 0, "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM USED   : %5d B", ESP.getSketchSize());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
 
 	// FLASH
-	sendLine(basicPtr, 0, "STORAGE ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STORAGE ---");
 	//sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
-	sendLine(basicPtr, 0, "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
 
-	// FILE SYSTEM
-	sendLine(basicPtr, 0, "FILE SYSTEM ---");
-	sendLine(basicPtr, 0, "TYPE       : %s", FS_TYPE);
-	//  #if defined(USE_LITTLEFS)
-	sendLine(basicPtr, 0, "SIZE       : %5d B", fs_info.totalBytes);
-	sendLine(basicPtr, 0, "USED       : %5d B", fs_info.usedBytes);
-	sendLine(basicPtr, 0, "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
-	//  #endif
+	// // FILE SYSTEM
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "FILE SYSTEM ---");
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "TYPE       : %s", FS_TYPE);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "SIZE       : %5d B", fs_info.totalBytes);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "USED       : %5d B", fs_info.usedBytes);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
 
 	// NETWORK
-	sendLine(basicPtr, 0, "NETWORK ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "NETWORK ---");
 	char ip[16];
 	sprintf(ip, "%s", ipToString(WiFi.softAPIP()).c_str());
-	sendLine(basicPtr, 0, "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
-	sendLine(basicPtr, 0, "AP IP      : %s", ip);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "AP IP      : %s", ip);
 	sprintf(ip, "%s", ipToString(WiFi.localIP()).c_str());
-	sendLine(basicPtr, 0, "STA MAC    : %s", WiFi.macAddress().c_str());
-	sendLine(basicPtr, 0, "STA IP     : %s", ip);
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STA MAC    : %s", WiFi.macAddress().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STA IP     : %s", ip);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
 	m_iec.sendEOI(0);
 
-	// ledON();
+	ledON();
 } // sendDeviceInfo
 
 void Interface::sendDeviceStatus()
@@ -164,16 +265,17 @@ void Interface::sendDeviceStatus()
 	Debug_println("");
 
 	// Send List HEADER
-	sendLine(basicPtr, 0, "\x12 %s V%s ", PRODUCT_ID, FW_VERSION);
+	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// Current Config
-	sendLine(basicPtr, 0, "DEVICE    : %d", m_device.device());
-	sendLine(basicPtr, 0, "MEDIA     : %d", m_device.media());
-	sendLine(basicPtr, 0, "PARTITION : %d", m_device.partition());
-	sendLine(basicPtr, 0, "URL       : %s", m_device.url().c_str());
-	sendLine(basicPtr, 0, "PATH      : %s", m_device.path().c_str());
-	sendLine(basicPtr, 0, "IMAGE     : %s", m_device.image().c_str());
-	sendLine(basicPtr, 0, "FILENAME  : %s", m_filename.c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE    : %d", m_device.device());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "MEDIA     : %d", m_device.media());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "PARTITION : %d", m_device.partition());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_device.url().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_device.path().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_mfile->name.c_str());
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -207,7 +309,7 @@ byte Interface::loop(void)
 	{
 		//Debug_printf("\r\n[ERROR]");
 		reset();
-		retATN == IEC::ATN_IDLE;
+		retATN = IEC::ATN_IDLE;
 	}
 	// Did anything happen from the host side?
 	else if (retATN not_eq IEC::ATN_IDLE)
@@ -268,130 +370,153 @@ byte Interface::loop(void)
 	return retATN;
 } // handler
 
+MFile* Interface::guessIncomingPath(std::string commandLne)
+{
+	std::string guessedPath = commandLne;
+
+	Debug_printv("[%s]", guessedPath.c_str());
+
+	// get the current directory
+	std::shared_ptr<MFile> currentDir = m_mfile;
+
+	// check to see if it starts with a known command token
+	if(mstr::startsWith(commandLne, "CD", false)) // would be case sensitive, but I don't know the proper case
+	{
+		guessedPath = mstr::drop(guessedPath, 2);
+		if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
+			guessedPath = mstr::drop(guessedPath, 1);
+	}
+	// TODO more of them?
+
+	// NOW, since user could have requested ANY kind of our supported magic paths like:
+	// LOAD ~/something
+	// LOAD ../something
+	// LOAD //something
+	// we HAVE TO PARSE IT OUR WAY!
+
+	Debug_printv("[%s]", guessedPath.c_str());
+
+	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
+	return currentDir->cd(guessedPath);
+}
+
 void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 {
 	m_device.select(atn_cmd.device);
-	m_filename = String((char *)atn_cmd.str);
-	m_filename.trim();
-	m_filetype = m_filename.substring(m_filename.lastIndexOf(".") + 1);
-	m_filetype.toUpperCase();
-	if (m_filetype.length() > 4 || m_filetype.length() == m_filename.length())
-		m_filetype = "";
 
-	Dir local_file = m_fileSystem->openDir(String(m_device.path() + m_filename));
+	std::string command = atn_cmd.str;
+	m_openState = O_NOTHING;
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
-	if (m_filename.startsWith(F("$")))
-	{
-		m_openState = O_DIR;
-	}
-	else if (local_file.isDirectory())
-	{
-		// Enter directory
-		Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
-		m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
-		m_openState = O_DIR;
-	}
-	else if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
-	{
-		// Mount image file
-		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-		m_device.image(m_filename);
 
-		m_openState = O_DIR;
-	}
-	else if (m_filename.startsWith(F("HTTP://")))
+	if (mstr::endsWith(command, "*"))
 	{
-		// Mount url
-		Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-		m_device.partition(0);
-		m_device.url(m_filename.substring(7).c_str());
-		m_device.path("/");
-		m_device.image("");
-
-		m_openState = O_DIR;
-	}
-	else if (m_filename.startsWith(F("CD")))
-	{
-		if (m_filename.endsWith(F("_")))
+		// Find first program in listing
+		if (m_device.path().empty())
 		{
-			if (m_device.image().length())
-			{
-				// Unmount image file
-				//Debug_printf("\r\nunmount: [%s] <", m_device.image().c_str());
-				m_device.image("");
-			}
-			else if (m_device.url().length() && m_device.path() == "/")
-			{
-				// Unmount url
-				//Debug_printf("\r\nunmount: [%s] <", m_device.url().c_str());
-				m_device.url("");
-			}
-			else
-			{
-				// Go back a directory
-				//Debug_printf("\r\nchangeDir: [%s] <", m_filename.c_str());
-				m_device.path(m_device.path().substring(0, m_device.path().lastIndexOf("/", m_device.path().length() - 2) + 1));
-
-				if (!m_device.path().length())
-				{
-					m_device.path("/");
-				}
-			}
+			// If in LittleFS root then set it to FB64
+			// TODO: Load configured autoload program
+			m_mfile.reset(MFSOwner::File("/.sys/fb64"));
 		}
-		else if (m_filename.length() > 3)
+		else if (m_filename_last.size() > 0)
 		{
-			// Switch to root
-			if (m_filename.startsWith(F("CD//")))
-			{
-				m_device.path("");
-				m_device.image("");
-			}
-
-			if (String(F(IMAGE_TYPES)).indexOf(m_filetype) >= 0 && m_filetype.length() > 0)
-			{
-				// Mount image file
-				//Debug_printf("\r\nmount: [%s] >", m_filename.c_str());
-				m_device.image(m_filename.substring(3));
-			}
-			else
-			{
-				// Enter directory
-				//Debug_printf("\r\nchangeDir: [%s] >", m_filename.c_str());
-				m_device.path(m_device.path() + m_filename.substring(3) + F("/"));
-			}
+			// Load last used file
+			m_mfile.reset(MFSOwner::File(m_filename_last));
 		}
+		else
+		{	
+			// Find first PRG file in current directory
+			std::shared_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
-		if (atn_cmd.channel == 0x00)
-		{
-			m_openState = O_DIR;
+			while (entry != nullptr && entry->isDirectory())
+			{
+				Debug_printv("extension: [%s]", entry->extension);
+				entry.reset(m_mfile->getNextFileInDir());
+			}
+			m_mfile = entry;
 		}
+		m_openState = O_FILE;
+		Debug_printv("LOAD * [%s]", m_mfile->url.c_str());
 	}
-	else if (m_filename.startsWith(F("@INFO")))
+	else if (mstr::startsWith(command, "@INFO", false))
 	{
-		m_filename = "";
 		m_openState = O_DEVICE_INFO;
 	}
-	else if (m_filename.startsWith(F("@STAT")))
+	else if (mstr::startsWith(command, "@STAT", false))
 	{
-		m_filename = "";
 		m_openState = O_DEVICE_STATUS;
 	}
+	if (mstr::startsWith(command, "$"))
+	{
+		m_openState = O_DIR;
+		Debug_printv("LOAD $");
+	}	
 	else
 	{
-		m_openState = O_FILE;
+		// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
+		// some shit in check variable!
+		std::shared_ptr<MFile> new_mfile(guessIncomingPath(command));
+
+		m_device.url(new_mfile->url);
+		if (mstr::equals(new_mfile->extension,"URL")) 
+		{
+			new_mfile.reset(new_mfile->cd("dummy"));
+			m_device.url(new_mfile->url);
+			m_openState = O_DIR;
+			Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
+			Debug_printv("LOAD $");
+		}
+		if (mstr::startsWith(command, "CD", false) || new_mfile->isDirectory())
+		{
+			// Enter directory
+			m_device.url(new_mfile->url);
+			m_mfile = new_mfile;
+			m_openState = O_DIR;
+			Debug_printv("CD [%s]", new_mfile->url.c_str());
+			Debug_printv("LOAD $");
+		}
+		else
+		{
+			m_device.path(new_mfile->parent()->url);
+			m_filename_last = m_mfile->url;
+			m_mfile = new_mfile;
+			m_openState = O_FILE;
+			Debug_printv("Load File [%s]", m_mfile->url.c_str());
+		}
 	}
+
 
 	if (m_openState == O_DIR)
 	{
-		m_filename = "$";
-		m_filetype = "";
 		m_atn_cmd.str[0] = '\0';
 		m_atn_cmd.strLen = 0;
 	}
 
 	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Serial.printf("\r\n$IEC: DEVICE[%d] MEDIA[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.media(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
+	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILE[%s]\nCOMMAND[%s]\r\n", 
+					m_device.device(), 
+					m_device.media(), 
+					m_device.partition(), 
+					m_device.url().c_str(), 
+					m_device.path().c_str(),
+					m_mfile->url.c_str(),
+					atn_cmd.str
+	);
+	
+	// Debug_println("");
+	// Debug_printv("-------------------------------");
+	// Debug_printv("URL: [%s]", m_mfile->url.c_str());
+    // Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
+    // Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
+	// Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	// Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	// Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	// Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	// Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	// Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	// Debug_printv("File: [%s]", m_mfile->name.c_str());
+	// Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+    // Debug_printv("-------------------------------");
 
 } // handleATNCmdCodeOpen
 
@@ -418,7 +543,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 		{
 		case O_NOTHING:
 			// Say file not found
-			m_iec.sendFNF();
+			sendFileNotFound();
 			break;
 
 		case O_INFO:
@@ -428,33 +553,17 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 			break;
 
 		case O_FILE:
-			// Send program file
-			if (m_device.url().length())
-			{
-				sendFileHTTP();
-			}
-			else
-			{
-				sendFile();
-			}
+			// Send file
+			sendFile();
 			break;
 
 		case O_DIR:
 			// Send listing
-			if (m_device.url().length())
-			{
-				sendListingHTTP();
-			}
-			else
-			{
-				sendListing();
-			}
+			sendListing();
 			break;
 
 		case O_FILE_ERR:
-			// FIXME: interface with Host for error info.
-			//sendListing(/*&send_file_err*/);
-			m_iec.sendFNF();
+			sendFileNotFound();
 			break;
 
 		case O_DEVICE_INFO:
@@ -473,43 +582,9 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 
 void Interface::handleATNCmdCodeDataListen()
 {
-	byte lengthOrResult;
-	boolean wasSuccess = false;
+	Debug_printv("[%s]", m_device.url().c_str());
 
-	// process response into m_queuedError.
-	// Response: ><code in binary><CR>
-
-	serCmdIOBuf[0] = 0;
-
-	Debug_printf("\r\nhandleATNCmdCodeDataListen: %s", serCmdIOBuf);
-
-	if (not lengthOrResult or '>' not_eq serCmdIOBuf[0])
-	{
-		// FIXME: Check what the drive does here when things go wrong. FNF is probably not right.
-		m_iec.sendFNF();
-		strcpy_P(serCmdIOBuf, "response not sync.");
-	}
-	else
-	{
-		if (lengthOrResult = Serial.readBytes(serCmdIOBuf, 2))
-		{
-			if (2 == lengthOrResult)
-			{
-				lengthOrResult = serCmdIOBuf[0];
-				wasSuccess = true;
-			}
-			else
-			{
-				//Log(Error, FAC_IFACE, serCmdIOBuf);
-			}
-		}
-		m_queuedError = wasSuccess ? lengthOrResult : ErrSerialComm;
-
-		if (ErrOK == m_queuedError)
-			saveFile();
-		//		else // FIXME: Check what the drive does here when saving goes wrong. FNF is probably not right. Dummyread entire buffer from CBM?
-		//			m_iec.sendFNF();
-	}
+	saveFile();
 } // handleATNCmdCodeDataListen
 
 void Interface::handleATNCmdClose()
@@ -519,7 +594,6 @@ void Interface::handleATNCmdClose()
 	//Serial.printf("\r\nIEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str());
 	Debug_printf("\r\n=================================\r\n\r\n");
 
-	m_filename = "";
 } // handleATNCmdClose
 
 // send single basic line, including heading basic pointer and terminating zero.
@@ -570,29 +644,43 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 	return b_cnt;
 } // sendLine
 
-uint16_t Interface::sendHeader(uint16_t &basicPtr)
+
+uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 {
-	uint16_t byte_count;
+	uint16_t byte_count = 0;
+	bool sent_info = false;
 
 	// Send List HEADER
-	// "      MEAT LOAF 64      "
-	byte space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
-	byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+	//byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+	byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "%s", header.c_str());
 
 	// Send Extra INFO
-	if (m_device.url().length())
+	if (m_device.url().size())
 	{
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, "[URL]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, m_device.url().c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[URL]");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.url().c_str());
+		sent_info = true;
 	}
-	if (m_device.path().length() > 1)
+	if (m_device.path().size() > 1)
 	{
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, "[PATH]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 3, "", 16, m_device.path().c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[PATH]");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.path().c_str());
+		sent_info = true;
 	}
-	if (m_device.url().length() + m_device.path().length() > 1)
+	// if (m_device.archive().length() > 1)
+	// {
+	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[ARCHIVE]");
+	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.archive().c_str());
+	// }
+	if (m_device.image().size())
 	{
-		byte_count += sendLine(basicPtr, 0, "%*s\"----------------\" NFO", 3, "");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[IMAGE]");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.image().c_str());
+		sent_info = true;
+	}
+	if (sent_info)
+	{
+		byte_count += sendLine(basicPtr, 0, "%*s\"-------------------\" NFO", 0, "");
 	}
 
 	return byte_count;
@@ -603,7 +691,20 @@ void Interface::sendListing()
 	Debug_printf("\r\nsendListing:\r\n");
 
 	uint16_t byte_count = 0;
-	String extension = "DIR";
+	std::string extension = "DIR";
+
+	// Send List ITEMS
+	std::shared_ptr<MFile> dir(m_mfile);
+	if(!dir->isDirectory())
+		dir.reset(m_mfile->parent());
+
+	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
+
+	if(entry == nullptr) {
+		ledOFF();
+		sendFileNotFound();
+		return;
+	}
 
 	// Reset basic memory pointer:
 	uint16_t basicPtr = C64_BASIC_START;
@@ -614,16 +715,26 @@ void Interface::sendListing()
 	byte_count += 2;
 	Debug_println("");
 
-	byte_count += sendHeader(basicPtr);
-
-	// Send List ITEMS
-	//byte_count += sendLine(basicPtr, 1, "\"THIS IS A FILE\"     PRG");
-	//byte_count += sendLine(basicPtr, 5, "\"THIS IS A FILE 2\"   PRG");
-
-	Dir dir = m_fileSystem->openDir(m_device.path());
-	while (dir.next())
+	// Send Listing Header
+	char buffer[100];
+	byte space_cnt = 0;
+	// if (m_mfile->media_header.size() == 0)
 	{
-		uint16_t block_cnt = dir.fileSize() / 256;
+		// Set device default Listing Header
+		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
+		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+	}
+	// else
+	// {
+	// 	space_cnt = (16 - m_mfile->media_header.size()) / 2;
+	// 	sprintf(buffer, "\"%*s%s%*s\" %s\x00", space_cnt, "", m_mfile->media_header.c_str(), space_cnt, "", m_mfile->media_id.c_str());
+	// }
+	byte_count += sendHeader(basicPtr, buffer);
+	
+	// Send Directory Items
+	while(entry != nullptr)
+	{
+		uint16_t block_cnt = entry->size() / dir->media_block_size;
 		byte block_spc = 3;
 		if (block_cnt > 9)
 			block_spc--;
@@ -632,19 +743,19 @@ void Interface::sendListing()
 		if (block_cnt > 999)
 			block_spc--;
 
-		byte space_cnt = 21 - (dir.fileName().length() + 5);
+		byte space_cnt = 21 - (entry->name.length() + 5);
 		if (space_cnt > 21)
 			space_cnt = 0;
 
-		if (dir.fileSize())
+		if (!entry->isDirectory())
 		{
-			block_cnt = dir.fileSize() / 256;
+			if ( block_cnt < 1)
+				block_cnt = 1;
 
-			uint8_t ext_pos = dir.fileName().lastIndexOf(".") + 1;
-			if (ext_pos && ext_pos != dir.fileName().length())
+			// Get extension
+			if (entry->extension.length())
 			{
-				extension = dir.fileName().substring(ext_pos);
-				extension.toUpperCase();
+				extension = entry->extension;
 			}
 			else
 			{
@@ -657,16 +768,19 @@ void Interface::sendListing()
 		}
 
 		// Don't show hidden folders or files
-		if (!dir.fileName().startsWith("."))
+		//Debug_printv("size[%d] name[%s]", entry->size(), entry->name.c_str());
+		if (entry->name[0]!='.' || m_show_hidden)
 		{
-			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", dir.fileName().c_str(), space_cnt, "", extension.c_str());
+			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name.c_str(), space_cnt, "", extension.c_str());
 		}
+		
+		entry.reset(dir->getNextFileInDir());
 
-		//Debug_printf(" (%d, %d)\r\n", space_cnt, byte_count);
 		ledToggle(true);
 	}
 
-	byte_count += sendFooter(basicPtr);
+	// Send Listing Footer
+	byte_count += sendFooter(basicPtr, dir->media_blocks_free, dir->media_block_size);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -677,91 +791,87 @@ void Interface::sendListing()
 	ledON();
 } // sendListing
 
-uint16_t Interface::sendFooter(uint16_t &basicPtr)
+
+uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size)
 {
 	// Send List FOOTER
 	// #if defined(USE_LITTLEFS)
-	FSInfo64 fs_info;
-	m_fileSystem->info64(fs_info);
-	return sendLine(basicPtr, (fs_info.totalBytes - fs_info.usedBytes) / 256, "BLOCKS FREE.");
+	uint64_t byte_count = 0;
+	if (block_size > 256)
+	{
+		//String bytes = String(" BYTES");
+		byte_count += sendLine(basicPtr, 0, "%*s\"-------------------\" NFO", 0, "");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[BLOCK SIZE]");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "1024 BYTES");
+		byte_count += sendLine(basicPtr, 0, "%*s\"===================\" NFO", 0, "");
+	}
+	
+	// if (m_device.url().length() == 0)
+	// {
+	// 	FSInfo64 fs_info;
+	// 	m_fileSystem->info64(fs_info);
+	// 	blocks_free = fs_info.totalBytes - fs_info.usedBytes;
+	// }
+	byte_count = sendLine(basicPtr, blocks_free, "BLOCKS FREE.");
+	return byte_count;
 	// #elif defined(USE_SPIFFS)
 	// 	return sendLine(basicPtr, 00, "UNKNOWN BLOCKS FREE.");
 	// #endif
 	//Debug_println("");
 }
 
+
 void Interface::sendFile()
 {
-	uint16_t i = 0;
+	size_t i = 0;
 	bool success = true;
 
 	uint16_t bi = 0;
 	uint16_t load_address = 0;
-	char b[1];
-	char ba[9];
+	size_t b_len = 1;
+	uint8_t b[b_len];
 
+#ifdef DATA_STREAM
+	char ba[9];
 	ba[8] = '\0';
+#endif
 
 	// Update device database
 	m_device.save();
 
-	// Find first program
-	if (m_filename.endsWith("*"))
+	Debug_printv("[%s]", m_mfile->url.c_str());
+
+	if(!m_mfile->exists())
 	{
-		m_filename = "";
-
-		if (m_device.path() == "/" && m_device.image().length() == 0)
-		{
-			m_filename = "FB64";
-		}
-		else
-		{
-
-			Dir dir = m_fileSystem->openDir(m_device.path());
-			while (dir.next() && dir.isDirectory())
-			{
-				Debug_printf("\r\nsendFile: %s", dir.fileName().c_str());
-			}
-			if (dir.isFile())
-				m_filename = dir.fileName();
-		}
+		sendFileNotFound();
+		return;
 	}
-	String inFile = String(m_device.path() + m_filename);
 
-	File file = m_fileSystem->open(inFile, "r");
+	std::shared_ptr<MIStream> istream(m_mfile->inputStream());
+	size_t len = istream->available() - 1;
 
-	if (!file.available())
+	// Get file load address
+	istream->read(b, b_len);
+	success = m_iec.send(b[0]);
+	load_address = *b & 0x00FF; // low byte
+	istream->read(b, b_len);
+	success = m_iec.send(b[0]);
+	load_address = load_address | *b << 8;  // high byte
+
+	Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
+	for (i = 2; success and i <= len; i++)
 	{
-		Debug_printf("\r\nsendFile: %s (File Not Found)\r\n", inFile.c_str());
-		m_iec.sendFNF();
-	}
-	else
-	{
-		size_t len = file.size();
-
-		// Get file load address
-		file.readBytes(b, 1);
-		success = m_iec.send(b[0]);
-		load_address = *b & 0x00FF; // low byte
-		file.readBytes(b, 1);
-		success = m_iec.send(b[0]);
-		load_address = load_address | *b << 8;  // high byte
-		// fseek(file, 0, SEEK_SET);
-
-		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", inFile.c_str(), load_address, len);
-		for (i = 2; success and i < len; ++i) 
+		success = istream->read(b, b_len);
+		if (success)
 		{
-			success = file.readBytes(b, 1);
-			if (success)
-			{
 #ifdef DATA_STREAM
-				if (bi == 0)
-				{
-					Debug_printf(":%.4X ", load_address);
-					load_address += 8;
-				}
+			if (bi == 0)
+			{
+				Debug_printf(":%.4X ", load_address);
+				load_address += 8;
+			}
 #endif
-			if (i == len - 1)
+			if (i == len)
 			{
 				success = m_iec.sendEOI(b[0]); // indicate end of file.
 			}
@@ -772,266 +882,130 @@ void Interface::sendFile()
 
 #ifdef DATA_STREAM
 			// Show ASCII Data
-				if (b[0] < 32 || b[0] >= 127) 
-				b[0] = 46;
+			if (b[0] < 32 || b[0] >= 127) 
+			b[0] = 46;
 
-				ba[bi++] = b[0];
+			ba[bi++] = b[0];
 
-				if(bi == 8)
+			if(bi == 8)
 			{
 				size_t t = (i * 100) / len;
-					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
+				Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
 				bi = 0;
 			}
 #endif
 			// Toggle LED
 			if (i % 50 == 0)
-				{
-				ledToggle(true);
-				}
-			}
-
-			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
 			{
-				success = true;
-				break;
+				ledToggle(true);
 			}
 		}
-		file.close();
-		Debug_println("");
-		Debug_printf("%d of %d bytes sent\r\n", i, len);
 
-		ledON();
-
-		if (!success || i != len)
+		// Exit if ATN is pulled while sending
+		if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
 		{
-			Debug_println("sendFile: Transfer aborted!");
+			success = true;
+			break;
 		}
+	}
+	istream->close();
+	Debug_println("");
+	Debug_printf("%d of %d bytes sent\r\n", i, len);
+
+	ledON();
+
+	if (!success || i != len)
+	{
+		Debug_println("sendFile: Transfer aborted!");
+		// TODO: Send something to signal that there was an error to the C64
 	}
 } // sendFile
 
+
 void Interface::saveFile()
 {
-	String outFile = String(m_device.path() + m_filename);
-	byte b;
-
-	Debug_printf("\r\nsaveFile: %s", outFile.c_str());
-
-	File file = m_fileSystem->open(outFile, "w");
-	//	noInterrupts();
-	if (!file.available())
-	{
-		Debug_printf("\r\nsaveFile: %s (Error)\r\n", outFile.c_str());
-	}
-	else
-	{
-		boolean done = false;
-		// Recieve bytes until a EOI is detected
-		do
-		{
-			b = m_iec.receive();
-			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
-
-			file.write(b);
-		} while (not done);
-		file.close();
-	}
-	//	interrupts();
-} // saveFile
-
-void Interface::sendListingHTTP()
-{
-	Debug_printf("\r\nsendListingHTTP: ");
-
-	uint16_t byte_count = 0;
-
-	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
-	String url("http://" + m_device.url() + "/api/");
-	String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-
-	// Connect to HTTP server
-	HTTPClient client;
-	client.setUserAgent(user_agent);
-	// client.setFollowRedirects(true);
-	client.setTimeout(10000);
-	if (!client.begin(url))
-	{
-		Debug_println(F("\r\nConnection failed"));
-		m_iec.sendFNF();
-		return;
-	}
-	client.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
-	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
-
-	uint8_t httpCode = client.POST(post_data);	 //Send the request
-	WiFiClient payload = client.getStream(); //Get the response payload as Stream
-	//String payload = client.getString();    //Get the response payload as String
-
-	Debug_printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
-	if (httpCode != 200)
-	{
-		Debug_println(F("Error"));
-		m_iec.sendFNF();
-		return;
-	}
-
-	//Serial.println(payload);    //Print request response payload
-	m_lineBuffer = payload.readStringUntil('\n');
-
-	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
-
-	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-	byte_count += 2;
-	Debug_println("");
-
-	do
-	{
-		// Parse JSON object
-		DeserializationError error = deserializeJson(m_jsonHTTP, m_lineBuffer);
-		if (error)
-		{
-			Serial.print(F("\r\ndeserializeJson() failed: "));
-			Serial.println(error.c_str());
-			break;
-		}
-
-		byte_count += sendLine(basicPtr, m_jsonHTTP["blocks"], "%s", urldecode(m_jsonHTTP["line"].as<String>()).c_str());
-		ledToggle(true);
-		m_lineBuffer = payload.readStringUntil('\n');
-		//Serial.printf("\r\nlinebuffer: %d %s", m_lineBuffer.length(), m_lineBuffer.c_str());
-	} while (m_lineBuffer.length() > 1);
-
-	//End program with two zeros after last line. Last zero goes out as EOI.
-	m_iec.send(0);
-	m_iec.sendEOI(0);
-
-	Debug_printf("\r\nBytes Sent: %d\r\n", byte_count);
-
-	client.end(); //Close connection
-
-	ledON();
-} // sendListingHTTP
-
-void Interface::sendFileHTTP()
-{
 	uint16_t i = 0;
-	bool success = true;
+	bool done = false;
 
 	uint16_t bi = 0;
 	uint16_t load_address = 0;
-	char b[1];
+	size_t b_len = 1;
+	uint8_t b[b_len];
+	uint8_t ll[b_len];
+	uint8_t lh[b_len];
+
+#ifdef DATA_STREAM
 	char ba[9];
-
 	ba[8] = '\0';
+#endif
 
-	// Update device database
-	m_device.save();
+	std::shared_ptr<MOStream> ostream(m_mfile->outputStream());
+	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", m_mfile->url.c_str());
 
-	Debug_printf("\r\nsendFileHTTP: ");
-
-	String user_agent(String(PRODUCT_ID) + " [" + String(FW_VERSION) + "]");
-	String url("http://" + m_device.url() + "/api/");
-	String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-
-	// Connect to HTTP server
-	HTTPClient client;
-	client.setUserAgent(user_agent);
-	// client.setFollowRedirects(true);
-	client.setTimeout(10000);
-	if (!client.begin(url))
+    if(!ostream->isOpen()) {
+        Debug_printv("couldn't open a stream for writing");
+        return;
+    }
+    else 
 	{
-		Debug_println(F("\r\nConnection failed"));
-		m_iec.sendFNF();
-		return;
-	}
-	client.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
-	Debug_printf("\r\nConnected!\r\n--------------------\r\n%s\r\n%s\r\n%s\r\n", user_agent.c_str(), url.c_str(), post_data.c_str());
-
-	uint8_t httpCode = client.POST(post_data); //Send the request
-	WiFiClient file = client.getStream();  //Get the response payload as Stream
-
-	if (!file.available())
-	{
-		Debug_printf("\r\nsendFileHTTP: %s (File Not Found)\r\n", url.c_str());
-		m_iec.sendFNF();
-	}
-	else
-	{
-		size_t len = client.getSize();
+	 	// Stream is open!  Let's save this!
 
 		// Get file load address
-		file.readBytes(b, 1);
-		success = m_iec.send(b[0]);
-		load_address = *b & 0x00FF; // low byte
-		file.readBytes(b, 1);
-		success = m_iec.send(b[0]);
-		load_address = load_address | *b << 8;  // high byte
-		// fseek(file, 0, SEEK_SET);
+		ll[0] = m_iec.receive();
+		load_address = *ll & 0x00FF; // low byte
+		lh[0] = m_iec.receive();
+		load_address = load_address | *lh << 8;  // high byte
 
-		Debug_printf("\r\nsendFileHTTP: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_filename.c_str(), load_address, len);
-		for (i = 2; success and i < len; ++i)
-		{ 
-			// End if sending to CBM fails.
-			success = file.readBytes(b, 1);
-			if (success)
+		// Recieve bytes until a EOI is detected
+		do
+		{
+			// Save Load Address
+			if (i == 0)
 			{
-#ifdef DATA_STREAM
-				if (bi == 0)
-        		{
-					Debug_printf(":%.4X ", load_address);
-					load_address += 8;
-				}
-#endif
-				if (i == len - 1)
-				{
-					success = m_iec.sendEOI(b[0]); // indicate end of file.
-				}
-				else
-				{
-					success = m_iec.send(b[0]);
-				}
-
-#ifdef DATA_STREAM
-            // Show ASCII Data
-				if (b[0] < 32 || b[0] >= 127) 
-                b[0] = 46;
-
-				ba[bi++] = b[0];
-
-				if(bi == 8)
-            	{
-					size_t t = (i * 100) / len;
-					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
-                	bi = 0;
-            	}
-#endif
-				// Toggle LED
-				if (i % 50 == 0)
-				{
-					ledToggle(true);
-				}
-            }
-
-			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
-			{
-				success = true;
-				break;
+				ostream->write(ll, b_len);
+				ostream->write(lh, b_len);
+				i += 2;
+				Debug_println("]");
 			}
-        }
-        client.end();
-        Debug_println("");
-		Debug_printf("%d of %d bytes sent\r\n", i, len);
 
-        ledON();
+#ifdef DATA_STREAM
+			if (bi == 0)
+			{
+				Debug_printf(":%.4X ", load_address);
+				load_address += 8;
+			}
+#endif
 
-		if (!success || i != len)
-        {
-			Debug_println("Transfer aborted!");
-        }
+			b[0] = m_iec.receive();
+			ostream->write(b, b_len);
+			i++;
+
+			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
+
+#ifdef DATA_STREAM
+			// Show ASCII Data
+			if (b[0] < 32 || b[0] >= 127) 
+			b[0] = 46;
+
+			ba[bi++] = b[0];
+
+			if(bi == 8)
+			{
+				Debug_printf(" %s (%d)\r\n", ba, i);
+				bi = 0;
+			}
+#endif
+			// Toggle LED
+			if (i % 50 == 0)
+			{
+				ledToggle(true);
+			}
+		} while (not done);
     }
-}
+    ostream->close(); // nor required, closes automagically
+
+	Debug_printf("\n%d bytes received\n", i);
+	ledON();
+
+	// TODO: Handle errorFlag
+} // saveFile

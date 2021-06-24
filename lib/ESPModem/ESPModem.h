@@ -1,5 +1,5 @@
-#ifndef ESPMODEM_H
-#define ESPMODEM_H
+#ifndef MEATLIB_ESPMODEM_ESPMODEM
+#define MEATLIB_ESPMODEM_ESPMODEM
 
 #if defined(ESP32)
 #include <WiFi.h>
@@ -12,6 +12,7 @@
 
 #include <WiFiClient.h>
 #include <WiFiServer.h>
+
 #include <EEPROM.h>
 
 #include "../../include/global_defines.h"
@@ -144,7 +145,7 @@ public:
     void sendResult(int resultCode);
     void sendString(String msg);
  //   int checkButton();
-    void connectWiFi();
+    bool connectWiFi();
     void updateLed();
     void disconnectWiFi();
     void setBaudRate(int inSpeed);
@@ -194,4 +195,4 @@ public:
     void service();
 };
 
-#endif
+#endif /* MEATLIB_ESPMODEM_ESPMODEM */

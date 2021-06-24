@@ -17,7 +17,7 @@
 #define __IGNORE_UNSUED_PVAR(v) (void*)v
 
 
-// Retruns a uint16 value given two bytes in high-low order
+// Returns a uint16 value given two bytes in high-low order
 #define UINT16_FROM_HILOBYTES(high, low) ((uint16_t)high << 8 | low)
 
 // Returns a uint16 value from the little-endian version
@@ -32,13 +32,6 @@
 // Returns the low byte (LSB) of a uint16 value
 #define LOBYTE_FROM_UINT16(value) ((uint8_t)(value & 0xFF))
 
-void util_string_ltrim(std::string &s);
-void util_string_rtrim(std::string &s);
-void util_string_trim(std::string &s);
-
-void util_string_tolower(std::string &s);
-void util_string_toupper(std::string &s);
-
 long util_parseInt(FILE *f, char skipChar);
 long util_parseInt(FILE *f);
 
@@ -49,8 +42,6 @@ std::string util_long_entry(std::string filename, size_t fileSize, bool is_dir);
 int util_ellipsize(const char* src, char *dst, int dstsize);
 //std::string util_ellipsize(std::string longString, int maxLength);
 bool util_wildcard_match(const char *str, const char *pattern);
-bool util_starts_with(std::string s, const char *pattern);
-bool util_ends_with(std::string s, const char *pattern);
 
 bool util_concat_paths(char *dest, const char *parent, const char *child, int dest_size);
 
@@ -65,6 +56,11 @@ void util_clean_devicespec(uint8_t* buf, unsigned short len);
 bool util_string_value_is_true(std::string value);
 bool util_string_value_is_true(const char *value);
 
-void util_replaceAll(std::string& str, const std::string& from, const std::string& to);
+void util_replace_all(std::string& str, const std::string& from, const std::string& to);
+
+
+bool compare_char(char &c1, char &c2);
+bool compare_char_insensitive(char &c1, char &c2);
 
 #endif // _FN_UTILS_H
+

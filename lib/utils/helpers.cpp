@@ -1,3 +1,20 @@
+// Meatloaf - A Commodore 64/128 multi-device emulator
+// https://github.com/idolpx/meatloaf
+// Copyright(C) 2020 James Johnston
+//
+// Meatloaf is free software : you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Meatloaf is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
+
 #include "helpers.h"
 
 
@@ -122,3 +139,48 @@ String formatBytes ( size_t bytes )
         return String ( bytes / 1024.0 / 1024.0 / 1024.0 ) + " GB";
     }
 }
+
+// String readLine(FS *fileSystem, String filename)
+// {
+// 	uint16_t i;
+// 	char b[1];
+//     String line;
+
+// 	File file = fileSystem->open(filename, "r");
+// 	if (!file.available())
+// 	{
+// 		Serial.printf("\r\nFile Not Found: %s\r\n", filename.c_str());
+// 	}
+// 	else
+// 	{
+// 		size_t len = file.size();
+//         line.reserve(len);
+// 		for(i = 0; i < len; i++) {
+// 			line += (char)file.read();
+// 		}
+// 		file.close();
+// 	}
+//     return line;
+// } // readLine
+
+// void readFile(FS *fileSystem, String filename)
+// {
+// 	uint16_t i;
+// 	char b[1];
+
+// 	File file = fileSystem->open(filename, "r");
+// 	if (!file.available())
+// 	{
+// 		Serial.printf("\r\nFile Not Found: %s\r\n", filename.c_str());
+// 	}
+// 	else
+// 	{
+// 		size_t len = file.size();
+// 		Serial.printf("\r\n[%s] (%d bytes)\r\n================================\r\n", filename.c_str(), len);
+// 		for(i = 0; i < len; i++) {
+// 			file.readBytes(b, sizeof(b));
+// 			Serial.print(b);
+// 		}
+// 		file.close();
+// 	}
+// } // readFile
