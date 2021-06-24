@@ -459,11 +459,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		std::shared_ptr<MFile> new_mfile(guessIncomingPath(command));
 
 		m_device.url(new_mfile->url);
-		if (mstr::equals(new_mfile->extension,"url")) 
+		if (mstr::equals(new_mfile->extension,"URL")) 
 		{
 			new_mfile.reset(new_mfile->cd("dummy"));
-			m_device.path(new_mfile->url);
-			m_filename = "";
+			m_device.url(new_mfile->url);
 			m_openState = O_DIR;
 			Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
 			Debug_printv("LOAD $");
