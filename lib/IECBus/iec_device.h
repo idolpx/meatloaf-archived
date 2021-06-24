@@ -92,9 +92,9 @@ private:
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...);
 	uint16_t sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size);
-	void sendListing(std::string path);
-	void sendFile(std::string url);
-	void saveFile(std::string url);
+	void sendListing();
+	void sendFile();
+	void saveFile();
 
 	// handler helpers.
 	void handleATNCmdCodeOpen(IEC::ATNCmd &cmd);
@@ -115,13 +115,13 @@ private:
 	// atn command buffer struct
 	IEC::ATNCmd &m_atn_cmd;
 
-	//std::shared_ptr<MFile> m_mfile;
+
 	//StaticJsonDocument<256> m_jsonHTTP;
 	//String m_lineBuffer;
 	//DynamicJsonDocument m_jsonHTTPBuffer;
 
 	DeviceDB m_device;
-	std::string m_filename;
+	std::shared_ptr<MFile> m_mfile;
 	std::string m_filename_last;
 
 	std::string m_device_status;
