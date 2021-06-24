@@ -377,7 +377,7 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 	Debug_printv("[%s]", guessedPath.c_str());
 
 	// get the current directory
-	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_device.path()));
+	std::shared_ptr<MFile> currentDir(MFSOwner::File(m_device.path()));
 
 	// check to see if it starts with a known command token
 	if(mstr::startsWith(commandLne, "CD", false)) // would be case sensitive, but I don't know the proper case
@@ -456,7 +456,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	{
 		// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
 		// some shit in check variable!
-		std::unique_ptr<MFile> new_mfile(guessIncomingPath(command));
+		std::shared_ptr<MFile> new_mfile(guessIncomingPath(command));
 
 		m_device.url(new_mfile->url);
 		if (mstr::startsWith(command, "CD", false) || new_mfile->isDirectory())
