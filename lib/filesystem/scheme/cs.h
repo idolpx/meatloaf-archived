@@ -61,8 +61,8 @@ public:
     };
 
     bool isDirectory() override;
-    MIstream* inputStream() override ; // has to return OPENED stream
-    MOstream* outputStream() override ; // has to return OPENED stream
+    MIStream* inputStream() override ; // has to return OPENED stream
+    MOStream* outputStream() override ; // has to return OPENED stream
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
     bool exists() override ;
@@ -74,7 +74,7 @@ public:
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override  { return 0; };
     bool rename(const char* dest) { return false; };
-    MIstream* createIStream(MIstream* src) { return src; };
+    MIStream* createIStream(MIStream* src) { return src; };
 
 };
 
@@ -83,7 +83,7 @@ public:
  ********************************************************/
 
 //
-class CServerIStream: public MIstream {
+class CServerIStream: public MIStream {
 
 public:
     CServerIStream(std::string path) {
@@ -99,7 +99,7 @@ public:
     void close() override;
     bool open() override;
 
-    // MIstream methods
+    // MIStream methods
     int available() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen() override;
@@ -113,7 +113,7 @@ protected:
 };
 
 
-class CServerOStream: public MOstream {
+class CServerOStream: public MOStream {
 
 public:
     // MStream methods
@@ -130,7 +130,7 @@ public:
     void close() override;
     bool open() override;
 
-    // MOstream methods
+    // MOStream methods
     size_t write(const uint8_t *buf, size_t size) override;
     void flush() override;
     bool isOpen() override;

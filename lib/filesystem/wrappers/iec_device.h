@@ -9,8 +9,8 @@
 class IECDevice {
     // FIRST you have to wrap iec data into our I/OStream API
     // THEN you have to initialize below two with such IOStreams:
-    MOstream* iecOstream; // TODO
-    MIstream* iecIstream; // TODO - this stream might work on interrupts and store incoming bytes in its internal buffer!
+    MOStream* iecOstream; // TODO
+    MIStream* iecIstream; // TODO - this stream might work on interrupts and store incoming bytes in its internal buffer!
 
     void signalError(int number, int track=0, int sector=0) {
         // send iec error here like in:
@@ -22,7 +22,7 @@ class IECDevice {
     // This method transfers a file from any path to IEC device, converting it on the fly if it is a TXT file
     bool transferFile(MFile* srcPath) {
         //auto istream = srcPath->inputStream();
-        std::unique_ptr<MIstream> istream(srcPath->inputStream());
+        std::unique_ptr<MIStream> istream(srcPath->inputStream());
 
         // or istream.get() ???
         if(istream == nullptr) {
@@ -76,7 +76,7 @@ class IECDevice {
 
     // This metod will save a stream from IEC device to any path, converting it on the fly if it is a text file
     bool receiveFile(MFile* dstPath) {
-        std::unique_ptr<MOstream> ostream(dstPath->outputStream());
+        std::unique_ptr<MOStream> ostream(dstPath->outputStream());
 
         // or ostream.get() ???
         if(ostream == nullptr) {

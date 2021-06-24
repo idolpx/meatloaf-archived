@@ -15,12 +15,12 @@
 class DNPFile: public MFile {
 public:
     DNPFile(std::string path);
-    MIstream* createIStream(MIstream* src) override { return 0; };
+    MIStream* createIStream(MIStream* src) override { return 0; };
 
     MFile* cd(std::string newDir) override;
     bool isDirectory() override { return true; };
-    MIstream* inputStream() override { return 0; }; // has to return OPENED stream
-    MOstream* outputStream() override { return 0; }; // has to return OPENED stream
+    MIStream* inputStream() override { return 0; }; // has to return OPENED stream
+    MOStream* outputStream() override { return 0; }; // has to return OPENED stream
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override { return 0; };
     bool rewindDirectory() { return true; } ;
@@ -37,9 +37,9 @@ public:
 /********************************************************
  * Streams implementations
  ********************************************************/
-class DNPIStream: public MIstream {
+class DNPIStream: public MIStream {
 public:
-    DNPIStream(MIstream* srcStream): srcStr(srcStream) {
+    DNPIStream(MIStream* srcStream): srcStr(srcStream) {
         // this stream must be able to return a stream of
         // raw file contents from DNP partition
         // additionaly it has to implement getNextEntry()
@@ -55,7 +55,7 @@ public:
         close();
     }
 
-    // MIstream methods
+    // MIStream methods
     int available() override;
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;

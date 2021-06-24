@@ -8,10 +8,10 @@
  * Streams implementations
  ********************************************************/
 
-class SevenZipIStream: MIstream {
+class SevenZipIStream: MIStream {
 public:
     
-    SevenZipIStream(MIstream* srcStream): srcStr(srcStream) {
+    SevenZipIStream(MIStream* srcStream): srcStr(srcStream) {
         // this stream must be able to return a stream of
         // UNPACKED file contents
         // additionaly it has to implement getNextEntry()
@@ -27,7 +27,7 @@ public:
         close();
     }
 
-    // MIstream methods
+    // MIStream methods
     int available() override;
     uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
@@ -47,11 +47,11 @@ class SevenZipFile: public MFile
 {
 public:
     SevenZipFile(std::string path) : MFile(path) {};
-    MIstream* createIStream(MIstream* src) override;
+    MIStream* createIStream(MIStream* src) override;
 
     bool isDirectory() override;
-    MIstream* inputStream() override ; // has to return OPENED stream
-    MOstream* outputStream() override ; // has to return OPENED stream
+    MIStream* inputStream() override ; // has to return OPENED stream
+    MOStream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
     bool rewindDirectory() override ;

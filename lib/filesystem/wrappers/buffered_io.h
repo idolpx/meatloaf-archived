@@ -65,7 +65,7 @@ public:
  ********************************************************/
 
 class BufferedReader {
-    MIstream* istream = nullptr;
+    MIStream* istream = nullptr;
     std::function<int(uint8_t* buf, size_t size)> readFn;
 
     uint8_t rawBuffer[BUFFER_SIZE] = { 0 };
@@ -88,7 +88,7 @@ protected:
     }
 
 public:
-    BufferedReader(MIstream* is) : istream(is), m_available(is->available()) { 
+    BufferedReader(MIStream* is) : istream(is), m_available(is->available()) { 
     };
 
     BufferedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : readFn(fn) {
@@ -127,10 +127,10 @@ public:
  ********************************************************/
 
 class BufferedWriter {
-    MOstream* ostream;
+    MOStream* ostream;
 
 public:
-    BufferedWriter(MOstream* os) : ostream(os) { 
+    BufferedWriter(MOStream* os) : ostream(os) { 
     };
 
     int write(MBuffer* buffer) {
@@ -140,6 +140,7 @@ public:
     bool writeByte(uint8_t byteToWrite) 
     {
         ostream->write(&byteToWrite, 1);
+        return true;
     }
 };
 

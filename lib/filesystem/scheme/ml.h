@@ -16,10 +16,11 @@
 #include <ArduinoJson.h>
 
 #include "meat_io.h"
-#include "scheme/http.h"
+#include "http.h"
 #include "../../include/global_defines.h"
 #include "helpers.h"
 #include "peoples_url_parser.h"
+
 
 /********************************************************
  * File
@@ -50,8 +51,8 @@ public:
     //void openDir(const char *path) override;
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
-    // MIstream* inputStream() override ; // file on ML server = standard HTTP file available via GET
-    // MOstream* outputStream() override ; // we can't write to ML server, can we?
+    MIStream* inputStream(); // file on ML server = standard HTTP file available via GET
+    // MOStream* outputStream() override ; // we can't write to ML server, can we?
     //time_t getLastWrite() override ; // you can implement it if you want
     //time_t getCreationTime() override ; // you can implement it if you want
     //bool mkDir() override { return false; }; // we can't write to ML server, can we?
@@ -59,7 +60,7 @@ public:
     size_t size() override { return m_size; };
     //bool remove() override { return false; }; // we can't write to ML server, can we?
     //bool rename(const char* dest) { return false; }; // we can't write to ML server, can we?
-    //MIstream* createIStream(MIstream* src); // not used anyway
+    //MIStream* createIStream(MIStream* src); // not used anyway
 
     //std::string mediaRoot();
 };
@@ -72,11 +73,11 @@ class MLIStream: public HttpIStream {
 
 public:
     MLIStream(std::string path) : HttpIStream(path) {
-        // m_http.setUserAgent(USER_AGENT);
-        // m_http.setTimeout(10000);
-        // m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-        // m_http.setRedirectLimit(10);
-        // url = path;
+        m_http.setUserAgent(USER_AGENT);
+        m_http.setTimeout(10000);
+        m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+        m_http.setRedirectLimit(10);
+        url = path;
     }
     // MStream methods
     bool seek(uint32_t pos, SeekMode mode) override;
@@ -88,7 +89,7 @@ public:
         close();
     }
 
-    // MIstream methods
+    // MIStream methods
     int available() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();

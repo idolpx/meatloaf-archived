@@ -34,18 +34,18 @@ public:
 // };
 
 
-class MOstream: public MStream {
+class MOStream: public MStream {
 public:
     virtual size_t write(const uint8_t *buf, size_t size) = 0;
     virtual void flush() = 0;
 };
 
 
-class MIstream: public MStream {
+class MIStream: public MStream {
 public:
     virtual int available() = 0;
     virtual size_t read(uint8_t* buf, size_t size) = 0;
-    bool pipeTo(MOstream* ostream);
+    bool pipeTo(MOStream* ostream);
     std::string seekNextEntry() {
         return "";
     };

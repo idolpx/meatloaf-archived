@@ -838,7 +838,7 @@ void Interface::sendFile(std::string url)
 		return;
 	}
 
-	std::shared_ptr<MIstream> istream(file->inputStream());
+	std::shared_ptr<MIStream> istream(file->inputStream());
 	size_t len = istream->available() - 1;
 
 	// Get file load address
@@ -931,7 +931,7 @@ void Interface::saveFile(std::string url)
 #endif
 
 	std::unique_ptr<MFile> file(MFSOwner::File(url));
-	std::shared_ptr<MOstream> ostream(file->outputStream());
+	std::shared_ptr<MOStream> ostream(file->outputStream());
 	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", file->url.c_str());
 
     if(!ostream->isOpen()) {

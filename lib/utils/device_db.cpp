@@ -48,7 +48,7 @@ bool DeviceDB::select(uint8_t new_device_id)
     if ( file->exists() )
     {
         // // Load Device Settings
-        // std::shared_ptr<MIstream> istream(file->inputStream());
+        // std::shared_ptr<MIStream> istream(file->inputStream());
         // deserializeJson(m_device, istream);
         Debug_printv("loaded");
     }
@@ -73,7 +73,7 @@ bool DeviceDB::save()
         // if ( file->exists() )
         //     file->remove();
 
-        // std::shared_ptr<MOstream> ostream(file->outputStream());
+        // std::shared_ptr<MOStream> ostream(file->outputStream());
         // serializeJson(m_device, ostream); 
     }
 

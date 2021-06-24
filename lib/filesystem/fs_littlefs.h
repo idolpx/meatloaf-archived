@@ -103,8 +103,8 @@ public:
     MFile* cd(std::string newDir);
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
     bool isDirectory() override;
-    MIstream* inputStream() override ; // has to return OPENED stream
-    MOstream* outputStream() override ; // has to return OPENED stream
+    MIStream* inputStream() override ; // has to return OPENED stream
+    MOStream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
     bool rewindDirectory() override ;
@@ -114,7 +114,7 @@ public:
     size_t size() override ;
     bool remove() override ;
     bool rename(const char* dest);
-    MIstream* createIStream(MIstream* src);
+    MIStream* createIStream(MIStream* src);
 
 private:
     void openDir(const char *path);
@@ -155,7 +155,7 @@ private:
  * MStreams O
  ********************************************************/
 
-class LittleOStream: public MOstream {
+class LittleOStream: public MOStream {
 public:
     // MStream methods
     LittleOStream(std::string& path) {
@@ -171,7 +171,7 @@ public:
         close();
     }
 
-    // MOstream methods
+    // MOStream methods
     //size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
     void flush() override;
@@ -189,7 +189,7 @@ protected:
  ********************************************************/
 
 
-class LittleIStream: public MIstream {
+class LittleIStream: public MIStream {
 public:
     LittleIStream(std::string& path) {
         localPath = path;
@@ -205,7 +205,7 @@ public:
         close();
     }
 
-    // MIstream methods
+    // MIStream methods
     int available() override;
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;

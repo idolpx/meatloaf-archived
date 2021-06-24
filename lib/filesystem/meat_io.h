@@ -40,16 +40,16 @@ public:
     bool operator!=(nullptr_t ptr);
 
     bool copyTo(MFile* dst) {
-        std::unique_ptr<MIstream> istream(this->inputStream());
-        std::unique_ptr<MOstream> ostream(dst->outputStream());
+        std::unique_ptr<MIStream> istream(this->inputStream());
+        std::unique_ptr<MOStream> ostream(dst->outputStream());
 
         return istream->pipeTo(ostream.get());
     };
 
     virtual MFile* cd(std::string newDir);
     virtual bool isDirectory() = 0;
-    virtual MIstream* inputStream();
-    virtual MOstream* outputStream() = 0 ; // has to return OPENED stream
+    virtual MIStream* inputStream();
+    virtual MOStream* outputStream() = 0 ; // has to return OPENED stream
     virtual time_t getLastWrite() = 0 ;
     virtual time_t getCreationTime() = 0 ;
     virtual bool rewindDirectory() = 0 ;
@@ -66,7 +66,7 @@ public:
     std::string pathInStream;
 
 protected:
-    virtual MIstream* createIStream(MIstream* src) = 0;
+    virtual MIStream* createIStream(MIStream* src) = 0;
     bool m_isNull;
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 friend class MFSOwner;

@@ -176,20 +176,20 @@ bool LittleFile::isDirectory()
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
 }
 
-MIstream* LittleFile::createIStream(MIstream* is) {
+MIStream* LittleFile::createIStream(MIStream* is) {
     return is; // we don't have to process this stream in any way, just return the original stream
 }
 
-MIstream* LittleFile::inputStream()
+MIStream* LittleFile::inputStream()
 {
-    MIstream* istream = new LittleIStream(path);
+    MIStream* istream = new LittleIStream(path);
     istream->open();   
     return istream;
 }
 
-MOstream* LittleFile::outputStream()
+MOStream* LittleFile::outputStream()
 {
-    MOstream* ostream = new LittleOStream(path);
+    MOStream* ostream = new LittleOStream(path);
     ostream->open();   
     return ostream;
 }
@@ -503,7 +503,7 @@ bool LittleIStream::open() {
     return isOpen();
 };
 
-// MIstream methods
+// MIStream methods
 int LittleIStream::available() {
     if(!isOpen()) return 0;
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();

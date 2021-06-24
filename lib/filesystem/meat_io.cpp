@@ -156,12 +156,12 @@ void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::v
     //Debug_printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
 }
 
-MIstream* MFile::inputStream() {
+MIStream* MFile::inputStream() {
     ; // has to return OPENED stream
     std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
-    std::shared_ptr<MIstream> containerStream(containerFile->inputStream()); // get its base stream, i.e. zip raw file contents
+    std::shared_ptr<MIStream> containerStream(containerFile->inputStream()); // get its base stream, i.e. zip raw file contents
 
-    std::shared_ptr<MIstream> decodedStream(createIStream(containerStream.get())); // wrap this stream into decodec stream, i.e. unpacked zip files
+    std::shared_ptr<MIStream> decodedStream(createIStream(containerStream.get())); // wrap this stream into decodec stream, i.e. unpacked zip files
 
     if(pathInStream != "" && decodedStream->isBrowsable()) {
         // stream is browsable and path was requested, let's skip the stream to requested file

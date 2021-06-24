@@ -1,4 +1,5 @@
 #include "http.h"
+
 /********************************************************
  * File impls
  ********************************************************/
@@ -8,21 +9,21 @@ bool HttpFile::isDirectory() {
     return false;
 };
 
-MIstream* HttpFile::inputStream() {
+MIStream* HttpFile::inputStream() {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
-    MIstream* istream = new HttpIStream(url);
+    MIStream* istream = new HttpIStream(url);
     istream->open();   
     return istream;
 } ; 
 
-MIstream* HttpFile::createIStream(MIstream* is) {
+MIStream* HttpFile::createIStream(MIStream* is) {
     return is; // we've overriden istreamfunction, so this one won't be used
 }
 
-MOstream* HttpFile::outputStream() {
+MOStream* HttpFile::outputStream() {
     // has to return OPENED stream
-    MOstream* ostream = new HttpOStream(url);
+    MOStream* ostream = new HttpOStream(url);
     ostream->open();   
     return ostream;
 } ; 
@@ -38,14 +39,14 @@ time_t HttpFile::getCreationTime() {
 bool HttpFile::exists() {
     Debug_printv("[%s]", url.c_str());
     // we may try open the stream to check if it exists
-    std::unique_ptr<MIstream> test(inputStream());
+    std::unique_ptr<MIStream> test(inputStream());
     // remember that MIStream destuctor should close the stream!
     return test->isOpen();
 } ; 
 
 size_t HttpFile::size() {
     // we may take content-lenght from header if exists
-    std::unique_ptr<MIstream> test(inputStream());
+    std::unique_ptr<MIStream> test(inputStream());
 
     size_t size = 0;
 

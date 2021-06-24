@@ -13,11 +13,11 @@ class URLFile: public MFile {
 public:
     URLFile(std::string path) : MFile(path) {};
 
-    MIstream* createIStream(MIstream* src) override { return 0; };
+    MIStream* createIStream(MIStream* src) override { return 0; };
     MFile* cd(std::string newDir) override ;
     bool isDirectory() override { return true; };
-    MIstream* inputStream() override { return 0; }; // has to return OPENED stream
-    MOstream* outputStream() override { return 0; }; // has to return OPENED stream
+    MIStream* inputStream() override { return 0; }; // has to return OPENED stream
+    MOStream* outputStream() override { return 0; }; // has to return OPENED stream
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override { return 0; };
     bool rewindDirectory() { return true; } ;

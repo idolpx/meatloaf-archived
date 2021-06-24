@@ -90,7 +90,7 @@ class C64LinedWriter: public LinedWriter {
 public:
     char delimiter = '\n';
 
-    C64LinedWriter(MOstream* os) : LinedWriter(os) { 
+    C64LinedWriter(MOStream* os) : LinedWriter(os) { 
     };
 
     bool print(std::string line) {
@@ -124,7 +124,7 @@ class C64LinedReader: public LinedReader {
 public:
     char delimiter = '\n';
 
-    C64LinedReader(MIstream* is) : LinedReader(is), buffPos(0), lineBuilder("") { };
+    C64LinedReader(MIStream* is) : LinedReader(is), buffPos(0), lineBuilder("") { };
     
     C64LinedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : LinedReader(fn), buffPos(0), lineBuilder("") {}
 

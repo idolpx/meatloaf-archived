@@ -106,7 +106,7 @@ bool MLFile::rewindDirectory() {
 
         // Show HTTP Headers
         Serial.println("HEADERS--------------");
-        size_t i = 0;
+        int i = 0;
         for (i=0; i < m_http.headers(); i++)
         {
             Serial.println(m_http.header(i));
@@ -128,6 +128,14 @@ bool MLFile::rewindDirectory() {
 
     return dirIsOpen;
 };
+
+MIStream* MLFile::inputStream() {
+    // has to return OPENED stream
+    Debug_printv("[%s]", url.c_str());
+    MIStream* istream = new MLIStream(url);
+    istream->open();   
+    return istream;
+}; 
 
 
 bool MLIStream::open() {
@@ -158,4 +166,5 @@ bool MLIStream::open() {
     m_length = m_http.getSize();
     Debug_printv("length=%d", m_length);
     m_bytesAvailable = m_length;
+    return true;
 };

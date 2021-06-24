@@ -36,7 +36,7 @@ class LinedWriter: public BufferedWriter {
 public:
     char delimiter = '\n';
 
-    LinedWriter(MOstream* os) : BufferedWriter(os) { 
+    LinedWriter(MOStream* os) : BufferedWriter(os) { 
     };
 
     bool print(std::string line) {
@@ -77,7 +77,7 @@ class LinedReader: public BufferedReader {
 public:
     char delimiter = '\n';
 
-    LinedReader(MIstream* is) : BufferedReader(is), buffPos(0), lineBuilder("") { };
+    LinedReader(MIStream* is) : BufferedReader(is), buffPos(0), lineBuilder("") { };
     
     LinedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {}
 

@@ -38,7 +38,7 @@ void testReader(MFile* readeTest) {
 
     Serial.printf("* Trying to read file:%s\n", readeTest->url.c_str());
 
-    std::shared_ptr<MIstream> readerStream(readeTest->inputStream());
+    std::shared_ptr<MIStream> readerStream(readeTest->inputStream());
 
     if(readerStream->isOpen()) {
         LinedReader reader(readerStream.get());
@@ -130,9 +130,9 @@ void testCopy(MFile* srcFile, MFile* dstFile) {
     }
 
     //Serial.println("FSTEST copy: attempt obtain istream");
-    std::shared_ptr<MIstream> srcStream(srcFile->inputStream());
+    std::shared_ptr<MIStream> srcStream(srcFile->inputStream());
     //Serial.println("FSTEST copy: attempt obtain ostream");
-    std::shared_ptr<MOstream> dstStream(dstFile->outputStream());
+    std::shared_ptr<MOStream> dstStream(dstFile->outputStream());
 
     if(!srcStream->isOpen()) {
         Serial.println("FSTEST: couldn't open a stream for reading");
@@ -272,7 +272,7 @@ void httpStream(char *url)
         size_t len = file->size();
         Debug_printv("File exists! size [%d]\r\n", len);
 
-        std::shared_ptr<MIstream> stream(file->inputStream());
+        std::shared_ptr<MIStream> stream(file->inputStream());
 
 		for(i=0;i < len; i++)
 		{

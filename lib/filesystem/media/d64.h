@@ -9,9 +9,9 @@
  * Streams implementations
  ********************************************************/
 
-class D64IStream: public MIstream {
+class D64IStream: public MIStream {
 public:
-    D64IStream(MIstream* srcStream): srcStr(srcStream) {
+    D64IStream(MIStream* srcStream): srcStr(srcStream) {
         // this stream must be able to return a stream of
         // raw file contents from D64 partition
         // additionaly it has to implement getNextEntry()
@@ -28,7 +28,7 @@ public:
         close();
     }
 
-    // MIstream methods
+    // MIStream methods
     int available() override;
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
@@ -49,12 +49,12 @@ protected:
 class D64File: public MFile {
 public:
     D64File(std::string path) : MFile(path) {};
-    MIstream* createIStream(MIstream* src) override { return 0; };
+    MIStream* createIStream(MIStream* src) override { return 0; };
 
     MFile* cd(std::string newDir) override { return 0; };
     bool isDirectory() override { return true; };
-    MIstream* inputStream() override { return 0; }; // has to return OPENED stream
-    MOstream* outputStream() override { return 0; }; // has to return OPENED stream
+    MIStream* inputStream() override { return 0; }; // has to return OPENED stream
+    MOStream* outputStream() override { return 0; }; // has to return OPENED stream
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override { return 0; };
     bool rewindDirectory() { return true; } ;
