@@ -51,12 +51,12 @@ public:
     //void openDir(const char *path) override;
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
-    MIStream* inputStream(); // file on ML server = standard HTTP file available via GET
-    // MOStream* outputStream() override ; // we can't write to ML server, can we?
+    MIStream* inputStream() override ; // file on ML server = standard HTTP file available via GET
+    //MOStream* outputStream() override ; // we can't write to ML server, can we?
     //time_t getLastWrite() override ; // you can implement it if you want
     //time_t getCreationTime() override ; // you can implement it if you want
     //bool mkDir() override { return false; }; // we can't write to ML server, can we?
-    // bool exists() override ;
+    //bool exists() override ;
     size_t size() override { return m_size; };
     //bool remove() override { return false; }; // we can't write to ML server, can we?
     //bool rename(const char* dest) { return false; }; // we can't write to ML server, can we?
@@ -69,10 +69,13 @@ public:
 /********************************************************
  * Streams
  ********************************************************/
+
 class MLIStream: public HttpIStream {
 
 public:
-    MLIStream(std::string path) : HttpIStream(path) {
+    MLIStream(std::string path) :
+    HttpIStream(path)
+    {
         m_http.setUserAgent(USER_AGENT);
         m_http.setTimeout(10000);
         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
@@ -104,6 +107,7 @@ protected:
     int m_position = 0;
     bool isFriendlySkipper = false;
 };
+
 
 /********************************************************
  * FS
