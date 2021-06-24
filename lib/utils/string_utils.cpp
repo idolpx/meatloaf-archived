@@ -105,6 +105,17 @@ namespace mstr {
 
     }
 
+    bool equals(std::string &s1, char* s2, bool case_sensitive)
+    {
+        if(case_sensitive)
+            return ( (s1.size() == strlen(s2) ) &&
+                std::equal(s1.begin(), s1.end(), s2, &compare_char) );
+        else
+            return ( (s1.size() == strlen(s2) ) &&
+                std::equal(s1.begin(), s1.end(), s2, &compare_char_insensitive) );
+
+    }
+
     // convert to lowercase (in place)
     void toLower(std::string &s)
     {

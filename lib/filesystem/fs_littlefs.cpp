@@ -124,7 +124,19 @@ int LittleFileSystem::lfs_flash_sync(const struct lfs_config *c) {
  ********************************************************/
 
 MFile* LittleFile::cd(std::string newDir) {
-    if(newDir[0]=='/') {
+    if(newDir[0]=='/' && newDir[1]=='/') {
+        if(newDir.size()==2) {
+            // user entered: CD:// or CD//
+            // means: change to the root of roots
+            return MFSOwner::File("/"); // chedked, works ad flash root!
+        }
+        else {
+            // user entered: CD://DIR or CD//DIR
+            // means: change to a dir in root of roots
+            return root(mstr::drop(newDir,2));
+        }
+    }
+    else if(newDir[0]=='/') {
         if(newDir.size()==1) {
             // user entered: CD:/ or CD/
             // means: change to container root
