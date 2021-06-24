@@ -275,7 +275,7 @@ void Interface::sendDeviceStatus()
 	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_device.path().c_str());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_filename.c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_mfile->name.c_str());
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
@@ -416,17 +416,17 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		{
 			// If in LittleFS root then set it to FB64
 			// TODO: Load configured autoload program
-			m_filename = "/.sys/fb64";
+			m_mfile.reset(MFSOwner::File("/.sys/fb64"));
 		}
 		else if (m_filename_last.size() > 0)
 		{
 			// Load last used file
-			m_filename = m_filename_last;
+			m_mfile.reset(MFSOwner::File(m_filename_last));
 		}
 		else
 		{	
 			// Find first PRG file in current directory
-			std::unique_ptr<MFile> dir(MFSOwner::File(m_device.path()));
+			std::shared_ptr<MFile> dir(MFSOwner::File(m_device.path()));
 			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 			while (entry != nullptr && entry->isDirectory())
@@ -434,10 +434,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 				Debug_printv("extension: [%s]", entry->extension);
 				entry.reset(dir->getNextFileInDir());
 			}
-			m_filename = entry->name;
+			m_mfile.reset(entry);
 		}
 		m_openState = O_FILE;
-		Debug_printv("LOAD * [%s]", m_filename.c_str());
+		Debug_printv("LOAD * [%s]", m_mfile->url.c_str());
 	}
 	else if (mstr::startsWith(command, "@INFO", false))
 	{
@@ -462,8 +462,8 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		if (mstr::startsWith(command, "CD", false) || new_mfile->isDirectory())
 		{
 			// Enter directory
-			m_device.path(new_mfile->url);
-			m_filename = "";
+			m_device.url(new_mfile->url);
+			m_mfile.reset(new_mfile);
 			m_openState = O_DIR;
 			Debug_printv("CD [%s]", new_mfile->url.c_str());
 			Debug_printv("LOAD $");
@@ -471,10 +471,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		else
 		{
 			m_device.path(new_mfile->parent()->url);
-			m_filename_last = m_filename;
-			m_filename = new_mfile->url;
+			m_filename_last = m_mfile->url;
+			m_mfile.reset(new_mfile);
 			m_openState = O_FILE;
-			Debug_printv("Load File [%s]", m_filename.c_str());
+			Debug_printv("Load File [%s]", m_mfile->url.c_str());
 		}
 	}
 
@@ -492,7 +492,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 					m_device.partition(), 
 					m_device.url().c_str(), 
 					m_device.path().c_str(),
-					m_filename.c_str(),
+					m_mfile->url.c_str(),
 					atn_cmd.str
 	);
 	
@@ -542,17 +542,17 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 		case O_INFO:
 			// Reset and send SD card info
 			reset();
-			sendListing(m_device.path());
+			sendListing();
 			break;
 
 		case O_FILE:
 			// Send file
-			sendFile(m_filename);
+			sendFile();
 			break;
 
 		case O_DIR:
 			// Send listing
-			sendListing(m_device.path());
+			sendListing();
 			break;
 
 		case O_FILE_ERR:
@@ -577,7 +577,7 @@ void Interface::handleATNCmdCodeDataListen()
 {
 	Debug_printv("[%s]", m_device.url().c_str());
 
-	saveFile(m_device.url());
+	saveFile();
 } // handleATNCmdCodeDataListen
 
 void Interface::handleATNCmdClose()
@@ -679,7 +679,7 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 	return byte_count;
 }
 
-void Interface::sendListing(std::string path)
+void Interface::sendListing()
 {
 	Debug_printf("\r\nsendListing:\r\n");
 
@@ -687,7 +687,10 @@ void Interface::sendListing(std::string path)
 	std::string extension = "DIR";
 
 	// Send List ITEMS
-	std::unique_ptr<MFile> dir(MFSOwner::File(path));
+	std::shared_ptr<MFile> dir(m_mfile);
+	if(!dir->isDirectory())
+		dir.reset(m_mfile->parent());
+
 	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 	if(entry == nullptr) {
@@ -811,7 +814,7 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_
 }
 
 
-void Interface::sendFile(std::string url)
+void Interface::sendFile()
 {
 	size_t i = 0;
 	bool success = true;
@@ -829,16 +832,15 @@ void Interface::sendFile(std::string url)
 	// Update device database
 	m_device.save();
 
-	Debug_printv("[%s]", url.c_str());
-	std::unique_ptr<MFile> file(MFSOwner::File(url));
+	Debug_printv("[%s]", m_mfile->url.c_str());
 
-	if(!file->exists())
+	if(!m_mfile->exists())
 	{
 		sendFileNotFound();
 		return;
 	}
 
-	std::shared_ptr<MIStream> istream(file->inputStream());
+	std::shared_ptr<MIStream> istream(m_mfile->inputStream());
 	size_t len = istream->available() - 1;
 
 	// Get file load address
@@ -849,7 +851,7 @@ void Interface::sendFile(std::string url)
 	success = m_iec.send(b[0]);
 	load_address = load_address | *b << 8;  // high byte
 
-	Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
+	Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
 	for (i = 2; success and i <= len; i++)
 	{
 		success = istream->read(b, b_len);
@@ -913,7 +915,7 @@ void Interface::sendFile(std::string url)
 } // sendFile
 
 
-void Interface::saveFile(std::string url)
+void Interface::saveFile()
 {
 	uint16_t i = 0;
 	bool done = false;
@@ -930,9 +932,8 @@ void Interface::saveFile(std::string url)
 	ba[8] = '\0';
 #endif
 
-	std::unique_ptr<MFile> file(MFSOwner::File(url));
-	std::shared_ptr<MOStream> ostream(file->outputStream());
-	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", file->url.c_str());
+	std::shared_ptr<MOStream> ostream(m_mfile->outputStream());
+	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", m_mfile->url.c_str());
 
     if(!ostream->isOpen()) {
         Debug_printv("couldn't open a stream for writing");
