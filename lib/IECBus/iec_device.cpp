@@ -377,7 +377,7 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 	Debug_printv("[%s]", guessedPath.c_str());
 
 	// get the current directory
-	std::shared_ptr<MFile> currentDir(MFSOwner::File(m_device.path()));
+	std::shared_ptr<MFile> currentDir = m_mfile;
 
 	// check to see if it starts with a known command token
 	if(mstr::startsWith(commandLne, "CD", false)) // would be case sensitive, but I don't know the proper case
@@ -426,13 +426,12 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		else
 		{	
 			// Find first PRG file in current directory
-			std::shared_ptr<MFile> dir(MFSOwner::File(m_device.path()));
-			std::shared_ptr<MFile> entry(dir->getNextFileInDir());
+			std::shared_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
 			while (entry != nullptr && entry->isDirectory())
 			{
 				Debug_printv("extension: [%s]", entry->extension);
-				entry.reset(dir->getNextFileInDir());
+				entry.reset(m_mfile->getNextFileInDir());
 			}
 			m_mfile = entry;
 		}
