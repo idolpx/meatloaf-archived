@@ -427,14 +427,14 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		{	
 			// Find first PRG file in current directory
 			std::shared_ptr<MFile> dir(MFSOwner::File(m_device.path()));
-			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
+			std::shared_ptr<MFile> entry(dir->getNextFileInDir());
 
 			while (entry != nullptr && entry->isDirectory())
 			{
 				Debug_printv("extension: [%s]", entry->extension);
 				entry.reset(dir->getNextFileInDir());
 			}
-			m_mfile.reset(entry);
+			m_mfile = entry;
 		}
 		m_openState = O_FILE;
 		Debug_printv("LOAD * [%s]", m_mfile->url.c_str());
@@ -463,7 +463,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		{
 			// Enter directory
 			m_device.url(new_mfile->url);
-			m_mfile.reset(new_mfile);
+			m_mfile = new_mfile;
 			m_openState = O_DIR;
 			Debug_printv("CD [%s]", new_mfile->url.c_str());
 			Debug_printv("LOAD $");
@@ -472,7 +472,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		{
 			m_device.path(new_mfile->parent()->url);
 			m_filename_last = m_mfile->url;
-			m_mfile.reset(new_mfile);
+			m_mfile = new_mfile;
 			m_openState = O_FILE;
 			Debug_printv("Load File [%s]", m_mfile->url.c_str());
 		}
