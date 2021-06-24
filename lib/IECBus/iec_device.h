@@ -103,7 +103,7 @@ private:
 	void handleATNCmdClose(void);
 
 	void handleDeviceCommand(IEC::ATNCmd &cmd);
-	void handleMeatLoafCommand(IEC::ATNCmd &cmd);
+	void handleMeatloafCommand(IEC::ATNCmd &cmd);
 
 	// our iec low level driver:
 	IEC &m_iec;
@@ -122,6 +122,7 @@ private:
 
 	DeviceDB m_device;
 	std::string m_filename;
+	std::string m_filename_last;
 
 	std::string m_device_status;
 	bool m_show_date;

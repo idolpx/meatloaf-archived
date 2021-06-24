@@ -39,11 +39,11 @@ public:
     MLFile(std::string path, size_t size = 0, bool isDir = false): 
     HttpFile(path), m_size(size), m_isDir(isDir)  
     {
-        if(path.back() == '/')
+        if(path.back() == '/' || path.find_last_of("/") < 6)
             m_isDir = true;
 
         parseUrl(path);
-        // Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
+        Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
     };
     ~MLFile();
 
@@ -65,6 +65,45 @@ public:
     //std::string mediaRoot();
 };
 
+
+/********************************************************
+ * Streams
+ ********************************************************/
+class MLIStream: public HttpIStream {
+
+public:
+    MLIStream(std::string path) : HttpIStream(path) {
+        // m_http.setUserAgent(USER_AGENT);
+        // m_http.setTimeout(10000);
+        // m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+        // m_http.setRedirectLimit(10);
+        // url = path;
+    }
+    // MStream methods
+    bool seek(uint32_t pos, SeekMode mode) override;
+    bool seek(uint32_t pos) override;
+    size_t position() override;
+    void close() override;
+    bool open() override;
+    ~MLIStream() {
+        close();
+    }
+
+    // MIstream methods
+    int available() override;
+    size_t read(uint8_t* buf, size_t size) override;
+    bool isOpen();
+
+protected:
+    std::string url;
+    bool m_isOpen;
+    int m_length;
+    WiFiClient m_file;
+	HTTPClient m_http;
+    int m_bytesAvailable = 0;
+    int m_position = 0;
+    bool isFriendlySkipper = false;
+};
 
 /********************************************************
  * FS

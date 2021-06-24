@@ -89,7 +89,8 @@ public:
         m_http.setTimeout(10000);
         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         m_http.setRedirectLimit(10);
-        url = path;
+        //url = path;
+        parseUrl(path);
     }
     // MStream methods
     bool seek(uint32_t pos, SeekMode mode) override;

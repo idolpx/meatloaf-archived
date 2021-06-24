@@ -66,6 +66,7 @@ SDFSConfig fileSystemConfig = SDFSConfig();
 #include "ESPModem.h"
 #include "ml_tests.h"
 
+extern StaticJsonDocument<512> g_mlconfig;
 
 //void IRAM_ATTR isrCheckATN();
 // enum class statemachine

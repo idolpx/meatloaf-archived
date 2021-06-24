@@ -3,13 +3,13 @@
 
 #include <Arduino.h>
 #include "FS.h"
+#include "peoples_url_parser.h"
 
 /********************************************************
  * Universal streams
  ********************************************************/
 
-class MStream 
-{
+class MStream : public PeoplesUrlParser {
 public:
     virtual bool seek(uint32_t pos, SeekMode mode) = 0;
     virtual bool seek(uint32_t pos) {

@@ -28,11 +28,12 @@ DeviceDB::~DeviceDB()
 } // destructor
 
 
-bool DeviceDB::select(uint8_t new_deviceID)
+bool DeviceDB::select(uint8_t new_device_id)
 {
-    uint8_t device = m_device["device"];
+    uint8_t device_id = m_device["id"];
 
-    if ( device == new_deviceID )
+    Debug_printv("cur[%d] new[%d]", device_id, new_device_id);
+    if ( device_id == new_device_id )
     {
         return false;
     }
@@ -40,7 +41,7 @@ bool DeviceDB::select(uint8_t new_deviceID)
     // Save current config
     save();
 
-    config_file = SYSTEM_DIR "device." + std::to_string(new_deviceID) + ".conf";
+    config_file = SYSTEM_DIR "device." + std::to_string(new_device_id) + ".conf";
     std::shared_ptr<MFile> file(MFSOwner::File(config_file));
 
     Debug_printv("config_file[%s]", config_file.c_str());
@@ -55,7 +56,7 @@ bool DeviceDB::select(uint8_t new_deviceID)
     {
         // Create New Settings
         deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
-        m_device["id"] = new_deviceID;
+        m_device["id"] = new_device_id;
         Debug_printv("created");
     }
 

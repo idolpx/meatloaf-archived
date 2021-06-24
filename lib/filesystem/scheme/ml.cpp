@@ -6,6 +6,7 @@ MLFile::~MLFile() {
     m_http.end();
 }
 
+
 MFile* MLFile::getNextFileInDir() {
 
     if(!dirIsOpen) // might be first call, so let's try opening the dir
@@ -126,4 +127,33 @@ bool MLFile::rewindDirectory() {
     }
 
     return dirIsOpen;
+};
+
+
+bool MLIStream::open() {
+
+    String ml_url = std::string("http://" + host + "/api/").c_str();
+	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
+    String post_data = std::string("p=" + mstr::urlEncode(path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
+
+
+    bool initOk = m_http.begin(m_file, url.c_str());
+    Debug_printv("input %s: someRc=%d", url.c_str(), initOk);
+    if(!initOk)
+        return false;
+
+
+    // Send the request
+	uint8_t httpCode = m_http.POST(post_data.c_str());
+    Debug_printv("httpCode=%d", httpCode);
+    if(httpCode != 200)
+        return false;
+
+    // Accept-Ranges: bytes - if we get such header from any request, good!
+    isFriendlySkipper = m_http.header("accept-ranges") == "bytes";
+    m_isOpen = true;
+    Debug_printv("[%s]", url.c_str());
+    m_length = m_http.getSize();
+    Debug_printv("length=%d", m_length);
+    m_bytesAvailable = m_length;
 };

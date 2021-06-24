@@ -385,7 +385,6 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 		guessedPath = mstr::drop(guessedPath, 2);
 		if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
 			guessedPath = mstr::drop(guessedPath, 1);
-		Debug_printv("Guessed Path: [%s]", guessedPath.c_str());
 	}
 	// TODO more of them?
 
@@ -413,30 +412,32 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	if (mstr::endsWith(command, "*"))
 	{
 		// Find first program in listing
-		if (m_device.url().empty()) // <---- "/" won't exist, as we are removing trailing /
+		if (m_device.path().empty())
 		{
 			// If in LittleFS root then set it to FB64
-			m_device.path("/.sys/");
-			m_filename = "fb64";
+			// TODO: Load configured autoload program
+			m_filename = "/.sys/fb64";
+		}
+		else if (m_filename_last.size() > 0)
+		{
+			// Load last used file
+			m_filename = m_filename_last;
 		}
 		else
 		{	
+			// Find first PRG file in current directory
 			std::unique_ptr<MFile> dir(MFSOwner::File(m_device.path()));
 			std::unique_ptr<MFile> entry(dir->getNextFileInDir());
 
 			while (entry != nullptr && entry->isDirectory())
 			{
+				Debug_printv("extension: [%s]", entry->extension);
 				entry.reset(dir->getNextFileInDir());
 			}
 			m_filename = entry->name;
 		}
 		m_openState = O_FILE;
 		Debug_printv("LOAD * [%s]", m_filename.c_str());
-	}
-	if (mstr::startsWith(command, "$"))
-	{
-		m_openState = O_DIR;
-		Debug_printv("LOAD $");
 	}
 	else if (mstr::startsWith(command, "@INFO", false))
 	{
@@ -446,36 +447,32 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	{
 		m_openState = O_DEVICE_STATUS;
 	}
+	if (mstr::startsWith(command, "$"))
+	{
+		m_openState = O_DIR;
+		Debug_printv("LOAD $");
+	}	
 	else
 	{
 		// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
 		// some shit in check variable!
 		std::unique_ptr<MFile> new_mfile(guessIncomingPath(command));
 
-		if (mstr::startsWith(command, "CD", false))
-		{
-			
-			Debug_printv("before CD");
-			Debug_printv("url [%s]", m_device.url().c_str());
-			Debug_printv("path [%s]", m_device.path().c_str());
-
-			// Enter directory
-			m_device.path(new_mfile->url);
-			m_openState = O_DIR;
-
-			Debug_printv("after CD");
-			Debug_printv("url [%s]", m_device.url().c_str());
-			Debug_printv("path [%s]", m_device.path().c_str());
-		}
-		else if (new_mfile->isDirectory())
+		m_device.url(new_mfile->url);
+		if (mstr::startsWith(command, "CD", false) || new_mfile->isDirectory())
 		{
 			// Enter directory
 			m_device.path(new_mfile->url);
+			m_filename = "";
 			m_openState = O_DIR;
+			Debug_printv("CD [%s]", new_mfile->url.c_str());
+			Debug_printv("LOAD $");
 		}
 		else
 		{
-			m_filename = command;
+			m_device.path(new_mfile->parent()->url);
+			m_filename_last = m_filename;
+			m_filename = new_mfile->url;
 			m_openState = O_FILE;
 			Debug_printv("Load File [%s]", m_filename.c_str());
 		}
@@ -489,12 +486,13 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 
 	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nCOMMAND[%s]\r\n", 
+	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILE[%s]\nCOMMAND[%s]\r\n", 
 					m_device.device(), 
 					m_device.media(), 
 					m_device.partition(), 
 					m_device.url().c_str(), 
 					m_device.path().c_str(),
+					m_filename.c_str(),
 					atn_cmd.str
 	);
 	
@@ -544,17 +542,17 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 		case O_INFO:
 			// Reset and send SD card info
 			reset();
-			sendListing(m_device.url());
+			sendListing(m_device.path());
 			break;
 
 		case O_FILE:
 			// Send file
-			sendFile(m_device.url());
+			sendFile(m_filename);
 			break;
 
 		case O_DIR:
 			// Send listing
-			sendListing(m_device.url());
+			sendListing(m_device.path());
 			break;
 
 		case O_FILE_ERR:
@@ -833,6 +831,13 @@ void Interface::sendFile(std::string url)
 
 	Debug_printv("[%s]", url.c_str());
 	std::unique_ptr<MFile> file(MFSOwner::File(url));
+
+	if(!file->exists())
+	{
+		sendFileNotFound();
+		return;
+	}
+
 	std::shared_ptr<MIstream> istream(file->inputStream());
 	size_t len = istream->available() - 1;
 
@@ -903,6 +908,7 @@ void Interface::sendFile(std::string url)
 	if (!success || i != len)
 	{
 		Debug_println("sendFile: Transfer aborted!");
+		// TODO: Send something to signal that there was an error to the C64
 	}
 } // sendFile
 
