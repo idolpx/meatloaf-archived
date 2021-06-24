@@ -48,7 +48,7 @@ MFile* MLFile::getNextFileInDir() {
             dirIsOpen = true;
             ledToggle(true);
 
-            std::string fname ="http:" + host + "/" + urldecode(m_jsonHTTP["name"]).c_str();
+            std::string fname ="ml://" + host + "/" + urldecode(m_jsonHTTP["name"]).c_str();
             size_t size = m_jsonHTTP["size"];
             bool dir = m_jsonHTTP["dir"];
 
@@ -73,16 +73,18 @@ bool MLFile::rewindDirectory() {
         return false;
     }
     
-    Debug_printv("\r\nRequesting JSON dir from PHP: ");
+    Debug_printv("Requesting JSON dir from PHP: ");
 
 	//String url("http://c64.meatloaf.cc/api/");
-    String ml_url = std::string("http://" + host + "/api/").c_str();
+    //String ml_url = std::string("http://" + host + "/api/").c_str();
+    std::string ml_url = "http://" + host + "/api/";
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-    String post_data = std::string("p=" + mstr::urlEncode(path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
+    //String post_data = std::string("p=" + mstr::urlEncode(path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
+    std::string post_data = "p=" + mstr::urlEncode(path);
 
 	// Connect to HTTP server
-	Serial.printf("\r\nConnecting!\r\n--------------------\r\n%s\r\n%s\r\n", url.c_str(), post_data.c_str());
-	if (!m_http.begin(m_file, ml_url))
+	Serial.printf("\r\nConnecting!\r\n--------------------\r\n%s\r\n%s\r\n", ml_url.c_str(), post_data.c_str());
+	if (!m_http.begin(m_file, ml_url.c_str()))
 	{
 		Serial.printf("\r\nConnection failed");
 		dirIsOpen = false;
@@ -146,12 +148,10 @@ bool MLIStream::open() {
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
     String post_data = std::string("p=" + mstr::urlEncode(urlParser.path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
 
-
-    bool initOk = m_http.begin(m_file, url.c_str());
-    Debug_printv("input %s: someRc=%d", url.c_str(), initOk);
+    bool initOk = m_http.begin(m_file, ml_url);
+    Debug_printv("input %s: someRc=%d", ml_url.c_str(), initOk);
     if(!initOk)
         return false;
-
 
     // Send the request
 	uint8_t httpCode = m_http.POST(post_data.c_str());
@@ -162,7 +162,7 @@ bool MLIStream::open() {
     // Accept-Ranges: bytes - if we get such header from any request, good!
     isFriendlySkipper = m_http.header("accept-ranges") == "bytes";
     m_isOpen = true;
-    Debug_printv("[%s]", url.c_str());
+    Debug_printv("[%s]", ml_url.c_str());
     m_length = m_http.getSize();
     Debug_printv("length=%d", m_length);
     m_bytesAvailable = m_length;

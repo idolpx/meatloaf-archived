@@ -45,11 +45,6 @@ public:
  * File implementations
  ********************************************************/
 class CServerFile: public MFile {
-private:
-    bool dirIsOpen = false;
-    bool dirIsImage = false;
-    bool m_isDir;
-    size_t m_size;
 
 public:
     CServerFile(std::string path, size_t size = 0): MFile(path), m_size(size) 
@@ -75,6 +70,12 @@ public:
     time_t getCreationTime() override  { return 0; };
     bool rename(const char* dest) { return false; };
     MIStream* createIStream(MIStream* src) { return src; };
+
+private:
+    bool dirIsOpen = false;
+    bool dirIsImage = false;
+    bool m_isDir;
+    size_t m_size;
 
 };
 
@@ -151,6 +152,7 @@ class CServerFileSystem: public MFileSystem
     bool handles(std::string name) {
         return name == "CS:";
     }
+    
 public:
     CServerFileSystem(): MFileSystem("c=server") {};
     static CServerSessionMgr session;

@@ -13,13 +13,13 @@
 #include <ESP8266HTTPClient.h>
 #endif
 
-#include <ArduinoJson.h>
-
-#include "meat_io.h"
+//#include "meat_io.h"
 #include "http.h"
 #include "../../include/global_defines.h"
 #include "helpers.h"
 #include "peoples_url_parser.h"
+
+#include <ArduinoJson.h>
 
 
 /********************************************************
@@ -27,13 +27,6 @@
  ********************************************************/
 
 class MLFile: public HttpFile {
-    bool dirIsOpen = false;
-    String m_lineBuffer;
-    WiFiClient m_file;
-	HTTPClient m_http;
-    StaticJsonDocument<256> m_jsonHTTP;
-    size_t m_size = 0;    
-    bool m_isDir = false;
 
 public:
     MLFile(std::string path, size_t size = 0, bool isDir = false): 
@@ -52,6 +45,7 @@ public:
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
     MIStream* inputStream() override ; // file on ML server = standard HTTP file available via GET
+    
     //MOStream* outputStream() override ; // we can't write to ML server, can we?
     //time_t getLastWrite() override ; // you can implement it if you want
     //time_t getCreationTime() override ; // you can implement it if you want
@@ -63,6 +57,16 @@ public:
     //MIStream* createIStream(MIStream* src); // not used anyway
 
     //std::string mediaRoot();
+
+protected:
+    bool dirIsOpen = false;
+    String m_lineBuffer;
+    WiFiClient m_file;
+	HTTPClient m_http;
+    StaticJsonDocument<256> m_jsonHTTP;
+    size_t m_size = 0;    
+    bool m_isDir = false;
+
 };
 
 
@@ -82,20 +86,21 @@ public:
         m_http.setRedirectLimit(10);
         url = path;
     }
-    // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
-    bool seek(uint32_t pos) override;
-    size_t position() override;
-    void close() override;
-    bool open() override;
     ~MLIStream() {
         close();
     }
 
+    // MStream methods
+    // bool seek(uint32_t pos, SeekMode mode) override;
+    // bool seek(uint32_t pos) override;
+    // size_t position() override;
+    // void close() override;
+    bool open() override;
+
     // MIStream methods
-    int available() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    bool isOpen();
+    // int available() override;
+    // size_t read(uint8_t* buf, size_t size) override;
+    // bool isOpen();
 
 protected:
     std::string url;
@@ -123,6 +128,7 @@ class MLFileSystem: public MFileSystem
     bool handles(std::string name) {
         return name == "ML:";
     }
+
 public:
     MLFileSystem(): MFileSystem("meatloaf") {};
 };
