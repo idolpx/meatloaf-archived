@@ -470,6 +470,7 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
 
     int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
 
+    //Serial.printf("in byteWrite '%c'\n", buf[0]);
     //Serial.println("after lfs_file_write");
 
     if (result < 0) {

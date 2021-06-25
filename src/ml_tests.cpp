@@ -6,6 +6,7 @@
 #include <WiFiClient.h>
 
 #include <string>
+#include <ArduinoJson.h>
 
 #include "ml_tests.h"
 #include "meat_io.h"
@@ -340,6 +341,54 @@ void httpGet(char *url)
     }
 }
 
+void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
+    testHeader("C++ stream wrappers");
+
+    StaticJsonDocument<512> m_device;
+
+    if ( dstFile->exists() )
+        dstFile->remove();
+
+    MeatIBuff ibuff(srcFile);
+    MUrlIStream istream(&ibuff); // this is your standard istream!
+
+    MeatOBuff obuff(dstFile);
+    MUrlOStream ostream(&obuff);
+    
+    deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"http://niceurlman.com\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
+
+    Serial.printf("Trying to serialize JSON to %s\n",dstFile->url.c_str());
+
+    serializeJson(m_device, ostream); 
+
+    ostream.close();
+
+    Serial.printf("Copying to %s\n", srcFile->url.c_str());
+
+    if(dstFile->copyTo(srcFile)) {
+        Serial.printf("Trying to deserialize JSON from %s\n",srcFile->url.c_str());
+
+        deserializeJson(m_device, istream);
+
+        Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+    }
+    else {
+        Serial.println("**** Copying failed *** WHY???");
+
+        Serial.printf("Trying to deserialize JSON from %s\n",dstFile->url.c_str());
+
+        MeatIBuff ibuff(dstFile);
+        MUrlIStream newIstream(&ibuff); // this is your standard istream!
+
+        deserializeJson(m_device, newIstream);
+
+        Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+
+    }
+
+}
+
+
 void runFSTest(std::string dirPath, std::string filePath) {
     Serial.println("**********************************************************************\n\n");
     std::shared_ptr<MFile> testDir(MFSOwner::File(dirPath));
@@ -359,12 +408,15 @@ void runFSTest(std::string dirPath, std::string filePath) {
         testReader(testFile.get());
         testCopy(testFile.get(), destFile.get());
 
+        testStdStreamWrapper(testFile.get(), destFile.get());
+
         Serial.println("\n\n\n*** Please compare file copied to ML aginst the source:\n\n\n");
         testReader(destFile.get());
     }
     else {
         Serial.println("*** WARNING - file instance couldn't be created!");
     }
+    
     Serial.println("**********************************************************************\n\n");
 }
 
@@ -374,14 +426,10 @@ void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
     auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !
 }
 
-void stdStreamWrapperTest(MFile* srcFile) {
-    MeatIBuff mistream(srcFile);
-    std::istream istream(&mistream); // this is your standard istream!
-}
 
 void runTestsSuite() {
     // working, uncomment if you want
-    // runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
     // runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
     //runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
     

@@ -5,6 +5,7 @@
 
 // https://newbedev.com/how-to-write-custom-input-stream-in-c
 
+
 /********************************************************
  * Input stream wrapper
  ********************************************************/
@@ -40,10 +41,15 @@ public:
      */
 
     int underflow() override {
-        if (this->gptr() == this->egptr()) {
+        if (!this->srcStream->isOpen()) {
+            return std::char_traits<char>::eof();
+        }
+        else if (this->gptr() == this->egptr()) {
             // the next statement assumes "size" characters were produced (if
             // no more characters are available, size == 0.
             auto buffer = reader->read();
+
+            Debug_printv("MeatIBuff underflow, read bytes=%d", buffer->length());
 
             this->setg(buffer->getBuffer(), buffer->getBuffer(), buffer->getBuffer() + buffer->length());
         }
@@ -51,6 +57,10 @@ public:
              ? std::char_traits<char>::eof()
              : std::char_traits<char>::to_int_type(*this->gptr());
     };
+
+    void close() {
+        srcStream->close();
+    }
 };
 
 
@@ -64,9 +74,12 @@ class MeatOBuff : public std::streambuf {
     std::shared_ptr<MOStream> srcStream;
     std::shared_ptr<BufferedWriter> writer;
 
+public:
     MeatOBuff(MFile* mf) {
         srcStream.reset(mf->outputStream());
         writer.reset(new BufferedWriter(srcStream.get()));
+
+        //Debug_printv("MeatOBuff constructor. ostream.isOpen=%d", srcStream->isOpen());
     }
 
       /**
@@ -94,8 +107,12 @@ class MeatOBuff : public std::streambuf {
       */
     int overflow(int ch  = traits_type::eof()) override
     {
-        if ( pbase() == NULL ) {
+        if (!srcStream->isOpen()) {
+            return 0;
+        }
+        else if ( pbase() == NULL ) {
             // save one char for next overflow:
+            //Debug_printv("in wrapper overflow '%c'", ch);
 
             if ( ch != EOF ) {
                 writer->writeByte(ch);
@@ -135,13 +152,50 @@ class MeatOBuff : public std::streambuf {
      * if the buffer is empty. sync will be called if the client code flushes the stream.)
      */
     int sync() { 
+//                Debug_printv("in wrapper sync");
+
         auto smartBuffer = MBuffer(pbase(), pptr()-pbase());
         auto result = writer->write(&smartBuffer);
 
         return (pptr() == pbase() || result != 0) ? 0 : -1;    
     };
+
+    void close() {
+        srcStream->close();
+    }
+
 };
 
+
+/********************************************************
+ * Urlstream that can be closed
+ ********************************************************/
+
+class MUrlIStream : public std::istream {
+    MeatIBuff* buff;
+public:
+    MUrlIStream(MeatIBuff* ibuf): std::istream(ibuf), buff(ibuf) {};
+	~MUrlIStream() {
+        close();
+    };
+
+    void close() {
+        buff->close();
+    }
+};
+
+class MUrlOStream : public std::ostream {
+    MeatOBuff* buff;
+public:
+    MUrlOStream(MeatOBuff* obuf): std::ostream(obuf), buff(obuf) {};
+	~MUrlOStream() {
+        close();
+    };
+    
+    void close() {
+        buff->close();
+    }
+};
 
 
 #endif /* MEATFILESYSTEM_WRAPPERS_STD_STREAM_WRAPPER */

@@ -148,6 +148,8 @@ public:
     
     bool writeByte(uint8_t byteToWrite) 
     {
+                    //Debug_printv("in wrapper overflow '%c'", ch);
+
         ostream->write(&byteToWrite, 1);
         return true;
     }
