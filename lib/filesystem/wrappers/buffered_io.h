@@ -46,6 +46,10 @@ public:
         return len;
     }
 
+    char* getBuffer() {
+        return buffer;
+    }
+
     friend class BufferedReader;
     friend class BufferedWriter;
 };

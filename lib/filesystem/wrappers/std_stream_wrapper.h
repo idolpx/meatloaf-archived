@@ -1,17 +1,23 @@
-#ifndef MEATLIB_FILESYSTEM_STD_STREAM_WRAPPER
-#define MEATLIB_FILESYSTEM_STD_STREAM_WRAPPER
+#ifndef MEATFILESYSTEM_WRAPPERS_STD_STREAM_WRAPPER
+#define MEATFILESYSTEM_WRAPPERS_STD_STREAM_WRAPPER
 
 #include "wrappers/buffered_io.h"
 
 // https://newbedev.com/how-to-write-custom-input-stream-in-c
 
-
 /********************************************************
  * Input stream wrapper
  ********************************************************/
 
-class StdMIstream : std::streambuf {
-    MBuffer buffer;
+class MeatIBuff : public std::streambuf {
+    std::shared_ptr<MIStream> srcStream;
+    std::shared_ptr<BufferedReader> reader;
+
+public:
+    MeatIBuff(MFile* mf) {
+        srcStream.reset(mf->inputStream());
+        reader.reset(new BufferedReader(srcStream.get()));
+    }
 
     /**
      *  @brief  Fetches more data from the controlled sequence.
@@ -34,6 +40,16 @@ class StdMIstream : std::streambuf {
      */
 
     int underflow() override {
+        if (this->gptr() == this->egptr()) {
+            // the next statement assumes "size" characters were produced (if
+            // no more characters are available, size == 0.
+            auto buffer = reader->read();
+
+            this->setg(buffer->getBuffer(), buffer->getBuffer(), buffer->getBuffer() + buffer->length());
+        }
+        return this->gptr() == this->egptr()
+             ? std::char_traits<char>::eof()
+             : std::char_traits<char>::to_int_type(*this->gptr());
     };
 };
 
@@ -44,8 +60,16 @@ class StdMIstream : std::streambuf {
  * output stream wrapper
  ********************************************************/
 
-class StdMOstream : std::streambuf {
-          /**
+class MeatOBuff : public std::streambuf {
+    std::shared_ptr<MOStream> srcStream;
+    std::shared_ptr<BufferedWriter> writer;
+
+    MeatOBuff(MFile* mf) {
+        srcStream.reset(mf->outputStream());
+        writer.reset(new BufferedWriter(srcStream.get()));
+    }
+
+      /**
        *  @brief  Consumes data from the buffer; writes to the
        *          controlled sequence.
        *  @param  __c  An additional character to consume.
@@ -87,4 +111,6 @@ class StdMOstream : std::streambuf {
     };
 };
 
-#endif /* MEATLIB_FILESYSTEM_STD_STREAM_WRAPPER */
+
+
+#endif /* MEATFILESYSTEM_WRAPPERS_STD_STREAM_WRAPPER */

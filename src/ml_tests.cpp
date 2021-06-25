@@ -14,7 +14,7 @@
 #include "../../include/make_unique.h"
 #include "wrappers/buffered_io.h"
 #include "wrappers/line_reader_writer.h"
-
+#include "wrappers/std_stream_wrapper.h"
 
 
 void testHeader(std::string testName) {
@@ -372,6 +372,11 @@ void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
     writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
 
     auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !
+}
+
+void stdStreamWrapperTest(MFile* srcFile) {
+    MeatIBuff mistream(srcFile);
+    std::istream istream(&mistream); // this is your standard istream!
 }
 
 void runTestsSuite() {
