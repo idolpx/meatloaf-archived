@@ -92,9 +92,30 @@ class MeatOBuff : public std::streambuf {
        *
        *  @note  Base class version does nothing, returns eof().
       */
-    int overflow(int _IsUnused  = traits_type::eof()) override
+    int overflow(int ch  = traits_type::eof()) override
     {
-        return traits_type::eof(); 
+        if ( pbase() == NULL ) {
+            // save one char for next overflow:
+
+            if ( ch != EOF ) {
+                writer->writeByte(ch);
+            } else {
+                ch = 0;
+            }
+        } else {
+            Debug_printv("**** hey! don't know how to process MeatOBuff with buffer! Nothing written!");
+            // char* end = pptr();
+            // if ( ch != EOF ) {
+            //     *end ++ = ch;
+            // }
+            // if ( write( pbase(), end - pbase() ) == failed ) {
+            //     ch = EOF;
+            // } else if ( ch == EOF ) {
+            //     ch = 0;
+            // }
+            // setp( buffer, buffer + bufferSize - 1 );
+        }
+        return ch;
     };
 
 
@@ -105,9 +126,19 @@ class MeatOBuff : public std::streambuf {
      *  Each derived class provides its own appropriate behavior,
      *  including the definition of @a failure.
      *  @note  Base class version does nothing, returns zero.
+     * 
+     * sync: Called on flush, should output any characters in the buffer to the sink. 
+     * If you never call setp (so there's no buffer), you're always in sync, and this 
+     * can be a no-op. overflow or uflow can call this one, or both can call some 
+     * separate function. (About the only difference between sync and uflow is that 
+     * uflow will only be called if there is a buffer, and it will never be called 
+     * if the buffer is empty. sync will be called if the client code flushes the stream.)
      */
     int sync() { 
-        return 0; 
+        auto smartBuffer = MBuffer(pbase(), pptr()-pbase());
+        auto result = writer->write(&smartBuffer);
+
+        return (pptr() == pbase() || result != 0) ? 0 : -1;    
     };
 };
 

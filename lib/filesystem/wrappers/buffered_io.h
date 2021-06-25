@@ -21,6 +21,11 @@ protected:
 public:
     MBuffer() {};
 
+    MBuffer(char* start, size_t size) {
+        buffer = start;
+        len = size;
+    }
+
     MBuffer(int size) {
         handmade = true;
         buffer = new char[size];
