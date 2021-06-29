@@ -20,6 +20,7 @@
 
 #include "../../include/global_defines.h"
 #include "meat_io.h"
+#include "wrappers/std_stream_wrapper.h"
 
 #include <ArduinoJson.h>
 

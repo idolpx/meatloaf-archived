@@ -42,14 +42,15 @@ bool DeviceDB::select(uint8_t new_device_id)
     save();
 
     config_file = SYSTEM_DIR "device." + std::to_string(new_device_id) + ".conf";
-    std::shared_ptr<MFile> file(MFSOwner::File(config_file));
+    std::unique_ptr<MFile> file(MFSOwner::File(config_file));
+    MeatIBuff ibuff(file.get());
+    MUrlIStream istream(&ibuff); // this is your standard istream!
 
     Debug_printv("config_file[%s]", config_file.c_str());
     if ( file->exists() )
     {
-        // // Load Device Settings
-        // std::shared_ptr<MIStream> istream(file->inputStream());
-        // deserializeJson(m_device, istream);
+        // Load Device Settings
+        deserializeJson(m_device, istream);
         Debug_printv("loaded");
     }
     else
@@ -69,12 +70,14 @@ bool DeviceDB::save()
     if ( m_dirty )
     {
         Debug_printv("saved [%s]", config_file.c_str());
-        // std::shared_ptr<MFile> file(MFSOwner::File(config_file));
-        // if ( file->exists() )
-        //     file->remove();
+        std::unique_ptr<MFile> file(MFSOwner::File(config_file));
+        if ( file->exists() )
+            file->remove();
 
-        // std::shared_ptr<MOStream> ostream(file->outputStream());
-        // serializeJson(m_device, ostream); 
+        MeatOBuff obuff(file.get());
+        MUrlOStream ostream(&obuff);
+
+        serializeJson(m_device, ostream);
     }
 
     return true;

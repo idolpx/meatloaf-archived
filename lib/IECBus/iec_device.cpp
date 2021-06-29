@@ -378,13 +378,14 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 
 	// get the current directory
 	std::shared_ptr<MFile> currentDir = m_mfile;
+	Debug_printv("currentDir[%s]", currentDir->url.c_str());
 
 	// check to see if it starts with a known command token
-	if(mstr::startsWith(commandLne, "CD", false)) // would be case sensitive, but I don't know the proper case
+	if(mstr::startsWith(commandLne, "CD:", false) || mstr::startsWith(commandLne, "CD/", false)) // would be case sensitive, but I don't know the proper case
 	{
-		guessedPath = mstr::drop(guessedPath, 2);
-		if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
-			guessedPath = mstr::drop(guessedPath, 1);
+		guessedPath = mstr::drop(guessedPath, 3);
+		// if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
+		// 	guessedPath = mstr::drop(guessedPath, 1);
 	}
 	// TODO more of them?
 
@@ -394,15 +395,18 @@ MFile* Interface::guessIncomingPath(std::string commandLne)
 	// LOAD //something
 	// we HAVE TO PARSE IT OUR WAY!
 
-	Debug_printv("[%s]", guessedPath.c_str());
-
+	Debug_printv("guessedPath[%s]", guessedPath.c_str());
+	
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
 	return currentDir->cd(guessedPath);
 }
 
 void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 {
-	m_device.select(atn_cmd.device);
+	if (m_device.select(atn_cmd.device))
+	{
+		m_mfile.reset(MFSOwner::File(m_device.url()));
+	}
 
 	std::string command = atn_cmd.str;
 	m_openState = O_NOTHING;
@@ -694,7 +698,7 @@ void Interface::sendListing()
 	std::string extension = "DIR";
 
 	// Send List ITEMS
-	std::shared_ptr<MFile> dir(m_mfile);
+	std::shared_ptr<MFile> dir(m_mfile.get());
 	if(!dir->isDirectory())
 		dir.reset(m_mfile->parent());
 

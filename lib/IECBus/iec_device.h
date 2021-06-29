@@ -124,7 +124,7 @@ private:
 	std::shared_ptr<MFile> m_mfile;
 	std::string m_filename_last;
 
-	std::string m_device_status;
+	std::string m_device_status = "";
 	bool m_show_date;
 	bool m_show_load_address;
 	bool m_show_hidden;
