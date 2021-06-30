@@ -121,7 +121,7 @@ private:
 	//DynamicJsonDocument m_jsonHTTPBuffer;
 
 	DeviceDB m_device;
-	std::shared_ptr<MFile> m_mfile;
+	std::unique_ptr<MFile> m_mfile;
 	std::string m_filename_last;
 
 	std::string m_device_status = "";
@@ -130,7 +130,7 @@ private:
 	bool m_show_hidden;
 	bool m_hide_extension;
 
-	MFile* guessIncomingPath(std::string commandLne);
+	MFile* guessIncomingPath(std::string commandLne, size_t channel);
 };
 
 #endif

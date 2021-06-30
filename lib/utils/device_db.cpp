@@ -83,13 +83,13 @@ bool DeviceDB::save()
     return true;
 }
 
-uint8_t DeviceDB::device()
+uint8_t DeviceDB::id()
 {
-    return m_device["device"];
+    return m_device["id"];
 }
-void DeviceDB::device(uint8_t device)
+void DeviceDB::id(uint8_t id)
 {
-    select(device);
+    select(id);
 }
 
 uint8_t DeviceDB::media()

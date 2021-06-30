@@ -36,8 +36,8 @@ public:
 
     std::string config_file;
 
-    uint8_t device();
-    void device(uint8_t device);
+    uint8_t id();
+    void id(uint8_t device);
     uint8_t media();
     void media(uint8_t media);
     uint8_t partition();

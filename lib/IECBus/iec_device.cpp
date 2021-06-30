@@ -268,7 +268,7 @@ void Interface::sendDeviceStatus()
 	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
 
 	// Current Config
-	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE    : %d", m_device.device());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE ID : %d", m_device.id());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "MEDIA     : %d", m_device.media());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "PARTITION : %d", m_device.partition());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_device.url().c_str());
@@ -370,22 +370,25 @@ byte Interface::loop(void)
 	return retATN;
 } // handler
 
-MFile* Interface::guessIncomingPath(std::string commandLne)
+MFile* Interface::guessIncomingPath(std::string command, size_t channel)
 {
-	std::string guessedPath = commandLne;
+	std::string guessedPath = command;
 
 	Debug_printv("[%s]", guessedPath.c_str());
 
 	// get the current directory
-	std::shared_ptr<MFile> currentDir = m_mfile;
+	Debug_printv("m_mfile[%s]", m_mfile->url.c_str());	
+	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
 	Debug_printv("currentDir[%s]", currentDir->url.c_str());
 
 	// check to see if it starts with a known command token
-	if(mstr::startsWith(commandLne, "CD:", false) || mstr::startsWith(commandLne, "CD/", false)) // would be case sensitive, but I don't know the proper case
+	if ( mstr::startsWith(command, "CD", false) ) // would be case sensitive, but I don't know the proper case
 	{
-		guessedPath = mstr::drop(guessedPath, 3);
-		// if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
-		// 	guessedPath = mstr::drop(guessedPath, 1);
+		guessedPath = mstr::drop(guessedPath, 2);
+		if ( mstr::startsWith(guessedPath, "/" ) || mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
+			guessedPath = mstr::drop(guessedPath, 1);
+		else if ( channel != 15 )
+			guessedPath = command;
 	}
 	// TODO more of them?
 
@@ -406,9 +409,11 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	if (m_device.select(atn_cmd.device))
 	{
 		m_mfile.reset(MFSOwner::File(m_device.url()));
+		Debug_printv("device changed [%d] url[%s]", m_device.id(), m_device.url().c_str());
 	}
 
 	std::string command = atn_cmd.str;
+	size_t channel = atn_cmd.channel;
 	m_openState = O_NOTHING;
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
@@ -434,10 +439,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 
 			while (entry != nullptr && entry->isDirectory())
 			{
-				Debug_printv("extension: [%s]", entry->extension);
+				Debug_printv("extension: [%s]", entry->extension.c_str());
 				entry.reset(m_mfile->getNextFileInDir());
 			}
-			m_mfile = entry;
+			m_mfile.reset(entry.get());
 		}
 		m_openState = O_FILE;
 		Debug_printv("LOAD * [%s]", m_mfile->url.c_str());
@@ -459,10 +464,9 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	{
 		// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
 		// some shit in check variable!
-		std::shared_ptr<MFile> new_mfile(guessIncomingPath(command));
+		std::unique_ptr<MFile> new_mfile(guessIncomingPath(command, channel));
 
-		m_device.url(new_mfile->url);
-		if (mstr::equals(new_mfile->extension,"URL")) 
+		if (mstr::equals(new_mfile->extension, "URL")) 
 		{
 			new_mfile.reset(new_mfile->cd("dummy"));
 			m_device.url(new_mfile->url);
@@ -474,16 +478,17 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		{
 			// Enter directory
 			m_device.url(new_mfile->url);
-			m_mfile = new_mfile;
+			m_mfile.reset(new_mfile.get());
+			m_mfile.reset(MFSOwner::File(new_mfile->url));
 			m_openState = O_DIR;
 			Debug_printv("CD [%s]", new_mfile->url.c_str());
 			Debug_printv("LOAD $");
 		}
 		else
 		{
-			m_device.path(new_mfile->parent()->url);
+			m_device.url(new_mfile->parent()->url);
 			m_filename_last = m_mfile->url;
-			m_mfile = new_mfile;
+			m_mfile.reset(MFSOwner::File(new_mfile->url));
 			m_openState = O_FILE;
 			Debug_printv("Load File [%s]", m_mfile->url.c_str());
 		}
@@ -497,8 +502,8 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 
 	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Serial.printf("\r\nDEVICE[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILE[%s]\nCOMMAND[%s]\r\n", 
-					m_device.device(), 
+	Serial.printf("\r\nDEVICE ID[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILE[%s]\nCOMMAND[%s]\r\n", 
+					m_device.id(), 
 					m_device.media(), 
 					m_device.partition(), 
 					m_device.url().c_str(), 
@@ -726,7 +731,7 @@ void Interface::sendListing()
 	{
 		// Set device default Listing Header
 		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
-		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
+		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.id());
 	}
 	// else
 	// {
