@@ -57,15 +57,15 @@ public:
             return std::string(1, char(ch));
         }
         else if(ch>=0x80 && ch<=0x7ff) {
-            auto upper = (ch>>6) & 0b11111 | 0b11000000; 
-            char lower = ch & 0b111111 | 0b10000000; 
+            auto upper = (ch>>6) & (0b11111 | 0b11000000); 
+            char lower = ch & (0b111111 | 0b10000000); 
             char arr[] = { (char)upper, (char)lower, '\0'};
             return std::string(arr);
         }
         else {
-            auto lower = (uint8_t)ch & 0b00111111 | 0b10000000;
-            auto mid = (uint8_t)(ch>>6) & 0b00111111 | 0b10000000;
-            auto hi = (uint8_t)(ch>>12) & 0b00111111 | 0b11100000;
+            auto lower = (uint8_t)ch & (0b00111111 | 0b10000000);
+            auto mid = (uint8_t)(ch>>6) & (0b00111111 | 0b10000000);
+            auto hi = (uint8_t)(ch>>12) & (0b00111111 | 0b11100000);
             char arr[] = { (char)hi, (char)mid, (char)lower, '\0'};
             return std::string(arr);
         }
@@ -133,7 +133,7 @@ public:
 
         std::string converted;
 
-        for(int i = 0; i<line.length(); i++) {
+        for(size_t i = 0; i<line.length(); i++) {
             converted+=U8Char(smartBuffer[buffPos]).toUtf8();
         }
 

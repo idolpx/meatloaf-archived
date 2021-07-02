@@ -8,8 +8,8 @@
 #include "../../include/global_defines.h"
 
 namespace mstr {
-    std::string drop(std::string str, int count);
-    std::string dropLast(std::string str, int count);
+    std::string drop(std::string str, size_t count);
+    std::string dropLast(std::string str, size_t count);
     bool startsWith(std::string s, const char *pattern, bool case_sensitive = true);
     bool endsWith(std::string s, const char *pattern, bool case_sensitive = true);
     bool equals(std::string &s1, std::string &s2, bool case_sensitive = true);

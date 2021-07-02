@@ -33,7 +33,8 @@ namespace
 Interface::Interface(IEC &iec)
 	: m_iec(iec),
 	m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
-	m_device(0)
+	m_device(0),
+	m_mfile(MFSOwner::File(""))
 {
 	reset();
 } // ctor
@@ -466,6 +467,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// some shit in check variable!
 		std::unique_ptr<MFile> new_mfile(guessIncomingPath(command, channel));
 
+
 		if (mstr::equals(new_mfile->extension, "URL")) 
 		{
 			new_mfile.reset(new_mfile->cd("dummy"));
@@ -478,7 +480,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		{
 			// Enter directory
 			m_device.url(new_mfile->url);
-			m_mfile.reset(new_mfile.get());
+			//m_mfile.reset(new_mfile.get());
 			m_mfile.reset(MFSOwner::File(new_mfile->url));
 			m_openState = O_DIR;
 			Debug_printv("CD [%s]", new_mfile->url.c_str());
@@ -502,30 +504,30 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 
 	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	Serial.printf("\r\nDEVICE ID[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILE[%s]\nCOMMAND[%s]\r\n", 
-					m_device.id(), 
-					m_device.media(), 
-					m_device.partition(), 
-					m_device.url().c_str(), 
-					m_device.path().c_str(),
-					m_mfile->url.c_str(),
-					atn_cmd.str
-	);
+	// Serial.printf("\r\nDEVICE ID[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILE[%s]\nCOMMAND[%s]\r\n", 
+	// 				m_device.id(), 
+	// 				m_device.media(), 
+	// 				m_device.partition(), 
+	// 				m_device.url().c_str(), 
+	// 				m_device.path().c_str(),
+	// 				m_mfile->url.c_str(),
+	// 				atn_cmd.str
+	// );
 	
-	// Debug_println("");
-	// Debug_printv("-------------------------------");
-	// Debug_printv("URL: [%s]", m_mfile->url.c_str());
-    // Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
-    // Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
-	// Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
-	// Debug_printv("Username: [%s]", m_mfile->user.c_str());
-	// Debug_printv("Password: [%s]", m_mfile->pass.c_str());
-	// Debug_printv("Host: [%s]", m_mfile->host.c_str());
-	// Debug_printv("Port: [%s]", m_mfile->port.c_str());
-	// Debug_printv("Path: [%s]", m_mfile->path.c_str());
-	// Debug_printv("File: [%s]", m_mfile->name.c_str());
-	// Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
-    // Debug_printv("-------------------------------");
+	Debug_println("");
+	Debug_printv("-------------------------------");
+	Debug_printv("URL: [%s]", m_mfile->url.c_str());
+    Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
+    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
+	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	Debug_printv("File: [%s]", m_mfile->name.c_str());
+	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+    Debug_printv("-------------------------------");
 
 } // handleATNCmdCodeOpen
 

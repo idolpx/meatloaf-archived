@@ -109,7 +109,7 @@ bool CServerSessionMgr::traversePath(MFile* path) {
         Debug_printv("Chopped size:%d\n", chopped.size());
         delay(500);
 
-        for(int i = 1; i < chopped.size(); i++) {
+        for(size_t i = 1; i < chopped.size(); i++) {
             Debug_printv("Before chopped deref");
 
             auto part = chopped[i];
@@ -393,6 +393,7 @@ bool CServerFile::isDirectory() {
         else
             return true;
     }
+    return false;
 };
 
 MIStream* CServerFile::inputStream() {

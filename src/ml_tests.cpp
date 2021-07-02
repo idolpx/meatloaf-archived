@@ -18,6 +18,9 @@
 #include "wrappers/std_stream_wrapper.h"
 
 
+std::unique_ptr<MFile> m_mfile(MFSOwner::File(""));
+
+
 void testHeader(std::string testName) {
     Serial.println("\n\n******************************");
     Serial.printf("* TESTING: %s\n", testName.c_str());
@@ -26,10 +29,9 @@ void testHeader(std::string testName) {
 
 void testDiscoverDevices()
 {
-    size_t d = 4;
     iecHost iec;
     testHeader("Query Bus for Devices");
-    for(d; d<31; d++)
+    for(size_t d=4; d<31; d++)
         iec.deviceExists(d);
 }
 
@@ -427,9 +429,96 @@ void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
 }
 
 
+MFile* guessIncomingPath(std::string command, size_t channel)
+{
+	std::string guessedPath = command;
+    std::unique_ptr<MFile> currentDir(MFSOwner::File(""));
+
+	Debug_printv("[%s]", guessedPath.c_str());
+
+	// get the current directory
+	Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
+    if ( m_mfile->isDirectory())
+	    currentDir.reset(m_mfile.get());
+    else
+        currentDir.reset(m_mfile->parent());
+
+	Debug_printv("currentDir[%s]", currentDir->url.c_str());
+
+	// check to see if it starts with a known command token
+	if ( mstr::startsWith(command, "CD", false) ) // would be case sensitive, but I don't know the proper case
+	{
+		guessedPath = mstr::drop(guessedPath, 2);
+		if ( mstr::startsWith(guessedPath, "/" ) || mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
+			guessedPath = mstr::drop(guessedPath, 1);
+	}
+	// TODO more of them?
+
+	// NOW, since user could have requested ANY kind of our supported magic paths like:
+	// LOAD ~/something
+	// LOAD ../something
+	// LOAD //something
+	// we HAVE TO PARSE IT OUR WAY!
+
+	Debug_printv("guessedPath[%s]", guessedPath.c_str());
+	
+	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
+	return currentDir->cd(guessedPath);
+}
+
+void testCDMFile(std::string command, size_t channel) {
+
+    testHeader("TEST CD MFile");
+
+    std::unique_ptr<MFile> new_mfile(guessIncomingPath(command, channel));
+
+    Debug_printv("new_mfile[%s]", new_mfile->url.c_str());
+
+    if (mstr::equals(new_mfile->extension, "URL")) 
+    {
+        new_mfile.reset(new_mfile->cd("dummy"));
+        m_mfile.reset(new_mfile.get());
+        Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
+        Debug_printv("LOAD $");
+    }
+    if (mstr::startsWith(command, "CD", false) || new_mfile->isDirectory())
+    {
+        // Enter directory
+        //m_mfile = new_mfile;
+        //m_mfile.reset(new_mfile);
+        //m_mfile.reset(new_mfile.get());
+        //m_mfile.reset(MFSOwner::File(new_mfile->url));
+        m_mfile.reset(new_mfile.get());
+        
+        Debug_printv("CD [%s]", new_mfile->url.c_str());
+        Debug_printv("LOAD $");
+    }
+    else
+    {
+        m_mfile.reset(new_mfile.get());
+        Debug_printv("Load File [%s]", m_mfile->url.c_str());
+    }
+
+	Debug_println("");
+	Debug_printv("-------------------------------");
+	Debug_printv("URL: [%s]", m_mfile->url.c_str());
+    Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
+    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
+	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	Debug_printv("File: [%s]", m_mfile->name.c_str());
+	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+    Debug_printv("-------------------------------");
+
+}
+
 void runTestsSuite() {
     // working, uncomment if you want
-    runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    // runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
     // runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
     //runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
     
@@ -445,4 +534,13 @@ void runTestsSuite() {
     //htmlStream("http://meatloaf.cc");  // Works!!!
 
     //testDiscoverDevices();
+    testCDMFile("CCGMS", 0);
+    testCDMFile("CD:GAMES", 0);
+    testCDMFile("CD_", 0);
+    testCDMFile("CD/GAMES", 0);
+    testCDMFile("CD_", 0);
+    testCDMFile("CDGAMES", 0);
+    testCDMFile("CD_", 0);
+    testCDMFile("CDGAMES", 15);
+    testCDMFile("CD_", 0);
 }

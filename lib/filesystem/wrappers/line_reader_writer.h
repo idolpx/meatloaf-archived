@@ -54,7 +54,7 @@ public:
         MBufferConst buffer(line);
         MBuffer encoded(l);
 
-        for(int i=0; i<l; i++) {
+        for(size_t i=0; i<l; i++) {
             encoded[i] = codec->toForeign(buffer[i]);
         }
 

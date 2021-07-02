@@ -46,14 +46,14 @@ namespace mstr {
 
 
 
-    std::string drop(std::string str, int count) {
+    std::string drop(std::string str, size_t count) {
         if(count>str.length())
             return "";
         else
             return str.substr(count);
     }
 
-    std::string dropLast(std::string str, int count) {
+    std::string dropLast(std::string str, size_t count) {
         if(count>str.length())
             return "";
         else
@@ -105,7 +105,7 @@ namespace mstr {
 
     }
 
-    bool equals(std::string &s1, char* s2, bool case_sensitive)
+    bool equals(std::string &s1, char *s2, bool case_sensitive)
     {
         if(case_sensitive)
             return ( (s1.size() == strlen(s2) ) &&
