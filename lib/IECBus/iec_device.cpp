@@ -441,7 +441,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		else
 		{	
 			// Find first PRG file in current directory
-			std::shared_ptr<MFile> entry(m_mfile->getNextFileInDir());
+			std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
 			while (entry != nullptr && entry->isDirectory())
 			{
@@ -710,7 +710,7 @@ void Interface::sendListing()
 	std::string extension = "DIR";
 
 	// Send List ITEMS
-	std::shared_ptr<MFile> dir(m_mfile.get());
+	std::unique_ptr<MFile> dir(m_mfile.get());
 	if(!dir->isDirectory())
 		dir.reset(m_mfile->parent());
 
@@ -863,7 +863,7 @@ void Interface::sendFile()
 		return;
 	}
 
-	std::shared_ptr<MIStream> istream(m_mfile->inputStream());
+	std::unique_ptr<MIStream> istream(m_mfile->inputStream());
 	size_t len = istream->available() - 1;
 
 	// Get file load address
@@ -955,7 +955,7 @@ void Interface::saveFile()
 	ba[8] = '\0';
 #endif
 
-	std::shared_ptr<MOStream> ostream(m_mfile->outputStream());
+	std::unique_ptr<MOStream> ostream(m_mfile->outputStream());
 	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", m_mfile->url.c_str());
 
     if(!ostream->isOpen()) {
