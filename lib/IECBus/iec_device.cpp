@@ -374,12 +374,17 @@ byte Interface::loop(void)
 MFile* Interface::guessIncomingPath(std::string command, size_t channel)
 {
 	std::string guessedPath = command;
+    std::unique_ptr<MFile> currentDir(MFSOwner::File(""));
 
 	Debug_printv("[%s]", guessedPath.c_str());
 
 	// get the current directory
-	Debug_printv("m_mfile[%s]", m_mfile->url.c_str());	
-	std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
+	Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
+    if ( m_mfile->isDirectory())
+	    currentDir.reset(m_mfile.get());
+    else
+        currentDir.reset(m_mfile->parent());
+
 	Debug_printv("currentDir[%s]", currentDir->url.c_str());
 
 	// check to see if it starts with a known command token
