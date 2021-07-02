@@ -473,6 +473,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			if ( new_mfile->isDirectory() )
 			{
 				m_device.url(new_mfile->url);
+				m_mfile.reset(MFSOwner::File(new_mfile->url));
 				m_openState = O_DIR;
 				Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
 				Debug_printv("LOAD $");				
@@ -489,6 +490,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		{
 			// Set directory
 			m_device.url(new_mfile->url);
+			m_mfile.reset(MFSOwner::File(new_mfile->url));
 			m_openState = O_DIR;
 			Debug_printv("CD [%s]", new_mfile->url.c_str());
 			Debug_printv("LOAD $");
@@ -499,7 +501,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			m_filename = new_mfile->url;
 			
 			m_openState = O_FILE;
-			Debug_printv("Load File [%s]", m_mfile->url.c_str());
+			Debug_printv("Load File [%s]", m_mfile->name.c_str());
 		}
 	}
 
