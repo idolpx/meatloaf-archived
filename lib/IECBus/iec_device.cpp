@@ -754,7 +754,7 @@ void Interface::sendListing()
 	// Send Directory Items
 	while(entry != nullptr)
 	{
-		uint16_t block_cnt = entry->size() / dir->media_block_size;
+		uint16_t block_cnt = entry->size() / m_mfile->media_block_size;
 		byte block_spc = 3;
 		if (block_cnt > 9)
 			block_spc--;
@@ -794,13 +794,13 @@ void Interface::sendListing()
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name.c_str(), space_cnt, "", extension.c_str());
 		}
 		
-		entry.reset(dir->getNextFileInDir());
+		entry.reset(m_mfile->getNextFileInDir());
 
 		ledToggle(true);
 	}
 
 	// Send Listing Footer
-	byte_count += sendFooter(basicPtr, dir->media_blocks_free, dir->media_block_size);
+	byte_count += sendFooter(basicPtr, m_mfile->media_blocks_free, m_mfile->media_block_size);
 
 	// End program with two zeros after last line. Last zero goes out as EOI.
 	m_iec.send(0);
