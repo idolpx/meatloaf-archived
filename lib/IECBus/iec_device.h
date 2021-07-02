@@ -121,8 +121,8 @@ private:
 	//DynamicJsonDocument m_jsonHTTPBuffer;
 
 	DeviceDB m_device;
-	std::unique_ptr<MFile> m_mfile;
-	std::string m_filename_last;
+	std::unique_ptr<MFile> m_mfile; // Always points to current directory
+	std::string m_filename; // Always points to current or last loaded file
 
 	std::string m_device_status = "";
 	bool m_show_date;

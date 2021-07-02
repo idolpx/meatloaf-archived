@@ -477,7 +477,7 @@ void testCDMFile(std::string command, size_t channel) {
     if (mstr::equals(new_mfile->extension, "URL")) 
     {
         new_mfile.reset(new_mfile->cd("dummy"));
-        m_mfile.reset(new_mfile.get());
+        //m_mfile.reset(MFSOwner::File(new_mfile->url));
         Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
         Debug_printv("LOAD $");
     }
@@ -488,14 +488,14 @@ void testCDMFile(std::string command, size_t channel) {
         //m_mfile.reset(new_mfile);
         //m_mfile.reset(new_mfile.get());
         //m_mfile.reset(MFSOwner::File(new_mfile->url));
-        m_mfile.reset(new_mfile.get());
+        //m_mfile.reset(MFSOwner::File(new_mfile->url));
         
         Debug_printv("CD [%s]", new_mfile->url.c_str());
         Debug_printv("LOAD $");
     }
     else
     {
-        m_mfile.reset(new_mfile.get());
+        //m_mfile.reset(MFSOwner::File(new_mfile->url));
         Debug_printv("Load File [%s]", m_mfile->url.c_str());
     }
 
@@ -534,13 +534,13 @@ void runTestsSuite() {
     //htmlStream("http://meatloaf.cc");  // Works!!!
 
     //testDiscoverDevices();
-    testCDMFile("CCGMS", 0);
-    testCDMFile("CD:GAMES", 0);
-    testCDMFile("CD_", 0);
-    testCDMFile("CD/GAMES", 0);
-    testCDMFile("CD_", 0);
-    testCDMFile("CDGAMES", 0);
-    testCDMFile("CD_", 0);
-    testCDMFile("CDGAMES", 15);
-    testCDMFile("CD_", 0);
+    // testCDMFile("CCGMS", 0);
+    // testCDMFile("CD:GAMES", 0);
+    // testCDMFile("CD_", 0);
+    // testCDMFile("CD/GAMES", 0);
+    // testCDMFile("CD_", 0);
+    // testCDMFile("CDGAMES", 0);
+    // testCDMFile("CD_", 0);
+    // testCDMFile("CDGAMES", 15);
+    // testCDMFile("CD_", 0);
 }

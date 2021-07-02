@@ -374,17 +374,12 @@ byte Interface::loop(void)
 MFile* Interface::guessIncomingPath(std::string command, size_t channel)
 {
 	std::string guessedPath = command;
-    std::unique_ptr<MFile> currentDir(MFSOwner::File(""));
 
 	Debug_printv("[%s]", guessedPath.c_str());
 
 	// get the current directory
 	Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
-    if ( m_mfile->isDirectory())
-	    currentDir.reset(m_mfile.get());
-    else
-        currentDir.reset(m_mfile->parent());
-
+    std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
 	Debug_printv("currentDir[%s]", currentDir->url.c_str());
 
 	// check to see if it starts with a known command token
@@ -431,12 +426,11 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		{
 			// If in LittleFS root then set it to FB64
 			// TODO: Load configured autoload program
-			m_mfile.reset(MFSOwner::File("/.sys/fb64"));
+			m_filename = "/.sys/fb64";
 		}
-		else if (m_filename_last.size() > 0)
+		else if (m_filename.size() > 0)
 		{
 			// Load last used file
-			m_mfile.reset(MFSOwner::File(m_filename_last));
 		}
 		else
 		{	
@@ -448,10 +442,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 				Debug_printv("extension: [%s]", entry->extension.c_str());
 				entry.reset(m_mfile->getNextFileInDir());
 			}
-			m_mfile.reset(entry.get());
+			m_filename = entry->name;
 		}
 		m_openState = O_FILE;
-		Debug_printv("LOAD * [%s]", m_mfile->url.c_str());
+		Debug_printv("LOAD * [%s]", m_filename.c_str());
 	}
 	else if (mstr::startsWith(command, "@INFO", false))
 	{
@@ -472,30 +466,38 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// some shit in check variable!
 		std::unique_ptr<MFile> new_mfile(guessIncomingPath(command, channel));
 
-
 		if (mstr::equals(new_mfile->extension, "URL")) 
 		{
+			// Set URL
 			new_mfile.reset(new_mfile->cd("dummy"));
-			m_device.url(new_mfile->url);
-			m_openState = O_DIR;
-			Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
-			Debug_printv("LOAD $");
+			if ( new_mfile->isDirectory() )
+			{
+				m_device.url(new_mfile->url);
+				m_openState = O_DIR;
+				Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
+				Debug_printv("LOAD $");				
+			}
+			else
+			{
+				m_filename = new_mfile->url;
+				m_openState = O_FILE;
+				Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
+				Debug_printv("LOAD %s", new_mfile->name.c_str());
+			}
 		}
 		if (mstr::startsWith(command, "CD", false) || new_mfile->isDirectory())
 		{
-			// Enter directory
+			// Set directory
 			m_device.url(new_mfile->url);
-			//m_mfile.reset(new_mfile.get());
-			m_mfile.reset(MFSOwner::File(new_mfile->url));
 			m_openState = O_DIR;
 			Debug_printv("CD [%s]", new_mfile->url.c_str());
 			Debug_printv("LOAD $");
 		}
 		else
 		{
-			m_device.url(new_mfile->parent()->url);
-			m_filename_last = m_mfile->url;
-			m_mfile.reset(MFSOwner::File(new_mfile->url));
+			// Set File
+			m_filename = new_mfile->url;
+			
 			m_openState = O_FILE;
 			Debug_printv("Load File [%s]", m_mfile->url.c_str());
 		}
@@ -532,6 +534,8 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	Debug_printv("Path: [%s]", m_mfile->path.c_str());
 	Debug_printv("File: [%s]", m_mfile->name.c_str());
 	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+	Debug_printv("");
+	Debug_printv("m_filename: [%s]", m_filename.c_str());
     Debug_printv("-------------------------------");
 
 } // handleATNCmdCodeOpen
@@ -855,15 +859,16 @@ void Interface::sendFile()
 	// Update device database
 	m_device.save();
 
-	Debug_printv("[%s]", m_mfile->url.c_str());
+	std::unique_ptr<MFile> file(MFSOwner::File(m_filename));
+	Debug_printv("[%s]", file->url.c_str());
 
-	if(!m_mfile->exists())
+	if(!file->exists())
 	{
 		sendFileNotFound();
 		return;
 	}
 
-	std::unique_ptr<MIStream> istream(m_mfile->inputStream());
+	std::unique_ptr<MIStream> istream(file->inputStream());
 	size_t len = istream->available() - 1;
 
 	// Get file load address
@@ -955,8 +960,11 @@ void Interface::saveFile()
 	ba[8] = '\0';
 #endif
 
-	std::unique_ptr<MOStream> ostream(m_mfile->outputStream());
-	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", m_mfile->url.c_str());
+	std::unique_ptr<MFile> file(MFSOwner::File(m_filename));
+	Debug_printv("[%s]", file->url.c_str());
+
+	std::unique_ptr<MOStream> ostream(file->outputStream());
+	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", file->url.c_str());
 
     if(!ostream->isOpen()) {
         Debug_printv("couldn't open a stream for writing");
