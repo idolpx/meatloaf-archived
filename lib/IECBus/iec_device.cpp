@@ -379,7 +379,7 @@ MFile* Interface::guessIncomingPath(std::string command, size_t channel)
 
 	// get the current directory
 	Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
-    std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile->url));
+    std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile.get()));
 	Debug_printv("currentDir[%s]", currentDir->url.c_str());
 
 	// check to see if it starts with a known command token
@@ -714,11 +714,11 @@ void Interface::sendListing()
 	std::string extension = "DIR";
 
 	// Send List ITEMS
-	std::unique_ptr<MFile> dir(m_mfile.get());
-	if(!dir->isDirectory())
-		dir.reset(m_mfile->parent());
+	// std::unique_ptr<MFile> dir(MFSOwner::File(m_mfile.get()));
+	// if(!dir->isDirectory())
+	// 	dir.reset(m_mfile->parent());
 
-	std::unique_ptr<MFile> entry(dir->getNextFileInDir());
+	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
 	if(entry == nullptr) {
 		ledOFF();

@@ -110,6 +110,9 @@ class MFSOwner {
 
 public:
     static MFile* File(std::string name);
+    static MFile* File(std::shared_ptr<MFile> file);
+    static MFile* File(MFile* file);
+
     static bool mount(std::string name);
     static bool umount(std::string name);
 };

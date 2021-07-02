@@ -70,6 +70,14 @@ bool MFSOwner::umount(std::string name) {
     return true;
 }
 
+MFile* MFSOwner::File(MFile* file) {
+    return File(file->url);
+}
+
+MFile* MFSOwner::File(std::shared_ptr<MFile> file) {
+    return File(file->url);
+}
+
 MFile* MFSOwner::File(std::string path) {
     std::vector<std::string> paths = mstr::split(path,'/');
 
