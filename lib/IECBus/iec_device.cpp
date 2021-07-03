@@ -371,25 +371,21 @@ byte Interface::loop(void)
 	return retATN;
 } // handler
 
-MFile* Interface::guessIncomingPath(std::string command, size_t channel)
+CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 {
 	std::string guessedPath = command;
-
-	Debug_printv("[%s]", guessedPath.c_str());
-
-	// get the current directory
-	Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
-    std::unique_ptr<MFile> currentDir(MFSOwner::File(m_mfile.get()));
-	Debug_printv("currentDir[%s]", currentDir->url.c_str());
+	CommandPathTuple tuple;
+	tuple.command = "";
 
 	// check to see if it starts with a known command token
-	if ( mstr::startsWith(command, "CD", false) ) // would be case sensitive, but I don't know the proper case
+	if ( mstr::startsWith(command, "CD:", false) ) // would be case sensitive, but I don't know the proper case
 	{
-		guessedPath = mstr::drop(guessedPath, 2);
-		if ( mstr::startsWith(guessedPath, "/" ) || mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
-			guessedPath = mstr::drop(guessedPath, 1);
-		else if ( channel != 15 )
-			guessedPath = command;
+		guessedPath = mstr::drop(guessedPath, 3);
+		tuple.command = "CD";
+		// if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
+		// 	guessedPath = mstr::drop(guessedPath, 1);
+		// else if ( channel != 15 )
+		// 	guessedPath = command;
 	}
 	// TODO more of them?
 
@@ -399,10 +395,17 @@ MFile* Interface::guessIncomingPath(std::string command, size_t channel)
 	// LOAD //something
 	// we HAVE TO PARSE IT OUR WAY!
 
-	Debug_printv("guessedPath[%s]", guessedPath.c_str());
-	
+
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
-	return currentDir->cd(guessedPath);
+	auto fullPath = Meat::Wrap(m_mfile->cd(guessedPath));
+
+	tuple.fullPath = fullPath->url;
+
+	Debug_printv("we are in            [%s]", m_mfile->url.c_str());
+	Debug_printv("full referenced path [%s]", tuple.fullPath.c_str());
+	Debug_printv("received command     [%s]", tuple.command.c_str());
+
+	return tuple;
 }
 
 void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
@@ -464,44 +467,36 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	{
 		// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
 		// some shit in check variable!
-		std::unique_ptr<MFile> new_mfile(guessIncomingPath(command, channel));
 
-		if (mstr::equals(new_mfile->extension, "URL")) 
+		// 1. obtain command and fullPath
+		auto commandAndPath = parseLine(command, channel);
+		auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
+
+		// 2. fullPath.extension == "URL" - change dir or load file
+		if (mstr::equals(referencedPath->extension, "URL")) 
 		{
-			// Set URL
-			new_mfile.reset(new_mfile->cd("dummy"));
-			if ( new_mfile->isDirectory() )
+			// CD to the path inside the .url file
+			referencedPath.reset(referencedPath->cd("dummy"));
+			if ( referencedPath->isDirectory() )
 			{
-				m_device.url(new_mfile->url);
-				m_mfile.reset(MFSOwner::File(new_mfile->url));
-				m_openState = O_DIR;
-				Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
-				Debug_printv("LOAD $");				
+				changeDir(referencedPath->url);
 			}
 			else
 			{
-				m_filename = new_mfile->url;
-				m_openState = O_FILE;
-				Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
-				Debug_printv("LOAD %s", new_mfile->name.c_str());
+				prepareFileStream(referencedPath->url);
 			}
 		}
-		if (mstr::startsWith(command, "CD", false) || new_mfile->isDirectory())
+		// 2. OR if command == "CD" OR fullPath.isDirectory - change directory
+		if (mstr::startsWith(commandAndPath.command, "CD", false) || referencedPath->isDirectory())
 		{
-			// Set directory
-			m_device.url(new_mfile->url);
-			m_mfile.reset(MFSOwner::File(new_mfile->url));
-			m_openState = O_DIR;
-			Debug_printv("CD [%s]", new_mfile->url.c_str());
-			Debug_printv("LOAD $");
+			changeDir(referencedPath->url);
 		}
+
+		// 3. else - stream file
 		else
 		{
 			// Set File
-			m_filename = new_mfile->url;
-			
-			m_openState = O_FILE;
-			Debug_printv("Load File [%s]", m_mfile->name.c_str());
+			prepareFileStream(referencedPath->url);
 		}
 	}
 
@@ -541,6 +536,22 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
     Debug_printv("-------------------------------");
 
 } // handleATNCmdCodeOpen
+
+void Interface::changeDir(std::string url)
+{
+	m_device.url(url);
+	m_mfile.reset(MFSOwner::File(url));
+	m_openState = O_DIR;
+	Debug_printv("CD into [%s]", url.c_str());
+	Debug_printv("LOAD $");		
+}
+
+void Interface::prepareFileStream(std::string url)
+{
+	m_filename = url;
+	m_openState = O_FILE;
+	Debug_printv("LOAD [%s]", url.c_str());
+}
 
 void Interface::handleATNCmdCodeDataTalk(byte chan)
 {

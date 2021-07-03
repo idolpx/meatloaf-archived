@@ -67,6 +67,14 @@ enum OpenState
 	O_DEVICE_STATUS
 };
 
+
+class CommandPathTuple {
+public:
+	std::string command;
+	std::string fullPath;
+};
+
+
 class Interface
 {
 public:
@@ -87,6 +95,9 @@ private:
 	void sendDeviceInfo(void);
 	void sendDeviceStatus(void);
 	void setDeviceStatus(int number, int track=0, int sector=0);
+
+	void changeDir(std::string url);
+	void prepareFileStream(std::string url);
 
 	uint16_t sendHeader(uint16_t &basicPtr, std::string header);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
@@ -130,7 +141,8 @@ private:
 	bool m_show_hidden;
 	bool m_hide_extension;
 
-	MFile* guessIncomingPath(std::string commandLne, size_t channel);
+	CommandPathTuple parseLine(std::string commandLne, size_t channel);
 };
+
 
 #endif
