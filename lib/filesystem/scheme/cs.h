@@ -1,4 +1,4 @@
-// a scheme for handling Commodore Server
+// CS:/ - a scheme for handling Commodore Server
 // see: https://www.commodoreserver.com/BlogEntryView.asp?EID=9D133160E7C344A398EC1F45AEF4BF32
 
 #ifndef MEATFILESYSTEM_SCHEME_CS

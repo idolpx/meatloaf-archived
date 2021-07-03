@@ -1,4 +1,4 @@
-// Hypertext Transfer Protocol
+// HTTP:// - Hypertext Transfer Protocol
 
 #ifndef MEATFILE_DEFINES_FSHTTP_H
 #define MEATFILE_DEFINES_FSHTTP_H
