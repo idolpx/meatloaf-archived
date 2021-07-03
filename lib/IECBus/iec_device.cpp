@@ -428,22 +428,22 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Debug_printv("device changed [%d] url[%s]", m_device.id(), m_device.url().c_str());
 	}
 
-	std::string command = atn_cmd.str;
+	//std::string command = atn_cmd.str;
 	size_t channel = atn_cmd.channel;
 	m_openState = O_NOTHING;
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
 	// 1. obtain command and fullPath
-	auto commandAndPath = parseLine(command, channel);
+	auto commandAndPath = parseLine(atn_cmd.str, channel);
 	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
 
-	if (mstr::startsWith(command, "$"))
+	if (mstr::endsWith(commandAndPath.command, "$"))
 	{
 		m_openState = O_DIR;
 		Debug_printv("LOAD $");
 	}	
-	else if (mstr::endsWith(command, "*"))
+	else if (mstr::endsWith(commandAndPath.command, "*"))
 	{
 		// Find first program in listing
 		if (m_device.path().empty())
