@@ -60,7 +60,10 @@ public:
     virtual bool remove() = 0;
     virtual bool rename(const char* dest) = 0;
 
-    virtual ~MFile() {};
+    virtual ~MFile() {
+        //Debug_printv("Deleting: [%s]", this->url.c_str());
+
+    };
 
     std::string streamPath;
     std::string pathInStream;
@@ -117,6 +120,36 @@ public:
     static bool umount(std::string name);
 };
 
+namespace Meat {
+    struct _Unique_mf {
+        typedef std::unique_ptr<MFile> _Single_file;
+    };
 
+    template<class MFile>
+        typename _Unique_mf::_Single_file
+        New(std::string name) {
+            return std::unique_ptr<MFile>(MFSOwner::File(name));
+        }
+
+    template<class MFile>
+        typename _Unique_mf::_Single_file
+        New(MFile* file) {
+            return std::unique_ptr<MFile>(MFSOwner::File(file->url));
+        }
+
+    template<class MFile>
+        typename _Unique_mf::_Single_file
+        New(char* name) {
+            return std::unique_ptr<MFile>(MFSOwner::File(std::string(name)));
+        }
+
+    template<class MFile>
+        typename _Unique_mf::_Single_file
+        Wrap(MFile* file) {
+            return std::unique_ptr<MFile>(file);
+        }
+
+
+}
 
 #endif

@@ -393,9 +393,13 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
 
 void runFSTest(std::string dirPath, std::string filePath) {
     Serial.println("**********************************************************************\n\n");
-    std::shared_ptr<MFile> testDir(MFSOwner::File(dirPath));
-    std::shared_ptr<MFile> testFile(MFSOwner::File(filePath));
-    std::shared_ptr<MFile> destFile(MFSOwner::File("/mltestfile"));
+    // std::shared_ptr<MFile> testDir(MFSOwner::File(dirPath));
+    // std::shared_ptr<MFile> testFile(MFSOwner::File(filePath));
+    // std::shared_ptr<MFile> destFile(MFSOwner::File("/mltestfile"));
+
+    auto testDir = Meat::New<MFile>(dirPath);
+    auto testFile = Meat::New<MFile>(filePath);
+    auto destFile = Meat::New<MFile>("/mltestfile");
 
     if(!dirPath.empty() && testDir != nullptr) {
         testPaths(testDir.get(),"subDir");
@@ -516,9 +520,24 @@ void testCDMFile(std::string command, size_t channel) {
 
 }
 
+void testSmartMFile() {
+    testHeader("TEST smart MFile pointers");
+
+    Debug_printv("Creating smart MFile from char*");
+    auto test = Meat::New<MFile>("cs://some/directory/disk.d64/file.txt");
+    Debug_printv("Creating smart MFile from MFile*");
+    auto test2 = Meat::New<MFile>(test.get());
+
+    auto wrapped = Meat::Wrap<MFile>(test2->getNextFileInDir());
+
+	Debug_printv("Extension of second one: [%s]", test2->extension.c_str());
+}
+
 void runTestsSuite() {
+    //testSmartMFile();
+
     // working, uncomment if you want
-    // runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    //runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
     // runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
     //runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
     
