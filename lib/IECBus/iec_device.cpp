@@ -375,7 +375,6 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 {
 	std::string guessedPath = command;
 	CommandPathTuple tuple;
-	tuple.command = "";
 
 	// check to see if it starts with a known command token
 	if ( mstr::startsWith(command, "CD:", false) ) // would be case sensitive, but I don't know the proper case
@@ -387,6 +386,16 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 		// else if ( channel != 15 )
 		// 	guessedPath = command;
 	}
+	else if(mstr::startsWith(command, "@INFO", false))
+	{
+		guessedPath = mstr::drop(guessedPath, 5);
+		tuple.command = "@INFO";
+	}
+	else if(mstr::startsWith(command, "@STAT", false))
+	{
+		guessedPath = mstr::drop(guessedPath, 5);
+		tuple.command = "@STAT";
+	}
 	// TODO more of them?
 
 	// NOW, since user could have requested ANY kind of our supported magic paths like:
@@ -397,14 +406,17 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 
 
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
-	auto fullPath = Meat::Wrap(m_mfile->cd(guessedPath));
+	mstr::trim(guessedPath);
 
-	tuple.fullPath = fullPath->url;
+	if(!guessedPath.empty()) {
+		auto fullPath = Meat::Wrap(m_mfile->cd(guessedPath));
 
-	Debug_printv("we are in            [%s]", m_mfile->url.c_str());
-	Debug_printv("full referenced path [%s]", tuple.fullPath.c_str());
-	Debug_printv("received command     [%s]", tuple.command.c_str());
+		tuple.fullPath = fullPath->url;
 
+		Debug_printv("we are in            [%s]", m_mfile->url.c_str());
+		Debug_printv("full referenced path [%s]", tuple.fullPath.c_str());
+		Debug_printv("received command     [%s]", tuple.command.c_str());
+	}
 	return tuple;
 }
 
@@ -422,7 +434,16 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
-	if (mstr::endsWith(command, "*"))
+	// 1. obtain command and fullPath
+	auto commandAndPath = parseLine(command, channel);
+	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
+
+	if (mstr::startsWith(command, "$"))
+	{
+		m_openState = O_DIR;
+		Debug_printv("LOAD $");
+	}	
+	else if (mstr::endsWith(command, "*"))
 	{
 		// Find first program in listing
 		if (m_device.path().empty())
@@ -450,28 +471,16 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_openState = O_FILE;
 		Debug_printv("LOAD * [%s]", m_filename.c_str());
 	}
-	else if (mstr::startsWith(command, "@INFO", false))
+	else if (mstr::equals(commandAndPath.command, "@INFO", false))
 	{
 		m_openState = O_DEVICE_INFO;
 	}
-	else if (mstr::startsWith(command, "@STAT", false))
+	else if (mstr::equals(commandAndPath.command, "@STAT", false))
 	{
 		m_openState = O_DEVICE_STATUS;
 	}
-	if (mstr::startsWith(command, "$"))
-	{
-		m_openState = O_DIR;
-		Debug_printv("LOAD $");
-	}	
 	else
 	{
-		// we need this because if user came here via LOAD"CD//somepath" then we'll end up with
-		// some shit in check variable!
-
-		// 1. obtain command and fullPath
-		auto commandAndPath = parseLine(command, channel);
-		auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
-
 		// 2. fullPath.extension == "URL" - change dir or load file
 		if (mstr::equals(referencedPath->extension, "URL")) 
 		{
