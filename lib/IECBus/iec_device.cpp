@@ -487,11 +487,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			}
 		}
 		// 2. OR if command == "CD" OR fullPath.isDirectory - change directory
-		if (mstr::startsWith(commandAndPath.command, "CD", false) || referencedPath->isDirectory())
+		if (mstr::equals(commandAndPath.command, "CD", false) || referencedPath->isDirectory())
 		{
 			changeDir(referencedPath->url);
 		}
-
 		// 3. else - stream file
 		else
 		{
