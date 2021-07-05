@@ -52,6 +52,8 @@
 #include "helpers.h"
 #include "utils.h"
 #include "string_utils.h"
+#include "wrappers/line_reader_writer.h"
+#include "wrappers/c64_reader_writer.h"
 
 //#include "doscmd.h"
 
@@ -115,6 +117,8 @@ private:
 
 	void handleDeviceCommand(IEC::ATNCmd &cmd);
 	void handleMeatloafCommand(IEC::ATNCmd &cmd);
+
+	MFile* getPointed(MFile* urlFile);
 
 	// our iec low level driver:
 	IEC &m_iec;

@@ -371,30 +371,58 @@ byte Interface::loop(void)
 	return retATN;
 } // handler
 
+MFile* Interface::getPointed(MFile* urlFile) {
+	std::unique_ptr<MIStream> istream(urlFile->inputStream());
+    if(istream == nullptr) {
+        Debug_printf("ISTREAM == NULLPTR!!! [%s]");
+		return nullptr;
+    }
+	else {
+		auto reader = std::make_unique<LinedReader>(istream.get());
+		auto linkUrl = reader->readLn();
+		Debug_printv("path read from [%s]=%s", urlFile->url.c_str(), linkUrl.c_str());
+
+		return MFSOwner::File(linkUrl);
+	}
+};
+
 CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 {
+
+	Debug_printv("* COMMAND RECEIVED *******************************");
+
+	Debug_printv("we are in              [%s]", m_mfile->url.c_str());
+	Debug_printv("unprocessed user input [%s]", command.c_str());
+
 	std::string guessedPath = command;
 	CommandPathTuple tuple;
 
+	mstr::toASCII(guessedPath);
+
 	// check to see if it starts with a known command token
-	if ( mstr::startsWith(command, "CD:", false) ) // would be case sensitive, but I don't know the proper case
+	if ( mstr::startsWith(command, "cd:", false) ) // would be case sensitive, but I don't know the proper case
 	{
 		guessedPath = mstr::drop(guessedPath, 3);
-		tuple.command = "CD";
+		tuple.command = "cd";
 		// if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
 		// 	guessedPath = mstr::drop(guessedPath, 1);
 		// else if ( channel != 15 )
 		// 	guessedPath = command;
 	}
-	else if(mstr::startsWith(command, "@INFO", false))
+	else if(mstr::startsWith(command, "@info", false))
 	{
 		guessedPath = mstr::drop(guessedPath, 5);
-		tuple.command = "@INFO";
+		tuple.command = "@info";
 	}
-	else if(mstr::startsWith(command, "@STAT", false))
+	else if(mstr::startsWith(command, "@stat", false))
 	{
 		guessedPath = mstr::drop(guessedPath, 5);
-		tuple.command = "@STAT";
+		tuple.command = "@stat";
+	}
+	else if(mstr::startsWith(command, ":")) {
+		// JiffyDOS eats commands it knows, it might be T: which means ASCII dump requested
+		guessedPath = mstr::drop(guessedPath, 1);
+		tuple.command = "t:";
 	}
 	// TODO more of them?
 
@@ -408,15 +436,21 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
 	mstr::trim(guessedPath);
 
-	if(!guessedPath.empty()) {
+	Debug_printv("found command     [%s]", tuple.command.c_str());
+
+	if(guessedPath == "$") {
+		Debug_printv("get directory of [%s]", m_mfile->url.c_str());
+	}
+	else if(!guessedPath.empty()) {
 		auto fullPath = Meat::Wrap(m_mfile->cd(guessedPath));
 
 		tuple.fullPath = fullPath->url;
 
-		Debug_printv("we are in            [%s]", m_mfile->url.c_str());
 		Debug_printv("full referenced path [%s]", tuple.fullPath.c_str());
-		Debug_printv("received command     [%s]", tuple.command.c_str());
 	}
+
+	Debug_printv("* END OF COMMAND RECEIVED *******************************");
+
 	return tuple;
 }
 
@@ -471,21 +505,22 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		m_openState = O_FILE;
 		Debug_printv("LOAD * [%s]", m_filename.c_str());
 	}
-	else if (mstr::equals(commandAndPath.command, "@INFO", false))
+	else if (mstr::equals(commandAndPath.command, "@info", false))
 	{
 		m_openState = O_DEVICE_INFO;
 	}
-	else if (mstr::equals(commandAndPath.command, "@STAT", false))
+	else if (mstr::equals(commandAndPath.command, "@stat", false))
 	{
 		m_openState = O_DEVICE_STATUS;
 	}
 	else
 	{
 		// 2. fullPath.extension == "URL" - change dir or load file
-		if (mstr::equals(referencedPath->extension, "URL")) 
+		if (mstr::equals(referencedPath->extension, "url", false)) 
 		{
 			// CD to the path inside the .url file
-			referencedPath.reset(referencedPath->cd("dummy"));
+			referencedPath.reset(getPointed(referencedPath.get()));
+
 			if ( referencedPath->isDirectory() )
 			{
 				changeDir(referencedPath->url);
@@ -496,7 +531,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			}
 		}
 		// 2. OR if command == "CD" OR fullPath.isDirectory - change directory
-		if (mstr::equals(commandAndPath.command, "CD", false) || referencedPath->isDirectory())
+		if (mstr::equals(commandAndPath.command, "cd", false) || referencedPath->isDirectory())
 		{
 			changeDir(referencedPath->url);
 		}
@@ -810,9 +845,13 @@ void Interface::sendListing()
 
 		// Don't show hidden folders or files
 		//Debug_printv("size[%d] name[%s]", entry->size(), entry->name.c_str());
+
+		std::string inPetscii = entry->name;
+		mstr::toPETSCII(inPetscii);
+
 		if (entry->name[0]!='.' || m_show_hidden)
 		{
-			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", entry->name.c_str(), space_cnt, "", extension.c_str());
+			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", inPetscii.c_str(), space_cnt, "", extension.c_str());
 		}
 		
 		entry.reset(m_mfile->getNextFileInDir());
@@ -889,70 +928,133 @@ void Interface::sendFile()
 		return;
 	}
 
+
+	// TODO!!!! you should check istream for nullptr here and return error immediately if null
 	std::unique_ptr<MIStream> istream(file->inputStream());
+
 	size_t len = istream->available() - 1;
-
-	// Get file load address
-	istream->read(b, b_len);
-	success = m_iec.send(b[0]);
-	load_address = *b & 0x00FF; // low byte
-	istream->read(b, b_len);
-	success = m_iec.send(b[0]);
-	load_address = load_address | *b << 8;  // high byte
-
-	Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
-	for (i = 2; success and i <= len; i++)
+	
+	if(
+		mstr::equals(file->extension, "txt", false) ||
+		mstr::equals(file->extension, "htm", false) ||
+		mstr::equals(file->extension, "html", false)
+		) 
 	{
-		success = istream->read(b, b_len);
-		if (success)
-		{
-#ifdef DATA_STREAM
-			if (bi == 0)
-			{
-				Debug_printf(":%.4X ", load_address);
-				load_address += 8;
-			}
-#endif
-			if (i == len)
-			{
-				success = m_iec.sendEOI(b[0]); // indicate end of file.
-			}
-			else
-			{
-				success = m_iec.send(b[0]);
-			}
+		// convert UTF8 files on the fly
 
-#ifdef DATA_STREAM
-			// Show ASCII Data
-			if (b[0] < 32 || b[0] >= 127) 
-			b[0] = 46;
+		Debug_printv("Sending a text file to C64 [%s]", file->url.c_str());
 
-			ba[bi++] = b[0];
+        std::unique_ptr<IECOstream> iecOstream(new IECOstream(&m_iec));
+        std::unique_ptr<BufferedReader> reader(new BufferedReader(istream.get()));
+        std::unique_ptr<C64LinedWriter> iecWriter(new C64LinedWriter(iecOstream.get()));
 
-			if(bi == 8)
-			{
-				size_t t = (i * 100) / len;
-				Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
-				bi = 0;
-			}
-#endif
-			// Toggle LED
-			if (i % 50 == 0)
-			{
-				ledToggle(true);
+		// we can skip the BOM here, EF BB BF for UTF8
+		auto b = reader->readByte();
+		if(b != 0xef)
+			iecWriter->writeByte(b); // not BOM
+		else {
+			b = reader->readByte();
+			if(b != 0xbb)
+				iecWriter->writeByte(b); // not BOM
+			else {
+				b = reader->readByte();
+				if(b != 0xbf)
+					iecWriter->writeByte(b); // not BOM
 			}
 		}
 
-		// Exit if ATN is pulled while sending
-		if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
-		{
-			success = true;
-			break;
-		}
+        while(reader->available()>1 && !reader->eof()) {
+			// Exit if ATN is pulled while sending
+			// if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
+			// {
+			// 	Debug_printv("Pin pulled, bailling out");
+
+			// 	success = true;
+			// 	break;
+			// }
+
+			ledToggle(true);
+
+			//Debug_printv("Looping read/write");
+            bool result = iecWriter->writeByte(reader->readByte());
+            if(!result) {
+				Debug_printv("Error sending");
+                setDeviceStatus(60); // write error
+            }
+        }
+        if(reader->available() > 1) {
+            // this is eof, not the last char!!!
+            setDeviceStatus(125); // timeout reading
+        }
+        else {
+			Debug_printv("Signalling last char!");
+            success = iecWriter->writeLastByte(reader->readByte());
+        }
 	}
-	istream->close();
-	Debug_println("");
-	Debug_printf("%d of %d bytes sent\r\n", i, len);
+	else
+	{
+		// Get file load address
+		istream->read(b, b_len);
+		success = m_iec.send(b[0]);
+		load_address = *b & 0x00FF; // low byte
+		istream->read(b, b_len);
+		success = m_iec.send(b[0]);
+		load_address = load_address | *b << 8;  // high byte
+
+		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
+		for (i = 2; success and i <= len; i++)
+		{
+			success = istream->read(b, b_len);
+			if (success)
+			{
+	#ifdef DATA_STREAM
+				if (bi == 0)
+				{
+					Debug_printf(":%.4X ", load_address);
+					load_address += 8;
+				}
+	#endif
+				if (i == len)
+				{
+					success = m_iec.sendEOI(b[0]); // indicate end of file.
+				}
+				else
+				{
+					success = m_iec.send(b[0]);
+				}
+
+	#ifdef DATA_STREAM
+				// Show ASCII Data
+				if (b[0] < 32 || b[0] >= 127) 
+				b[0] = 46;
+
+				ba[bi++] = b[0];
+
+				if(bi == 8)
+				{
+					size_t t = (i * 100) / len;
+					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
+					bi = 0;
+				}
+	#endif
+				// Toggle LED
+				if (i % 50 == 0)
+				{
+					ledToggle(true);
+				}
+			}
+
+			// Exit if ATN is pulled while sending
+			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
+			{
+				success = true;
+				break;
+			}
+		}
+		istream->close();
+		Debug_println("");
+		Debug_printf("%d of %d bytes sent\r\n", i, len);
+	}
 
 	ledON();
 

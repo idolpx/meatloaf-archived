@@ -1,5 +1,5 @@
-#ifndef MEATFILE_STREAM_WRITER_H
-#define MEATFILE_STREAM_WRITER_H
+#ifndef MEATFILESYSTEM_WRAPPERS_LINE_READER_WRITER
+#define MEATFILESYSTEM_WRAPPERS_LINE_READER_WRITER
 
 #include "buffered_io.h"
 #include "../../../include/petscii.h"
@@ -87,6 +87,8 @@ public:
 
     std::string readLn(StringCodec* codec = nullptr) {
         if(buffPos==0 && smartBuffer.length()==0 && BufferedReader::eof()) {
+            Debug_printv("EOF!");
+
             return "";
         }
         lineBuilder="";
@@ -114,4 +116,4 @@ public:
     };
 };
 
-#endif
+#endif /* MEATFILESYSTEM_WRAPPERS_LINE_READER_WRITER */

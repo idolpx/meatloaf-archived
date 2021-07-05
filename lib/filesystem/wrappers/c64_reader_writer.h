@@ -1,8 +1,9 @@
-#ifndef MEATFILE_C64STREAM_WRITER_H
-#define MEATFILE_C64STREAM_WRITER_H
+#ifndef MEATFILESYSTEM_WRAPPERS_C64_READER_WRITER
+#define MEATFILESYSTEM_WRAPPERS_C64_READER_WRITER
 
 #include "buffered_io.h"
 #include "line_reader_writer.h"
+#include "iec.h"
 
 
 /********************************************************
@@ -81,6 +82,41 @@ public:
 };
 
 /********************************************************
+ * IEC MOstream
+ * 
+ * A nice API for IEC
+ ********************************************************/
+
+class IECOstream: public MOStream {
+    IEC* m_iec;
+public:
+    IECOstream(IEC* iec): m_iec(iec) {};
+    bool seek(uint32_t pos, SeekMode mode) { return false; };
+    bool seek(uint32_t pos) { return false; };
+    size_t position();
+    void close() {};
+    bool open() {};
+    ~IECOstream() {};
+    bool isOpen() {
+        return true;
+    };
+
+    size_t write(const uint8_t *buf, size_t size);
+    size_t writeLast(const uint8_t *buf, size_t size);
+
+        
+    void flush() {};
+
+    bool sendEOI(uint8_t data) {
+        return m_iec->sendEOI(data);
+    }
+
+    bool sendFNF() {
+        return m_iec->sendFNF();
+    }
+};
+
+/********************************************************
  * Stream writer
  * 
  * For writing UTF8 streams to PETSCII-talking devices
@@ -89,8 +125,9 @@ public:
 class C64LinedWriter: public LinedWriter {
 public:
     char delimiter = '\n';
+    IECOstream* m_os;
 
-    C64LinedWriter(MOStream* os) : LinedWriter(os) { 
+    C64LinedWriter(IECOstream* os) : LinedWriter(os), m_os(os) { 
     };
 
     bool print(std::string line) {
@@ -103,11 +140,18 @@ public:
             converted+=codePoint.toPetscii();
         }
         MBufferConst buffer(converted);
+        Debug_printv("Converted line:%s", converted);
         return write(&buffer);        
     }
 
     bool printLn(std::string line) {
         return print(line+delimiter); 
+    }
+
+    bool writeLastByte(uint8_t byteToWrite) 
+    {
+        m_os->writeLast(&byteToWrite, 1);
+        return true;
     }
 };
 
@@ -142,4 +186,4 @@ public:
 
 };
 
-#endif
+#endif /* MEATFILESYSTEM_WRAPPERS_C64_READER_WRITER */

@@ -32,7 +32,7 @@ MLFileSystem mlFS;
 CServerFileSystem csFS;
 
 // put all available filesystems in this array - first matching system gets the file!
-std::vector<MFileSystem*> MFSOwner::availableFS{ &urlFS, &d64FS, &dnpFS, &mlFS, &httpFS };
+std::vector<MFileSystem*> MFSOwner::availableFS{ /*&urlFS,*/ &d64FS, &dnpFS, &mlFS, &httpFS };
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");

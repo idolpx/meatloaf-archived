@@ -6,6 +6,7 @@
 
 #include "../meat_io.h"
 #include "meat_stream.h"
+#include "../../include/global_defines.h"
 
 /********************************************************
  * A buffer
@@ -87,9 +88,12 @@ protected:
     void refillBuffer() {
         if(istream != nullptr) {
             smartBuffer.len = istream->read((uint8_t*)rawBuffer, BUFFER_SIZE);
+            Debug_printv("Refilling buffer by stream, got %d bytes!", smartBuffer.len);
+
         }
         else {
             smartBuffer.len = readFn((uint8_t*)rawBuffer, BUFFER_SIZE);
+            Debug_printv("Refilling buffer by lambda, got %d bytes!", smartBuffer.len);
         }
 
         smartBuffer.buffer = (char *)rawBuffer;

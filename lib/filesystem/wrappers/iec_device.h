@@ -44,7 +44,7 @@ class IECDevice {
                 if(b != 0xbb)
                     writer->writeByte(b); // not BOM
                 else {
-                    b = reader->readByte();
+-                    b = reader->readByte();
                     if(b != 0xbf)
                         writer->writeByte(b); // not BOM
                 }

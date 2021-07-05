@@ -25,6 +25,8 @@ namespace mstr {
     std::string joinToString(std::vector<std::string>, std::string separator);
     std::string urlEncode(std::string s);
     std::string urlDecode(std::string s);
+    void toASCII(std::string &s);
+    void toPETSCII(std::string &s);
 }
 
 #endif

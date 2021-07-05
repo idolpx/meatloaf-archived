@@ -1,4 +1,5 @@
 #include "string_utils.h"
+#include "../../include/petscii.h"
 #include <algorithm>
 
 
@@ -128,6 +129,21 @@ namespace mstr {
     {
         std::transform(s.begin(), s.end(), s.begin(),
                     [](unsigned char c) { return std::toupper(c); });
+    }
+
+
+
+    void toASCII(std::string &s)
+    {
+        std::transform(s.begin(), s.end(), s.begin(),
+                    [](unsigned char c) { return petscii2ascii(c); });
+    }
+
+    // convert to uppercase (in place)
+    void toPETSCII(std::string &s)
+    {
+        std::transform(s.begin(), s.end(), s.begin(),
+                    [](unsigned char c) { return ascii2petscii(c); });
     }
 
 
