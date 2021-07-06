@@ -151,7 +151,7 @@ protected:
 class CServerFileSystem: public MFileSystem 
 {
     bool handles(std::string name) {
-        return name == "CS:";
+        return name == "cs:";
     }
     
 public:

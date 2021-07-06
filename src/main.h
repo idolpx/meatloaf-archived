@@ -31,7 +31,7 @@
 // Setup FileSystem Object
 #if defined(USE_SPIFFS)
 #include <FS.h>
-#define FS_TYPE "SPIFFS"
+//#define FS_TYPE "SPIFFS"
 #if defined(ESP8266)
 SPIFFSConfig fileSystemConfig = SPIFFSConfig();
 #elif defined(ESP32)
@@ -39,7 +39,7 @@ SPIFFSConfig fileSystemConfig = SPIFFSConfig();
 #endif
 FS *fileSystem = &SPIFFS;
 #elif defined USE_LITTLEFS
-#define FS_TYPE "LittleFS"
+//#define FS_TYPE "LittleFS"
 #if defined(ESP8266)
 #include <LittleFS.h>
 FS *fileSystem = &LittleFS;
@@ -50,7 +50,7 @@ FS *fileSystem = &LITTLEFS;
 #endif
 #elif defined USE_SDFS
 #include <SDFS.h>
-#define FS_TYPE "SDFS"
+//#define FS_TYPE "SDFS"
 FS *fileSystem = &SDFS;
 SDFSConfig fileSystemConfig = SDFSConfig();
 // fileSystemConfig.setCSPin(chipSelectPin);

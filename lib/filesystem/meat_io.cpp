@@ -96,11 +96,12 @@ MFile* MFSOwner::File(std::string path) {
         pathIterator--;
 
         auto part = *pathIterator;
+        mstr::toLower(part);
 
-        //Serial.printf("testing part '%s'\n", part.c_str());
+        //Debug_printv("testing part '%s'\n", part.c_str());
 
         auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
-            //Serial.printf("calling handles for '%s'\n", fs->symbol);
+            //Debug_printv("calling handles for '%s'\n", fs->symbol);
             return fs->handles(part); 
         } );
 

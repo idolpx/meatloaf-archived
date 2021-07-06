@@ -52,7 +52,7 @@ public:
 
     bool handles(std::string fileName) {
         //Debug_printv("handles w URL %s %d\n", fileName.rfind(".URL"), fileName.length()-4);
-        return byExtension(".URL", fileName);
+        return byExtension(".url", fileName);
     }
 
 

@@ -36,7 +36,7 @@ public:
             m_isDir = true;
 
         parseUrl(path);
-        Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
+        //Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
     };
     ~MLFile();
 
@@ -126,7 +126,7 @@ class MLFileSystem: public MFileSystem
     }
 
     bool handles(std::string name) {
-        return name == "ML:";
+        return name == "ml:";
     }
 
 public:

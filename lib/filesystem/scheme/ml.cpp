@@ -149,7 +149,7 @@ bool MLIStream::open() {
     String post_data = std::string("p=" + mstr::urlEncode(urlParser.path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
 
     bool initOk = m_http.begin(m_file, ml_url);
-    Debug_printv("input %s: someRc=%d", ml_url.c_str(), initOk);
+    Debug_printv("input %s: someRc=%d, post[%s]", ml_url.c_str(), initOk, post_data.c_str());
     if(!initOk)
         return false;
 
