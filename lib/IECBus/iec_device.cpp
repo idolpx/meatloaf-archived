@@ -767,7 +767,7 @@ void Interface::sendListing()
 	Debug_printf("\r\nsendListing:\r\n");
 
 	uint16_t byte_count = 0;
-	std::string extension = "DIR";
+	std::string extension = "dir";
 
 	// Send List ITEMS
 	// std::unique_ptr<MFile> dir(MFSOwner::File(m_mfile.get()));
@@ -835,23 +835,24 @@ void Interface::sendListing()
 			}
 			else
 			{
-				extension = "PRG";
+				extension = "prg";
 			}
 		}
 		else
 		{
-			extension = "DIR";
+			extension = "dir";
 		}
 
 		// Don't show hidden folders or files
 		//Debug_printv("size[%d] name[%s]", entry->size(), entry->name.c_str());
 
-		std::string inPetscii = entry->name;
-		mstr::toPETSCII(inPetscii);
+		std::string name = entry->name;
+		mstr::toPETSCII(name);
+		mstr::toPETSCII(extension);
 
 		if (entry->name[0]!='.' || m_show_hidden)
 		{
-			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", inPetscii.c_str(), space_cnt, "", extension.c_str());
+			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", name.c_str(), space_cnt, "", extension.c_str());
 		}
 		
 		entry.reset(m_mfile->getNextFileInDir());
@@ -932,8 +933,8 @@ void Interface::sendFile()
 	// TODO!!!! you should check istream for nullptr here and return error immediately if null
 	std::unique_ptr<MIStream> istream(file->inputStream());
 
-	size_t len = istream->size();
-	size_t avail = istream->available() - 1;
+	size_t len = istream->size() - 1;
+	size_t avail = istream->available();
 	
 	if(
 		mstr::equals(file->extension, "txt", false) ||
@@ -991,6 +992,7 @@ void Interface::sendFile()
 	else
 	{
 		// Get file load address
+		i = 2;
 		istream->read(b, b_len);
 		success = m_iec.send(b[0]);
 		load_address = *b & 0x00FF; // low byte
@@ -999,7 +1001,6 @@ void Interface::sendFile()
 		load_address = load_address | *b << 8;  // high byte
 
 		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
-		//for (i = 2; success and i <= len; i++)
 		while( len && success )
 		{
 			success = istream->read(b, b_len);
@@ -1012,7 +1013,6 @@ void Interface::sendFile()
 					load_address += 8;
 				}
 	#endif
-				//if (i == len)
 				if ( avail == 1 )
 				{
 					success = m_iec.sendEOI(b[0]); // indicate end of file.
@@ -1050,7 +1050,7 @@ void Interface::sendFile()
 				break;
 			}
 
-			avail = istream->available() - 1;
+			avail = istream->available();
 			i++;
 		}
 		istream->close();
@@ -1060,7 +1060,7 @@ void Interface::sendFile()
 
 	ledON();
 
-	if (!success || i != len)
+	if (!success)
 	{
 		Debug_println("sendFile: Transfer aborted!");
 		// TODO: Send something to signal that there was an error to the C64
@@ -1085,6 +1085,7 @@ void Interface::saveFile()
 	ba[8] = '\0';
 #endif
 
+	mstr::toASCII(m_filename);
 	std::unique_ptr<MFile> file(MFSOwner::File(m_filename));
 	Debug_printv("[%s]", file->url.c_str());
 
