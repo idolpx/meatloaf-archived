@@ -85,7 +85,7 @@ protected:
     bool eofOccured = false;
     size_t m_available = 0;
 
-    void refillBuffer() {
+    virtual void refillBuffer() {
         if(istream != nullptr) {
             smartBuffer.len = istream->read((uint8_t*)rawBuffer, BUFFER_SIZE);
             Debug_printv("Refilling buffer by stream, got %d bytes!", smartBuffer.len);
@@ -101,6 +101,8 @@ protected:
     }
 
 public:
+    BufferedReader() {}; 
+
     BufferedReader(MIStream* is) : istream(is), m_available(is->available()) { 
     };
 
@@ -108,7 +110,7 @@ public:
 
     };
 
-    MBuffer* read() {
+    virtual MBuffer* read() {
         if(!eofOccured)
             refillBuffer();
 
@@ -117,7 +119,7 @@ public:
         return &smartBuffer;
     }
 
-    uint8_t readByte() {
+    virtual uint8_t readByte() {
         if(smartBuffer.length()==0 && !eofOccured)
             refillBuffer();
 
@@ -130,7 +132,7 @@ public:
         return eofOccured;
     }
 
-    size_t available() {
+    virtual size_t available() {
         return m_available;
     }
 };

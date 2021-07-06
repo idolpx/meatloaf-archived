@@ -426,11 +426,11 @@ void runFSTest(std::string dirPath, std::string filePath) {
     Serial.println("**********************************************************************\n\n");
 }
 
-void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
-    writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
+// void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
+//     writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
 
-    auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !
-}
+//     auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !
+// }
 
 
 MFile* guessIncomingPath(std::string command, size_t channel)
@@ -531,6 +531,10 @@ void testSmartMFile() {
     auto wrapped = Meat::Wrap<MFile>(test2->getNextFileInDir());
 
 	Debug_printv("Extension of second one: [%s]", test2->extension.c_str());
+}
+
+void testNewCppStreams() {
+    Meat::ifstream istream("some url");
 }
 
 void runTestsSuite() {

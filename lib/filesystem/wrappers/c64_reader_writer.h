@@ -18,7 +18,7 @@ class U8Char {
 
     const char missing = '?';
 
-    void fromUtf8Stream(LinedReader* reader) {
+    void fromUtf8Stream(BufferedReader* reader) {
         uint8_t byte = reader->readByte();
         if(byte<=0x7f) {
             ch = byte;
@@ -42,7 +42,7 @@ class U8Char {
 public:
     char16_t ch;
     U8Char(uint16_t codepoint): ch(codepoint) {};
-    U8Char(LinedReader* reader) {
+    U8Char(BufferedReader* reader) {
         fromUtf8Stream(reader);
     }
     
@@ -89,6 +89,15 @@ public:
 
 class IECOstream: public MOStream {
     IEC* m_iec;
+
+    bool sendEOI(uint8_t data) {
+        return m_iec->sendEOI(data);
+    }
+
+    bool sendFNF() {
+        return m_iec->sendFNF();
+    }
+
 public:
     IECOstream(IEC* iec): m_iec(iec) {};
     bool seek(uint32_t pos, SeekMode mode) { return false; };
@@ -107,12 +116,41 @@ public:
         
     void flush() {};
 
-    bool sendEOI(uint8_t data) {
-        return m_iec->sendEOI(data);
-    }
+};
 
-    bool sendFNF() {
-        return m_iec->sendFNF();
+/********************************************************
+ * String reader
+ * 
+ * For writing UTF8 streams to PETSCII-talking devices
+ ********************************************************/
+
+class StringReader: public BufferedReader {
+    std::string buffer;
+    size_t pos = 0;
+
+public:
+    StringReader(std::string b) : BufferedReader(), buffer(b) {};
+
+    void refillBuffer() override {};
+    
+    MBuffer* read() override {
+        return nullptr;
+    };
+    
+    uint8_t readByte() override {
+        if(pos<buffer.length()) {
+            uint8_t by = buffer[pos++];
+            if(pos>=buffer.length())
+                eofOccured = true;
+
+            return by;
+        }
+        else
+            return 0;
+    };
+
+    size_t available() override {
+        return buffer.length()-pos;
     }
 };
 
@@ -132,7 +170,8 @@ public:
 
     bool print(std::string line) {
         // line is utf-8, convert to petscii
-        LinedReader* a; // TODO create string reader!
+        Debug_printv("to print:%s",line.c_str());
+        StringReader* a = new StringReader(line); // TODO create string reader!
 
         std::string converted;
         while(!a->eof()) {
@@ -140,7 +179,7 @@ public:
             converted+=codePoint.toPetscii();
         }
         MBufferConst buffer(converted);
-        Debug_printv("Converted line:%s", converted);
+        Debug_printv("Converted line:%s", converted.c_str());
         return write(&buffer);        
     }
 
