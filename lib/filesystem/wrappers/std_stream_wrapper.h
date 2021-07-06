@@ -53,6 +53,9 @@ public:
 
             this->setg(buffer->getBuffer(), buffer->getBuffer(), buffer->getBuffer() + buffer->length());
         }
+        // eback = beginning of get area
+        // gptr = current character (get pointer)
+        // egptr = one past end of get area
         return this->gptr() == this->egptr()
              ? std::char_traits<char>::eof()
              : std::char_traits<char>::to_int_type(*this->gptr());
@@ -179,7 +182,7 @@ public:
         close();
     };
 
-    void close() {
+    virtual void close() {
         buff->close();
     }
 };
@@ -192,7 +195,7 @@ public:
         close();
     };
     
-    void close() {
+    virtual void close() {
         buff->close();
     }
 };

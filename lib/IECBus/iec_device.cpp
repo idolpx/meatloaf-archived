@@ -946,7 +946,7 @@ void Interface::sendFile()
 		Debug_printv("Sending a text file to C64 [%s]", file->url.c_str());
 
         std::unique_ptr<IECOstream> iecOstream(new IECOstream(&m_iec));
-        std::unique_ptr<BufferedReader> reader(new BufferedReader(istream.get()));
+        std::unique_ptr<LinedReader> reader(new LinedReader(istream.get()));
         std::unique_ptr<C64LinedWriter> iecWriter(new C64LinedWriter(iecOstream.get()));
 
 		// we can skip the BOM here, EF BB BF for UTF8
@@ -964,7 +964,7 @@ void Interface::sendFile()
 			}
 		}
 
-        while(reader->available()>1 && !reader->eof()) {
+        while(!reader->eof()) {
 			// Exit if ATN is pulled while sending
 			// if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
 			// {
@@ -976,21 +976,17 @@ void Interface::sendFile()
 
 			ledToggle(true);
 
-			//Debug_printv("Looping read/write");
-            bool result = iecWriter->writeByte(reader->readByte());
+			Debug_printv("Looping read/write");
+			auto re = reader->readLn();
+			Debug_printv("Got:%s",re.c_str());
+            bool result = iecWriter->printLn(re);
             if(!result) {
 				Debug_printv("Error sending");
                 setDeviceStatus(60); // write error
             }
         }
-        if(reader->available() > 1) {
-            // this is eof, not the last char!!!
-            setDeviceStatus(125); // timeout reading
-        }
-        else {
-			Debug_printv("Signalling last char!");
-            success = iecWriter->writeLastByte(reader->readByte());
-        }
+		Debug_printv("Signalling last char!");
+		success = iecWriter->writeLastByte(0);
 	}
 	else
 	{

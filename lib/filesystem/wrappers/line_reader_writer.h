@@ -4,29 +4,29 @@
 #include "buffered_io.h"
 #include "../../../include/petscii.h"
 
-/********************************************************
- * Simple string codec
- ********************************************************/
+// /********************************************************
+//  * Simple string codec
+//  ********************************************************/
 
-class StringCodec {
-public:
-    virtual uint8_t toLocal(uint8_t ch)=0;
-    virtual uint8_t toForeign(uint8_t ch)=0;
-};
+// class StringCodec {
+// public:
+//     virtual uint8_t toLocal(uint8_t ch)=0;
+//     virtual uint8_t toForeign(uint8_t ch)=0;
+// };
 
-class PETSCIICodec: public StringCodec {
-    virtual uint8_t toLocal(uint8_t ch) override {
-        return petscii2ascii(ch);
-    };
+// class PETSCIICodec: public StringCodec {
+//     virtual uint8_t toLocal(uint8_t ch) override {
+//         return petscii2ascii(ch);
+//     };
 
-    virtual uint8_t toForeign(uint8_t ch) override {
-        return ascii2petscii(ch);
-    };
-};
+//     virtual uint8_t toForeign(uint8_t ch) override {
+//         return ascii2petscii(ch);
+//     };
+// };
 
-namespace strcodec {
-    static PETSCIICodec petscii;
-};
+// namespace strcodec {
+//     static PETSCIICodec petscii;
+// };
 
 /********************************************************
  * Stream writer
@@ -49,21 +49,21 @@ public:
         return write(&buffer);    
     }
 
-    bool print(std::string line, StringCodec* codec) {
-        auto l = line.length();
-        MBufferConst buffer(line);
-        MBuffer encoded(l);
+    // bool print(std::string line, StringCodec* codec) {
+    //     auto l = line.length();
+    //     MBufferConst buffer(line);
+    //     MBuffer encoded(l);
 
-        for(size_t i=0; i<l; i++) {
-            encoded[i] = codec->toForeign(buffer[i]);
-        }
+    //     for(size_t i=0; i<l; i++) {
+    //         encoded[i] = codec->toForeign(buffer[i]);
+    //     }
 
-        return write(&encoded);        
-    }
+    //     return write(&encoded);        
+    // }
 
-    bool printLn(std::string line, StringCodec* codec) {
-        return print(line+delimiter, codec);    
-    }
+    // bool printLn(std::string line, StringCodec* codec) {
+    //     return print(line+delimiter, codec);    
+    // }
 };
 
 /********************************************************
@@ -85,7 +85,7 @@ public:
         return buffPos >= smartBuffer.length() && BufferedReader::eof();
     }
 
-    std::string readLn(StringCodec* codec = nullptr) {
+    std::string readLn() {
         if(buffPos==0 && smartBuffer.length()==0 && BufferedReader::eof()) {
             Debug_printv("EOF!");
 
@@ -104,9 +104,9 @@ public:
                     buffPos++;
                     return lineBuilder;
                 } else {
-                    if(codec != nullptr)
-                        lineBuilder+=codec->toLocal(smartBuffer[buffPos]);
-                    else
+                    // if(codec != nullptr)
+                    //     lineBuilder+=codec->toLocal(smartBuffer[buffPos]);
+                    // else
                         lineBuilder+=smartBuffer[buffPos];
                 }
             }
