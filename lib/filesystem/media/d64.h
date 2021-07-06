@@ -2,7 +2,6 @@
 #define MEATFILE_DEFINES_D64_H
 
 #include "meat_io.h"
-#include "LittleFS.h"
 #include <string>
 
 /********************************************************

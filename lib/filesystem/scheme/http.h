@@ -103,17 +103,18 @@ public:
 
     // MIStream methods
     int available() override;
+    int size() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
 
 protected:
     std::string url;
     bool m_isOpen;
-    int m_length;
     WiFiClient m_file;
     //WiFiClient m_client;
 	HTTPClient m_http;
     int m_bytesAvailable = 0;
+    int m_length = 0;
     int m_position = 0;
     bool isFriendlySkipper = false;
 };

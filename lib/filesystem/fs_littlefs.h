@@ -9,7 +9,9 @@
 #endif
 #include "../../include/global_defines.h"
 #include "../../include/make_unique.h"
-#include "EdUrlParser.h"
+//#include "EdUrlParser.h"
+
+#include <string.h>
 
 
 /********************************************************
@@ -207,6 +209,7 @@ public:
 
     // MIStream methods
     int available() override;
+    int size() override;
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();

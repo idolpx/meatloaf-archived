@@ -44,6 +44,7 @@ public:
 class MIStream: public MStream {
 public:
     virtual int available() = 0;
+    virtual int size() = 0;
     virtual size_t read(uint8_t* buf, size_t size) = 0;
     bool pipeTo(MOStream* ostream);
     std::string seekNextEntry() {

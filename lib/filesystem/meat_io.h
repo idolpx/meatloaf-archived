@@ -5,7 +5,8 @@
 #include <Arduino.h>
 #include <string>
 #include <vector>
-#include "FS.h"
+#include <FS.h>
+#include <LittleFS.h>
 #include "wrappers/buffered_io.h"
 #include "meat_stream.h"
 #include "peoples_url_parser.h"

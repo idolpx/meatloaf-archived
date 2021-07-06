@@ -201,6 +201,10 @@ int CServerIStream::available() {
     return m_bytesAvailable;
 };
 
+int CServerIStream::size() {
+    return m_bytesAvailable;
+};
+
 size_t CServerIStream::read(uint8_t* buf, size_t size)  {
     //Serial.println("CServerIStream::read");
     auto bytesRead = CServerFileSystem::session.read(buf, size);

@@ -2,7 +2,6 @@
 #define MEATFILE_DEFINES_DNP_H
 
 #include "meat_io.h"
-#include "LittleFS.h"
 #include <string>
 
 #include "../../include/global_defines.h"

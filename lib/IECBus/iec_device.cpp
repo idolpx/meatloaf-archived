@@ -932,7 +932,8 @@ void Interface::sendFile()
 	// TODO!!!! you should check istream for nullptr here and return error immediately if null
 	std::unique_ptr<MIStream> istream(file->inputStream());
 
-	size_t len = istream->available() - 1;
+	size_t len = istream->size();
+	size_t avail = istream->available() - 1;
 	
 	if(
 		mstr::equals(file->extension, "txt", false) ||
@@ -1002,7 +1003,8 @@ void Interface::sendFile()
 		load_address = load_address | *b << 8;  // high byte
 
 		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
-		for (i = 2; success and i <= len; i++)
+		//for (i = 2; success and i <= len; i++)
+		while( len && success )
 		{
 			success = istream->read(b, b_len);
 			if (success)
@@ -1014,7 +1016,8 @@ void Interface::sendFile()
 					load_address += 8;
 				}
 	#endif
-				if (i == len)
+				//if (i == len)
+				if ( avail == 1 )
 				{
 					success = m_iec.sendEOI(b[0]); // indicate end of file.
 				}
@@ -1033,7 +1036,7 @@ void Interface::sendFile()
 				if(bi == 8)
 				{
 					size_t t = (i * 100) / len;
-					Debug_printf(" %s (%d %d%%)\r\n", ba, i, t);
+					Debug_printf(" %s (%d %d%%) [%d]\r\n", ba, i, t, avail - 1);
 					bi = 0;
 				}
 	#endif
@@ -1050,6 +1053,9 @@ void Interface::sendFile()
 				success = true;
 				break;
 			}
+
+			avail = istream->available() - 1;
+			i++;
 		}
 		istream->close();
 		Debug_println("");
