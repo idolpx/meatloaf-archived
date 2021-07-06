@@ -579,12 +579,6 @@ IEC::ATNCheck IEC::checkATN(ATNCmd& atn_cmd)
 		// some delay is required before more ATN business can take place.
 		delayMicroseconds(TIMING_ATN_DELAY);
 	}
-	else 
-	{
-		// No ATN, keep lines in a released state.
-		release(IEC_PIN_CLK);
-		release(IEC_PIN_DATA);
-	}
 
 	return ATN_IDLE;
 } // checkATN
