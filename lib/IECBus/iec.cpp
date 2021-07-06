@@ -606,40 +606,41 @@ IEC::ATNCheck IEC::deviceListen(ATNCmd& atn_cmd)
 		if(atn_cmd.command == ATN_CODE_OPEN) 
 		{
 			Debug_printf("\r\ncheckATN: %.2X (%.2X OPEN) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
+
+			// Some other command. Record the cmd string until UNLISTEN is sent
+			for(;;) 
+			{
+				c = (ATNCommand)receive();
+				if(m_state bitand errorFlag)
+				{
+					Debug_printf("\r\nm_state bitand errorFlag 2");
+					return ATN_ERROR;
+				}
+					
+
+				if((m_state bitand atnFlag) and (ATN_CODE_UNLISTEN == c)) 
+				{
+					Debug_printf(" [%s]", atn_cmd.str);
+					Debug_printf("\r\ncheckATN: %.2X (UNLISTEN)", c);
+					break;
+				}
+
+				if(i >= ATN_CMD_MAX_LENGTH) 
+				{
+					// Buffer is going to overflow, this is an error condition
+					// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
+					Debug_printf("\r\nATN_CMD_MAX_LENGTH");
+					return ATN_ERROR;
+				}
+				atn_cmd.str[i++] = c;
+				atn_cmd.str[i] = '\0';
+			}			
 		}
 		else if(atn_cmd.command == ATN_CODE_CLOSE) 
 		{
 			Debug_printf("\r\ncheckATN: %.2X (%.2X CLOSE) (%.2X CHANNEL)", atn_cmd.code, atn_cmd.command, atn_cmd.channel);
 		}
 
-		// Some other command. Record the cmd string until UNLISTEN is sent
-		for(;;) 
-		{
-			c = (ATNCommand)receive();
-			if(m_state bitand errorFlag)
-			{
-				Debug_printf("\r\nm_state bitand errorFlag 2");
-				return ATN_ERROR;
-			}
-				
-
-			if((m_state bitand atnFlag) and (ATN_CODE_UNLISTEN == c)) 
-			{
-				Debug_printf(" [%s]", atn_cmd.str);
-				Debug_printf("\r\ncheckATN: %.2X (UNLISTEN)", c);
-				break;
-			}
-
-			if(i >= ATN_CMD_MAX_LENGTH) 
-			{
-				// Buffer is going to overflow, this is an error condition
-				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-				Debug_printf("\r\nATN_CMD_MAX_LENGTH");
-				return ATN_ERROR;
-			}
-			atn_cmd.str[i++] = c;
-			atn_cmd.str[i] = '\0';
-		}
 		return ATN_CMD;
 	}
 	return ATN_IDLE;

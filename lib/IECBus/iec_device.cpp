@@ -70,13 +70,13 @@ void Interface::sendStatus(void)
 	Debug_printv("status: %s", status.c_str());
 	Debug_print("[");
 	
-	for (i = 0; i < status.length()-1; ++i)
+	for (i = 0; i < status.length(); ++i)
 		m_iec.send(status[i]);
 
 	Debug_println("]");
 
-	// ...and last byte in string as with EOI marker.
-	m_iec.sendEOI(status[i]);
+	// Send CR with EOI marker.
+	m_iec.sendEOI('\x0D');
 
 	// Clear the status message
 	m_device_status.clear();
@@ -465,6 +465,11 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	//std::string command = atn_cmd.str;
 	size_t channel = atn_cmd.channel;
 	m_openState = O_NOTHING;
+	if ( strlen(atn_cmd.str) == 0 )
+	{
+		Debug_printv("No command to process");
+		return;
+	}
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
@@ -525,7 +530,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			{
 				changeDir(referencedPath->url);
 			}
-			else
+			else if ( referencedPath->exists() )
 			{
 				prepareFileStream(referencedPath->url);
 			}
@@ -539,7 +544,8 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		else
 		{
 			// Set File
-			prepareFileStream(referencedPath->url);
+			if ( referencedPath->exists() )
+				prepareFileStream(referencedPath->url);
 		}
 	}
 
