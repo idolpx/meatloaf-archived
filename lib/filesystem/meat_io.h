@@ -63,6 +63,11 @@ public:
     virtual size_t size() = 0;
     virtual bool remove() = 0;
     virtual bool rename(std::string dest) = 0;
+    virtual std::string petsciiName() {
+        std::string pname = name;
+        mstr::toPETSCII(pname);
+        return pname;
+    }
 
     virtual ~MFile() {
         //Debug_printv("Deleting: [%s]", this->url.c_str());

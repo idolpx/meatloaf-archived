@@ -71,6 +71,11 @@ public:
     bool rename(std::string dest) { return false; };
     MIStream* createIStream(MIStream* src) { return src; };
 
+    std::string petsciiName() override {
+        return name;
+    }
+
+
 private:
     bool dirIsOpen = false;
     bool dirIsImage = false;

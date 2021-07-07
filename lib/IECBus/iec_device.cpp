@@ -534,6 +534,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	else if (commandAndPath.command == "mfav") {
 		// create a urlfile named like the argument, containing current m_mfile path
 		// here we don't want the full path provided by commandAndPath, though
+		// the full syntax should be: heart:urlfilename,[filename] - optional name of the file that should be pointed to
 
 		auto favStream = Meat::ofstream(commandAndPath.rawPath+".url"); // put the name from argument here!
 		if(favStream.is_open()) {
@@ -875,8 +876,7 @@ void Interface::sendListing()
 		// Don't show hidden folders or files
 		//Debug_printv("size[%d] name[%s]", entry->size(), entry->name.c_str());
 
-		std::string name = entry->name;
-		mstr::toPETSCII(name);
+		std::string name = entry->petsciiName();
 		mstr::toPETSCII(extension);
 
 		if (entry->name[0]!='.' || m_show_hidden)
