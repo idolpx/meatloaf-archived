@@ -259,22 +259,26 @@ size_t LittleFile::size() {
 
 bool LittleFile::remove() {
     // musi obslugiwac usuwanie plikow i katalogow!
+    if(path.empty())
+        return false;
+
     int rc = lfs_remove(&LittleFileSystem::lfsStruct, path.c_str());
     if (rc != 0) {
         DEBUGV("lfs_remove: rc=%d path=`%s`\n", rc, path);
         return false;
     }
     // Now try and remove any empty subdirs this makes, silently
-    char *pathStr = strdup(path.c_str());
-    if (pathStr) {
-        char *ptr = strrchr(pathStr, '/');
-        while (ptr) {
-            *ptr = 0;
-            lfs_remove(&LittleFileSystem::lfsStruct, pathStr); // Don't care if fails if there are files left
-            ptr = strrchr(pathStr, '/');
-        }
-        free(pathStr);
+    char *pathStr = new char[path.length()];
+    strncpy(pathStr, path.data(), path.length());
+
+    char *ptr = strrchr(pathStr, '/');
+    while (ptr) {
+        *ptr = 0;
+        lfs_remove(&LittleFileSystem::lfsStruct, pathStr); // Don't care if fails if there are files left
+        ptr = strrchr(pathStr, '/');
     }
+    delete[] pathStr;
+
     return true;
 }
 
@@ -305,13 +309,15 @@ bool LittleFile::rename(std::string pathTo) {
  * SOMETHING BAD IS HAPPENING HERE! IF YOU READ LITTLEFS RECURSIVELY THE APP WILL CRASH AT A LATER POINT!
  * 
  ***************************/
-void LittleFile::openDir(std::string *apath) {
+void LittleFile::openDir(std::string apath) {
     if (!isDirectory()) { 
         dirOpened = false;
         return;
     }
     
-    char *pathStr = strdup(apath); // Allow edits on our scratch copy
+    char *pathStr = new char[apath.length()];
+    strncpy(pathStr, apath.data(), apath.length());
+ 
     // Get rid of any trailing slashes
     while (strlen(pathStr) && (pathStr[strlen(pathStr)-1]=='/')) {
         pathStr[strlen(pathStr)-1] = 0;
@@ -362,7 +368,6 @@ void LittleFile::openDir(std::string *apath) {
     }
     if (rc < 0) {
         DEBUGV("LittleFSImpl::openDir: apath=`%s` err=%d\n", apath, rc);
-        free(pathStr);
         dirOpened = false;
     }
     else {
@@ -372,9 +377,10 @@ void LittleFile::openDir(std::string *apath) {
         lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
 
         //auto ret = std::make_shared<LittleFSDirImpl>(filter, this, dir, pathStr);
-        free(pathStr);
         dirOpened = true;
     }
+
+    delete[] pathStr;
 }
 
 bool LittleFile::rewindDirectory()
@@ -605,7 +611,10 @@ void LittleHandle::obtain(int fl, std::string m_path) {
     if ((flags & LFS_O_CREAT) && strchr(m_path.c_str(), '/')) {
         // For file creation, silently make subdirs as needed.  If any fail,
         // it will be caught by the real file open later on
-        char *pathStr = strdup(m_path.c_str());
+
+        char *pathStr = new char[m_path.length()];
+        strncpy(pathStr, m_path.data(), m_path.length());
+
         if (pathStr) {
             // Make dirs up to the final fnamepart
             char *ptr = strchr(pathStr, '/');
@@ -616,7 +625,7 @@ void LittleHandle::obtain(int fl, std::string m_path) {
                 ptr = strchr(ptr+1, '/');
             }
         }
-        free(pathStr);
+        delete[] pathStr;
     }
 
     // time_t creation = 0;
