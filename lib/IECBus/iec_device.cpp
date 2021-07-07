@@ -372,9 +372,10 @@ byte Interface::loop(void)
 } // handler
 
 MFile* Interface::getPointed(MFile* urlFile) {
+	Debug_printv("getPointed [%s]", urlFile->url);
 	std::unique_ptr<MIStream> istream(urlFile->inputStream());
     if(istream == nullptr) {
-        Debug_printf("ISTREAM == NULLPTR!!! [%s]");
+        Debug_printf("ISTREAM == NULLPTR!!!");
 		return nullptr;
     }
 	else {
@@ -466,7 +467,6 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		Debug_printv("device changed [%d] url[%s]", m_device.id(), m_device.url().c_str());
 	}
 
-	//std::string command = atn_cmd.str;
 	size_t channel = atn_cmd.channel;
 	m_openState = O_NOTHING;
 	if ( strlen(atn_cmd.str) == 0 )
