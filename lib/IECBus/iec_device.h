@@ -74,6 +74,7 @@ class CommandPathTuple {
 public:
 	std::string command;
 	std::string fullPath;
+	std::string rawPath;
 };
 
 

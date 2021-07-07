@@ -423,12 +423,18 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 	else if(mstr::startsWith(command, ":")) {
 		// JiffyDOS eats commands it knows, it might be T: which means ASCII dump requested
 		guessedPath = mstr::drop(guessedPath, 1);
-		tuple.command = "t:";
+		tuple.command = "t";
+	}
+	else if(mstr::startsWith(command, "S:")) {
+		// capital S = heart, that's a FAV!
+		guessedPath = mstr::drop(guessedPath, 2);
+		tuple.command = "mfav";
 	}
 	else
 	{
 		tuple.command = command;
 	}
+
 	// TODO more of them?
 
 	// NOW, since user could have requested ANY kind of our supported magic paths like:
@@ -440,6 +446,7 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
 	mstr::trim(guessedPath);
+	tuple.rawPath = guessedPath;
 
 	Debug_printv("found command     [%s]", tuple.command.c_str());
 
@@ -518,6 +525,16 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	else if (mstr::equals(commandAndPath.command, "@stat", false))
 	{
 		m_openState = O_DEVICE_STATUS;
+	}
+	else if (commandAndPath.command == "mfav") {
+		// create a urlfile named like the argument, containing current m_mfile path
+		// here we don't want the full path provided by commandAndPath, though
+
+		auto favStream = Meat::ofstream(commandAndPath.rawPath); // put the name from argument here!
+		if(favStream.is_open()) {
+			favStream << m_mfile->url;
+		}
+		favStream.close();
 	}
 	else
 	{
