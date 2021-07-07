@@ -430,6 +430,11 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 		guessedPath = mstr::drop(guessedPath, 2);
 		tuple.command = "mfav";
 	}
+	else if(mstr::startsWith(command, "MFAV:")) {
+		// capital S = heart, that's a FAV!
+		guessedPath = mstr::drop(guessedPath, 5);
+		tuple.command = "mfav";
+	}
 	else
 	{
 		tuple.command = command;
@@ -530,7 +535,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// create a urlfile named like the argument, containing current m_mfile path
 		// here we don't want the full path provided by commandAndPath, though
 
-		auto favStream = Meat::ofstream(commandAndPath.rawPath); // put the name from argument here!
+		auto favStream = Meat::ofstream(commandAndPath.rawPath+".url"); // put the name from argument here!
 		if(favStream.is_open()) {
 			favStream << m_mfile->url;
 		}
