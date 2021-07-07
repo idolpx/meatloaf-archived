@@ -390,7 +390,7 @@ MFile* Interface::getPointed(MFile* urlFile) {
 CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 {
 
-	Debug_printv("* COMMAND RECEIVED *******************************");
+	Debug_printv("* PARSE INCOMING LINE *******************************");
 
 	Debug_printv("we are in              [%s]", m_mfile->url.c_str());
 	Debug_printv("unprocessed user input [%s]", command.c_str());
@@ -466,7 +466,7 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 		Debug_printv("full referenced path [%s]", tuple.fullPath.c_str());
 	}
 
-	Debug_printv("* END OF COMMAND RECEIVED *******************************");
+	Debug_printv("* END OF PARSE LINE *******************************");
 
 	return tuple;
 }
@@ -476,18 +476,17 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	if (m_device.select(atn_cmd.device))
 	{
 		m_mfile.reset(MFSOwner::File(m_device.url()));
-		Debug_printv("device changed [%d] url[%s]", m_device.id(), m_device.url().c_str());
+		Debug_printv("!!!! device changed: unit:%d current url: [%s]", m_device.id(), m_device.url().c_str());
 	}
 
 	size_t channel = atn_cmd.channel;
 	m_openState = O_NOTHING;
-	// if ( strlen(atn_cmd.str) == 0 )
-	// {
-	// 	Debug_printv("No command to process");
-	// 	return;
-	// }
 
-	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
+	if ( strlen(atn_cmd.str) == 0 )
+	{
+		Debug_printv("No command to process");
+		return;
+	}
 
 	// 1. obtain command and fullPath
 	auto commandAndPath = parseLine(atn_cmd.str, channel);
@@ -542,7 +541,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		}
 		favStream.close();
 	}
-	else
+	else if(!commandAndPath.rawPath.empty())
 	{
 		// 2. fullPath.extension == "URL" - change dir or load file
 		if (mstr::equals(referencedPath->extension, "url", false)) 
@@ -552,6 +551,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 
 			if ( referencedPath->isDirectory() )
 			{
+				Debug_printv("change dir called for urlfile");
 				changeDir(referencedPath->url);
 			}
 			else if ( referencedPath->exists() )
@@ -562,6 +562,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// 2. OR if command == "CD" OR fullPath.isDirectory - change directory
 		if (mstr::equals(commandAndPath.command, "cd", false) || referencedPath->isDirectory())
 		{
+			Debug_printv("change dir called by CD command or because of isDirectory");
 			changeDir(referencedPath->url);
 		}
 		// 3. else - stream file
@@ -573,24 +574,16 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		}
 	}
 
+	dumpState();
 
 	if (m_openState == O_DIR)
 	{
 		m_atn_cmd.str[0] = '\0';
 		m_atn_cmd.strLen = 0;
 	}
+} // handleATNCmdCodeOpen
 
-	//Debug_printf("\r\nhandleATNCmdCodeOpen: %d (M_OPENSTATE) [%s]", m_openState, m_atn_cmd.str);
-	// Serial.printf("\r\nDEVICE ID[%d]\nMEDIA[%d]\nPARTITION[%d]\nURL[%s]\nPATH[%s]\nFILE[%s]\nCOMMAND[%s]\r\n", 
-	// 				m_device.id(), 
-	// 				m_device.media(), 
-	// 				m_device.partition(), 
-	// 				m_device.url().c_str(), 
-	// 				m_device.path().c_str(),
-	// 				m_mfile->url.c_str(),
-	// 				atn_cmd.str
-	// );
-	
+void Interface::dumpState() {
 	Debug_println("");
 	Debug_printv("-------------------------------");
 	Debug_printv("URL: [%s]", m_mfile->url.c_str());
@@ -608,14 +601,15 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	Debug_printv("m_filename: [%s]", m_filename.c_str());
     Debug_printv("-------------------------------");
 
-} // handleATNCmdCodeOpen
+}
 
 void Interface::changeDir(std::string url)
 {
 	m_device.url(url);
 	m_mfile.reset(MFSOwner::File(url));
 	m_openState = O_DIR;
-	Debug_printv("CD into [%s]", url.c_str());
+	Debug_printv("!!!! CD into [%s] new current ur: [%s]", url.c_str());
+	Debug_printv("new current ur: [%s]", m_mfile->url.c_str());
 	Debug_printv("LOAD $");		
 }
 
@@ -798,11 +792,6 @@ void Interface::sendListing()
 
 	uint16_t byte_count = 0;
 	std::string extension = "dir";
-
-	// Send List ITEMS
-	// std::unique_ptr<MFile> dir(MFSOwner::File(m_mfile.get()));
-	// if(!dir->isDirectory())
-	// 	dir.reset(m_mfile->parent());
 
 	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 

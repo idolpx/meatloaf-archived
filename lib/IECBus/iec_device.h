@@ -147,6 +147,8 @@ private:
 	bool m_hide_extension;
 
 	CommandPathTuple parseLine(std::string commandLne, size_t channel);
+
+	void dumpState();
 };
 
 
