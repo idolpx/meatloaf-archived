@@ -158,8 +158,9 @@ void LittleFile::fillPaths(std::vector<std::string>::iterator* matchedElement, s
     pathInStream = "";
 }
 
-bool LittleFile::pathValid(const char *apath) 
+bool LittleFile::pathValid(std::string path) 
 {
+    auto apath = path.c_str();
     while (*apath) {
         const char *slash = strchr(apath, '/');
         if (!slash) {
@@ -288,13 +289,12 @@ bool LittleFile::remove() {
 //     return true;
 // }
 
-bool LittleFile::rename(const char* pathTo) {
-    if (!pathTo || !pathTo[0]) {
+bool LittleFile::rename(std::string pathTo) {
+    if(pathTo.empty())
         return false;
-    }
-    int rc = lfs_rename(&LittleFileSystem::lfsStruct, path.c_str(), pathTo);
+
+    int rc = lfs_rename(&LittleFileSystem::lfsStruct, path.c_str(), pathTo.c_str());
     if (rc != 0) {
-        DEBUGV("lfs_rename: rc=%d, from=`%s`, to=`%s`\n", rc, pathFrom, pathTo);
         return false;
     }
     return true;
@@ -305,7 +305,7 @@ bool LittleFile::rename(const char* pathTo) {
  * SOMETHING BAD IS HAPPENING HERE! IF YOU READ LITTLEFS RECURSIVELY THE APP WILL CRASH AT A LATER POINT!
  * 
  ***************************/
-void LittleFile::openDir(const char *apath) {
+void LittleFile::openDir(std::string *apath) {
     if (!isDirectory()) { 
         dirOpened = false;
         return;

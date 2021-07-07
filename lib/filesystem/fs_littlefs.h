@@ -115,18 +115,18 @@ public:
     bool exists() override ;
     size_t size() override ;
     bool remove() override ;
-    bool rename(const char* dest);
+    bool rename(std::string dest);
     MIStream* createIStream(MIStream* src);
 
 private:
-    void openDir(const char *path);
+    void openDir(std::string path);
     lfs_dir_t dir;
     bool dirOpened = false;
     lfs_info _dirent;
     bool _valid;
     std::string _pattern;
 
-    bool pathValid(const char *path);
+    bool pathValid(std::string path);
 
 };
 

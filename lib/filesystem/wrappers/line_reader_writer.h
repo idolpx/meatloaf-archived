@@ -81,6 +81,8 @@ public:
     
     LinedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {}
 
+    virtual ~LinedReader() {}
+
     bool eof() {
         return buffPos >= smartBuffer.length() && BufferedReader::eof();
     }

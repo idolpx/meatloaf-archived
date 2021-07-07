@@ -34,7 +34,7 @@ public:
     bool exists() override ;
     size_t size() override ;
     bool remove() override { return false; };
-    bool rename(const char* dest) { return false; };
+    bool rename(std::string dest) { return false; };
     MIStream* createIStream(MIStream* src);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 

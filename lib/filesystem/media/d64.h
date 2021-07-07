@@ -62,7 +62,7 @@ public:
     bool exists() override { return true; };
     size_t size() override { return 0; };
     bool remove() override { return false; };
-    bool rename(const char* dest) { return false; };
+    bool rename(std::string dest) { return false; };
 
 };
 

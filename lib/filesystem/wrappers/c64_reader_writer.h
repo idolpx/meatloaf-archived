@@ -104,7 +104,9 @@ public:
     bool seek(uint32_t pos) { return false; };
     size_t position();
     void close() {};
-    bool open() {};
+    bool open() {
+        return true;
+    };
     ~IECOstream() {};
     bool isOpen() {
         return true;

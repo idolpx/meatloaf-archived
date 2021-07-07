@@ -60,7 +60,7 @@ public:
     bool exists() override ;
     size_t size() override ;
     bool remove() override ;
-    bool rename(const char* dest);
+    bool rename(std::string dest);
 
 
     bool isBrowsable() override {

@@ -53,7 +53,7 @@ public:
     //bool exists() override ;
     size_t size() override { return m_size; };
     //bool remove() override { return false; }; // we can't write to ML server, can we?
-    //bool rename(const char* dest) { return false; }; // we can't write to ML server, can we?
+    //bool rename(std::string dest) { return false; }; // we can't write to ML server, can we?
     //MIStream* createIStream(MIStream* src); // not used anyway
 
     //std::string mediaRoot();

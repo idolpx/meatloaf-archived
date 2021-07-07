@@ -62,7 +62,7 @@ public:
     virtual bool exists() = 0;
     virtual size_t size() = 0;
     virtual bool remove() = 0;
-    virtual bool rename(const char* dest) = 0;
+    virtual bool rename(std::string dest) = 0;
 
     virtual ~MFile() {
         //Debug_printv("Deleting: [%s]", this->url.c_str());
