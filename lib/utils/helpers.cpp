@@ -52,9 +52,10 @@ String urlencode(String str)
     char code2;
     for (uint8_t i =0; i < str.length(); i++){
       c=str.charAt(i);
-      if (c == ' '){
-        encodedString+= '+';
-      } else if (isalnum(c)){
+    //   if (c == ' '){
+    //     encodedString+= '+';
+    //   } else 
+      if (isalnum(c)){
         encodedString+=c;
       } else{
         code1=(c & 0xf)+'0';

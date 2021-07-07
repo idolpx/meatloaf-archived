@@ -87,6 +87,7 @@
 #define Dir File
 #endif //ESP32
 #include <StreamString.h>
+#include "helpers.h"
 
 class ESPWebDAVCore
 {
