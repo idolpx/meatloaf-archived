@@ -78,9 +78,10 @@ bool DeviceDB::save()
         MUrlOStream ostream(&obuff);
 
         serializeJson(m_device, ostream);
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 uint8_t DeviceDB::id()

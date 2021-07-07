@@ -62,11 +62,10 @@ protected:
     bool dirIsOpen = false;
     String m_lineBuffer;
     WiFiClient m_file;
-	HTTPClient m_http;
+    HTTPClient m_http;
     StaticJsonDocument<256> m_jsonHTTP;
     size_t m_size = 0;    
     bool m_isDir = false;
-
 };
 
 
@@ -102,15 +101,15 @@ public:
     // size_t read(uint8_t* buf, size_t size) override;
     // bool isOpen();
 
-protected:
-    std::string url;
-    bool m_isOpen;
-    int m_length;
-    WiFiClient m_file;
-	HTTPClient m_http;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
-    bool isFriendlySkipper = false;
+// protected:
+//     std::string url;
+//     bool m_isOpen;
+//     int m_length;
+//     WiFiClient m_file;
+//     HTTPClient m_http;
+//     int m_bytesAvailable = 0;
+//     int m_position = 0;
+//     bool isFriendlySkipper = false;
 };
 
 

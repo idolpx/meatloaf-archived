@@ -19,6 +19,7 @@ namespace mstr {
     void toUpper(std::string &s);
     void ltrim(std::string &s);
     void rtrim(std::string &s);
+    void rtrimA0(std::string &s);
     void trim(std::string &s);
     void replaceAll(std::string &s, const std::string &search, const std::string &replace);
     std::string joinToString(std::vector<std::string>::iterator* start, std::vector<std::string>::iterator* end, std::string separator);
@@ -27,6 +28,7 @@ namespace mstr {
     std::string urlDecode(std::string s);
     void toASCII(std::string &s);
     void toPETSCII(std::string &s);
+    bool isA0Space(int ch);
 }
 
 #endif

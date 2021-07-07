@@ -924,7 +924,7 @@ void Interface::sendFile()
 #endif
 
 	// Update device database
-	m_device.save();
+	//m_device.save();
 
 	std::unique_ptr<MFile> file(MFSOwner::File(m_filename));
 	Debug_printv("[%s]", file->url.c_str());

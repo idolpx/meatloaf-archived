@@ -105,16 +105,16 @@ bool CServerSessionMgr::traversePath(MFile* path) {
 
         //MFile::parsePath(&chopped, path->path); - nope this doessn't work and crases in the loop!
 
-        Debug_printv("Before loop");
-        Debug_printv("Chopped size:%d\n", chopped.size());
+        //Debug_printv("Before loop");
+        //Debug_printv("Chopped size:%d\n", chopped.size());
         delay(500);
 
         for(size_t i = 1; i < chopped.size(); i++) {
-            Debug_printv("Before chopped deref");
+            //Debug_printv("Before chopped deref");
 
             auto part = chopped[i];
             
-            Debug_printv("traverse path part: [%s]\n", part.c_str());
+            //Debug_printv("traverse path part: [%s]\n", part.c_str());
             if(mstr::endsWith(part, ".d64", false)) 
             {
                 // THEN we have to mount the image INSERT image_name
@@ -176,6 +176,8 @@ bool CServerIStream::open() {
         // should we allow loading of * in any directory?
         // then we can LOAD and get available count from first 2 bytes in (LH) endian
         // name here MUST BE UPPER CASE
+        // trim spaces from right of name too
+        mstr::rtrimA0(file->name);
         CServerFileSystem::session.command("load "+file->name);
         // read first 2 bytes with size, low first, but may also reply with: ?500 - ERROR
         uint8_t buffer[2] = { 0, 0 };
@@ -184,6 +186,7 @@ bool CServerIStream::open() {
         if(buffer[0]=='?' && buffer[1]=='5') {
             Serial.println("CServer: open file failed");
             CServerFileSystem::session.readReply();
+            m_isOpen = false;
         }
         else {
             m_bytesAvailable = buffer[0] + buffer[1]*256; // put len here

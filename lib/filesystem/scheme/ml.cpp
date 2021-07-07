@@ -144,11 +144,13 @@ bool MLIStream::open() {
     PeoplesUrlParser urlParser;
     urlParser.parseUrl(url);
 
-    String ml_url = std::string("http://" + urlParser.host + "/api/").c_str();
+    //String ml_url = std::string("http://" + urlParser.host + "/api/").c_str();
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
-    String post_data = std::string("p=" + mstr::urlEncode(urlParser.path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
+    //String post_data = std::string("p=" + mstr::urlEncode(urlParser.path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
+    std::string ml_url = "http://" + urlParser.host + "/api";
+    std::string post_data = "p=" + urlParser.path;
 
-    bool initOk = m_http.begin(m_file, ml_url);
+    bool initOk = m_http.begin(m_file, ml_url.c_str());
     Debug_printv("input %s: someRc=%d, post[%s]", ml_url.c_str(), initOk, post_data.c_str());
     if(!initOk)
         return false;

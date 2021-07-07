@@ -208,7 +208,6 @@ int HttpIStream::size() {
 
 size_t HttpIStream::read(uint8_t* buf, size_t size) {
     auto bytesRead= m_file.readBytes((char *) buf, size);
-    //m_bytesAvailable-=bytesRead;
     m_bytesAvailable = m_file.available();
     m_position+=bytesRead;
     ledToggle(true);

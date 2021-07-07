@@ -37,12 +37,23 @@ namespace mstr {
         s.erase(
             std::find_if(s.rbegin(), s.rend(), [](int ch) { return !std::isspace(ch); }).base(), s.end());
     }
+    void rtrimA0(std::string &s)
+    {
+        s.erase(
+            std::find_if(s.rbegin(), s.rend(), [](int ch) { return !isA0Space(ch); }).base(), s.end());
+    }
 
     // trim from both ends (in place)
     void trim(std::string &s)
     {
         ltrim(s);
         rtrim(s);
+    }
+
+    // is space or petscii shifted space
+    bool isA0Space(int ch)
+    {
+        return ch == '\xA0' || std::isspace(ch);
     }
 
 
