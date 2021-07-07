@@ -424,6 +424,10 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 		guessedPath = mstr::drop(guessedPath, 1);
 		tuple.command = "t:";
 	}
+	else
+	{
+		tuple.command = command;
+	}
 	// TODO more of them?
 
 	// NOW, since user could have requested ANY kind of our supported magic paths like:
@@ -477,6 +481,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	auto commandAndPath = parseLine(atn_cmd.str, channel);
 	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
 
+	Debug_printv("command[%s]", commandAndPath.command.c_str());
 	if (mstr::endsWith(commandAndPath.command, "$"))
 	{
 		m_openState = O_DIR;
@@ -491,11 +496,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			// TODO: Load configured autoload program
 			m_filename = "/.sys/fb64";
 		}
-		else if (m_filename.size() > 0)
-		{
-			// Load last used file
-		}
-		else
+		else if (m_filename.size() == 0)
 		{	
 			// Find first PRG file in current directory
 			std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
