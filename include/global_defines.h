@@ -94,7 +94,7 @@
 // See timeoutWait
 #define TIMEOUT 65500
 
-#define	ATN_CMD_MAX_LENGTH 	40
+#define	ATN_CMD_MAX_LENGTH 	100
 
 #define LED_PIN LED_BUILTIN // IO2
 #define LED_ON LOW
