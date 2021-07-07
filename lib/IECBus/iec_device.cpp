@@ -469,11 +469,11 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	//std::string command = atn_cmd.str;
 	size_t channel = atn_cmd.channel;
 	m_openState = O_NOTHING;
-	if ( strlen(atn_cmd.str) == 0 )
-	{
-		Debug_printv("No command to process");
-		return;
-	}
+	// if ( strlen(atn_cmd.str) == 0 )
+	// {
+	// 	Debug_printv("No command to process");
+	// 	return;
+	// }
 
 	//Serial.printf("\r\n$IEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s] COMMAND[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str(), atn_cmd.str);
 
