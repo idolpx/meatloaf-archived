@@ -98,9 +98,10 @@ public:
         else
             m_isNull = false;
     };
-    // ~LittleFile() {
-    //     Serial.printf("*** Destroying littlefile %s\n",localPath.c_str());
-    // }
+    ~LittleFile() {
+        //Serial.printf("*** Destroying littlefile %s\n", url.c_str());
+        closeDir();
+    }
 
     MFile* cd(std::string newDir);
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
@@ -120,9 +121,9 @@ public:
 
 private:
     void openDir(std::string path);
+    void closeDir();
     lfs_dir_t dir;
     bool dirOpened = false;
-    lfs_info _dirent;
     bool _valid;
     std::string _pattern;
 

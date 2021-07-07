@@ -305,69 +305,32 @@ bool LittleFile::rename(std::string pathTo) {
 }
 
 
-/***************************
- * SOMETHING BAD IS HAPPENING HERE! IF YOU READ LITTLEFS RECURSIVELY THE APP WILL CRASH AT A LATER POINT!
- * 
- ***************************/
+
+void LittleFile::closeDir() {
+    if(dirOpened) {
+        dirOpened = false;
+        lfs_dir_close(&LittleFileSystem::lfsStruct, &dir);
+    }
+}
+
 void LittleFile::openDir(std::string apath) {
     if (!isDirectory()) { 
         dirOpened = false;
         return;
     }
-    
-    char *pathStr = new char[apath.length()];
-    strncpy(pathStr, apath.data(), apath.length());
- 
-    // Get rid of any trailing slashes
-    while (strlen(pathStr) && (pathStr[strlen(pathStr)-1]=='/')) {
-        pathStr[strlen(pathStr)-1] = 0;
-    }
-    // At this point we have a name of "blah/blah/blah" or "blah" or ""
-    // If that references a directory, just open it and we're done.
+    Debug_printv("apath: %s", apath.c_str());
+
     lfs_info info;
-    //auto dir = std::make_shared<lfs_dir_t>();
-    int rc;
-    // const char *filter = "";
-    if (!pathStr[0]) {
-        // openDir("") === openDir("/")
+    int rc = -1;
+
+    if(apath.empty()) {
         rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
-        // filter = "";
-    } else if (lfs_stat(&LittleFileSystem::lfsStruct, pathStr, &info) >= 0) {
-        if (info.type == LFS_TYPE_DIR) {
-            // Easy peasy, path specifies an existing dir!
-            rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
-	    // filter = "";
-        } else {
-            // This is a file, so open the containing dir
-            char *ptr = strrchr(pathStr, '/');
-            if (!ptr) {
-                // No slashes, open the root dir
-                rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
-		        // filter = pathStr;
-            } else {
-                // We've got slashes, open the dir one up
-                *ptr = 0; // Remove slash, truncate string
-                rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
-		        // filter = ptr + 1;
-            }
-        }
-    } else { 
-        // Name doesn't exist, so use the parent dir of whatever was sent in
-        // This is a file, so open the containing dir
-        char *ptr = strrchr(pathStr, '/');
-        if (!ptr) {
-            // No slashes, open the root dir
-            rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, "/");
-	        // filter = pathStr;
-        } else {
-            // We've got slashes, open the dir one up
-            *ptr = 0; // Remove slash, truncate string
-            rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, pathStr);
-	        // filter = ptr + 1;
-        }
+    }
+    else if (lfs_stat(&LittleFileSystem::lfsStruct, apath.c_str(), &info) >= 0) {
+        rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, apath.c_str());
     }
     if (rc < 0) {
-        DEBUGV("LittleFSImpl::openDir: apath=`%s` err=%d\n", apath, rc);
+        Debug_printv("LittleFSImpl::openDir: apath=`%s` err=%d\n", apath.c_str(), rc);
         dirOpened = false;
     }
     else {
@@ -376,11 +339,8 @@ void LittleFile::openDir(std::string apath) {
         lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
         lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &dirent);
 
-        //auto ret = std::make_shared<LittleFSDirImpl>(filter, this, dir, pathStr);
         dirOpened = true;
     }
-
-    delete[] pathStr;
 }
 
 bool LittleFile::rewindDirectory()
@@ -398,27 +358,18 @@ bool LittleFile::rewindDirectory()
 
 MFile* LittleFile::getNextFileInDir()
 {
+    lfs_info _dirent;
+
     if(!dirOpened)
         openDir(path.c_str());
 
     memset(&_dirent, 0, sizeof(_dirent));
+    _dirent.name[0] = 0;
 
-    // const int n = _pattern.length();
-    // bool match;
-    //do {
-        _dirent.name[0] = 0;
-        int rc = lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &_dirent);
-        _valid = (rc == 1);
-
-// Serial.print("inside getNextFileInDir - got: ");
-// Serial.println(_dirent.name);
-
-
-        //match = (!n || !strncmp((const char*) _dirent.name, _pattern.c_str(), n));
-    //} while (_valid/* && !match*/);
-
-    if(!_valid)
+    if(lfs_dir_read(&LittleFileSystem::lfsStruct, &dir, &_dirent) != 1) {
+        closeDir();
         return nullptr;
+    }
     else
         return new LittleFile(this->path + ((this->path == "/") ? "" : "/") + std::string(_dirent.name)); // due to EdUrlParser shittiness
 }

@@ -149,6 +149,7 @@ public:
     };
 
     int write(MBuffer* buffer) {
+        Debug_printv("writing buffer not null:%d",buffer != nullptr);
         return ostream->write((uint8_t*)buffer->buffer, buffer->length());
     }
     
