@@ -61,8 +61,8 @@ public:
 		ATN_CODE_TALK = 0x40,	  // 0x40 + device_id (TALK)
 		ATN_CODE_UNTALK = 0x5F,	  // 0x5F (UNTALK)
 		ATN_CODE_DATA = 0x60,	  // 0x60 + channel (SECOND)
-		ATN_CODE_CLOSE = 0xE0,	  // 0xE0 + channel (CLOSE)
-		ATN_CODE_OPEN = 0xF0	  // 0xF0 + channel (OPEN)
+		ATN_CODE_CLOSE = 0xE0,	  // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
+		ATN_CODE_OPEN = 0xF0	  // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
 	};
 
 	typedef struct _tagATNCMD

@@ -348,23 +348,21 @@ byte Interface::loop(void)
 			break;
 
 		case IEC::ATN_CODE_CLOSE:
-			Debug_printf("\r\n[CLOSE] ");
-			// handle close with host.
 			handleATNCmdClose();
 			break;
 
-		case IEC::ATN_CODE_LISTEN:
-			Debug_printf("\r\n[LISTEN] ");
-			break;
-		case IEC::ATN_CODE_TALK:
-			Debug_printf("\r\n[TALK] ");
-			break;
-		case IEC::ATN_CODE_UNLISTEN:
-			Debug_printf("\r\n[UNLISTEN] ");
-			break;
-		case IEC::ATN_CODE_UNTALK:
-			Debug_printf("\r\n[UNTALK] ");
-			break;
+		// case IEC::ATN_CODE_LISTEN:
+		// 	Debug_printf("\r\n[LISTEN] ");
+		// 	break;
+		// case IEC::ATN_CODE_TALK:
+		// 	Debug_printf("\r\n[TALK] ");
+		// 	break;
+		// case IEC::ATN_CODE_UNLISTEN:
+		// 	Debug_printf("\r\n[UNLISTEN] ");
+		// 	break;
+		// case IEC::ATN_CODE_UNTALK:
+		// 	Debug_printf("\r\n[UNTALK] ");
+		// 	break;
 		} // switch
 	}	  // IEC not idle
 
@@ -608,7 +606,7 @@ void Interface::changeDir(std::string url)
 	m_device.url(url);
 	m_mfile.reset(MFSOwner::File(url));
 	m_openState = O_DIR;
-	Debug_printv("!!!! CD into [%s] new current ur: [%s]", url.c_str());
+	Debug_printv("!!!! CD into [%s]", url.c_str());
 	Debug_printv("new current ur: [%s]", m_mfile->url.c_str());
 	Debug_printv("LOAD $");		
 }
@@ -625,7 +623,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 	// process response into m_queuedError.
 	// Response: ><code in binary><CR>
 
-	Debug_printf("\r\nhandleATNCmdCodeDataTalk: %d (CHANNEL) %d (M_OPENSTATE)", chan, m_openState);
+	Debug_printf("(%d CHANNEL)\r\n", chan);
 
 	if (chan == CMD_CHANNEL)
 	{
@@ -689,10 +687,6 @@ void Interface::handleATNCmdCodeDataListen()
 
 void Interface::handleATNCmdClose()
 {
-	Debug_printf("\r\nhandleATNCmdClose: Success!");
-
-	//Serial.printf("\r\nIEC: DEVICE[%d] DRIVE[%d] PARTITION[%d] URL[%s] PATH[%s] IMAGE[%s] FILENAME[%s] FILETYPE[%s]\r\n", m_device.device(), m_device.drive(), m_device.partition(), m_device.url().c_str(), m_device.path().c_str(), m_device.image().c_str(), m_filename.c_str(), m_filetype.c_str());
-	Debug_printf("\r\n=================================\r\n\r\n");
 
 } // handleATNCmdClose
 
@@ -788,7 +782,7 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 
 void Interface::sendListing()
 {
-	Debug_printf("\r\nsendListing:\r\n");
+	Debug_printf("sendListing: [%s]\r\n=================================\r\n", m_mfile->url.c_str());
 
 	uint16_t byte_count = 0;
 	std::string extension = "dir";
@@ -885,7 +879,7 @@ void Interface::sendListing()
 	m_iec.send(0);
 	m_iec.sendEOI(0);
 
-	Debug_printf("\r\nsendListing: %d Bytes Sent\r\n", byte_count);
+	Debug_printf("=================================\r\n%d bytes sent\r\n", byte_count);
 
 	ledON();
 } // sendListing
@@ -939,7 +933,6 @@ void Interface::sendFile()
 	//m_device.save();
 
 	std::unique_ptr<MFile> file(MFSOwner::File(m_filename));
-	Debug_printv("[%s]", file->url.c_str());
 
 	if(!file->exists())
 	{
@@ -1018,7 +1011,7 @@ void Interface::sendFile()
 		success = m_iec.send(b[0]);
 		load_address = load_address | *b << 8;  // high byte
 
-		Debug_printf("\r\nsendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", m_mfile->url.c_str(), load_address, len);
+		Debug_printf("sendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
 		while( len && success )
 		{
 			success = istream->read(b, b_len);
@@ -1072,8 +1065,7 @@ void Interface::sendFile()
 			i++;
 		}
 		istream->close();
-		Debug_println("");
-		Debug_printf("%d of %d bytes sent\r\n", i, len);
+		Debug_printf("=================================\r\n%d of %d bytes sent\r\n", i, len);
 	}
 
 	ledON();
@@ -1108,7 +1100,7 @@ void Interface::saveFile()
 	Debug_printv("[%s]", file->url.c_str());
 
 	std::unique_ptr<MOStream> ostream(file->outputStream());
-	Debug_printf("\r\nsaveFile: [%s]\r\n=================================\r\nLOAD ADDRESS [ ", file->url.c_str());
+	
 
     if(!ostream->isOpen()) {
         Debug_printv("couldn't open a stream for writing");
@@ -1124,12 +1116,15 @@ void Interface::saveFile()
 		lh[0] = m_iec.receive();
 		load_address = load_address | *lh << 8;  // high byte
 
+		Debug_printf("saveFile: [%s] [$%.4X]\r\n=================================\r\n", file->url.c_str(), load_address);
+
 		// Recieve bytes until a EOI is detected
 		do
 		{
 			// Save Load Address
 			if (i == 0)
 			{
+				Debug_print("[");
 				ostream->write(ll, b_len);
 				ostream->write(lh, b_len);
 				i += 2;
@@ -1172,7 +1167,7 @@ void Interface::saveFile()
     }
     ostream->close(); // nor required, closes automagically
 
-	Debug_printf("\n%d bytes received\n", i);
+	Debug_printf("=================================\r\n%d bytes saved\r\n", i);
 	ledON();
 
 	// TODO: Handle errorFlag
