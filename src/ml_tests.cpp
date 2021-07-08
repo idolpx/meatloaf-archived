@@ -391,6 +391,40 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
 }
 
 
+void testNewCppStreams(std::string name) {
+    testHeader("TEST C++ streams");
+
+    Meat::ifstream istream(name);
+    istream.open();
+    if(istream.is_open()) {
+        std::string line;
+
+        while(!istream.eof()) {
+            istream >> line;
+            Serial.print(line.c_str());
+        }
+
+        istream.close();
+    }
+
+    Meat::ofstream ostream("intern.txt");
+
+    ostream.open();
+    if(ostream.is_open()) {
+        Debug_printv("ostream opened FOR WRITING");
+        Serial.println("Opened file for writing!");
+        ostream << "Arise, ye workers from your slumber,";
+        ostream << "Arise, ye prisoners of want.";
+        ostream << "For reason in revolt now thunders,";
+        ostream << "and at last ends the age of cant!";
+        ostream.write("jeifjeiwjfiewjfiewjfiewfj", 20);
+        Serial.println("Writing finished!");
+
+
+        ostream.close();
+    }
+}
+
 void runFSTest(std::string dirPath, std::string filePath) {
     Serial.println("**********************************************************************\n\n");
     // std::shared_ptr<MFile> testDir(MFSOwner::File(dirPath));
@@ -400,6 +434,8 @@ void runFSTest(std::string dirPath, std::string filePath) {
     auto testDir = Meat::New<MFile>(dirPath);
     auto testFile = Meat::New<MFile>(filePath);
     auto destFile = Meat::New<MFile>("/mltestfile");
+
+    testNewCppStreams(filePath);
 
     if(!dirPath.empty() && testDir != nullptr) {
         testPaths(testDir.get(),"subDir");
@@ -426,100 +462,6 @@ void runFSTest(std::string dirPath, std::string filePath) {
     Serial.println("**********************************************************************\n\n");
 }
 
-// void streamTranslationExample(LinedWriter* writer, LinedReader* reader) {
-//     writer->printLn("This ___ Will look RIGHT on a C64!", &strcodec::petscii);
-
-//     auto read = reader->readLn(&strcodec::petscii); // this line read from Commodore will look right heregit !
-// }
-
-
-MFile* guessIncomingPath(std::string command, size_t channel)
-{
-	std::string guessedPath = command;
-    std::unique_ptr<MFile> currentDir(MFSOwner::File(""));
-
-	Debug_printv("[%s]", guessedPath.c_str());
-
-	// get the current directory
-	Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
-    if ( m_mfile->isDirectory())
-	    currentDir.reset(m_mfile.get());
-    else
-        currentDir.reset(m_mfile->parent());
-
-	Debug_printv("currentDir[%s]", currentDir->url.c_str());
-
-	// check to see if it starts with a known command token
-	if ( mstr::startsWith(command, "CD", false) ) // would be case sensitive, but I don't know the proper case
-	{
-		guessedPath = mstr::drop(guessedPath, 2);
-		if ( mstr::startsWith(guessedPath, "/" ) || mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
-			guessedPath = mstr::drop(guessedPath, 1);
-	}
-	// TODO more of them?
-
-	// NOW, since user could have requested ANY kind of our supported magic paths like:
-	// LOAD ~/something
-	// LOAD ../something
-	// LOAD //something
-	// we HAVE TO PARSE IT OUR WAY!
-
-	Debug_printv("guessedPath[%s]", guessedPath.c_str());
-	
-	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
-	return currentDir->cd(guessedPath);
-}
-
-void testCDMFile(std::string command, size_t channel) {
-
-    testHeader("TEST CD MFile");
-
-    std::unique_ptr<MFile> new_mfile(guessIncomingPath(command, channel));
-
-    Debug_printv("new_mfile[%s]", new_mfile->url.c_str());
-
-    if (mstr::equals(new_mfile->extension, "URL")) 
-    {
-        new_mfile.reset(new_mfile->cd("dummy"));
-        //m_mfile.reset(MFSOwner::File(new_mfile->url));
-        Debug_printv("CD into URL file [%s]", new_mfile->url.c_str());
-        Debug_printv("LOAD $");
-    }
-    if (mstr::startsWith(command, "CD", false) || new_mfile->isDirectory())
-    {
-        // Enter directory
-        //m_mfile = new_mfile;
-        //m_mfile.reset(new_mfile);
-        //m_mfile.reset(new_mfile.get());
-        //m_mfile.reset(MFSOwner::File(new_mfile->url));
-        //m_mfile.reset(MFSOwner::File(new_mfile->url));
-        
-        Debug_printv("CD [%s]", new_mfile->url.c_str());
-        Debug_printv("LOAD $");
-    }
-    else
-    {
-        //m_mfile.reset(MFSOwner::File(new_mfile->url));
-        Debug_printv("Load File [%s]", m_mfile->url.c_str());
-    }
-
-	Debug_println("");
-	Debug_printv("-------------------------------");
-	Debug_printv("URL: [%s]", m_mfile->url.c_str());
-    Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
-    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
-	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
-	Debug_printv("Username: [%s]", m_mfile->user.c_str());
-	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
-	Debug_printv("Host: [%s]", m_mfile->host.c_str());
-	Debug_printv("Port: [%s]", m_mfile->port.c_str());
-	Debug_printv("Path: [%s]", m_mfile->path.c_str());
-	Debug_printv("File: [%s]", m_mfile->name.c_str());
-	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
-    Debug_printv("-------------------------------");
-
-}
-
 void testSmartMFile() {
     testHeader("TEST smart MFile pointers");
 
@@ -533,15 +475,10 @@ void testSmartMFile() {
 	Debug_printv("Extension of second one: [%s]", test2->extension.c_str());
 }
 
-void testNewCppStreams() {
-    Meat::ifstream istream("some url");
-}
 
 void runTestsSuite() {
-    //testSmartMFile();
-
     // working, uncomment if you want
-    //runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
     // runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
     //runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
     

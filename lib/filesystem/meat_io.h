@@ -191,12 +191,17 @@ namespace Meat {
     class imfilebuf : public std::filebuf {
         std::unique_ptr<MIStream> mistream;
         std::unique_ptr<MFile> mfile;
-        char data[1024] = { 0 };
+        char* data;
 
     public:
-        imfilebuf() {};
+        imfilebuf() {
+            data = new char[1024];
+        };
 
         ~imfilebuf() {
+            if(data != nullptr)
+                delete[] data;
+
             close();
         }
 
@@ -263,7 +268,7 @@ namespace Meat {
 
                 auto readCount = mistream->read((uint8_t*)data, 1024);
 
-                Debug_printv("imfilebuf underflow, read bytes=%d", readCount);
+                //Debug_printv("--imfilebuf underflow, read bytes=%d--", readCount);
 
                 this->setg(data, data, data + readCount);
             }
@@ -284,35 +289,40 @@ namespace Meat {
     class omfilebuf : public std::filebuf {
         std::unique_ptr<MOStream> mostream;
         std::unique_ptr<MFile> mfile;
-        char data[1024] = { 0 };
+        char* data;
 
     public:
-        omfilebuf() {};
+        omfilebuf() {
+            data = new char[1024];
+        };
 
         ~omfilebuf() {
+            if(data != nullptr)
+                delete[] data;
+
             close();
         }
 
         std::filebuf* open(std::string filename) {
             mfile.reset(MFSOwner::File(filename));
             mostream.reset(mfile->outputStream());
-            if(mostream->isOpen())
+            if(mostream->isOpen()) {
+                setp(data, data+1024);
                 return this;
+            }
             else
                 return nullptr;
         };
 
         std::filebuf* open(MFile* file) {
-            mfile.reset(MFSOwner::File(file->url));
-            mostream.reset(mfile->outputStream());
-            if(mostream->isOpen())
-                return this;
-            else
-                return nullptr;
+            return open(file->url);
         };
 
         virtual void close() {
-            mostream->close();
+            if(is_open()) {
+                sync();
+                mostream->close();
+            }
         }
 
         bool is_open() const {
@@ -351,32 +361,41 @@ namespace Meat {
 
         int overflow(int ch  = traits_type::eof()) override
         {
-            if (!is_open()) {
-                return 0;
-            }
-            else if ( pbase() == NULL ) {
-                // save one char for next overflow:
-                //Debug_printv("in wrapper overflow '%c'", ch);
 
-                if ( ch != EOF ) {
-                    //writer->writeByte(ch); //TODO
-                    ch = 6666; // dummy, remove
-                } else {
-                    ch = 0;
-                }
-            } else {
-                Debug_printv("**** hey! don't know how to process MeatOBuff with buffer! Nothing written!");
-                // char* end = pptr();
-                // if ( ch != EOF ) {
-                //     *end ++ = ch;
-                // }
-                // if ( write( pbase(), end - pbase() ) == failed ) {
-                //     ch = EOF;
-                // } else if ( ch == EOF ) {
-                //     ch = 0;
-                // }
-                // setp( buffer, buffer + bufferSize - 1 );
+            Debug_printv("in overflow");
+                // pptr =  Returns the pointer to the current character (put pointer) in the put area.
+                // pbase = Returns the pointer to the beginning ("base") of the put area.
+                // epptr = Returns the pointer one past the end of the put area.
+
+            if (!is_open()) {
+                return EOF;
             }
+
+
+        //  *  Informally, this function is called when the output buffer
+        //  *  is full (or does not exist, as buffering need not actually
+        //  *  be done).  If a buffer exists, it is @a consumed, with
+        //  *  <em>some effect</em> on the controlled sequence.
+        //  *  (Typically, the buffer is written out to the sequence
+        //  *  verbatim.)  In either case, the character @a c is also
+        //  *  written out, if @a __c is not @c eof().
+
+            char* end = pptr();
+            if ( ch != EOF ) {
+                *end ++ = ch;
+            }
+
+            Debug_printv("%d bytes in buffer will be written", end-pbase());
+
+            uint8_t* pBase = (uint8_t*)pbase();
+
+            if ( mostream->write( pBase, end - pbase() ) == 0 ) {
+                ch = EOF;
+            } else if ( ch == EOF ) {
+                ch = 0;
+            }
+            setp(data, data+1024);
+            
             return ch;
         };
 
@@ -397,12 +416,25 @@ namespace Meat {
          * if the buffer is empty. sync will be called if the client code flushes the stream.)
          */
         int sync() { 
-    //                Debug_printv("in wrapper sync");
+            Debug_printv("in wrapper sync");
+            
+            if(pptr() == pbase()) {
+                return 0;
+            }
+            else {
+                uint8_t* buffer = (uint8_t*)pbase();
 
-            //auto result = mostream->write(pbase(), pptr()-pbase()); TODO
-            int result = 0;
+                Debug_printv("%d bytes left in buffer will be written", pptr()-pbase());
 
-            return (pptr() == pbase() || result != 0) ? 0 : -1;    
+                // pptr =  Returns the pointer to the current character (put pointer) in the put area.
+                // pbase = Returns the pointer to the beginning ("base") of the put area.
+                // epptr = Returns the pointer one past the end of the put area.
+                auto result = mostream->write(buffer, pptr()-pbase()); 
+
+                setp(data, data+1024);
+
+                return (result != 0) ? 0 : -1;  
+            }  
         };
 
 
@@ -445,7 +477,7 @@ namespace Meat {
         std::string url; 
     public:
         ofstream(std::string u): std::ostream(&buff), url(u) {};
-        //ofstream(MFile* file) std::istream(&buff), url(file->url) {};
+        //ofstream(MFile* file) std::ostream(&buff), url(file->url) {};
 
         ~ofstream() {
             close();
