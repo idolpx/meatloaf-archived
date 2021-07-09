@@ -947,10 +947,7 @@ void Interface::sendFile()
 
 
 	// TODO!!!! you should check istream for nullptr here and return error immediately if null
-	std::unique_ptr<MIStream> istream(file->inputStream());
 
-	size_t len = istream->size() - 1;
-	size_t avail = istream->available();
 	
 	if(
 		mstr::equals(file->extension, "txt", false) ||
@@ -961,49 +958,46 @@ void Interface::sendFile()
 		// convert UTF8 files on the fly
 
 		Debug_printv("Sending a text file to C64 [%s]", file->url.c_str());
-        std::unique_ptr<LinedReader> reader(new LinedReader(istream.get()));
+        //std::unique_ptr<LinedReader> reader(new LinedReader(istream.get()));
+		auto istream = Meat::ifstream(file.get());
 		auto ostream = oiecstream(&m_iec);
 
 		// we can skip the BOM here, EF BB BF for UTF8
-		auto b = reader->readByte();
+		auto b = istream.get();
 		if(b != 0xef)
 			ostream.put(b);
 		else {
-			b = reader->readByte();
+			b = istream.get();
 			if(b != 0xbb)
 				ostream.put(b);
 			else {
-				b = reader->readByte();
+				b = istream.get();
 				if(b != 0xbf)
 					ostream.put(b); // not BOM
 			}
 		}
 
-        while(!reader->eof()) {
-			// Exit if ATN is pulled while sending
-			// if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
-			// {
-			// 	Debug_printv("Pin pulled, bailling out");
+		std::string re;
 
-			// 	success = true;
-			// 	break;
-			// }
-
+        while(std::getline(istream, re)) {
+			Debug_printv("Looping sendText:%s",re.c_str());
 			ledToggle(true);
+            ostream.writeAsPetscii(re);
 
-			Debug_printv("Looping read/write");
-			auto re = reader->readLn();
-			Debug_printv("Got:%s",re.c_str());
-            ostream << re;
             if(ostream.bad()) {
 				Debug_printv("Error sending");
                 setDeviceStatus(60); // write error
+				break;
             }
         }
 	}
 	else
 	{
 		// Get file load address
+		std::unique_ptr<MIStream> istream(file->inputStream());
+		size_t len = istream->size() - 1;
+		size_t avail = istream->available();
+
 		i = 2;
 		istream->read(b, b_len);
 		success = m_iec.send(b[0]);

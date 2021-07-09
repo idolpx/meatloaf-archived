@@ -53,7 +53,6 @@
 #include "utils.h"
 #include "string_utils.h"
 #include "wrappers/line_reader_writer.h"
-#include "wrappers/c64_reader_writer.h"
 
 //#include "doscmd.h"
 
