@@ -708,7 +708,7 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *fo
 	return sendLine(basicPtr, blocks, text);
 }
 
-uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
+uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, std::string text)
 {
 	byte i;
 	uint16_t b_cnt = 0;
@@ -716,7 +716,8 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 	Debug_printf("%d %s ", blocks, text);
 
 	// Get text length
-	uint8_t len = strlen(text);
+	uint8_t len = text.size();
+	mstr::toPETSCII(text);
 
 	// Increment next line pointer
 	basicPtr += len + 5;
