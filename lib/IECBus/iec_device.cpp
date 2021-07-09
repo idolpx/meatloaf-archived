@@ -48,7 +48,6 @@ bool Interface::begin()
 void Interface::reset(void)
 {
 	m_openState = O_NOTHING;
-	m_queuedError = ErrIntro;
 	setDeviceStatus(73);
 	//m_device.reset();
 } // reset
@@ -625,8 +624,6 @@ void Interface::prepareFileStream(std::string url)
 
 void Interface::handleATNCmdCodeDataTalk(byte chan)
 {
-	// process response into m_queuedError.
-	// Response: ><code in binary><CR>
 
 	Debug_printf("(%d CHANNEL)\r\n", chan);
 
@@ -634,8 +631,6 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 	{
 		// Send status message
 		sendStatus();
-		// go back to OK state, we have dispatched the error to IEC host now.
-		m_queuedError = ErrOK;
 	}
 	else
 	{
@@ -869,7 +864,7 @@ void Interface::sendListing()
 
 		if (entry->name[0]!='.' || m_show_hidden)
 		{
-			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %3s", block_spc, "", name.c_str(), space_cnt, "", extension.c_str());
+			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %s", block_spc, "", name.c_str(), space_cnt, "", extension.c_str());
 		}
 		
 		entry.reset(m_mfile->getNextFileInDir());
@@ -926,6 +921,7 @@ void Interface::sendFile()
 
 	uint16_t bi = 0;
 	uint16_t load_address = 0;
+	uint16_t sys_address = 0;
 	size_t b_len = 1;
 	uint8_t b[b_len];
 
@@ -1011,9 +1007,11 @@ void Interface::sendFile()
 		istream->read(b, b_len);
 		success = m_iec.send(b[0]);
 		load_address = *b & 0x00FF; // low byte
+		sys_address = *b;
 		istream->read(b, b_len);
 		success = m_iec.send(b[0]);
 		load_address = load_address | *b << 8;  // high byte
+		sys_address += *b * 256;
 
 		Debug_printf("sendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
 		while( len && success )
@@ -1061,6 +1059,7 @@ void Interface::sendFile()
 			// Exit if ATN is pulled while sending
 			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
 			{
+				// TODO: If sending from a named channel save file pointer position
 				success = true;
 				break;
 			}
@@ -1069,7 +1068,7 @@ void Interface::sendFile()
 			i++;
 		}
 		istream->close();
-		Debug_printf("=================================\r\n%d of %d bytes sent\r\n", i, len);
+		Debug_printf("=================================\r\n%d of %d bytes sent [SYS%d]\r\n", i, len, sys_address);
 	}
 
 	ledON();
@@ -1108,6 +1107,7 @@ void Interface::saveFile()
 
     if(!ostream->isOpen()) {
         Debug_printv("couldn't open a stream for writing");
+		// TODO: Set status and sendFNF
         return;
     }
     else 

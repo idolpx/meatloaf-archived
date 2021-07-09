@@ -131,6 +131,8 @@ public:
 		return espDigitalRead(pinNumber) ? released : pulled;
 	}
 
+	void debugTiming();
+
 private:
 	// IEC Bus Commands
 	ATNCheck deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)

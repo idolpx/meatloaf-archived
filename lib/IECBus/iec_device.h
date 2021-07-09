@@ -122,26 +122,20 @@ private:
 	IEC &m_iec;
 
 	// This var is set after an open command and determines what to send next
-	byte m_openState; // see OpenState
-	byte m_queuedError;
-
+	byte m_openState;
+	
 	// atn command buffer struct
 	IEC::ATNCmd &m_atn_cmd;
-
-
-	//StaticJsonDocument<256> m_jsonHTTP;
-	//String m_lineBuffer;
-	//DynamicJsonDocument m_jsonHTTPBuffer;
 
 	DeviceDB m_device;
 	std::unique_ptr<MFile> m_mfile; // Always points to current directory
 	std::string m_filename; // Always points to current or last loaded file
 
 	std::string m_device_status = "";
-	bool m_show_date;
-	bool m_show_load_address;
-	bool m_show_hidden;
-	bool m_hide_extension;
+	bool m_show_extension = true;
+	bool m_show_hidden = false;
+	bool m_show_date = false;
+	bool m_show_load_address = false;
 
 	CommandPathTuple parseLine(std::string commandLne, size_t channel);
 

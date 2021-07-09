@@ -202,6 +202,7 @@ uint8_t IEC::receiveByte(void)
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
 
 	// Acknowledge byte received
+	delayMicroseconds(TIMING_BIT);
 	pull(IEC_PIN_DATA);
 
 	// STEP 5: START OVER
@@ -448,45 +449,6 @@ bool IEC::undoTurnAround(void)
 // Return value, see IEC::ATNCheck definition.
 IEC::ATNCheck IEC::checkATN(ATNCmd& atn_cmd)
 {
-
-#ifdef DEBUG_TIMING
-	int pin = IEC_PIN_ATN;
-	pull(pin);
-	delayMicroseconds(1000); // 1000
-	release(pin);
-	delayMicroseconds(1000);
-
-	pin = IEC_PIN_CLOCK;
-	pull(pin);
-	delayMicroseconds(20); // 20
-	release(pin);
-	delayMicroseconds(1);
-
-	pin = IEC_PIN_DATA;
-	pull(pin);
-	delayMicroseconds(50); // 50
-	release(pin);
-	delayMicroseconds(1);
-
-	pin = IEC_PIN_SRQ;
-	pull(pin);
-	delayMicroseconds(60); // 60
-	release(pin);
-	delayMicroseconds(1);
-
-	pin = IEC_PIN_ATN;
-	pull(pin);
-	delayMicroseconds(100); // 100
-	release(pin);
-	delayMicroseconds(1);
-
-	pin = IEC_PIN_CLOCK;
-	pull(pin);
-	delayMicroseconds(200); // 200
-	release(pin);
-	delayMicroseconds(1);
-#endif
-
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
 	if(status(IEC_PIN_RESET) == pulled) 
@@ -561,18 +523,18 @@ IEC::ATNCheck IEC::checkATN(ATNCmd& atn_cmd)
 		}
 
 		// Either the message is not for us or insignificant
-		delayMicroseconds(TIMING_ATN_DELAY);
+		//delayMicroseconds(TIMING_ATN_DELAY);
 		release(IEC_PIN_CLK);
 		release(IEC_PIN_DATA);
 		
 		if ( cc == ATN_CODE_UNTALK )
 			Debug_println("UNTALK");
 		if ( cc == ATN_CODE_UNLISTEN )
-			Debug_println("UNLISTEN");
-		
+			Debug_println("UNLISTEN");			
+
 		// Wait for ATN to release and quit
 		while(status(IEC_PIN_ATN) == pulled);
-		delayMicroseconds(TIMING_ATN_DELAY);
+		//delayMicroseconds(TIMING_ATN_DELAY);
 		// Don't do anything here or could cause LOAD ERROR!!!
 	}
 
@@ -780,3 +742,42 @@ IEC::IECState IEC::state() const
 {
 	return static_cast<IECState>(m_state);
 } // state
+
+void IEC::debugTiming()
+{
+	int pin = IEC_PIN_ATN;
+	pull(pin);
+	delayMicroseconds(1000); // 1000
+	release(pin);
+	delayMicroseconds(1000);
+
+	pin = IEC_PIN_CLK;
+	pull(pin);
+	delayMicroseconds(20); // 20
+	release(pin);
+	delayMicroseconds(1);
+
+	pin = IEC_PIN_DATA;
+	pull(pin);
+	delayMicroseconds(50); // 50
+	release(pin);
+	delayMicroseconds(1);
+
+	pin = IEC_PIN_SRQ;
+	pull(pin);
+	delayMicroseconds(60); // 60
+	release(pin);
+	delayMicroseconds(1);
+
+	pin = IEC_PIN_ATN;
+	pull(pin);
+	delayMicroseconds(100); // 100
+	release(pin);
+	delayMicroseconds(1);
+
+	pin = IEC_PIN_CLK;
+	pull(pin);
+	delayMicroseconds(200); // 200
+	release(pin);
+	delayMicroseconds(1);
+}
