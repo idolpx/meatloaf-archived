@@ -36,21 +36,23 @@ void testDiscoverDevices()
 
 void testReader(MFile* readeTest) {
     // /* Test Line reader */
-    testHeader("Buffered line reader");
+    testHeader("C++ line reader");
 
     Serial.printf("* Trying to read file:%s\n", readeTest->url.c_str());
 
-    std::shared_ptr<MIStream> readerStream(readeTest->inputStream());
+    auto readerStream = Meat::ifstream(readeTest);
+    readerStream.open();
 
-    if(readerStream->isOpen()) {
-        LinedReader reader(readerStream.get());
-
-        if(reader.eof()) {
+    if(readerStream.is_open()) {
+        if(readerStream.eof()) {
             Serial.printf("Reader returned EOF! :(");
         }
 
-        while(!reader.eof()) {
-            std::string line = reader.readLn();
+        while(!readerStream.eof()) {
+            std::string line;
+
+            readerStream >> line;
+
             Serial.printf("%s\n",line.c_str());
         };
     }
@@ -117,51 +119,12 @@ void testCopy(MFile* srcFile, MFile* dstFile) {
 
     Serial.printf("FROM:%s\nTO:%s\n", srcFile->url.c_str(), dstFile->url.c_str());
 
-    char exampleText[]="Proletariusze wszystkich krajow, laczcie sie!";
-
-    // test 1 - write some string to a plain file in root dir
-
-    // if(!srcFile->exists()) {
-    //     Serial.printf("FSTEST: %s doesn't exist!\n", srcFile->path.c_str());
-    //     return;
-    // }
-
     if(dstFile->exists()) {
         bool result = dstFile->remove();
         Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
     }
 
-    //Serial.println("FSTEST copy: attempt obtain istream");
-    std::shared_ptr<MIStream> srcStream(srcFile->inputStream());
-    //Serial.println("FSTEST copy: attempt obtain ostream");
-    std::shared_ptr<MOStream> dstStream(dstFile->outputStream());
-
-    if(!srcStream->isOpen()) {
-        Serial.println("FSTEST: couldn't open a stream for reading");
-        return;
-    }
-    else if(!dstStream->isOpen()) {
-        Serial.println("FSTEST: couldn't open a stream for writing");
-        return;
-    }
-    else {
-        auto br = std::make_unique<BufferedReader>(srcStream.get());
-        auto bw = std::make_unique<BufferedWriter>(dstStream.get());
-
-        do {
-            auto buffer = br->read();
-            
-            if(buffer->length() != 0) {
-                Serial.printf("FSTEST: Bytes read into buffred reader: %d\n",buffer->length());
-                int written = bw->write(buffer);
-                Serial.printf("FSTEST: Bytes written into buffred writer: %d\n",written);
-
-            }
-        } while (!br->eof());
-    }
-
-    srcStream->close(); // not required, closes automagically
-    dstStream->close(); // nor required, closes automagically
+    srcFile->copyTo(dstFile);
 }
 
 void dumpParts(std::vector<std::string> v) {
@@ -346,37 +309,51 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
     testHeader("C++ stream wrappers");
 
     StaticJsonDocument<512> m_device;
+    deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"http://niceurlman.com\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
 
     if ( dstFile->exists() )
         dstFile->remove();
 
-    Meat::ifstream istream(srcFile->url);
-
-    Meat::ofstream ostream(dstFile->url);
+    Meat::ofstream ostream(dstFile); // dstFile
+    ostream.open();
     
-    deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"http://niceurlman.com\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
+    if(ostream.is_open()) {
+        Serial.printf("Trying to serialize JSON to %s\n", dstFile->url.c_str());
 
-    Serial.printf("Trying to serialize JSON to %s\n",dstFile->url.c_str());
+        auto x = serializeJson(m_device, ostream); 
 
-    serializeJson(m_device, ostream); 
+        Serial.printf("serializeJson returned %d\n", x);
 
-    ostream.close();
+        ostream.close();
+    }
 
-    Serial.printf("Copying to %s\n", srcFile->url.c_str());
+    Serial.printf("%s size is %d\n", dstFile->url.c_str(), dstFile->size());
+
+    Serial.printf("Copy %s to %s\n", dstFile->url.c_str(), srcFile->url.c_str());
 
     if(dstFile->copyTo(srcFile)) {
-        Serial.printf("Trying to deserialize JSON from %s\n",srcFile->url.c_str());
+        Meat::ifstream istream(srcFile);
+        istream.open();
 
-        deserializeJson(m_device, istream);
+        if(istream.is_open()) {
+            Serial.printf("Trying to deserialize JSON from %s\n",srcFile->url.c_str());
 
-        Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+            deserializeJson(m_device, istream);
+
+            Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+        }
+        else
+        {
+            Serial.printf("Error! The stream for deserialization couldn't be opened!");
+        }
     }
     else {
         Serial.println("**** Copying failed *** WHY???");
 
         Serial.printf("Trying to deserialize JSON from %s\n",dstFile->url.c_str());
 
-        Meat::ifstream newIstream(dstFile->url); // this is your standard istream!
+        Meat::ifstream newIstream(dstFile); // this is your standard istream!
+        newIstream.open();
 
         deserializeJson(m_device, newIstream);
 
@@ -407,15 +384,12 @@ void testNewCppStreams(std::string name) {
 
     ostream.open();
     if(ostream.is_open()) {
-        Debug_printv("ostream opened FOR WRITING");
-        Serial.println("Opened file for writing!");
         ostream << "Arise, ye workers from your slumber,";
         ostream << "Arise, ye prisoners of want.";
         ostream << "For reason in revolt now thunders,";
         ostream << "and at last ends the age of cant!";
-        ostream.write("jeifjeiwjfiewjfiewjfiewfj", 20);
-        Serial.println("Writing finished!");
-
+        if(ostream.badbit)
+            Serial.println("Writing failed!");
 
         ostream.close();
     }

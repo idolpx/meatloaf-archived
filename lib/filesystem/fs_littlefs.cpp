@@ -382,6 +382,7 @@ MFile* LittleFile::getNextFileInDir()
  * MOStreams implementations
  ********************************************************/
 // MStream methods
+// error list: enum lfs_error
 bool LittleOStream::isOpen() {
     return handle->rc >= 0;
 }

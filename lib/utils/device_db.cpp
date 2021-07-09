@@ -44,6 +44,7 @@ bool DeviceDB::select(uint8_t new_device_id)
     config_file = SYSTEM_DIR "device." + std::to_string(new_device_id) + ".conf";
     std::unique_ptr<MFile> file(MFSOwner::File(config_file));
     Meat::ifstream istream(config_file);
+    istream.open();
 
     Debug_printv("config_file[%s]", config_file.c_str());
     if ( file->exists() )
@@ -74,9 +75,16 @@ bool DeviceDB::save()
             file->remove();
 
         Meat::ofstream ostream(file.get()->url);
-
-        serializeJson(m_device, ostream);
-        return true;
+        ostream.open();
+        if(ostream.is_open()) 
+        {
+            serializeJson(m_device, ostream);
+            return true;
+        }
+        else 
+        {
+            return false;
+        }
     }
 
     return false;

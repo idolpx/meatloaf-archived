@@ -534,6 +534,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		// the full syntax should be: heart:urlfilename,[filename] - optional name of the file that should be pointed to
 
 		auto favStream = Meat::ofstream(commandAndPath.rawPath+".url"); // put the name from argument here!
+		favStream.open();
 		if(favStream.is_open()) {
 			favStream << m_mfile->url;
 		}

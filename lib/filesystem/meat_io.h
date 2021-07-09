@@ -43,12 +43,7 @@ public:
 
     bool operator!=(nullptr_t ptr);
 
-    bool copyTo(MFile* dst) {
-        std::unique_ptr<MIStream> istream(this->inputStream());
-        std::unique_ptr<MOStream> ostream(dst->outputStream());
-
-        return istream->pipeTo(ostream.get());
-    };
+    bool copyTo(MFile* dst);
 
     virtual MFile* cd(std::string newDir);
     virtual bool isDirectory() = 0;
@@ -68,6 +63,17 @@ public:
         mstr::toPETSCII(pname);
         return pname;
     }
+
+    virtual bool isTextFile() {
+        if(mstr::equals(extension, "txt", false))
+            return true;
+        if(mstr::equals(extension, "htm", false))
+            return true;
+        if(mstr::equals(extension, "html", false))
+            return true;
+        else
+            return false;
+    };
 
     virtual ~MFile() {
         //Debug_printv("Deleting: [%s]", this->url.c_str());
@@ -169,8 +175,9 @@ namespace Meat {
     */
     template<class MFile>
         typename _Unique_mf::_Single_file
-        New(MFile* file) {
-            return std::unique_ptr<MFile>(MFSOwner::File(file->url));
+        New(MFile* mFile) {
+            mFile->name;
+            return std::unique_ptr<MFile>(MFSOwner::File(mFile->url));
         }
 
     /**
@@ -234,6 +241,7 @@ namespace Meat {
                 return mistream->isOpen();
         }
         
+
         /**
          *  @brief  Fetches more data from the controlled sequence.
          *  @return  The first character from the <em>pending sequence</em>.
@@ -416,7 +424,7 @@ namespace Meat {
          * if the buffer is empty. sync will be called if the client code flushes the stream.)
          */
         int sync() { 
-            Debug_printv("in wrapper sync");
+            //Debug_printv("in wrapper sync");
             
             if(pptr() == pbase()) {
                 return 0;
@@ -424,12 +432,12 @@ namespace Meat {
             else {
                 uint8_t* buffer = (uint8_t*)pbase();
 
-                Debug_printv("%d bytes left in buffer will be written", pptr()-pbase());
-
                 // pptr =  Returns the pointer to the current character (put pointer) in the put area.
                 // pbase = Returns the pointer to the beginning ("base") of the put area.
                 // epptr = Returns the pointer one past the end of the put area.
                 auto result = mostream->write(buffer, pptr()-pbase()); 
+
+                Debug_printv("%d bytes left in buffer written to sink, rc=%d", pptr()-pbase(), result);
 
                 setp(data, data+1024);
 
@@ -447,9 +455,16 @@ namespace Meat {
     class ifstream : public std::istream {
         imfilebuf buff;
         std::string url; 
+        bool isTranslating = false; 
     public:
-        ifstream(std::string u): std::istream(&buff), url(u) {};
-        //ifstream(MFile* file) std::istream(&buff), url(file->url) {};
+        ifstream(std::string u): std::istream(&buff), url(u) {
+            auto f = MFSOwner::File(u);
+            isTranslating = f->isTextFile();
+            delete f;
+        };
+        ifstream(MFile* file): std::istream(&buff), url(file->url) {
+            isTranslating = file->isTextFile();
+        };
 
         ~ifstream() {
             close();
@@ -474,10 +489,17 @@ namespace Meat {
 
     class ofstream : public std::ostream {
         omfilebuf buff;
-        std::string url; 
+        std::string url;
+        bool isTranslating = false; 
     public:
-        ofstream(std::string u): std::ostream(&buff), url(u) {};
-        //ofstream(MFile* file) std::ostream(&buff), url(file->url) {};
+        ofstream(std::string u): std::ostream(&buff), url(u) {
+            auto f = MFSOwner::File(u);
+            isTranslating = f->isTextFile();
+            delete f;
+        };
+        ofstream(MFile* file): std::ostream(&buff), url(file->url) {
+            isTranslating = file->isTextFile();
+        };
 
         ~ofstream() {
             close();

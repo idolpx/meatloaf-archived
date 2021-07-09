@@ -81,7 +81,7 @@ MFile* MFSOwner::File(std::shared_ptr<MFile> file) {
 MFile* MFSOwner::File(std::string path) {
     std::vector<std::string> paths = mstr::split(path,'/');
 
-    Debug_printv("path[%s]", path.c_str());
+    //Debug_printv("path[%s]", path.c_str());
 
     auto pathIterator = paths.end();
     auto begin = paths.begin();
@@ -316,7 +316,33 @@ MFile* MFile::cd(std::string newDir) {
     }
 };
 
+bool MFile::copyTo(MFile* dst) {
+    auto istream = Meat::ifstream(this);
+    auto ostream = Meat::ofstream(dst);
 
+    int rc;
+
+    istream.open();
+    ostream.open();
+
+    //Debug_printv("in copyTo, iopen=%d oopen=%d", istream.is_open(), ostream.is_open());
+
+    if(!istream.is_open() || !ostream.is_open())
+        return false;
+
+    //Debug_printv("commencing copy");
+
+    while((rc = istream.get())!= EOF) {     
+        //Serial.print(".");
+        ostream.put(rc);
+        if(ostream.bad())
+            return false;
+    }
+
+    //Debug_printv("copying finished, rc=%d", rc);
+
+    return true;
+};
 /********************************************************
  * MStream implementations
  ********************************************************/
