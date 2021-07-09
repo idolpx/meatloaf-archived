@@ -15,7 +15,6 @@
 #include "../../include/make_unique.h"
 #include "wrappers/buffered_io.h"
 #include "wrappers/line_reader_writer.h"
-#include "wrappers/std_stream_wrapper.h"
 
 
 std::unique_ptr<MFile> m_mfile(MFSOwner::File(""));
@@ -351,11 +350,9 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
     if ( dstFile->exists() )
         dstFile->remove();
 
-    MeatIBuff ibuff(srcFile);
-    MUrlIStream istream(&ibuff); // this is your standard istream!
+    Meat::ifstream istream(srcFile->url);
 
-    MeatOBuff obuff(dstFile);
-    MUrlOStream ostream(&obuff);
+    Meat::ofstream ostream(dstFile->url);
     
     deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"http://niceurlman.com\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
 
@@ -379,8 +376,7 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
 
         Serial.printf("Trying to deserialize JSON from %s\n",dstFile->url.c_str());
 
-        MeatIBuff ibuff(dstFile);
-        MUrlIStream newIstream(&ibuff); // this is your standard istream!
+        Meat::ifstream newIstream(dstFile->url); // this is your standard istream!
 
         deserializeJson(m_device, newIstream);
 
