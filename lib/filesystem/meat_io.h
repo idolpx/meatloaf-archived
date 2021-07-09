@@ -479,16 +479,9 @@ namespace Meat {
     class ofstream : public std::ostream {
         omfilebuf buff;
         std::string url;
-        bool isTranslating = false; 
     public:
-        ofstream(std::string u): std::ostream(&buff), url(u) {
-            auto f = MFSOwner::File(u);
-            isTranslating = mstr::isText(f->extension);
-            delete f;
-        };
-        ofstream(MFile* file): std::ostream(&buff), url(file->url) {
-            isTranslating = mstr::isText(file->extension);
-        };
+        ofstream(std::string u): std::ostream(&buff), url(u) {};
+        ofstream(MFile* file): std::ostream(&buff), url(file->url) {};
 
         ~ofstream() {
             close();
