@@ -4,6 +4,7 @@
 #include "buffered_io.h"
 #include "line_reader_writer.h"
 #include "iec.h"
+#include "iec_buffer.h"
 
 
 /********************************************************
@@ -81,80 +82,6 @@ public:
     }
 };
 
-/********************************************************
- * IEC MOstream
- * 
- * A nice API for IEC
- ********************************************************/
-
-class IECOstream: public MOStream {
-    IEC* m_iec;
-
-    bool sendEOI(uint8_t data) {
-        return m_iec->sendEOI(data);
-    }
-
-    bool sendFNF() {
-        return m_iec->sendFNF();
-    }
-
-public:
-    IECOstream(IEC* iec): m_iec(iec) {};
-    bool seek(uint32_t pos, SeekMode mode) { return false; };
-    bool seek(uint32_t pos) { return false; };
-    size_t position();
-    void close() {};
-    bool open() {
-        return true;
-    };
-    ~IECOstream() {};
-    bool isOpen() {
-        return true;
-    };
-
-    size_t write(const uint8_t *buf, size_t size);
-    size_t writeLast(const uint8_t *buf, size_t size);
-
-        
-    void flush() {};
-
-};
-
-/********************************************************
- * String reader
- * 
- * For writing UTF8 streams to PETSCII-talking devices
- ********************************************************/
-
-class StringReader: public BufferedReader {
-    std::string buffer;
-    size_t pos = 0;
-
-public:
-    StringReader(std::string b) : BufferedReader(), buffer(b) {};
-
-    void refillBuffer() override {};
-    
-    MBuffer* read() override {
-        return nullptr;
-    };
-    
-    uint8_t readByte() override {
-        if(pos<buffer.length()) {
-            uint8_t by = buffer[pos++];
-            if(pos>=buffer.length())
-                eofOccured = true;
-
-            return by;
-        }
-        else
-            return 0;
-    };
-
-    size_t available() override {
-        return buffer.length()-pos;
-    }
-};
 
 /********************************************************
  * Stream writer
@@ -162,15 +89,7 @@ public:
  * For writing UTF8 streams to PETSCII-talking devices
  ********************************************************/
 
-class C64LinedWriter: public LinedWriter {
-public:
-    char delimiter = '\n';
-    IECOstream* m_os;
-
-    C64LinedWriter(IECOstream* os) : LinedWriter(os), m_os(os) { 
-    };
-
-    bool print(std::string line) {
+/*
         // line is utf-8, convert to petscii
         Debug_printv("to print:%s",line.c_str());
         StringReader* a = new StringReader(line); // TODO create string reader!
@@ -181,20 +100,9 @@ public:
             converted+=codePoint.toPetscii();
         }
         MBufferConst buffer(converted);
-        Debug_printv("Converted line:%s", converted.c_str());
-        return write(&buffer);        
-    }
+*/
 
-    bool printLn(std::string line) {
-        return print(line+delimiter); 
-    }
 
-    bool writeLastByte(uint8_t byteToWrite) 
-    {
-        m_os->writeLast(&byteToWrite, 1);
-        return true;
-    }
-};
 
 /********************************************************
  * Stream reader
@@ -202,16 +110,7 @@ public:
  * For reading PETSCII encoded steams into UTF8 lines of text
  ********************************************************/
 
-class C64LinedReader: public LinedReader {
-    int buffPos;
-    std::string lineBuilder;
-
-public:
-    char delimiter = '\n';
-
-    C64LinedReader(MIStream* is) : LinedReader(is), buffPos(0), lineBuilder("") { };
-    
-    C64LinedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : LinedReader(fn), buffPos(0), lineBuilder("") {}
+/*
 
     std::string readLn() {
         auto line = LinedReader::readLn();
@@ -225,6 +124,7 @@ public:
         return converted;
     };
 
-};
+*/
+
 
 #endif /* MEATFILESYSTEM_WRAPPERS_C64_READER_WRITER */

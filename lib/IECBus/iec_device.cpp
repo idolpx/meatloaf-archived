@@ -20,6 +20,7 @@
 
 #include "iec_device.h"
 #include "iec.h"
+#include "wrappers/iec_buffer.h"
 
 using namespace CBM;
 
@@ -371,14 +372,17 @@ byte Interface::loop(void)
 
 MFile* Interface::getPointed(MFile* urlFile) {
 	Debug_printv("getPointed [%s]", urlFile->url);
-	std::unique_ptr<MIStream> istream(urlFile->inputStream());
-    if(istream == nullptr) {
-        Debug_printf("ISTREAM == NULLPTR!!!");
+	auto istream = Meat::ifstream(urlFile);
+
+	istream.open();
+
+    if(!istream.is_open()) {
+        Debug_printf("couldn't open stream of urlfile");
 		return nullptr;
     }
 	else {
-		auto reader = std::make_unique<LinedReader>(istream.get());
-		auto linkUrl = reader->readLn();
+		std::string linkUrl;
+		istream >> linkUrl;
 		Debug_printv("path read from [%s]=%s", urlFile->url.c_str(), linkUrl.c_str());
 
 		return MFSOwner::File(linkUrl);
@@ -957,23 +961,21 @@ void Interface::sendFile()
 		// convert UTF8 files on the fly
 
 		Debug_printv("Sending a text file to C64 [%s]", file->url.c_str());
-
-        std::unique_ptr<IECOstream> iecOstream(new IECOstream(&m_iec));
         std::unique_ptr<LinedReader> reader(new LinedReader(istream.get()));
-        std::unique_ptr<C64LinedWriter> iecWriter(new C64LinedWriter(iecOstream.get()));
+		auto ostream = oiecstream(&m_iec);
 
 		// we can skip the BOM here, EF BB BF for UTF8
 		auto b = reader->readByte();
 		if(b != 0xef)
-			iecWriter->writeByte(b); // not BOM
+			ostream.put(b);
 		else {
 			b = reader->readByte();
 			if(b != 0xbb)
-				iecWriter->writeByte(b); // not BOM
+				ostream.put(b);
 			else {
 				b = reader->readByte();
 				if(b != 0xbf)
-					iecWriter->writeByte(b); // not BOM
+					ostream.put(b); // not BOM
 			}
 		}
 
@@ -992,14 +994,12 @@ void Interface::sendFile()
 			Debug_printv("Looping read/write");
 			auto re = reader->readLn();
 			Debug_printv("Got:%s",re.c_str());
-            bool result = iecWriter->printLn(re);
-            if(!result) {
+            ostream << re;
+            if(ostream.bad()) {
 				Debug_printv("Error sending");
                 setDeviceStatus(60); // write error
             }
         }
-		Debug_printv("Signalling last char!");
-		success = iecWriter->writeLastByte(0);
 	}
 	else
 	{

@@ -31,26 +31,3 @@ const char16_t U8Char::utf8map[] = {
   0x250c,0x2534,0x252c,0x2524,0x258e,0x258d,  0x00,  0x00,  0x00,0x2583,0x2713,0x2596,0x259d,0x2518,0x2598,  0x00
 
 };
-
-size_t IECOstream::position() {
-  return 0;
-};
-
-size_t IECOstream::write(const uint8_t *buf, size_t size) {
-  size_t written = 0;
-  for(size_t i = 0; i < size; i++) {
-    if(m_iec->send(buf[i]))
-      written++;
-    else
-      break;
-  }
-
-  return written;
-};
-
-size_t IECOstream::writeLast(const uint8_t *buf, size_t size) {
-  size_t written = write(buf, size-1);
-  m_iec->sendEOI(buf[size-1]);
-  return ++written;
-};
-

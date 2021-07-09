@@ -4,67 +4,6 @@
 #include "buffered_io.h"
 #include "../../../include/petscii.h"
 
-// /********************************************************
-//  * Simple string codec
-//  ********************************************************/
-
-// class StringCodec {
-// public:
-//     virtual uint8_t toLocal(uint8_t ch)=0;
-//     virtual uint8_t toForeign(uint8_t ch)=0;
-// };
-
-// class PETSCIICodec: public StringCodec {
-//     virtual uint8_t toLocal(uint8_t ch) override {
-//         return petscii2ascii(ch);
-//     };
-
-//     virtual uint8_t toForeign(uint8_t ch) override {
-//         return ascii2petscii(ch);
-//     };
-// };
-
-// namespace strcodec {
-//     static PETSCIICodec petscii;
-// };
-
-/********************************************************
- * Stream writer
- ********************************************************/
-
-class LinedWriter: public BufferedWriter {
-public:
-    char delimiter = '\n';
-
-    LinedWriter(MOStream* os) : BufferedWriter(os) { 
-    };
-
-    bool print(std::string line) {
-        MBufferConst buffer(line);
-        return write(&buffer);        
-    }
-
-    bool printLn(std::string line) {
-        MBufferConst buffer(line+delimiter);
-        return write(&buffer);    
-    }
-
-    // bool print(std::string line, StringCodec* codec) {
-    //     auto l = line.length();
-    //     MBufferConst buffer(line);
-    //     MBuffer encoded(l);
-
-    //     for(size_t i=0; i<l; i++) {
-    //         encoded[i] = codec->toForeign(buffer[i]);
-    //     }
-
-    //     return write(&encoded);        
-    // }
-
-    // bool printLn(std::string line, StringCodec* codec) {
-    //     return print(line+delimiter, codec);    
-    // }
-};
 
 /********************************************************
  * Stream reader

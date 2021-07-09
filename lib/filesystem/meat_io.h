@@ -379,21 +379,12 @@ namespace Meat {
                 return EOF;
             }
 
-
-        //  *  Informally, this function is called when the output buffer
-        //  *  is full (or does not exist, as buffering need not actually
-        //  *  be done).  If a buffer exists, it is @a consumed, with
-        //  *  <em>some effect</em> on the controlled sequence.
-        //  *  (Typically, the buffer is written out to the sequence
-        //  *  verbatim.)  In either case, the character @a c is also
-        //  *  written out, if @a __c is not @c eof().
-
             char* end = pptr();
             if ( ch != EOF ) {
                 *end ++ = ch;
             }
 
-            Debug_printv("%d bytes in buffer will be written", end-pbase());
+            //Debug_printv("%d bytes in buffer will be written", end-pbase());
 
             uint8_t* pBase = (uint8_t*)pbase();
 
