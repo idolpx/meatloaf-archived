@@ -10,7 +10,6 @@
 #include <FS.h>
 #include <LittleFS.h>
 
-#include "wrappers/buffered_io.h"
 #include "meat_stream.h"
 #include "peoples_url_parser.h"
 #include "string_utils.h"

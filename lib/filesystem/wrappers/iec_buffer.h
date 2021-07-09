@@ -1,11 +1,13 @@
 #ifndef MEATFILESYSTEM_WRAPPERS_IEC_BUFFER
 #define MEATFILESYSTEM_WRAPPERS_IEC_BUFFER
 
-#include "buffered_io.h"
-#include "line_reader_writer.h"
+//#include "buffered_io.h"
 #include "iec.h"
 #include "iec_buffer.h"
-
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 /********************************************************
  * U8Char

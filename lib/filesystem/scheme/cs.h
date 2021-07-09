@@ -6,9 +6,9 @@
 
 #include "../../include/global_defines.h"
 #include "../../include/make_unique.h"
+#include "../wrappers/legacy_buffers.h"
 #include "meat_io.h"
 #include "WiFiClient.h"
-#include "wrappers/line_reader_writer.h"
 #include "utils.h"
 #include "string_utils.h"
 

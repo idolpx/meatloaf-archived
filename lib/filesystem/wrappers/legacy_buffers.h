@@ -1,5 +1,5 @@
-#ifndef MEATFILE_BUFFERED_H
-#define MEATFILE_BUFFERED_H
+#ifndef MEATFILESYSTEM_WRAPPERS_LEGACY_BUFFERS
+#define MEATFILESYSTEM_WRAPPERS_LEGACY_BUFFERS
 
 //#define RECORD_SIZE 256
 #define BUFFER_SIZE 512
@@ -57,18 +57,8 @@ public:
     }
 
     friend class BufferedReader;
-    friend class BufferedWriter;
 };
 
-class MBufferConst: public MBuffer {
-protected:
-    const char* buffer; // will point to buffered reader internal buffer
-
-public:
-    MBufferConst(std::string str): buffer(str.c_str()) {
-        len = str.length();
-    };
-};
 
 /********************************************************
  * Buffered reader
@@ -103,9 +93,6 @@ protected:
 public:
     BufferedReader() {}; 
 
-    BufferedReader(MIStream* is) : istream(is), m_available(is->available()) { 
-    };
-
     BufferedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : readFn(fn) {
 
     };
@@ -138,28 +125,54 @@ public:
 };
 
 /********************************************************
- * Buffered writer
+ * Stream reader
  ********************************************************/
 
-class BufferedWriter {
-    MOStream* ostream;
+class LinedReader: public BufferedReader {
+    int buffPos;
+    std::string lineBuilder;
 
 public:
-    BufferedWriter(MOStream* os) : ostream(os) { 
-    };
-
-    int write(MBuffer* buffer) {
-        Debug_printv("writing buffer not null:%d",buffer != nullptr);
-        return ostream->write((uint8_t*)buffer->buffer, buffer->length());
-    }
+    char delimiter = '\n';
     
-    bool writeByte(uint8_t byteToWrite) 
-    {
-                    //Debug_printv("in wrapper overflow '%c'", ch);
+    LinedReader(const std::function<int(uint8_t* buf, size_t size)>& fn) : BufferedReader(fn), buffPos(0), lineBuilder("") {}
 
-        ostream->write(&byteToWrite, 1);
-        return true;
+    virtual ~LinedReader() {}
+
+    bool eof() {
+        return buffPos >= smartBuffer.length() && BufferedReader::eof();
     }
+
+    std::string readLn() {
+        if(buffPos==0 && smartBuffer.length()==0 && BufferedReader::eof()) {
+            Debug_printv("EOF!");
+
+            return "";
+        }
+        lineBuilder="";
+        do {
+            // we read through the whole buffer? Let's get more!
+            if(buffPos >= smartBuffer.length() && !BufferedReader::eof()) {
+                buffPos=0;
+                read();
+            }
+
+            for(; buffPos<smartBuffer.length(); buffPos++) {
+                if(smartBuffer[buffPos]==delimiter) {
+                    buffPos++;
+                    return lineBuilder;
+                } else {
+                    // if(codec != nullptr)
+                    //     lineBuilder+=codec->toLocal(smartBuffer[buffPos]);
+                    // else
+                        lineBuilder+=smartBuffer[buffPos];
+                }
+            }
+        } while(!eof());
+
+        return lineBuilder;
+    };
 };
 
-#endif
+
+#endif /* MEATFILESYSTEM_WRAPPERS_LEGACY_BUFFERS */
