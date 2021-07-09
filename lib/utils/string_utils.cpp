@@ -4,24 +4,6 @@
 
 
 namespace mstr {
-    bool compare_char(char &c1, char &c2)
-    {
-        if (c1 == c2)
-            return true;
-
-        return false;
-    }
-
-    bool compare_char_insensitive(char &c1, char &c2)
-    {
-        if (c1 == c2)
-            return true;
-        else if (std::toupper(c1) == std::toupper(c2))
-            return true;
-        return false;
-    }
-
-
 
     // trim from start (in place)
     void ltrim(std::string &s)
@@ -106,6 +88,23 @@ namespace mstr {
     /*
     * String Comparision
     */
+    bool compare_char(char &c1, char &c2)
+    {
+        if (c1 == c2)
+            return true;
+
+        return false;
+    }
+
+    bool compare_char_insensitive(char &c1, char &c2)
+    {
+        if (c1 == c2)
+            return true;
+        else if (std::toupper(c1) == std::toupper(c2))
+            return true;
+        return false;
+    }
+
     bool equals(std::string &s1, std::string &s2, bool case_sensitive)
     {
         if(case_sensitive)
@@ -114,7 +113,6 @@ namespace mstr {
         else
             return ( (s1.size() == s2.size() ) &&
                 std::equal(s1.begin(), s1.end(), s2.begin(), &compare_char_insensitive) );
-
     }
 
     bool equals(std::string &s1, char *s2, bool case_sensitive)
@@ -125,7 +123,18 @@ namespace mstr {
         else
             return ( (s1.size() == strlen(s2) ) &&
                 std::equal(s1.begin(), s1.end(), s2, &compare_char_insensitive) );
+    }
+    
+    bool contains(std::string &s1, char *s2, bool case_sensitive)
+    {
+        std::string sn = s2;
+        std::string::iterator it;
+        if(case_sensitive)
+            it = ( std::search(s1.begin(), s1.end(), sn.begin(), sn.end(), &compare_char) );
+        else
+            it = ( std::search(s1.begin(), s1.end(), sn.begin(), sn.end(), &compare_char_insensitive) );
 
+        return ( it != s1.end() );
     }
 
     // convert to lowercase (in place)
@@ -142,21 +151,40 @@ namespace mstr {
                     [](unsigned char c) { return std::toupper(c); });
     }
 
-
-
+    // convert to ascii (in place)
     void toASCII(std::string &s)
     {
         std::transform(s.begin(), s.end(), s.begin(),
                     [](unsigned char c) { return petscii2ascii(c); });
     }
 
-    // convert to uppercase (in place)
+    // convert to petscii (in place)
     void toPETSCII(std::string &s)
     {
         std::transform(s.begin(), s.end(), s.begin(),
                     [](unsigned char c) { return ascii2petscii(c); });
     }
 
+    bool isText(std::string &s) 
+    {
+        // extensions
+        if(equals(s, "txt", false))
+            return true;
+        if(equals(s, "htm", false))
+            return true;
+        if(equals(s, "html", false))
+            return true;
+
+        // content types
+        if(contains(s, "text", false))
+            return true;
+        if(contains(s, "json", false))
+            return true;
+        if(contains(s, "xml", false))
+            return true;
+
+        return false;
+    };
 
     void replaceAll(std::string &s, const std::string &search, const std::string &replace) 
     {

@@ -181,8 +181,14 @@ bool HttpIStream::open() {
     Debug_printv("input %s: someRc=%d", url.c_str(), initOk);
     if(!initOk)
         return false;
-    
-    int httpCode = m_http.GET(); //Send the request
+
+    // Setup response headers we want to collect
+    const char * headerKeys[] = {"accept-ranges", "content-type"};
+    const size_t numberOfHeaders = 2;
+    m_http.collectHeaders(headerKeys, numberOfHeaders);
+
+    //Send the request
+    int httpCode = m_http.GET();
     Debug_printv("httpCode=%d", httpCode);
     if(httpCode != 200)
         return false;
@@ -195,6 +201,11 @@ bool HttpIStream::open() {
     m_length = m_http.getSize();
     Debug_printv("length=%d", m_length);
     m_bytesAvailable = m_length;
+
+    // Is this text?
+    std::string ct = m_http.header("content-type").c_str();
+    isText = mstr::isText(ct);
+
     return true;
 };
 

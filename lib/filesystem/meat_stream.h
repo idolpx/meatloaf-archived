@@ -19,6 +19,8 @@ public:
     virtual bool open() = 0;
     virtual ~MStream() = 0;
     virtual bool isOpen() = 0;
+
+    bool isText = false;
 };
 
 // template <class T>

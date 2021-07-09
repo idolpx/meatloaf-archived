@@ -34,13 +34,11 @@ public:
     //std::string name();
     //std::string extension();
 
-    std::string media_root;
     std::string media_header;
     std::string media_id;
     std::string media_image;
     uint16_t media_blocks_free = 0;
     uint16_t media_block_size = 256;
-    
 
     bool operator!=(nullptr_t ptr);
 
@@ -65,17 +63,6 @@ public:
         return pname;
     }
 
-    virtual bool isTextFile() {
-        if(mstr::equals(extension, "txt", false))
-            return true;
-        if(mstr::equals(extension, "htm", false))
-            return true;
-        if(mstr::equals(extension, "html", false))
-            return true;
-        else
-            return false;
-    };
-
     virtual ~MFile() {
         //Debug_printv("Deleting: [%s]", this->url.c_str());
 
@@ -88,6 +75,7 @@ protected:
     virtual MIStream* createIStream(MIStream* src) = 0;
     bool m_isNull;
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
+
 friend class MFSOwner;
 };
 
@@ -451,11 +439,11 @@ namespace Meat {
     public:
         ifstream(std::string u): std::istream(&buff), url(u) {
             auto f = MFSOwner::File(u);
-            isTranslating = f->isTextFile();
+            isTranslating = mstr::isText(f->extension);
             delete f;
         };
         ifstream(MFile* file): std::istream(&buff), url(file->url) {
-            isTranslating = file->isTextFile();
+            isTranslating = mstr::isText(file->extension);
         };
 
         ~ifstream() {
@@ -495,11 +483,11 @@ namespace Meat {
     public:
         ofstream(std::string u): std::ostream(&buff), url(u) {
             auto f = MFSOwner::File(u);
-            isTranslating = f->isTextFile();
+            isTranslating = mstr::isText(f->extension);
             delete f;
         };
         ofstream(MFile* file): std::ostream(&buff), url(file->url) {
-            isTranslating = file->isTextFile();
+            isTranslating = mstr::isText(file->extension);
         };
 
         ~ofstream() {

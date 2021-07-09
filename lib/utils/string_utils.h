@@ -14,6 +14,7 @@ namespace mstr {
     bool endsWith(std::string s, const char *pattern, bool case_sensitive = true);
     bool equals(std::string &s1, std::string &s2, bool case_sensitive = true);
     bool equals(std::string &s1, char* s2, bool case_sensitive = true);
+    bool contains(std::string &s1, char *s2, bool case_sensitive = true);
     std::vector<std::string> split(std::string toSplit, char ch, int limit = 9999);
     void toLower(std::string &s);
     void toUpper(std::string &s);
@@ -28,6 +29,7 @@ namespace mstr {
     std::string urlDecode(std::string s);
     void toASCII(std::string &s);
     void toPETSCII(std::string &s);
+    bool isText(std::string &s);
     bool isA0Space(int ch);
 }
 

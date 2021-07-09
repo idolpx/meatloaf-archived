@@ -93,8 +93,8 @@ bool MLFile::rewindDirectory() {
 	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
     // Setup response headers we want to collect
-    const char * headerKeys[] = {"ml_media_root", "ml_media_header", "ml_media_id", "ml_media_blocks_free", "ml_media_block_size"} ;
-    const size_t numberOfHeaders = 5;
+    const char * headerKeys[] = {"accept-ranges", "content-type", "ml_media_header", "ml_media_id", "ml_media_blocks_free", "ml_media_block_size"} ;
+    const size_t numberOfHeaders = 6;
     m_http.collectHeaders(headerKeys, numberOfHeaders);
 
     // Send the request
@@ -106,22 +106,21 @@ bool MLFile::rewindDirectory() {
         Serial.println(m_http.errorToString(httpCode));
 		dirIsOpen = false;
 
-        // Show HTTP Headers
-        Serial.println("HEADERS--------------");
-        int i = 0;
-        for (i=0; i < m_http.headers(); i++)
-        {
-            Serial.println(m_http.header(i));
-        }
-        Serial.println("DATA-----------------");
-        Serial.println(m_http.getString());
-        Serial.println("---------------------");
+        // // Show HTTP Headers
+        // Serial.println("HEADERS--------------");
+        // int i = 0;
+        // for (i=0; i < m_http.headers(); i++)
+        // {
+        //     Serial.println(m_http.header(i));
+        // }
+        // Serial.println("DATA-----------------");
+        // Serial.println(m_http.getString());
+        // Serial.println("---------------------");
 
     }
     else
     {
         dirIsOpen = true;
-        media_root = m_http.header("ml_media_root").c_str();
         media_header = m_http.header("ml_media_header").c_str();
         media_id = m_http.header("ml_media_id").c_str();
         media_block_size = m_http.header("ml_media_block_size").toInt();
