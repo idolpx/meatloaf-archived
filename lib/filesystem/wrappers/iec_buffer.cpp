@@ -1,5 +1,11 @@
 #include "iec_buffer.h"
 
+/********************************************************
+ * oiecbuf
+ * 
+ * A buffer for writing IEC data, handles sending EOI
+ ********************************************************/
+
 size_t oiecbuf::easyWrite(bool lastOne) {
     size_t written = 0;
 
@@ -59,14 +65,31 @@ int oiecbuf::sync() {
 };
 
 
-
-
+/********************************************************
+ * oiecstream
+ * 
+ * Standard C++ stream for writing to IEC
+ ********************************************************/
 
 void oiecstream::putUtf8(U8Char* codePoint) {
     //Serial.printf("%c",codePoint->toPetscii());
-    Debug_printv("oiecstream calling put");
+    //Debug_printv("oiecstream calling put");
     auto c = codePoint->toPetscii();
-
-    (*this) << c;
-    //put(codePoint->toPetscii());        
+    put(codePoint->toPetscii());        
 }
+
+    // void oiecstream::writeLn(std::string line) {
+    //     // line is utf-8, convert to petscii
+
+    //     std::string converted;
+    //     std::stringstream ss(line);
+
+    //     while(!ss.eof()) {
+    //         U8Char codePoint(&ss);
+    //         converted+=codePoint.toPetscii();
+    //     }
+
+    //     Debug_printv("UTF8 converted to PETSCII:%s",converted.c_str());
+
+    //     (*this) << converted;
+    // }

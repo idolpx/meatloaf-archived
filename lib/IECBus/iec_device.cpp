@@ -960,9 +960,10 @@ void Interface::sendFile()
 		Debug_printv("Sending a text file to C64 [%s]", file->url.c_str());
         //std::unique_ptr<LinedReader> reader(new LinedReader(istream.get()));
 		auto istream = Meat::ifstream(file.get());
-		auto ostream = oiecstream(&m_iec);
+		auto ostream = oiecstream();
 
 		istream.open();
+		ostream.open(&m_iec);
 
 		if(!istream.is_open()) {
 			sendFileNotFound();
@@ -970,19 +971,19 @@ void Interface::sendFile()
 		}
 
 		//we can skip the BOM here, EF BB BF for UTF8
-		// auto b = (char)istream.get();
-		// if(b != 0xef)
-		// 	ostream.put(b);
-		// else {
-		// 	b = istream.get();
-		// 	if(b != 0xbb)
-		// 		ostream.put(b);
-		// 	else {
-		// 		b = istream.get();
-		// 		if(b != 0xbf)
-		// 			ostream.put(b); // not BOM
-		// 	}
-		// }
+		auto b = (char)istream.get();
+		if(b != 0xef)
+			ostream.put(b);
+		else {
+			b = istream.get();
+			if(b != 0xbb)
+				ostream.put(b);
+			else {
+				b = istream.get();
+				if(b != 0xbf)
+					ostream.put(b); // not BOM
+			}
+		}
 
 		while(!istream.eof()) {
 			ledToggle(true);
@@ -997,6 +998,7 @@ void Interface::sendFile()
             }
 		}
 		ostream.close();
+		istream.close();
 	}
 	else
 	{
