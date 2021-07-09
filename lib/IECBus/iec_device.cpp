@@ -962,34 +962,41 @@ void Interface::sendFile()
 		auto istream = Meat::ifstream(file.get());
 		auto ostream = oiecstream(&m_iec);
 
-		// we can skip the BOM here, EF BB BF for UTF8
-		auto b = istream.get();
-		if(b != 0xef)
-			ostream.put(b);
-		else {
-			b = istream.get();
-			if(b != 0xbb)
-				ostream.put(b);
-			else {
-				b = istream.get();
-				if(b != 0xbf)
-					ostream.put(b); // not BOM
-			}
+		istream.open();
+
+		if(!istream.is_open()) {
+			sendFileNotFound();
+			return;
 		}
 
-		std::string re;
+		//we can skip the BOM here, EF BB BF for UTF8
+		// auto b = (char)istream.get();
+		// if(b != 0xef)
+		// 	ostream.put(b);
+		// else {
+		// 	b = istream.get();
+		// 	if(b != 0xbb)
+		// 		ostream.put(b);
+		// 	else {
+		// 		b = istream.get();
+		// 		if(b != 0xbf)
+		// 			ostream.put(b); // not BOM
+		// 	}
+		// }
 
-        while(std::getline(istream, re)) {
-			Debug_printv("Looping sendText:%s",re.c_str());
+		while(!istream.eof()) {
 			ledToggle(true);
-            ostream.writeAsPetscii(re);
+			auto cp = istream.getUtf8();
 
-            if(ostream.bad()) {
+			ostream.putUtf8(&cp);
+
+			if(ostream.bad() || istream.bad()) {
 				Debug_printv("Error sending");
                 setDeviceStatus(60); // write error
 				break;
             }
-        }
+		}
+		ostream.close();
 	}
 	else
 	{

@@ -13,6 +13,8 @@
 #include "meat_stream.h"
 #include "peoples_url_parser.h"
 #include "string_utils.h"
+#include "wrappers/iec_buffer.h"
+#include "U8Char.h"
 
 /********************************************************
  * Universal file
@@ -471,6 +473,15 @@ namespace Meat {
         virtual bool is_open() {
             return buff.is_open();
         }
+
+        U8Char getUtf8() {
+            U8Char codePoint(this);
+            return codePoint;
+        }
+
+        char getPetscii() {
+            return getUtf8().toPetscii();
+        }
     };
 
 /********************************************************
@@ -501,6 +512,11 @@ namespace Meat {
 
         virtual void close() {
             buff.close();
+        }
+
+        void putPetscii(char c) {
+            U8Char wide = U8Char(c);
+            (*this) << wide.toUtf8();
         }
 
         virtual bool is_open() {

@@ -1,7 +1,5 @@
 #include "meat_io.h"
 
-//#include <flash_hal.h>
-
 #include "MIOException.h"
 #include "fs_littlefs.h"
 #include "media/d64.h"
@@ -333,7 +331,7 @@ bool MFile::copyTo(MFile* dst) {
     while((rc = istream.get())!= EOF) {     
         //Serial.print(".");
         ostream.put(rc);
-        if(ostream.bad())
+        if(ostream.bad() || istream.bad())
             return false;
     }
 
