@@ -6,7 +6,6 @@
 #include "fs_littlefs.h"
 #include "media/d64.h"
 #include "media/dnp.h"
-#include "media/url.h"
 #include "scheme/http.h"
 #include "scheme/smb.h"
 #include "scheme/ml.h"
@@ -27,7 +26,6 @@ LittleFileSystem littleFS(FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOC
 HttpFileSystem httpFS;
 D64FileSystem d64FS;
 DNPFileSystem dnpFS;
-URLFileSystem urlFS;
 MLFileSystem mlFS;
 CServerFileSystem csFS;
 

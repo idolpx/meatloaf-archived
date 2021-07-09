@@ -437,7 +437,7 @@ namespace Meat {
                 // epptr = Returns the pointer one past the end of the put area.
                 auto result = mostream->write(buffer, pptr()-pbase()); 
 
-                Debug_printv("%d bytes left in buffer written to sink, rc=%d", pptr()-pbase(), result);
+                //Debug_printv("%d bytes left in buffer written to sink, rc=%d", pptr()-pbase(), result);
 
                 setp(data, data+1024);
 

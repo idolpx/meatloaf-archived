@@ -160,11 +160,11 @@ void testPaths(MFile* testFile, std::string subDir) {
 
 void testIsDirectory() {
     std::shared_ptr<MFile> testDir(MFSOwner::File("/NOTADIR/"));
-    Debug_printv("dir [%s] exists [%d]",testDir->url.c_str(), testDir->isDirectory());
+    Serial.printf("dir [%s] exists [%d]\n",testDir->url.c_str(), testDir->isDirectory());
     testDir.reset(MFSOwner::File("/.sys"));
-    Debug_printv("dir [%s] exists [%d]",testDir->url.c_str(), testDir->isDirectory());
+    Serial.printf("dir [%s] exists [%d]\n",testDir->url.c_str(), testDir->isDirectory());
     testDir.reset(MFSOwner::File("/.sys/"));
-    Debug_printv("dir [%s] exists [%d]",testDir->url.c_str(), testDir->isDirectory());
+    Serial.printf("dir [%s] exists [%d]\n",testDir->url.c_str(), testDir->isDirectory());
 }
 
 void testUrlParser() {
@@ -188,13 +188,6 @@ void testUrlParser() {
 
 void testCD() {
     std::shared_ptr<MFile> testDir(MFSOwner::File(""));
-    // Debug_printv("dir [%s]",testDir->url.c_str());
-    // testDir.reset(testDir->cd("_"));
-    // Debug_printv("cd(_) dir [%s]",testDir->url.c_str());
-    // testDir.reset(testDir->cd(".."));
-    // Debug_printv("cd(..) dir [%s]",testDir->url.c_str());
-    // testDir.reset(testDir->cd("_"));
-    // Debug_printv("cd(_) dir [%s]",testDir->url.c_str());
 
     Serial.println("A chain of CDs");
     // make a folder called GAMES on root of flash
@@ -324,10 +317,14 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
 
         Serial.printf("serializeJson returned %d\n", x);
 
+        if(ostream.bad()) {
+            Serial.println("WARNING: FILE WRITE FAILED!!!");
+        }
+
         ostream.close();
     }
 
-    Serial.printf("%s size is %d\n", dstFile->url.c_str(), dstFile->size());
+    //Serial.printf("%s size is %d\n", dstFile->url.c_str(), dstFile->size());
 
     Serial.printf("Copy %s to %s\n", dstFile->url.c_str(), srcFile->url.c_str());
 
@@ -367,6 +364,8 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
 void testNewCppStreams(std::string name) {
     testHeader("TEST C++ streams");
 
+    Serial.println(" * Read test\n");
+
     Meat::ifstream istream(name);
     istream.open();
     if(istream.is_open()) {
@@ -380,7 +379,9 @@ void testNewCppStreams(std::string name) {
         istream.close();
     }
 
-    Meat::ofstream ostream("intern.txt");
+    Serial.println(" * Write test\n");
+
+    Meat::ofstream ostream("/intern.txt");
 
     ostream.open();
     if(ostream.is_open()) {
@@ -388,15 +389,15 @@ void testNewCppStreams(std::string name) {
         ostream << "Arise, ye prisoners of want.";
         ostream << "For reason in revolt now thunders,";
         ostream << "and at last ends the age of cant!";
-        if(ostream.badbit)
-            Serial.println("Writing failed!");
+        if(ostream.bad())
+            Serial.println("WRITING FAILED!!!");
 
         ostream.close();
     }
 }
 
 void runFSTest(std::string dirPath, std::string filePath) {
-    Serial.println("**********************************************************************\n\n");
+    //Serial.println("**********************************************************************\n\n");
     // std::shared_ptr<MFile> testDir(MFSOwner::File(dirPath));
     // std::shared_ptr<MFile> testFile(MFSOwner::File(filePath));
     // std::shared_ptr<MFile> destFile(MFSOwner::File("/mltestfile"));
@@ -435,14 +436,14 @@ void runFSTest(std::string dirPath, std::string filePath) {
 void testSmartMFile() {
     testHeader("TEST smart MFile pointers");
 
-    Debug_printv("Creating smart MFile from char*");
+    Serial.println("Creating smart MFile from char*");
     auto test = Meat::New<MFile>("cs://some/directory/disk.d64/file.txt");
-    Debug_printv("Creating smart MFile from MFile*");
+    Serial.println("Creating smart MFile from MFile*");
     auto test2 = Meat::New<MFile>(test.get());
 
     auto wrapped = Meat::Wrap<MFile>(test2->getNextFileInDir());
 
-	Debug_printv("Extension of second one: [%s]", test2->extension.c_str());
+	Serial.printf("Extension of second one: [%s]\n", test2->extension.c_str());
 }
 
 
