@@ -41,8 +41,8 @@ public:
 		errorFlag = (1 << 2) // If this flag is set, something went wrong and
 	};
 
-	// Return values for checkATN:
-	enum ATNCheck
+	// Return values for service:
+	enum ATNMode
 	{
 		ATN_IDLE = 0,		// Nothing recieved of our concern
 		ATN_CMD = 1,		// A command is recieved
@@ -83,7 +83,7 @@ public:
 
 	// Checks if CBM is sending an attention message. If this is the case,
 	// the message is recieved and stored in atn_cmd.
-	ATNCheck checkATN(ATNCmd &atn_cmd);
+	ATNMode service(ATNCmd &atn_cmd);
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typicall
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
@@ -135,13 +135,13 @@ public:
 
 private:
 	// IEC Bus Commands
-	ATNCheck deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
-	ATNCheck deviceUnListen(ATNCmd &atn_cmd); // 0x3F 				Unlisten, all devices
-	ATNCheck deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
-	ATNCheck deviceUnTalk(ATNCmd &atn_cmd);	  // 0x5F 				Untalk, all devices
-	ATNCheck deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
-	ATNCheck deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
-	ATNCheck deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
+	ATNMode deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
+	ATNMode deviceUnListen(ATNCmd &atn_cmd); // 0x3F 				Unlisten, all devices
+	ATNMode deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
+	ATNMode deviceUnTalk(ATNCmd &atn_cmd);	  // 0x5F 				Untalk, all devices
+	ATNMode deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
+	ATNMode deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
+	ATNMode deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
 
 protected:
 	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus);

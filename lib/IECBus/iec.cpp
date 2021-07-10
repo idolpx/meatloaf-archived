@@ -446,8 +446,8 @@ bool IEC::undoTurnAround(void)
  * device, since the unselected devices will have dropped off when ATN ceased, leaving you with
  * nobody to talk to.
  */
-// Return value, see IEC::ATNCheck definition.
-IEC::ATNCheck IEC::checkATN(ATNCmd& atn_cmd)
+// Return value, see IEC::ATNMode definition.
+IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 {
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
@@ -539,9 +539,9 @@ IEC::ATNCheck IEC::checkATN(ATNCmd& atn_cmd)
 	}
 
 	return ATN_IDLE;
-} // checkATN
+} // service
 
-IEC::ATNCheck IEC::deviceListen(ATNCmd& atn_cmd)
+IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 {
 	byte i=0;
 	ATNCommand c;
@@ -557,61 +557,57 @@ IEC::ATNCheck IEC::deviceListen(ATNCmd& atn_cmd)
 		Debug_printf("(%.2X SECOND) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
 		return ATN_CMD_LISTEN;
 	}
-	else if(atn_cmd.command not_eq ATN_CODE_UNLISTEN)
+
+	// OPEN Named Channel
+	else if(atn_cmd.command == ATN_CODE_OPEN) 
 	{
+		Debug_printf("(%.2X OPEN) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
 
-		// OPEN Named Channel
-		if(atn_cmd.command == ATN_CODE_OPEN) 
+		// Some other command. Record the cmd string until UNLISTEN is sent
+		for(;;) 
 		{
-			Debug_printf("(%.2X OPEN) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
-
-			// Some other command. Record the cmd string until UNLISTEN is sent
-			for(;;) 
+			c = (ATNCommand)receive();
+			if(m_state bitand errorFlag)
 			{
-				c = (ATNCommand)receive();
-				if(m_state bitand errorFlag)
-				{
-					Debug_printf("\r\nm_state bitand errorFlag 2");
-					return ATN_ERROR;
-				}
-					
+				Debug_printf("\r\nm_state bitand errorFlag 2");
+				return ATN_ERROR;
+			}
+				
 
-				if((m_state bitand atnFlag) and (ATN_CODE_UNLISTEN == c)) 
-				{
-					// TODO: Set channel name (file) 
-					Debug_printf("[%s]\r\n", atn_cmd.str);
-					Debug_printf("deviceListen: %.2X (UNLISTEN)\r\n", c);
-					break;
-				}
+			if((m_state bitand atnFlag) and (ATN_CODE_UNLISTEN == c)) 
+			{
+				Debug_printf("[%s]\r\n", atn_cmd.str);
+				Debug_printf("deviceListen: %.2X (UNLISTEN)\r\n", c);
+				break;
+			}
 
-				if(i >= ATN_CMD_MAX_LENGTH) 
-				{
-					// Buffer is going to overflow, this is an error condition
-					// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-					Debug_println("ATN_CMD_MAX_LENGTH");
-					return ATN_ERROR;
-				}
-				atn_cmd.str[i++] = c;
-				atn_cmd.str[i] = '\0';
-			}			
-		}
-		else if(atn_cmd.command == ATN_CODE_CLOSE) 
-		{
-			Debug_printf("(%.2X CLOSE) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
-			// TODO: Close channel name (file)
-		}
-
-		return ATN_CMD;
+			if(i >= ATN_CMD_MAX_LENGTH) 
+			{
+				// Buffer is going to overflow, this is an error condition
+				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
+				Debug_println("ATN_CMD_MAX_LENGTH");
+				return ATN_ERROR;
+			}
+			atn_cmd.str[i++] = c;
+			atn_cmd.str[i] = '\0';
+		}			
 	}
-	return ATN_IDLE;
+
+	// CLOSE Named Channel
+	else if(atn_cmd.command == ATN_CODE_CLOSE) 
+	{
+		Debug_printf("(%.2X CLOSE) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
+	}
+
+	return ATN_CMD;
 }
 
-// IEC::ATNCheck  IEC::deviceUnListen(ATNCmd& atn_cmd)
+// IEC::ATNMode  IEC::deviceUnListen(ATNCmd& atn_cmd)
 // {
 
 // }
 
-IEC::ATNCheck IEC::deviceTalk(ATNCmd& atn_cmd)
+IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 {
 	byte i = 0;
 	ATNCommand c;
@@ -647,7 +643,7 @@ IEC::ATNCheck IEC::deviceTalk(ATNCmd& atn_cmd)
 	return ATN_CMD_TALK;
 }
 
-// IEC::ATNCheck  IEC::deviceUnTalk(ATNCmd& atn_cmd)
+// IEC::ATNMode  IEC::deviceUnTalk(ATNCmd& atn_cmd)
 // {
 
 // }

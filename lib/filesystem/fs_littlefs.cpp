@@ -330,7 +330,6 @@ void LittleFile::openDir(std::string apath) {
         rc = lfs_dir_open(&LittleFileSystem::lfsStruct, &dir, apath.c_str());
     }
     if (rc < 0) {
-        Debug_printv("LittleFSImpl::openDir: apath=`%s` err=%d\n", apath.c_str(), rc);
         dirOpened = false;
     }
     else {

@@ -285,11 +285,11 @@ void Interface::sendDeviceStatus()
 	ledON();
 } // sendDeviceStatus
 
-byte Interface::loop(void)
+void Interface::service(void)
 {
 	//#ifdef HAS_RESET_LINE
 	//	if(m_iec.checkRESET()) {
-	//		// IEC reset line is in reset state, so we should set all states in reset.
+	//		// IEC reset line is in reset mode, so we should set all modes in reset.
 	//		reset();
 	//
 	//
@@ -303,71 +303,62 @@ byte Interface::loop(void)
 	//}
 
 	//	noInterrupts();
-	IEC::ATNCheck retATN = m_iec.checkATN(m_atn_cmd);
+	IEC::ATNMode mode = m_iec.service(m_atn_cmd);
 	//	interrupts();
 
-	if (retATN == IEC::ATN_ERROR)
+
+	if (mode == IEC::ATN_ERROR)
 	{
-		//Debug_printf("\r\n[ERROR]");
 		reset();
-		retATN = IEC::ATN_IDLE;
+		mode = IEC::ATN_IDLE;
 	}
+
 	// Did anything happen from the host side?
-	else if (retATN not_eq IEC::ATN_IDLE)
+	else if (mode not_eq IEC::ATN_IDLE)
 	{
 
 		switch (m_atn_cmd.command)
 		{
-		case IEC::ATN_CODE_OPEN:
-			if (m_atn_cmd.channel == 0)
-				Debug_printf("\r\n[OPEN] LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
-			if (m_atn_cmd.channel == 1)
-				Debug_printf("\r\n[OPEN] SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+			case IEC::ATN_CODE_OPEN:
+				Debug_printv("\r\n[OPEN] ");
+				if (m_atn_cmd.channel == 0)
+					Debug_printf("\r\n[OPEN] LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+				if (m_atn_cmd.channel == 1)
+					Debug_printf("\r\n[OPEN] SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
 
-			// Open either file or prg for reading, writing or single line command on the command channel.
-			// In any case we just issue an 'OPEN' to the host and let it process.
-			// Note: Some of the host response handling is done LATER, since we will get a TALK or LISTEN after this.
-			// Also, simply issuing the request to the host and not waiting for any response here makes us more
-			// responsive to the CBM here, when the DATA with TALK or LISTEN comes in the next sequence.
-			handleATNCmdCodeOpen(m_atn_cmd);
-			break;
+				// Open either file or prg for reading, writing or single line command on the command channel.
+				handleATNCmdCodeOpen(m_atn_cmd);
+				break;
 
-		case IEC::ATN_CODE_DATA: // data channel opened
-			Debug_printf("\r\n[DATA] ");
-			if (retATN == IEC::ATN_CMD_TALK)
-			{
-				// when the CMD channel is read (status), we first need to issue the host request. The data channel is opened directly.
-				if (m_atn_cmd.channel == CMD_CHANNEL)
-					handleATNCmdCodeOpen(m_atn_cmd);		 // This is typically an empty command,
-				handleATNCmdCodeDataTalk(m_atn_cmd.channel); // ...but we do expect a response from PC that we can send back to CBM.
-			}
-			else if (retATN == IEC::ATN_CMD_LISTEN)
-				handleATNCmdCodeDataListen();
-			else if (retATN == IEC::ATN_CMD)	 // Here we are sending a command to PC and executing it, but not sending response
-				handleATNCmdCodeOpen(m_atn_cmd); // back to CBM, the result code of the command is however buffered on the PC side.
-			break;
+			case IEC::ATN_CODE_DATA: // data channel opened
+				Debug_printv("\r\n[DATA] ");
+				if (mode == IEC::ATN_CMD)
+				{
+					// Process a command
+					handleATNCmdCodeOpen(m_atn_cmd);
+				}
+				else if (mode == IEC::ATN_CMD_LISTEN)
+				{
+					// Receive data
+					handleATNCmdCodeDataListen();	
+				}
+				else if (mode == IEC::ATN_CMD_TALK)
+				{
 
-		case IEC::ATN_CODE_CLOSE:
-			handleATNCmdClose();
-			break;
+					if (m_atn_cmd.channel == CMD_CHANNEL)
+						handleATNCmdCodeOpen(m_atn_cmd);		 // This is typically an empty command,
+					
+					handleATNCmdCodeDataTalk(m_atn_cmd.channel);
+				}
+				break;
 
-		// case IEC::ATN_CODE_LISTEN:
-		// 	Debug_printf("\r\n[LISTEN] ");
-		// 	break;
-		// case IEC::ATN_CODE_TALK:
-		// 	Debug_printf("\r\n[TALK] ");
-		// 	break;
-		// case IEC::ATN_CODE_UNLISTEN:
-		// 	Debug_printf("\r\n[UNLISTEN] ");
-		// 	break;
-		// case IEC::ATN_CODE_UNTALK:
-		// 	Debug_printf("\r\n[UNTALK] ");
-		// 	break;
+			case IEC::ATN_CODE_CLOSE:
+				Debug_printv("\r\n[CLOSE] ");
+				handleATNCmdClose();
+				break;
 		} // switch
-	}	  // IEC not idle
-
-	return retATN;
-} // handler
+	}
+} // service
 
 MFile* Interface::getPointed(MFile* urlFile) {
 	Debug_printv("getPointed [%s]", urlFile->url);
@@ -578,11 +569,9 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 
 	dumpState();
 
-	if (m_openState == O_DIR)
-	{
-		m_atn_cmd.str[0] = '\0';
-		m_atn_cmd.strLen = 0;
-	}
+	// Clear command string
+	m_atn_cmd.str[0] = '\0';
+	m_atn_cmd.strLen = 0;
 } // handleATNCmdCodeOpen
 
 void Interface::dumpState() {
@@ -635,7 +624,7 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 	else
 	{
 
-		//Debug_printf("\r\nm_openState: %d", m_openState);
+		//Debug_printf("\r\m_openState: %d", m_openState);
 
 		switch (m_openState)
 		{

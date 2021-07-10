@@ -120,8 +120,11 @@ void loop()
 
     www.handleClient();
     modem.service();
-    drive.loop();
+    drive.service();
     //cli.readSerial();
+#ifdef DEBUG_TIMING
+    iec.debugTiming();
+#endif
 }
 
 // void isrCheckATN()
@@ -129,9 +132,6 @@ void loop()
 //  state = statemachine::check_atn;
 //  iec.init();
 // }
-
-
-
 
 
 ////////////////////////////////

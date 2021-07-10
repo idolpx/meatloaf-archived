@@ -83,8 +83,8 @@ public:
 
 	bool begin();
 
-	// The handler returns the current IEC state, see the iec.hpp for possible states.
-	byte loop(void);
+	// The handler returns the current IEC state, see the iec.h for possible states.
+	void service(void);
 
 
 private:
