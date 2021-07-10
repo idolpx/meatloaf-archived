@@ -149,10 +149,6 @@ bool CServerSessionMgr::traversePath(MFile* path) {
  * I Stream impls
  ********************************************************/
 
-bool CServerIStream::seek(uint32_t pos, SeekMode mode) {
-    return false;
-};
-
 bool CServerIStream::seek(uint32_t pos)  {
     return false;
 };
@@ -204,7 +200,7 @@ int CServerIStream::available() {
     return m_bytesAvailable;
 };
 
-int CServerIStream::size() {
+size_t CServerIStream::size() {
     return m_bytesAvailable;
 };
 
@@ -224,10 +220,6 @@ bool CServerIStream::isOpen() {
 /********************************************************
  * O Stream impls
  ********************************************************/
-
-bool CServerOStream::seek(uint32_t pos, SeekMode mode) {
-    return false;
-};
 
 bool CServerOStream::seek(uint32_t pos) {
     return false;
@@ -263,9 +255,6 @@ size_t CServerOStream::write(const uint8_t *buf, size_t size) {
     return CServerFileSystem::session.write(file->name, buf, size);
 };
 
-void CServerOStream::flush() {
-    CServerFileSystem::session.flush();
-};
 
 bool CServerOStream::isOpen() {
     return m_isOpen;

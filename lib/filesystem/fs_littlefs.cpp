@@ -386,9 +386,6 @@ bool LittleOStream::isOpen() {
     return handle->rc >= 0;
 }
 
-bool LittleOStream::seek(uint32_t pos, SeekMode mode) {
-    return false;
-};
 bool LittleOStream::seek(uint32_t pos) {
     return false;
 };
@@ -437,9 +434,6 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     return result;
 };
 
-void LittleOStream::flush() {
-
-};
 
 
 /********************************************************
@@ -450,9 +444,6 @@ bool LittleIStream::isOpen() {
     return handle->rc >= 0;
 }
 
-bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
-    return false;
-};
 bool LittleIStream::seek(uint32_t pos) {
     return false;
 };
@@ -479,7 +470,7 @@ int LittleIStream::available() {
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
 };
 
-int LittleIStream::size() {
+size_t LittleIStream::size() {
     return available();
 };
 

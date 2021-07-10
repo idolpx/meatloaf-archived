@@ -60,10 +60,8 @@ public:
     bool open() override;
 
     // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
-    void flush() override;
     int available() override;
     size_t read(uint8_t* buf, size_t size) override;
     size_t write(const uint8_t *buf, size_t size) override;
@@ -91,7 +89,6 @@ public:
         url = path;
     }
     // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
@@ -102,7 +99,7 @@ public:
 
     // MIStream methods
     int available() override;
-    int size() override;
+    size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
 
@@ -113,7 +110,7 @@ protected:
 	HTTPClient m_http;
     int m_bytesAvailable = 0;
     int m_length = 0;
-    int m_position = 0;
+    uint32_t m_position = 0;
     bool isFriendlySkipper = false;
 };
 
@@ -131,7 +128,6 @@ public:
 
         url = path;
     }
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
@@ -142,7 +138,6 @@ public:
 
     // MOStream methods
     size_t write(const uint8_t *buf, size_t size) override;
-    void flush() override;
     bool isOpen();
 
 protected:

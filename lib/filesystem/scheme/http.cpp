@@ -82,8 +82,7 @@ void HttpFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std
  * Ostream impls
  ********************************************************/
 
-bool HttpOStream::seek(uint32_t pos, SeekMode mode) { return true; };
-bool HttpOStream::seek(uint32_t pos) { return true; };
+bool HttpOStream::seek(uint32_t pos) { return false; };
 size_t HttpOStream::position() { return 0; };
 void HttpOStream::close() {
     m_http.end();
@@ -111,9 +110,6 @@ size_t HttpOStream::write(const uint8_t *buf, size_t size) {
     return m_file.write(buf, size);
 };
 
-void HttpOStream::flush() {
-    m_file.flush();
-};
 bool HttpOStream::isOpen() {
     return m_isOpen;
 };
@@ -122,11 +118,6 @@ bool HttpOStream::isOpen() {
 /********************************************************
  * Istream impls
  ********************************************************/
-
-bool HttpIStream::seek(uint32_t pos, SeekMode mode) {
-    // maybe we can use http resume here?
-    return seek(pos);
-};
 
 bool HttpIStream::seek(uint32_t pos) {
     if(pos==m_position)
@@ -156,6 +147,7 @@ bool HttpIStream::seek(uint32_t pos) {
                 return false;
         }
 
+        m_position = 0;
         // ... and then read until we reach pos
         // while(m_position < pos) {
         //  m_position+=m_file.readBytes(buffer, size);  <----------- trurn this on!!!!
@@ -213,7 +205,7 @@ int HttpIStream::available() {
     return m_bytesAvailable;
 };
 
-int HttpIStream::size() {
+size_t HttpIStream::size() {
     return m_length;
 };
 

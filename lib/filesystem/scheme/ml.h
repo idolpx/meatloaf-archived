@@ -90,7 +90,6 @@ public:
     }
 
     // MStream methods
-    // bool seek(uint32_t pos, SeekMode mode) override;
     // bool seek(uint32_t pos) override;
     // size_t position() override;
     // void close() override;

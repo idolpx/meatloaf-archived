@@ -35,9 +35,7 @@ public:
     bool traversePath(MFile* path);
     std::string readReply();
     bool isOK();
-    void flush() {
-        m_wifi.flush();
-    }
+
     LinedReader* breader;
 };
 
@@ -99,7 +97,6 @@ public:
         close();
     }
     // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
@@ -107,7 +104,7 @@ public:
 
     // MIStream methods
     int available() override;
-    int size() override;
+    size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen() override;
 
@@ -131,7 +128,6 @@ public:
         close();
     }
 
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
@@ -139,7 +135,6 @@ public:
 
     // MOStream methods
     size_t write(const uint8_t *buf, size_t size) override;
-    void flush() override;
     bool isOpen() override;
 
 protected:

@@ -272,10 +272,24 @@ namespace Meat {
             // eback = beginning of get area
             // gptr = current character (get pointer)
             // egptr = one past end of get area
+
             return this->gptr() == this->egptr()
                 ? std::char_traits<char>::eof()
                 : std::char_traits<char>::to_int_type(*this->gptr());
         };
+
+      std::streampos seekpos(std::streampos __pos, std::ios_base::openmode __mode = std::ios_base::in | std::ios_base::out) override {
+        Debug_printv("Seek called on mistream: %d", __pos);
+        std::streampos __ret = std::streampos(off_type(-1));
+
+        if(mistream->seek(__pos)) {
+    	    __ret.state(_M_state_cur);
+            __ret = std::streampos(off_type(__pos));
+            // probably requires resetting setg!
+        }
+
+        return __ret;
+      }
 
     };
 
