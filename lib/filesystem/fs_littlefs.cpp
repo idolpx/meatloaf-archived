@@ -318,7 +318,6 @@ void LittleFile::openDir(std::string apath) {
         dirOpened = false;
         return;
     }
-    Debug_printv("apath: %s", apath.c_str());
 
     lfs_info info;
     int rc = -1;

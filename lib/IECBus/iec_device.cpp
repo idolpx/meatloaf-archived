@@ -316,35 +316,40 @@ void Interface::service(void)
 	// Did anything happen from the host side?
 	else if (mode not_eq IEC::ATN_IDLE)
 	{
-
 		switch (m_atn_cmd.command)
 		{
 			case IEC::ATN_CODE_OPEN:
-				Debug_printv("\r\n[OPEN] ");
+				Debug_printv("[OPEN]");
 				if (m_atn_cmd.channel == 0)
-					Debug_printf("\r\n[OPEN] LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
-				if (m_atn_cmd.channel == 1)
-					Debug_printf("\r\n[OPEN] SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+					Debug_printf("LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+				else if (m_atn_cmd.channel == 1)
+					Debug_printf("SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+				else {
+					Debug_printf("OPEN #,%d,%d,\"%s\"", m_atn_cmd.device, m_atn_cmd.channel, m_atn_cmd.str);
+				}
 
 				// Open either file or prg for reading, writing or single line command on the command channel.
 				handleATNCmdCodeOpen(m_atn_cmd);
 				break;
 
 			case IEC::ATN_CODE_DATA: // data channel opened
-				Debug_printv("\r\n[DATA] ");
+				Debug_printv("[DATA]");
 				if (mode == IEC::ATN_CMD)
 				{
 					// Process a command
+					Debug_printv("[Process a command]");
 					handleATNCmdCodeOpen(m_atn_cmd);
 				}
 				else if (mode == IEC::ATN_CMD_LISTEN)
 				{
 					// Receive data
+					Debug_printv("[Receive data]");
 					handleATNCmdCodeDataListen();	
 				}
 				else if (mode == IEC::ATN_CMD_TALK)
 				{
-
+					// Send data
+					Debug_printv("[Send data]");
 					if (m_atn_cmd.channel == CMD_CHANNEL)
 						handleATNCmdCodeOpen(m_atn_cmd);		 // This is typically an empty command,
 					
@@ -353,7 +358,7 @@ void Interface::service(void)
 				break;
 
 			case IEC::ATN_CODE_CLOSE:
-				Debug_printv("\r\n[CLOSE] ");
+				Debug_printv("[CLOSE] ");
 				handleATNCmdClose();
 				break;
 		} // switch
@@ -567,7 +572,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 		}
 	}
 
-	dumpState();
+	//dumpState();
 
 	// Clear command string
 	m_atn_cmd.str[0] = '\0';
@@ -613,8 +618,7 @@ void Interface::prepareFileStream(std::string url)
 
 void Interface::handleATNCmdCodeDataTalk(byte chan)
 {
-
-	Debug_printf("(%d CHANNEL)\r\n", chan);
+	Debug_printf("(%d CHANNEL) (%d openState)\r\n", chan, m_openState);
 
 	if (chan == CMD_CHANNEL)
 	{
@@ -623,45 +627,42 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 	}
 	else
 	{
-
-		//Debug_printf("\r\m_openState: %d", m_openState);
-
 		switch (m_openState)
 		{
-		case O_NOTHING:
-			// Say file not found
-			sendFileNotFound();
-			break;
+			case O_NOTHING:
+				// Say file not found
+				sendFileNotFound();
+				break;
 
-		case O_INFO:
-			// Reset and send SD card info
-			reset();
-			sendListing();
-			break;
+			case O_INFO:
+				// Reset and send SD card info
+				reset();
+				sendListing();
+				break;
 
-		case O_FILE:
-			// Send file
-			sendFile();
-			break;
+			case O_FILE:
+				// Send file
+				sendFile();
+				break;
 
-		case O_DIR:
-			// Send listing
-			sendListing();
-			break;
+			case O_DIR:
+				// Send listing
+				sendListing();
+				break;
 
-		case O_FILE_ERR:
-			sendFileNotFound();
-			break;
+			case O_FILE_ERR:
+				sendFileNotFound();
+				break;
 
-		case O_DEVICE_INFO:
-			// Send device info
-			sendDeviceInfo();
-			break;
+			case O_DEVICE_INFO:
+				// Send device info
+				sendDeviceInfo();
+				break;
 
-		case O_DEVICE_STATUS:
-			// Send device info
-			sendDeviceStatus();
-			break;
+			case O_DEVICE_STATUS:
+				// Send device info
+				sendDeviceStatus();
+				break;
 		}
 	}
 
@@ -920,7 +921,7 @@ void Interface::sendFile()
 #endif
 
 	// Update device database
-	//m_device.save();
+	m_device.save();
 
 	std::unique_ptr<MFile> file(MFSOwner::File(m_filename));
 
