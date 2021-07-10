@@ -351,8 +351,10 @@ void Interface::service(void)
 					// Send data
 					Debug_printv("[Send data]");
 					if (m_atn_cmd.channel == CMD_CHANNEL)
+					{
 						handleATNCmdCodeOpen(m_atn_cmd);		 // This is typically an empty command,
-					
+					}
+
 					handleATNCmdCodeDataTalk(m_atn_cmd.channel);
 				}
 				break;
@@ -482,6 +484,9 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	if ( strlen(atn_cmd.str) == 0 )
 	{
 		Debug_printv("No command to process");
+
+		if ( atn_cmd.channel == CMD_CHANNEL )
+			m_openState = O_STATUS;
 		return;
 	}
 
@@ -521,11 +526,11 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	}
 	else if (mstr::equals(commandAndPath.command, "@info", false))
 	{
-		m_openState = O_DEVICE_INFO;
+		m_openState = O_ML_INFO;
 	}
 	else if (mstr::equals(commandAndPath.command, "@stat", false))
 	{
-		m_openState = O_DEVICE_STATUS;
+		m_openState = O_ML_STATUS;
 	}
 	else if (commandAndPath.command == "mfav") {
 		// create a urlfile named like the argument, containing current m_mfile path
@@ -620,12 +625,12 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 {
 	Debug_printf("(%d CHANNEL) (%d openState)\r\n", chan, m_openState);
 
-	if (chan == CMD_CHANNEL)
-	{
-		// Send status message
-		sendStatus();
-	}
-	else
+	// if (chan == CMD_CHANNEL)
+	// {
+	// 	// Send status message
+	// 	sendStatus();
+	// }
+	// else
 	{
 		switch (m_openState)
 		{
@@ -634,10 +639,9 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 				sendFileNotFound();
 				break;
 
-			case O_INFO:
-				// Reset and send SD card info
-				reset();
-				sendListing();
+			case O_STATUS:
+				// Send status
+				sendStatus();
 				break;
 
 			case O_FILE:
@@ -650,22 +654,19 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 				sendListing();
 				break;
 
-			case O_FILE_ERR:
-				sendFileNotFound();
-				break;
-
-			case O_DEVICE_INFO:
+			case O_ML_INFO:
 				// Send device info
 				sendDeviceInfo();
 				break;
 
-			case O_DEVICE_STATUS:
+			case O_ML_STATUS:
 				// Send device info
 				sendDeviceStatus();
 				break;
 		}
 	}
 
+	m_openState = O_NOTHING;
 } // handleATNCmdCodeDataTalk
 
 void Interface::handleATNCmdCodeDataListen()

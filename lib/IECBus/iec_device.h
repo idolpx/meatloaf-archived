@@ -57,13 +57,11 @@
 enum OpenState
 {
 	O_NOTHING,		// Nothing to send / File not found error
-	O_INFO,			// User issued a reload sd card
+	O_STATUS,		// Command channel status is requested
 	O_FILE,			// A program file is opened
 	O_DIR,			// A listing is requested
-	O_FILE_ERR,		// Incorrect file format opened
-	O_SAVE_REPLACE, // Save-with-replace is requested
-	O_DEVICE_INFO,
-	O_DEVICE_STATUS
+	O_ML_INFO,		// Meatloaf Device Info
+	O_ML_STATUS		// Meatloaf Virtual Device Status
 };
 
 
