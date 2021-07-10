@@ -82,7 +82,7 @@ void HttpFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std
  * Ostream impls
  ********************************************************/
 
-bool HttpOStream::seek(uint32_t pos) { return true; };
+bool HttpOStream::seek(uint32_t pos) { return false; };
 size_t HttpOStream::position() { return 0; };
 void HttpOStream::close() {
     m_http.end();
@@ -147,6 +147,7 @@ bool HttpIStream::seek(uint32_t pos) {
                 return false;
         }
 
+        m_position = 0;
         // ... and then read until we reach pos
         // while(m_position < pos) {
         //  m_position+=m_file.readBytes(buffer, size);  <----------- trurn this on!!!!

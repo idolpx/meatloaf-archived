@@ -110,7 +110,7 @@ protected:
 	HTTPClient m_http;
     int m_bytesAvailable = 0;
     int m_length = 0;
-    int m_position = 0;
+    uint32_t m_position = 0;
     bool isFriendlySkipper = false;
 };
 
