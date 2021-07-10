@@ -35,9 +35,7 @@ public:
     bool traversePath(MFile* path);
     std::string readReply();
     bool isOK();
-    void flush() {
-        m_wifi.flush();
-    }
+
     LinedReader* breader;
 };
 
@@ -139,7 +137,6 @@ public:
 
     // MOStream methods
     size_t write(const uint8_t *buf, size_t size) override;
-    void flush() override;
     bool isOpen() override;
 
 protected:

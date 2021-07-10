@@ -438,9 +438,6 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     return result;
 };
 
-void LittleOStream::flush() {
-
-};
 
 
 /********************************************************

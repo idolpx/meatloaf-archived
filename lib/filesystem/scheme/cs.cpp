@@ -263,9 +263,6 @@ size_t CServerOStream::write(const uint8_t *buf, size_t size) {
     return CServerFileSystem::session.write(file->name, buf, size);
 };
 
-void CServerOStream::flush() {
-    CServerFileSystem::session.flush();
-};
 
 bool CServerOStream::isOpen() {
     return m_isOpen;

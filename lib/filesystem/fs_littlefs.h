@@ -177,7 +177,6 @@ public:
     // MOStream methods
     //size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
-    void flush() override;
     bool isOpen();
 
 protected:

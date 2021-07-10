@@ -111,9 +111,6 @@ size_t HttpOStream::write(const uint8_t *buf, size_t size) {
     return m_file.write(buf, size);
 };
 
-void HttpOStream::flush() {
-    m_file.flush();
-};
 bool HttpOStream::isOpen() {
     return m_isOpen;
 };
