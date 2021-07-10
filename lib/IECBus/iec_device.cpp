@@ -1040,11 +1040,6 @@ void Interface::sendFile()
 					bi = 0;
 				}
 	#endif
-				// Toggle LED
-				if (i % 50 == 0)
-				{
-					ledToggle(true);
-				}
 			}
 
 			// Exit if ATN is pulled while sending
@@ -1055,6 +1050,12 @@ void Interface::sendFile()
 				break;
 			}
 
+			// Toggle LED
+			if (i % 50 == 0)
+			{
+				ledToggle(true);
+			}
+			
 			avail = istream->available();
 			i++;
 		}
