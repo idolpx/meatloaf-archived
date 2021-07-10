@@ -31,7 +31,7 @@ public:
     virtual size_t position() = 0;
     virtual void close() = 0;
     virtual bool open() = 0;
-    virtual ~MStream() = 0;
+    virtual ~MStream() {};
     virtual bool isOpen() = 0;
 
     bool isText = false;
@@ -59,7 +59,7 @@ public:
 class MIStream: public MStream {
 public:
     virtual int available() = 0;
-    virtual int size() = 0;
+    virtual size_t size() = 0;
     virtual size_t read(uint8_t* buf, size_t size) = 0;
     std::string seekNextEntry() {
         return "";

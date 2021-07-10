@@ -471,7 +471,7 @@ int LittleIStream::available() {
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
 };
 
-int LittleIStream::size() {
+size_t LittleIStream::size() {
     return available();
 };
 

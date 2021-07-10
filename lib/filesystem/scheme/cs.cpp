@@ -200,7 +200,7 @@ int CServerIStream::available() {
     return m_bytesAvailable;
 };
 
-int CServerIStream::size() {
+size_t CServerIStream::size() {
     return m_bytesAvailable;
 };
 

@@ -205,7 +205,7 @@ int HttpIStream::available() {
     return m_bytesAvailable;
 };
 
-int HttpIStream::size() {
+size_t HttpIStream::size() {
     return m_length;
 };
 

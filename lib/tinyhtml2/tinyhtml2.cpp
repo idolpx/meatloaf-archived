@@ -298,7 +298,7 @@ bool HTMLDocument::ParseData( const char * data ) {
     }
     
     return false;
-}
+}x
 
 HTMLDocument::~HTMLDocument() {
     if (internal) delete((tinyxml2::XMLDocument* )internal);

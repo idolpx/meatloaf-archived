@@ -339,8 +339,5 @@ bool MFile::copyTo(MFile* dst) {
 
     return true;
 };
-/********************************************************
- * MStream implementations
- ********************************************************/
 
-MStream::~MStream() {};
+
