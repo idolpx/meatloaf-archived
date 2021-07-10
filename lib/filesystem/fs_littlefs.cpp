@@ -387,9 +387,6 @@ bool LittleOStream::isOpen() {
     return handle->rc >= 0;
 }
 
-bool LittleOStream::seek(uint32_t pos, SeekMode mode) {
-    return false;
-};
 bool LittleOStream::seek(uint32_t pos) {
     return false;
 };
@@ -448,9 +445,6 @@ bool LittleIStream::isOpen() {
     return handle->rc >= 0;
 }
 
-bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
-    return false;
-};
 bool LittleIStream::seek(uint32_t pos) {
     return false;
 };

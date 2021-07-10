@@ -18,7 +18,6 @@ public:
         // which skips data in the stream to next file in zip
     }
     // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;

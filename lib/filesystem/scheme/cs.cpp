@@ -149,10 +149,6 @@ bool CServerSessionMgr::traversePath(MFile* path) {
  * I Stream impls
  ********************************************************/
 
-bool CServerIStream::seek(uint32_t pos, SeekMode mode) {
-    return false;
-};
-
 bool CServerIStream::seek(uint32_t pos)  {
     return false;
 };
@@ -224,10 +220,6 @@ bool CServerIStream::isOpen() {
 /********************************************************
  * O Stream impls
  ********************************************************/
-
-bool CServerOStream::seek(uint32_t pos, SeekMode mode) {
-    return false;
-};
 
 bool CServerOStream::seek(uint32_t pos) {
     return false;

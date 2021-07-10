@@ -165,7 +165,6 @@ public:
         localPath = path;
         handle = std::make_unique<LittleHandle>();
     }
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
@@ -198,7 +197,6 @@ public:
         handle = std::make_unique<LittleHandle>();
     }
     // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;

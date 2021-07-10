@@ -60,7 +60,6 @@ public:
     bool open() override;
 
     // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     int available() override;
@@ -90,7 +89,6 @@ public:
         url = path;
     }
     // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
@@ -130,7 +128,6 @@ public:
 
         url = path;
     }
-    bool seek(uint32_t pos, SeekMode mode) override;
     bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;

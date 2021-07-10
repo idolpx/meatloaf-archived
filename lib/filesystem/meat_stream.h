@@ -2,18 +2,32 @@
 #define MEATFILE_STREAMS_H
 
 #include <Arduino.h>
-#include "FS.h"
+//#include "FS.h"
 
 /********************************************************
  * Universal streams
  ********************************************************/
 
+// enum SeekMode {
+//     SeekSet = 0,
+//     SeekCur = 1,
+//     SeekEnd = 2
+// };
+
 class MStream {
 public:
-    virtual bool seek(uint32_t pos, SeekMode mode) = 0;
-    virtual bool seek(uint32_t pos) {
-        return seek(pos, SeekSet);
+    virtual bool seek(uint32_t pos, SeekMode mode) {
+        if(mode == SeekSet) {
+            return seek(pos);
+        }
+        else if(mode == SeekCur) {
+            return seek(position()+pos);
+        }
+        else {
+            return seek(/*length-*/pos);
+        }
     }
+    virtual bool seek(uint32_t pos) = 0;
     virtual size_t position() = 0;
     virtual void close() = 0;
     virtual bool open() = 0;

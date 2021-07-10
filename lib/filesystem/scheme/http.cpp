@@ -82,7 +82,6 @@ void HttpFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std
  * Ostream impls
  ********************************************************/
 
-bool HttpOStream::seek(uint32_t pos, SeekMode mode) { return true; };
 bool HttpOStream::seek(uint32_t pos) { return true; };
 size_t HttpOStream::position() { return 0; };
 void HttpOStream::close() {
@@ -119,11 +118,6 @@ bool HttpOStream::isOpen() {
 /********************************************************
  * Istream impls
  ********************************************************/
-
-bool HttpIStream::seek(uint32_t pos, SeekMode mode) {
-    // maybe we can use http resume here?
-    return seek(pos);
-};
 
 bool HttpIStream::seek(uint32_t pos) {
     if(pos==m_position)
