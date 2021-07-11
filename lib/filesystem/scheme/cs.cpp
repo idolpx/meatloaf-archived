@@ -15,16 +15,15 @@ void CServerSessionMgr::connect() {
     int rc = m_wifi.connect("commodoreserver.com", 1541);
     Serial.printf("CServer: connect: %d\n", rc);
 
-    if(breader==nullptr && rc != 0) {
+    if(rc != 0) {
         // do not initialize in constructor - compiler bug!
         Serial.println("breader ---- INIT!");
-        breader = new LinedReader([this](uint8_t* buffer, size_t size)->int  {
-            //Serial.println("Lambda read start");
-            int x = this->read(buffer, size);
-            //Serial.printf("Lambda read %d\n",x);
-            return x;
-        });
-        breader->delimiter = 10;
+        // breader = new LinedReader([this](uint8_t* buffer, size_t size)->int  {
+        //     //Serial.println("Lambda read start");
+        //     int x = this->read(buffer, size);
+        //     //Serial.printf("Lambda read %d\n",x);
+        //     return x;
+        // });
     }
 }
 
@@ -48,6 +47,18 @@ bool CServerSessionMgr::command(std::string command) {
         return false;
 }
 
+std::string CServerSessionMgr::readLn() {
+    std::string line;
+    uint8_t ch;
+
+    while(read(&ch, 1) > 0 && ch != 10) {
+        line+=ch;
+    };
+
+    return line;
+}
+
+
 size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
         //Serial.println("CServerSessionMgr::read");
 
@@ -60,6 +71,9 @@ size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
         wait+=100;
         rd = m_wifi.read(buf, size);
     } 
+
+    m_eof = !m_wifi.connected();
+
     return rd;
 }
 
@@ -413,11 +427,11 @@ bool CServerFile::rewindDirectory() {
         // to list image contents we have to run
         //Serial.println("cserver: this is a d64 img!");
         CServerFileSystem::session.command("$");
-        auto line = CServerFileSystem::session.breader->readLn(); // mounted image name
-        if(!CServerFileSystem::session.breader->eof()) {
+        auto line = CServerFileSystem::session.readLn(); // mounted image name
+        if(!CServerFileSystem::session.m_eof) {
             dirIsOpen = true;
             media_image = line.substr(5);
-            line = CServerFileSystem::session.breader->readLn(); // dir header
+            line = CServerFileSystem::session.readLn(); // dir header
             media_header = line.substr(2, line.find_last_of("\""));
             media_id = line.substr(line.find_last_of("\"")+2);
             return true;
@@ -431,8 +445,8 @@ bool CServerFile::rewindDirectory() {
         // to list directory contents we use
         //Serial.println("cserver: this is a directory!");
         CServerFileSystem::session.command("disks");
-        auto line = CServerFileSystem::session.breader->readLn(); // dir header
-        if(!CServerFileSystem::session.breader->eof()) {
+        auto line = CServerFileSystem::session.readLn(); // dir header
+        if(!CServerFileSystem::session.m_eof) {
             media_header = line.substr(2, line.find_last_of("]")-1);
             media_id = "C=SVR";
             dirIsOpen = true;
@@ -459,7 +473,7 @@ MFile* CServerFile::getNextFileInDir() {
         new_url += "/";
 
     if(dirIsImage) {
-        auto line = CServerFileSystem::session.breader->readLn();
+        auto line = CServerFileSystem::session.readLn();
         // 'ot line:'0 ␒"CIE�������������" 00�2A�
         // 'ot line:'2   "CIE+SERIAL      " PRG   2049
         // 'ot line:'1   "CIE-SYS31801    " PRG   2049
@@ -488,7 +502,7 @@ MFile* CServerFile::getNextFileInDir() {
             return new CServerFile(new_url, size);
         }
     } else {
-        auto line = CServerFileSystem::session.breader->readLn();
+        auto line = CServerFileSystem::session.readLn();
         // Got line:''
         // Got line:''
         // 'ot line:'FAST-TESTER DELUXE EXCESS.D64

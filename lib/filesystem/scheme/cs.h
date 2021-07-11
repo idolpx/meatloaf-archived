@@ -6,7 +6,6 @@
 
 #include "../../include/global_defines.h"
 #include "../../include/make_unique.h"
-#include "../wrappers/legacy_buffers.h"
 #include "meat_io.h"
 #include "WiFiClient.h"
 #include "utils.h"
@@ -18,14 +17,17 @@ class CServerSessionMgr {
     std::string m_user;
     std::string m_pass;
 
+protected:
+    std::string readLn();
+    bool m_eof = false;
+
+
 public:
     CServerSessionMgr(std::string user = "", std::string pass = "") : m_user(user), m_pass(pass) 
     {
     };
     ~CServerSessionMgr() {
         disconnect();
-        if(breader!=nullptr)
-            delete breader;
     };
     void connect();
     void disconnect();
@@ -36,7 +38,7 @@ public:
     std::string readReply();
     bool isOK();
 
-    LinedReader* breader;
+    friend class CServerFile;
 };
 
 /********************************************************
@@ -163,6 +165,8 @@ public:
     }
 
 };
+
+
 
 
 #endif /* MEATFILESYSTEM_SCHEME_CS */
