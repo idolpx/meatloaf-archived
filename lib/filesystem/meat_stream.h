@@ -16,18 +16,6 @@
 
 class MStream {
 public:
-    virtual bool seek(uint32_t pos, SeekMode mode) {
-        if(mode == SeekSet) {
-            return seek(pos);
-        }
-        else if(mode == SeekCur) {
-            return seek(position()+pos);
-        }
-        else {
-            return seek(/*length-*/pos);
-        }
-    }
-    virtual bool seek(uint32_t pos) = 0;
     virtual size_t position() = 0;
     virtual void close() = 0;
     virtual bool open() = 0;
@@ -37,19 +25,6 @@ public:
     bool isText = false;
 };
 
-// template <class T>
-// class MFileStream: public MStream {
-//     std::unique_ptr<T> file;
-
-// protected:
-//     T* getFile() {
-//         return file.get();
-//     }
-// public:
-//     MFileStream(std::shared_ptr<T> f): file(f) {};
-// };
-
-
 class MOStream: public MStream {
 public:
     virtual size_t write(const uint8_t *buf, size_t size) = 0;
@@ -58,6 +33,19 @@ public:
 
 class MIStream: public MStream {
 public:
+    virtual bool seek(uint32_t pos, SeekMode mode) {
+        if(mode == SeekSet) {
+            return seek(pos);
+        }
+        else if(mode == SeekCur) {
+            return seek(position()+pos);
+        }
+        else {
+            return seek(size() - pos);
+        }
+    }
+    virtual bool seek(uint32_t pos) = 0;
+
     virtual int available() = 0;
     virtual size_t size() = 0;
     virtual size_t read(uint8_t* buf, size_t size) = 0;

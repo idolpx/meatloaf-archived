@@ -90,10 +90,10 @@ public:
     }
 
     // MStream methods
-    // bool seek(uint32_t pos) override;
     // size_t position() override;
     // void close() override;
     bool open() override;
+    
 
     // MIStream methods
     // int available() override;

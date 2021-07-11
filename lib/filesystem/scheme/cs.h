@@ -97,7 +97,6 @@ public:
         close();
     }
     // MStream methods
-    bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
     bool open() override;
@@ -107,6 +106,9 @@ public:
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen() override;
+    virtual bool seek(uint32_t pos) {
+        return false;
+    };
 
 protected:
     std::string url;
@@ -128,7 +130,6 @@ public:
         close();
     }
 
-    bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
     bool open() override;

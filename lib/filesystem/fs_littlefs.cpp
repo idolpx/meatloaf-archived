@@ -385,9 +385,6 @@ bool LittleOStream::isOpen() {
     return handle->rc >= 0;
 }
 
-bool LittleOStream::seek(uint32_t pos) {
-    return false;
-};
 size_t LittleOStream::position() {
     if(!isOpen()) return 0;
     else return lfs_file_tell(&LittleFileSystem::lfsStruct, &handle->lfsFile);
@@ -443,10 +440,6 @@ bool LittleIStream::isOpen() {
     return handle->rc >= 0;
 }
 
-bool LittleIStream::seek(uint32_t pos) {
-    return false;
-};
-
 size_t LittleIStream::position() {
     if(!isOpen()) return 0;
     else return lfs_file_tell(&LittleFileSystem::lfsStruct, &handle->lfsFile);
@@ -478,7 +471,7 @@ size_t LittleIStream::size() {
 // };
 
 size_t LittleIStream::read(uint8_t* buf, size_t size) {
-    if (!isOpen() | !buf) {
+    if (!isOpen() || !buf) {
         return 0;
     }
     
@@ -492,6 +485,18 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
 
     return result;
 };
+
+bool LittleIStream::seek(uint32_t pos) {
+    return seek(pos, SeekMode::SeekSet);
+};
+
+bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
+    if (!isOpen()) {
+        return false;
+    }
+    lfs_file_seek(&LittleFileSystem::lfsStruct, &handle->lfsFile, pos, mode);
+    return false;
+}
 
 
 /********************************************************

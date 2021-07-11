@@ -60,7 +60,6 @@ public:
     bool open() override;
 
     // MStream methods
-    bool seek(uint32_t pos) override;
     size_t position() override;
     int available() override;
     size_t read(uint8_t* buf, size_t size) override;
@@ -89,7 +88,6 @@ public:
         url = path;
     }
     // MStream methods
-    bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
     bool open() override;
@@ -98,6 +96,8 @@ public:
     }
 
     // MIStream methods
+
+    virtual bool seek(uint32_t pos);
     int available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
@@ -128,7 +128,6 @@ public:
 
         url = path;
     }
-    bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
     bool open() override;
