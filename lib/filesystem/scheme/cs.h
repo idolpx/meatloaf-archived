@@ -163,12 +163,20 @@ public:
         sendCommand("quit");
     };
 
-    size_t read(uint8_t* buffer, size_t size) {
-        return buf.m_wifi.read(buffer, size);
+    // read/write are used only by MStreams
+    size_t receive(uint8_t* buffer, size_t size) {
+        if(buf.is_open())
+            return buf.m_wifi.read(buffer, size);
+        else
+            return 0;
     }
 
-    size_t write(const uint8_t* buffer, size_t size) {
-        return buf.m_wifi.write(buffer, size);
+    // read/write are used only by MStreams
+    size_t send(const uint8_t* buffer, size_t size) {
+        if(buf.is_open())
+            return buf.m_wifi.write(buffer, size);
+        else
+            return 0;
     }
 
     bool is_open() {

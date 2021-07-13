@@ -170,7 +170,7 @@ size_t CServerIStream::size() {
 
 size_t CServerIStream::read(uint8_t* buf, size_t size)  {
     //Serial.println("CServerIStream::read");
-    auto bytesRead = CServerFileSystem::session.read(buf, size);
+    auto bytesRead = CServerFileSystem::session.receive(buf, size);
     m_bytesAvailable-=bytesRead;
     m_position+=bytesRead;
     //ledTogg(true);
@@ -212,7 +212,7 @@ size_t CServerOStream::write(const uint8_t *buf, size_t size) {
 
     CServerFileSystem::session.sendCommand("save fileName,size[,type=PRG,SEQ]");
     m_isOpen = false; // c64 server supports only writing all at once, so this channel has to be marked closed
-    return CServerFileSystem::session.write(buf, size);
+    return CServerFileSystem::session.send(buf, size);
 };
 
 
