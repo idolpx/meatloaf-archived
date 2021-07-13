@@ -1056,6 +1056,7 @@ void Interface::sendFile()
 			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
 			{
 				// TODO: If sending from a named channel save file pointer position
+				setDeviceStatus(74);
 				success = true;
 				break;
 			}
@@ -1110,6 +1111,7 @@ void Interface::saveFile()
     if(!ostream->isOpen()) {
         Debug_printv("couldn't open a stream for writing");
 		// TODO: Set status and sendFNF
+		sendFileNotFound();
         return;
     }
     else 
