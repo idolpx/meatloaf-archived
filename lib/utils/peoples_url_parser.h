@@ -11,13 +11,13 @@
 
 class PeoplesUrlParser {
 public:
+    std::string url;
     std::string scheme;
-    std::string path;
     std::string user;
-    std::string pass;
+    std::string pass;    
     std::string host;
     std::string port;
-    std::string url;
+    std::string path;
     std::string name;
     std::string extension;
 
@@ -78,6 +78,9 @@ private:
     }
 
     void cleanPath() {
+        if(path.size() == 0)
+            return;
+
         while(mstr::endsWith(path,"/")) {
             path=mstr::dropLast(path,1);
         }
@@ -85,20 +88,22 @@ private:
     }
 
     void fillInNameExt() {
+        if(path.size() == 0)
+            return;
+
         auto pathParts = mstr::split(path,'/');
 
-        if(pathParts.size()>1)
+        if(pathParts.size() > 1)
             name = *(--pathParts.end());
         else
             name = path;
 
         auto nameParts = mstr::split(name,'.');
         
-        if(nameParts.size()>1)
+        if(nameParts.size() > 1)
             extension = *(--nameParts.end());
         else
             extension = "";
-
     }
 
 public:
@@ -106,7 +111,13 @@ public:
     std::string root(void)
     {
         // set root URL
-        std::string root = scheme + "://";
+        std::string root;
+        if ( scheme.size() )
+            root = scheme + ":";
+
+        if ( host.size() )
+            root += "//";
+
         if ( user.size() )
         {
             root += user;
@@ -114,7 +125,9 @@ public:
                 root += ':' + pass;
             root += '@';
         }
+
         root += host;
+
         if ( port.size() )
             root += ':' + port;
 
@@ -125,6 +138,14 @@ public:
     {
         // set base URL
         return root() + path;
+    }
+
+    std::string pathToFile(void)
+    {
+        if (name.size() > 0)
+            return path.substr(0, path.size() - name.size());
+        else
+            return path;
     }
 
     std::string rebuildUrl(void)
@@ -157,34 +178,35 @@ public:
         if(byColon.size()==1) {
             // no scheme, good old local path
             path = byColon[0];
-            cleanPath();
-            fillInNameExt();
-            return;
+        }
+        else
+        {
+            scheme = byColon[0];
+
+            auto pastTheColon = byColon[1]; // don't visualise!
+
+            if(pastTheColon[0]=='/' && pastTheColon[1]=='/') {
+                // //user:pass@/path
+                // //user:pass@authority:80/path
+                // //authority:100
+                // //authority:30/path            
+
+                processAuthority(pastTheColon);
+            }
+            else {
+                // we have just a plain old path
+                // /path
+                // user@server
+                // etc.
+                path = pastTheColon;
+            }            
         }
 
-        scheme = byColon[0];
-
-        auto pastTheColon = byColon[1]; // don't visualise!
-
-        if(pastTheColon[0]=='/' && pastTheColon[1]=='/') {
-            // //user:pass@/path
-            // //user:pass@authority:80/path
-            // //authority:100
-            // //authority:30/path            
-
-            processAuthority(pastTheColon);
-        }
-        else {
-            // we have just a plain old path
-            // /path
-            // user@server
-            // etc.
-            path = pastTheColon;
-        }
+        // Clean things up before exiting
         cleanPath();
         fillInNameExt();
         //rebuildUrl();
-        //Debug_printv("After [%s]", url.c_str());
+
         return;        
     }
 

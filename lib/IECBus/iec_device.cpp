@@ -735,21 +735,31 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 	uint16_t byte_count = 0;
 	bool sent_info = false;
 
+	PeoplesUrlParser p;
+	std::string url = m_device.url();
+
+	mstr::toPETSCII(url);
+	p.parseUrl(url);
+
+	url = p.root();
+	std::string path = p.pathToFile();
+	std::string image = p.name;
+
 	// Send List HEADER
 	//byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
 	byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "%s", header.c_str());
 
 	// Send Extra INFO
-	if (m_device.url().size())
+	if (url.size())
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[URL]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.url().c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, url.c_str());
 		sent_info = true;
 	}
-	if (m_device.path().size() > 1)
+	if (path.size() > 1)
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[PATH]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.path().c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, path.c_str());
 		sent_info = true;
 	}
 	// if (m_device.archive().length() > 1)
@@ -757,10 +767,10 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[ARCHIVE]");
 	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.archive().c_str());
 	// }
-	if (m_device.image().size())
+	if (image.size())
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[IMAGE]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.image().c_str());
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, image.c_str());
 		sent_info = true;
 	}
 	if (sent_info)
@@ -883,11 +893,11 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_
 	uint64_t byte_count = 0;
 	if (block_size > 256)
 	{
-		//String bytes = String(" BYTES");
-		byte_count += sendLine(basicPtr, 0, "%*s\"-------------------\" NFO", 0, "");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[BLOCK SIZE]");
-		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "1024 BYTES");
-		byte_count += sendLine(basicPtr, 0, "%*s\"===================\" NFO", 0, "");
+		byte_count = sendLine(basicPtr, blocks_free, "BLOCKS FREE. (*%d bytes)", block_size);
+	}
+	else
+	{
+		byte_count = sendLine(basicPtr, blocks_free, "BLOCKS FREE.");
 	}
 	
 	// if (m_device.url().length() == 0)
@@ -896,7 +906,7 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_
 	// 	m_fileSystem->info64(fs_info);
 	// 	blocks_free = fs_info.totalBytes - fs_info.usedBytes;
 	// }
-	byte_count = sendLine(basicPtr, blocks_free, "BLOCKS FREE.");
+	
 	return byte_count;
 	// #elif defined(USE_SPIFFS)
 	// 	return sendLine(basicPtr, 00, "UNKNOWN BLOCKS FREE.");
@@ -1055,7 +1065,7 @@ void Interface::sendFile()
 			{
 				ledToggle(true);
 			}
-			
+
 			avail = istream->available();
 			i++;
 		}
