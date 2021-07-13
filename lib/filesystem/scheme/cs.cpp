@@ -8,99 +8,38 @@
 
 #define OK_REPLY "00 - OK\x0d\x0a\x04"
 
-void CServerSessionMgr::connect() {
-    if(m_wifi.connected())
-        return;
+CServerSessionMgr CServerFileSystem::session;
 
-    int rc = m_wifi.connect("commodoreserver.com", 1541);
-    Serial.printf("CServer: connect: %d\n", rc);
-
-    if(rc != 0) {
-        // do not initialize in constructor - compiler bug!
-        Serial.println("breader ---- INIT!");
-        // breader = new LinedReader([this](uint8_t* buffer, size_t size)->int  {
-        //     //Serial.println("Lambda read start");
-        //     int x = this->read(buffer, size);
-        //     //Serial.printf("Lambda read %d\n",x);
-        //     return x;
-        // });
+bool CServerSessionMgr::establishSession() {
+    if(!buf.is_open()) {
+        currentDir = "cs:/";
+        buf.open();
     }
+    
+    return buf.is_open();
 }
 
-void CServerSessionMgr::disconnect() {
-    if(m_wifi.connected()) {
-        command("quit");
-        m_wifi.stop();
-    }
+std::string CServerSessionMgr::readLn() {
+    char buffer[80];
+    // telnet line ends with 10;
+    getline(buffer, 80, 10);
+    return std::string((char *)buffer);
 }
 
-bool CServerSessionMgr::command(std::string command) {
+bool CServerSessionMgr::sendCommand(std::string command) {
     // 13 (CR) sends the command
-    connect();
-
-    if(m_wifi.connected()) {
+    if(establishSession()) {
         Serial.printf("CServer: send command: %s\n", command.c_str());
-        m_wifi.write((command+'\r').c_str());
+        (*this) << (command+'\r');
         return true;
     }
     else
         return false;
 }
 
-std::string CServerSessionMgr::readLn() {
-    std::string line;
-    uint8_t ch;
-
-    while(read(&ch, 1) > 0 && ch != 10) {
-        line+=ch;
-    };
-
-    return line;
-}
-
-
-size_t CServerSessionMgr::read(uint8_t* buf, size_t size) {
-        //Serial.println("CServerSessionMgr::read");
-
-    auto rd = m_wifi.read(buf, size);
-    int attempts = 5;
-    int wait = 500;
-    while(rd == 0 && (attempts--)>0) {
-        //Serial.printf("Read Attempt %d\n", attempts);
-        delay(wait);
-        wait+=100;
-        rd = m_wifi.read(buf, size);
-    } 
-
-    m_eof = !m_wifi.connected();
-
-    return rd;
-}
-
-size_t CServerSessionMgr::write(std::string &fileName, const uint8_t *buf, size_t size) {
-    connect();
-
-    if(m_wifi.connected())
-        return m_wifi.write(buf, size);
-    else
-        return 0;
-}
-
-std::string CServerSessionMgr::readReply() {
-    uint8_t buffer[40] = { 0 };
-    memset(buffer, 0, sizeof(buffer));
-    int rd = read(buffer, 40);
-    // for(int i=0; i<rd; i++) {
-    //     Serial.printf("%d ", buffer[i]);
-    // }
-    Serial.printf("CServer: replies %d bytes: '%s'\n", rd, buffer);
-    return std::string((char *)buffer);
-}
-
 bool CServerSessionMgr::isOK() {
-    return readReply() == OK_REPLY;
+    return readLn() == OK_REPLY;
 }
-
 
 bool CServerSessionMgr::traversePath(MFile* path) {
     // tricky. First we have to
@@ -108,12 +47,23 @@ bool CServerSessionMgr::traversePath(MFile* path) {
 
     Debug_printv("Traversing path: [%s]", path->path.c_str());
 
-    command("cf /");
+    if(buf.is_open()) {
+        // if we are still connected we can smart change dir by just going up or down
+        // but for time being, we stick to traversing from root
+        if(!sendCommand("cf /"))
+            return false;
+    }
+    else {
+        // if we aren't, change dir to root (alos connects the session);
+        if(!sendCommand("cf /"))
+            return false;
+    }
 
     if(isOK()) {
-
-        if(path->path.compare("/") == 0)
+        if(path->path.compare("/") == 0) {
+            currentDir = path->url;
             return true;
+        }
 
         std::vector<std::string> chopped = mstr::split(path->path, '/');
 
@@ -132,10 +82,11 @@ bool CServerSessionMgr::traversePath(MFile* path) {
             if(mstr::endsWith(part, ".d64", false)) 
             {
                 // THEN we have to mount the image INSERT image_name
-                command("insert "+part);
+                sendCommand("insert "+part);
 
                 // disk image is the end, so return
                 if(isOK()) {
+                    currentDir = path->url;
                     return true;
                 }
                 else {
@@ -146,13 +97,15 @@ bool CServerSessionMgr::traversePath(MFile* path) {
             else 
             {
                 // CF xxx - to browse into subsequent dirs
-                command("cf "+part);
+                sendCommand("cf "+part);
                 if(!isOK()) {
                     // or: ?500 - CANNOT CHANGE TO dupa
                     return false;
                 }
             }
         }
+        
+        currentDir = path->url;
         return true;
     }
     else
@@ -185,14 +138,14 @@ bool CServerIStream::open() {
         // trim spaces from right of name too
         mstr::rtrimA0(file->name);
         mstr::toPETSCII(file->name);
-        CServerFileSystem::session.command("load "+file->name);
+        CServerFileSystem::session.sendCommand("load "+file->name);
         // read first 2 bytes with size, low first, but may also reply with: ?500 - ERROR
         uint8_t buffer[2] = { 0, 0 };
         read(buffer, 2);
         // hmmm... should we check if they're "?5" for error?!
         if(buffer[0]=='?' && buffer[1]=='5') {
             Serial.println("CServer: open file failed");
-            CServerFileSystem::session.readReply();
+            CServerFileSystem::session.readLn();
             m_isOpen = false;
         }
         else {
@@ -257,9 +210,9 @@ size_t CServerOStream::write(const uint8_t *buf, size_t size) {
     // we have to write all at once... sorry...
     auto file = std::make_unique<CServerFile>(url);
 
-    CServerFileSystem::session.command("save fileName,size[,type=PRG,SEQ]");
+    CServerFileSystem::session.sendCommand("save fileName,size[,type=PRG,SEQ]");
     m_isOpen = false; // c64 server supports only writing all at once, so this channel has to be marked closed
-    return CServerFileSystem::session.write(file->name, buf, size);
+    return CServerFileSystem::session.write(buf, size);
 };
 
 
@@ -411,13 +364,11 @@ MOStream* CServerFile::outputStream() {
     return ostream;
 };
 
-bool CServerFile::rewindDirectory() {
-    CServerFileSystem::session.connect();
-    
+bool CServerFile::rewindDirectory() {    
+    dirIsOpen = false;
+
     if(!isDirectory())
         return false;
-
-    dirIsOpen = false;
 
     if(!CServerFileSystem::session.traversePath(this)) return false;
 
@@ -426,9 +377,9 @@ bool CServerFile::rewindDirectory() {
         dirIsImage = true;
         // to list image contents we have to run
         //Serial.println("cserver: this is a d64 img!");
-        CServerFileSystem::session.command("$");
+        CServerFileSystem::session.sendCommand("$");
         auto line = CServerFileSystem::session.readLn(); // mounted image name
-        if(!CServerFileSystem::session.m_eof) {
+        if(CServerFileSystem::session.is_open()) {
             dirIsOpen = true;
             media_image = line.substr(5);
             line = CServerFileSystem::session.readLn(); // dir header
@@ -437,16 +388,16 @@ bool CServerFile::rewindDirectory() {
             return true;
         }
         else
-            return true;
+            return false;
     }
     else 
     {
         dirIsImage = false;
         // to list directory contents we use
         //Serial.println("cserver: this is a directory!");
-        CServerFileSystem::session.command("disks");
+        CServerFileSystem::session.sendCommand("disks");
         auto line = CServerFileSystem::session.readLn(); // dir header
-        if(!CServerFileSystem::session.m_eof) {
+        if(CServerFileSystem::session.is_open()) {
             media_header = line.substr(2, line.find_last_of("]")-1);
             media_id = "C=SVR";
             dirIsOpen = true;
@@ -565,5 +516,4 @@ bool CServerFile::remove() {
     return false; 
 };
 
-CServerSessionMgr CServerFileSystem::session;
  
