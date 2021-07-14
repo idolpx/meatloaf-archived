@@ -67,9 +67,9 @@ public:
     }
 
     int underflow() override {
-        Debug_printv("In underflow");
+        //_printv("In underflow");
         if (!m_wifi.connected()) {
-            Debug_printv("In connection closed");
+            //Debug_printv("In connection closed");
             close();
             return std::char_traits<char>::eof();
         }
@@ -79,11 +79,11 @@ public:
             int wait = 500;
             
             while(!(readCount = m_wifi.read((uint8_t*)gbuf, 512)) && (attempts--)>0 && m_wifi.connected()) {
-                Debug_printv("read attempt");
+                //Debug_printv("read attempt");
                 delay(wait);
                 wait+=100;
             } 
-            Debug_printv("readcount: %d, %s", readCount, gbuf);
+            //Debug_printv("readcount: %d, %s", readCount, gbuf);
             this->setg(gbuf, gbuf, gbuf + readCount);
         }
 
@@ -95,7 +95,7 @@ public:
 
     int overflow(int ch  = traits_type::eof()) override
     {
-        Debug_printv("in overflow");
+        //Debug_printv("in overflow");
 
         if (!m_wifi.connected()) {
             close();
@@ -129,7 +129,7 @@ public:
             return 0;
         }
         else {
-            Debug_printv("in sync, written %d", pptr()-pbase());
+            //Debug_printv("in sync, written %d", pptr()-pbase());
             uint8_t* buffer = (uint8_t*)pbase();
             auto result = m_wifi.write(buffer, pptr()-pbase()); 
             setp(pbuf, pbuf+512);

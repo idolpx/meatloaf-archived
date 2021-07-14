@@ -23,7 +23,7 @@ std::string CServerSessionMgr::readLn() {
     char buffer[80];
     // telnet line ends with 10;
     getline(buffer, 80, 10);
-    Debug_printv("Inside readLn: %s", buffer);
+    //Debug_printv("Inside readLn: %s", buffer);
     return std::string((char *)buffer);
 }
 
@@ -40,19 +40,19 @@ bool CServerSessionMgr::sendCommand(std::string command) {
 }
 
 bool CServerSessionMgr::isOK() {
-    auto a = readLn();
+    // auto a = readLn();
 
-    for(int i = 0 ; i<a.length(); i++)
-        Debug_printv("'%d'", a[i]);
+    // for(int i = 0 ; i<a.length(); i++)
+    //     Debug_printv("'%d'", a[i]);
 
-    return a == OK_REPLY;
+    return readLn() == OK_REPLY;
 }
 
 bool CServerSessionMgr::traversePath(MFile* path) {
     // tricky. First we have to
     // CF / - to go back to root
 
-    Debug_printv("Traversing path: [%s]", path->path.c_str());
+    //Debug_printv("Traversing path: [%s]", path->path.c_str());
 
     if(buf.is_open()) {
         // if we are still connected we can smart change dir by just going up or down
