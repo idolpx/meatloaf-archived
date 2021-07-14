@@ -332,8 +332,8 @@ void Interface::service(void)
 				handleATNCmdCodeOpen(m_atn_cmd);
 				break;
 
-			case IEC::ATN_CODE_DATA: // data channel opened
-				Debug_printv("[DATA]");
+			case IEC::ATN_CODE_SECOND: // data channel opened
+				Debug_printv("[SECOND]");
 				if (mode == IEC::ATN_CMD)
 				{
 					// Process a command

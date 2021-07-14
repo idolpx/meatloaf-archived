@@ -104,7 +104,10 @@ uint8_t IEC::receiveByte(void)
 
 	// Wait for talker ready
 	if(timeoutWait(IEC_PIN_CLK, released))
+	{
+		Debug_printv("Wait for talker ready");
 		return -1; // return error because timeout
+	}
 
 	// Say we're ready
 	// STEP 2: READY FOR DATA
@@ -149,7 +152,10 @@ uint8_t IEC::receiveByte(void)
 
 		// but still wait for clk
 		if(timeoutWait(IEC_PIN_CLK, pulled))
-			return -1;
+		{
+			Debug_printv("After Acknowledge EOI");
+			return -1; // return error because timeout
+		}
 	}
 
 	// Sample ATN and set flag to indicate SELECT or DATA mode
@@ -185,14 +191,20 @@ uint8_t IEC::receiveByte(void)
 
 		// wait for bit to be ready to read
 		if(timeoutWait(IEC_PIN_CLK, released))
-			return -1;
+		{
+			Debug_printv("wait for bit to be ready to read");
+			return -1; // return error because timeout
+		}
 
 		// get bit
 		data or_eq (status(IEC_PIN_DATA) == released ? (1 << 7) : 0);
 
 		// wait for talker to finish sending bit
 		if(timeoutWait(IEC_PIN_CLK, pulled))
-			return -1;
+		{
+			Debug_printv("wait for talker to finish sending bit");
+			return -1; // return error because timeout
+		}
 	}
 
 	// STEP 4: FRAME HANDSHAKE
@@ -215,7 +227,7 @@ uint8_t IEC::receiveByte(void)
 	// {
 	// 	// EOI Received
 	// 	delayMicroseconds(TIMING_STABLE_WAIT);
-	// 	//release(IEC_PIN_CLK);
+	// 	release(IEC_PIN_CLK);
 	// 	release(IEC_PIN_DATA);
 	// }
 
@@ -245,7 +257,10 @@ bool IEC::sendByte(uint8_t data, boolean signalEOI)
 	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
 	// to  accept  data.  What  happens  next  is  variable.  
 	if(timeoutWait(IEC_PIN_DATA, released))
-		return false;
+	{
+		Debug_printv("Wait for listener to be ready");
+		return false; // return error because timeout
+	}
 
 	// Either  the  talker  will pull the 
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
@@ -274,10 +289,16 @@ bool IEC::sendByte(uint8_t data, boolean signalEOI)
 
 		// get eoi acknowledge:
 		if(timeoutWait(IEC_PIN_DATA, pulled))
-			return false;
+		{
+			Debug_printv("Get eoi acknowledge");
+			return false; // return error because timeout
+		}
 
 		if(timeoutWait(IEC_PIN_DATA, released))
-			return false;
+		{
+			Debug_printv("Wait for listener to be ready");
+			return false; // return error because timeout
+		}
 	}
 	else
 	{
@@ -335,7 +356,10 @@ bool IEC::sendByte(uint8_t data, boolean signalEOI)
 
 	// Wait for listener to accept data
 	if(timeoutWait(IEC_PIN_DATA, pulled))
-		return false;
+	{
+		Debug_printv("Wait for listener to accept data");
+		return false; // return error because timeout
+	}
 
 	// STEP 5: START OVER
 	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
@@ -475,7 +499,7 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 		Debug_printf("ATN: %.2X ", c);
 		if(m_state bitand errorFlag)
 		{
-			Debug_printf("\r\nm_state bitand errorFlag 0");
+			Debug_printv("Get first ATN byte");
 			return ATN_ERROR;
 		}
 
@@ -503,7 +527,7 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 				c = (ATNCommand)receive();
 				if(m_state bitand errorFlag)
 				{
-					Debug_printf("\r\nm_state bitand errorFlag 1");
+					Debug_printv("Get the first cmd byte");
 					return ATN_ERROR;
 				}
 				
@@ -549,17 +573,17 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 	// Okay, we will listen.
 	Debug_printf("(20 LISTEN) (%.2d DEVICE) ", atn_cmd.device);
 
-	// If the command is DATA and it is not to expect just a small command on the command channel, then
+	// If the command is SECOND and it is not to expect just a small command on the command channel, then
 	// we're into something more heavy. Otherwise read it all out right here until UNLISTEN is received.
-	if(atn_cmd.command == ATN_CODE_DATA and atn_cmd.channel not_eq CMD_CHANNEL) 
+	if(atn_cmd.command == ATN_CODE_SECOND && atn_cmd.channel not_eq CMD_CHANNEL) 
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
 		Debug_printf("(%.2X SECOND) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
 		return ATN_CMD_LISTEN;
 	}
 
-	// OPEN Named Channel
-	else if(atn_cmd.command == ATN_CODE_OPEN) 
+	// OPEN
+	else if(atn_cmd.command == ATN_CODE_SECOND || atn_cmd.command == ATN_CODE_OPEN) 
 	{
 		Debug_printf("(%.2X OPEN) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
 
@@ -569,7 +593,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 			c = (ATNCommand)receive();
 			if(m_state bitand errorFlag)
 			{
-				Debug_printf("\r\nm_state bitand errorFlag 2");
+				Debug_printv("Some other command");
 				return ATN_ERROR;
 			}
 				
@@ -585,7 +609,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 			{
 				// Buffer is going to overflow, this is an error condition
 				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-				Debug_println("ATN_CMD_MAX_LENGTH");
+				Debug_printv("ATN_CMD_MAX_LENGTH");
 				return ATN_ERROR;
 			}
 			atn_cmd.str[i++] = c;
@@ -597,6 +621,12 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 	else if(atn_cmd.command == ATN_CODE_CLOSE) 
 	{
 		Debug_printf("(%.2X CLOSE) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
+	}
+
+	// Unknown
+	else
+	{
+		Debug_printv("OTHER (%.2X COMMAND) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
 	}
 
 	return ATN_CMD;
@@ -622,7 +652,10 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 		{
 			c = (ATNCommand)receive();
 			if(m_state bitand errorFlag)
+			{
+				Debug_printv("Some other command");
 				return ATN_ERROR;
+			}
 
 			if(i >= ATN_CMD_MAX_LENGTH) 
 			{
@@ -660,7 +693,7 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 uint8_t IEC::receive()
 {
 	uint8_t data;
-	data = receiveByte();
+	data = receiveByte(); // Standard CBM Timing
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
 #endif
@@ -675,7 +708,7 @@ bool IEC::send(uint8_t data)
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
 #endif	
-	return sendByte(data, false);
+	return sendByte(data, false); // Standard CBM Timing
 } // send
 
 
