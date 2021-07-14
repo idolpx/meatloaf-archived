@@ -92,7 +92,7 @@
 #define TIMING_FNF_DELAY     100   // delay after fnf?         (us)
 
 // See timeoutWait
-#define TIMEOUT 65500
+#define TIMEOUT 10000 // 1ms
 
 #define	ATN_CMD_MAX_LENGTH 	100
 

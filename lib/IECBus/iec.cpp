@@ -68,7 +68,7 @@ byte IEC::timeoutWait(byte iecPIN, IECline lineStatus)
 			return false;
 		}
 
-		delayMicroseconds(1); // The aim is to make the loop at least 3 us
+		delayMicroseconds(3); // The aim is to make the loop at least 3 us
 		t++;
 	}
 
@@ -227,7 +227,7 @@ uint8_t IEC::receiveByte(void)
 	// {
 	// 	// EOI Received
 	// 	delayMicroseconds(TIMING_STABLE_WAIT);
-	// 	release(IEC_PIN_CLK);
+	// 	// release(IEC_PIN_CLK);
 	// 	release(IEC_PIN_DATA);
 	// }
 
@@ -344,9 +344,9 @@ bool IEC::sendByte(uint8_t data, boolean signalEOI)
 
 		data >>= 1; // get next bit
 	}
-
 	pull(IEC_PIN_CLK);	// pull clock cause we're done
 	release(IEC_PIN_DATA); // release data because we're done
+	
 
 	// STEP 4: FRAME HANDSHAKE
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
@@ -372,7 +372,7 @@ bool IEC::sendByte(uint8_t data, boolean signalEOI)
 	// 	// EOI Received
 	// 	delayMicroseconds(TIMING_STABLE_WAIT);
 	// 	release(IEC_PIN_CLK);
-	// 	release(IEC_PIN_DATA);
+	// 	// release(IEC_PIN_DATA);
 	// }
 
 	return true;
@@ -561,6 +561,11 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 		//delayMicroseconds(TIMING_ATN_DELAY);
 		// Don't do anything here or could cause LOAD ERROR!!!
 	}
+	else
+	{
+		release(IEC_PIN_CLK);
+		release(IEC_PIN_DATA);
+	}
 
 	return ATN_IDLE;
 } // service
@@ -614,7 +619,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 			}
 			atn_cmd.str[i++] = c;
 			atn_cmd.str[i] = '\0';
-		}			
+		}		
 	}
 
 	// CLOSE Named Channel
@@ -646,29 +651,26 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 	Debug_printf("(40 TALK) (%.2d DEVICE) ", atn_cmd.device);
 	Debug_printf("(%.2X SECOND) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
 
+	// Record the cmd string until ATN is released
 	while(status(IEC_PIN_ATN) == pulled) 
 	{
-		if(status(IEC_PIN_CLK) == released) 
-		{
-			c = (ATNCommand)receive();
-			if(m_state bitand errorFlag)
-			{
-				Debug_printv("Some other command");
-				return ATN_ERROR;
-			}
+		c = (ATNCommand)receive();
 
-			if(i >= ATN_CMD_MAX_LENGTH) 
-			{
-				// Buffer is going to overflow, this is an error condition
-				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-				return ATN_ERROR;
-			}
-			atn_cmd.str[i++] = c;
-			atn_cmd.str[i] = '\0';
+		if(i >= ATN_CMD_MAX_LENGTH) 
+		{
+			// Buffer is going to overflow, this is an error condition
+			// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
+			Debug_printv("ATN_CMD_MAX_LENGTH");
+			return ATN_ERROR;
 		}
+		atn_cmd.str[i++] = c;
+		atn_cmd.str[i] = '\0';
 	}
 
-	// Now ATN has just been released, do bus turnaround
+	// Delay after ATN is released
+	//delayMicroseconds(TIMING_BIT);
+
+	// Now do bus turnaround
 	if(not turnAround())
 		return ATN_ERROR;
 
@@ -710,6 +712,14 @@ bool IEC::send(uint8_t data)
 #endif	
 	return sendByte(data, false); // Standard CBM Timing
 } // send
+
+bool IEC::send(std::string data)
+{
+	for (int i = 0; i < data.length(); ++i)
+		send(data[i]);
+
+	return true;
+}
 
 
 // Same as IEC_send, but indicating that this is the last byte.

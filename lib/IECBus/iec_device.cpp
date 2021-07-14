@@ -70,8 +70,7 @@ void Interface::sendStatus(void)
 	Debug_printv("status: %s", status.c_str());
 	Debug_print("[");
 	
-	for (i = 0; i < status.length(); ++i)
-		m_iec.send(status[i]);
+	m_iec.send(status);
 
 	Debug_println("]");
 
@@ -625,45 +624,37 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 {
 	Debug_printf("(%d CHANNEL) (%d openState)\r\n", chan, m_openState);
 
-	// if (chan == CMD_CHANNEL)
-	// {
-	// 	// Send status message
-	// 	sendStatus();
-	// }
-	// else
+	switch (m_openState)
 	{
-		switch (m_openState)
-		{
-			case O_NOTHING:
-				// Say file not found
-				sendFileNotFound();
-				break;
+		case O_NOTHING:
+			// Say file not found
+			sendFileNotFound();
+			break;
 
-			case O_STATUS:
-				// Send status
-				sendStatus();
-				break;
+		case O_STATUS:
+			// Send status
+			sendStatus();
+			break;
 
-			case O_FILE:
-				// Send file
-				sendFile();
-				break;
+		case O_FILE:
+			// Send file
+			sendFile();
+			break;
 
-			case O_DIR:
-				// Send listing
-				sendListing();
-				break;
+		case O_DIR:
+			// Send listing
+			sendListing();
+			break;
 
-			case O_ML_INFO:
-				// Send device info
-				sendDeviceInfo();
-				break;
+		case O_ML_INFO:
+			// Send device info
+			sendDeviceInfo();
+			break;
 
-			case O_ML_STATUS:
-				// Send device info
-				sendDeviceStatus();
-				break;
-		}
+		case O_ML_STATUS:
+			// Send device info
+			sendDeviceStatus();
+			break;
 	}
 
 	m_openState = O_NOTHING;

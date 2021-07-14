@@ -23,6 +23,7 @@
 #include "../../include/global_defines.h"
 #include "../../include/cbmdefines.h"
 #include "../../include/petscii.h"
+#include "string_utils.h"
 
 class IEC
 {
@@ -92,6 +93,7 @@ public:
 	// Sends a byte. The communication must be in the correct state: a load command
 	// must just have been recieved. If something is not OK, FALSE is returned.
 	bool send(byte data);
+	bool send(std::string data);
 
 	// Same as IEC_send, but indicating that this is the last byte.
 	bool sendEOI(byte data);
