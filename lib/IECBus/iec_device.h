@@ -82,7 +82,7 @@ public:
 	bool begin();
 
 	// The handler returns the current IEC state, see the iec.h for possible states.
-	void service(void);
+	uint8_t service(void);
 
 
 private:

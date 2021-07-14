@@ -617,8 +617,11 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 				Debug_printv("ATN_CMD_MAX_LENGTH");
 				return ATN_ERROR;
 			}
-			atn_cmd.str[i++] = c;
-			atn_cmd.str[i] = '\0';
+			if(c != 0x0D)
+			{
+				atn_cmd.str[i++] = c;
+				atn_cmd.str[i] = '\0';			
+			}
 		}		
 	}
 

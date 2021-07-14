@@ -99,8 +99,11 @@ void setup()
         Serial.println("]");
 
 
-        //  attachInterrupt(digitalPinToInterrupt(IEC_PIN_ATN), isrCheckATN, FALLING);
-        //  attachInterrupt(digitalPinToInterrupt(IEC_PIN_ATN), isrATNRising, RISING);
+        attachInterrupt(
+            digitalPinToInterrupt(IEC_PIN_ATN), 
+            isrCheckATN, 
+            FALLING
+        );
     }
 
 
@@ -120,19 +123,26 @@ void loop()
 
     www.handleClient();
     modem.service();
-    drive.service();
     //cli.readSerial();
+    if ( bus_state != statemachine::idle )
+    {
+        Debug_printv("bus_state[%d]", bus_state);
+        if( drive.service() == IEC::ATN_IDLE )
+            bus_state = statemachine::idle;
+    }
+        
+
 #ifdef DEBUG_TIMING
     iec.debugTiming();
 #endif
 }
 
-// void isrCheckATN()
-// {
-//  state = statemachine::check_atn;
-//  iec.init();
-// }
 
+void isrCheckATN()
+{
+    bus_state = statemachine::select;
+    // iec.init();
+}
 
 ////////////////////////////////
 // Utils to return HTTP codes, and determine content-type

@@ -284,7 +284,7 @@ void Interface::sendDeviceStatus()
 	ledON();
 } // sendDeviceStatus
 
-void Interface::service(void)
+uint8_t Interface::service(void)
 {
 	//#ifdef HAS_RESET_LINE
 	//	if(m_iec.checkRESET()) {
@@ -364,6 +364,8 @@ void Interface::service(void)
 				break;
 		} // switch
 	}
+	
+	return mode;
 } // service
 
 MFile* Interface::getPointed(MFile* urlFile) {
@@ -580,7 +582,6 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 
 	// Clear command string
 	m_atn_cmd.str[0] = '\0';
-	m_atn_cmd.strLen = 0;
 } // handleATNCmdCodeOpen
 
 void Interface::dumpState() {

@@ -73,7 +73,6 @@ public:
 		uint8_t channel;
 		uint8_t device;
 		char str[ATN_CMD_MAX_LENGTH];
-		uint8_t strLen;
 	} ATNCmd;
 
 	IEC();

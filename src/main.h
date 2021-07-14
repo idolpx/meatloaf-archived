@@ -68,15 +68,14 @@ SDFSConfig fileSystemConfig = SDFSConfig();
 
 extern StaticJsonDocument<512> g_mlconfig;
 
-//void IRAM_ATTR isrCheckATN();
-// enum class statemachine
-// {
-//     none,
-//     check_atn
-// };
-// statemachine state = statemachine::none;
-//uint8_t state_int;
-//String state_string;
+enum class statemachine
+{
+    idle,   // BUS is idle
+    select, // ATN is pulled read command
+    data    // READY to receive or send data
+};
+statemachine bus_state = statemachine::idle;
+void IRAM_ATTR isrCheckATN();
 
 String statusMessage;
 bool initFailed = false;
