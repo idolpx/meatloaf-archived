@@ -6,7 +6,7 @@
 // fajna sciezka do sprawdzenia:
 // utilities/disk tools/cie.d64
 
-#define OK_REPLY "00 - OK\x0d\x0a\x04"
+#define OK_REPLY "00 - OK\x0d"
 
 CServerSessionMgr CServerFileSystem::session;
 
@@ -23,6 +23,7 @@ std::string CServerSessionMgr::readLn() {
     char buffer[80];
     // telnet line ends with 10;
     getline(buffer, 80, 10);
+    Debug_printv("Inside readLn: %s", buffer);
     return std::string((char *)buffer);
 }
 
@@ -31,6 +32,7 @@ bool CServerSessionMgr::sendCommand(std::string command) {
     if(establishSession()) {
         Serial.printf("CServer: send command: %s\n", command.c_str());
         (*this) << (command+'\r');
+        (*this).flush();
         return true;
     }
     else
@@ -38,7 +40,12 @@ bool CServerSessionMgr::sendCommand(std::string command) {
 }
 
 bool CServerSessionMgr::isOK() {
-    return readLn() == OK_REPLY;
+    auto a = readLn();
+
+    for(int i = 0 ; i<a.length(); i++)
+        Debug_printv("'%d'", a[i]);
+
+    return a == OK_REPLY;
 }
 
 bool CServerSessionMgr::traversePath(MFile* path) {
@@ -425,6 +432,7 @@ MFile* CServerFile::getNextFileInDir() {
 
     if(dirIsImage) {
         auto line = CServerFileSystem::session.readLn();
+        Debug_printv("next file in dir got %s", line);
         // 'ot line:'0 ␒"CIE�������������" 00�2A�
         // 'ot line:'2   "CIE+SERIAL      " PRG   2049
         // 'ot line:'1   "CIE-SYS31801    " PRG   2049
