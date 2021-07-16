@@ -75,7 +75,7 @@ enum class statemachine
     data    // READY to receive or send data
 };
 statemachine bus_state = statemachine::idle;
-void IRAM_ATTR isrCheckATN();
+void IRAM_ATTR onATN();
 
 String statusMessage;
 bool initFailed = false;

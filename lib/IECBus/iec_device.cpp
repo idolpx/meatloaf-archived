@@ -359,12 +359,12 @@ uint8_t Interface::service(void)
 				break;
 
 			case IEC::ATN_CODE_CLOSE:
-				Debug_printv("[CLOSE] ");
+				//Debug_printv("[CLOSE] ");
 				handleATNCmdClose();
 				break;
 		} // switch
 	}
-	
+
 	return mode;
 } // service
 

@@ -25,6 +25,7 @@
 #include "../../include/petscii.h"
 #include "string_utils.h"
 
+
 class IEC
 {
 public:
@@ -75,8 +76,8 @@ public:
 		char str[ATN_CMD_MAX_LENGTH];
 	} ATNCmd;
 
-	IEC();
-	~IEC() {}
+	// IEC()
+	// ~IEC() {}
 
 	// Initialise iec driver
 	bool init();
@@ -137,15 +138,17 @@ public:
 private:
 	// IEC Bus Commands
 	ATNMode deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
-	ATNMode deviceUnListen(ATNCmd &atn_cmd); // 0x3F 				Unlisten, all devices
+	//ATNMode deviceUnListen(ATNCmd &atn_cmd);  // 0x3F 				Unlisten, all devices
 	ATNMode deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
-	ATNMode deviceUnTalk(ATNCmd &atn_cmd);	  // 0x5F 				Untalk, all devices
-	ATNMode deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
+	//ATNMode deviceUnTalk(ATNCmd &atn_cmd);	  // 0x5F 				Untalk, all devices
+	//ATNMode deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
 	ATNMode deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
-	ATNMode deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
+	//ATNMode deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
+
+
 
 protected:
-	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus);
+	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT);
 	uint8_t receiveByte(void);
 	bool sendByte(uint8_t data, bool signalEOI);
 	bool turnAround(void);
@@ -188,7 +191,7 @@ protected:
 	}
 
 	// communication must be reset
-	uint8_t m_state;
+	uint8_t m_state = noFlags;
 };
 
 #endif

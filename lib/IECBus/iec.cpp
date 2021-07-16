@@ -20,10 +20,10 @@
 using namespace CBM;
 
 
-IEC::IEC() :
-	m_state(noFlags)
-{
-} // ctor
+// IEC::IEC() :
+// 	m_state(noFlags)
+// {
+// } // ctor
 
 // Set all IEC_signal lines in the correct mode
 //
@@ -52,14 +52,15 @@ bool IEC::init()
 	return true;
 } // init
 
-byte IEC::timeoutWait(byte iecPIN, IECline lineStatus)
+// Wait indefinitely if wait = 0
+byte IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait)
 {
-	uint16_t t = 0;
+	size_t t = 0;
 	
 #if defined(ESP8266)
 	ESP.wdtFeed();
 #endif	
-	while(t < TIMEOUT) {
+	while(t < wait || wait == 0) {
 
 		// Check the waiting condition:
 		if(status(iecPIN) == lineStatus)
@@ -103,7 +104,7 @@ uint8_t IEC::receiveByte(void)
 	m_state = noFlags;
 
 	// Wait for talker ready
-	if(timeoutWait(IEC_PIN_CLK, released))
+	if(timeoutWait(IEC_PIN_CLK, released, FOREVER))
 	{
 		Debug_printv("Wait for talker ready");
 		return -1; // return error because timeout
@@ -120,7 +121,7 @@ uint8_t IEC::receiveByte(void)
 	// Either  the  talker  will pull the 
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
 	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
-	// without  the Clock line going to true, it has a special task to perform: note EOI.
+	// without  the Clock line going to true, it has a special task to perform: note EOI.	uint8_t n = 0;
 	uint8_t n = 0;
 	while(status(IEC_PIN_CLK) == released && (n < 20)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
@@ -128,6 +129,8 @@ uint8_t IEC::receiveByte(void)
 	}
 
 	if(n >= TIMING_EOI_THRESH) 
+	
+	//if(timeoutWait(IEC_PIN_CLK, pulled, TIMING_EOI_WAIT))
 	{
 		// INTERMISSION: EOI
 		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the 
@@ -155,7 +158,7 @@ uint8_t IEC::receiveByte(void)
 		{
 			Debug_printv("After Acknowledge EOI");
 			return -1; // return error because timeout
-		}
+		}		
 	}
 
 	// Sample ATN and set flag to indicate SELECT or DATA mode
@@ -243,7 +246,7 @@ uint8_t IEC::receiveByte(void)
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-bool IEC::sendByte(uint8_t data, boolean signalEOI)
+bool IEC::sendByte(uint8_t data, bool signalEOI)
 {
 	//m_state = noFlags;
 
@@ -275,7 +278,7 @@ bool IEC::sendByte(uint8_t data, boolean signalEOI)
 		// If  it's  a  sequential  disk  file,  don't  ask  for  more:  there will be no more.  If it's 
 		// a relative record, that's the end of the record.  The character itself will still be coming, but 
 		// the listener should note: here comes the last character. So if the listener sees the 200 microsecond  
-		// time-out,  it  must  signal  "OK,  I  noticed  the  EOI"  back  to  the  talker,    I  does  this  
+		// time-out,  it  must  signal  "OK,  I  noticed  the  EOI"  back  to  the  talker,  It  does  this  
 		// by pulling  the  Data  line  true  for  at  least  60  microseconds,  and  then  releasing  it.  
 		// The  talker  will  then revert to transmitting the character in the usual way; within 60 microseconds 
 		// it will pull the Clock line  true,  and  transmission  will  continue.  At  this point,  the  Clock  
@@ -290,13 +293,13 @@ bool IEC::sendByte(uint8_t data, boolean signalEOI)
 		// get eoi acknowledge:
 		if(timeoutWait(IEC_PIN_DATA, pulled))
 		{
-			Debug_printv("Get eoi acknowledge");
+			Debug_printv("Get EOI acknowledge");
 			return false; // return error because timeout
 		}
 
 		if(timeoutWait(IEC_PIN_DATA, released))
 		{
-			Debug_printv("Wait for listener to be ready");
+			Debug_printv("Listener didn't release DATA");
 			return false; // return error because timeout
 		}
 	}
@@ -357,7 +360,7 @@ bool IEC::sendByte(uint8_t data, boolean signalEOI)
 	// Wait for listener to accept data
 	if(timeoutWait(IEC_PIN_DATA, pulled))
 	{
-		Debug_printv("Wait for listener to accept data");
+		Debug_printv("Wait for listener to acknowledge byte received");
 		return false; // return error because timeout
 	}
 
@@ -387,9 +390,9 @@ bool IEC::turnAround(void)
 	An unusual sequence takes place following ATN if the computer wishes the remote device to
 	become a talker. This will usually take place only after a Talk command has been sent.
 	Immediately after ATN is released, the selected device will be behaving like a listener. After all, it's
-	been listening during the ATN cycle, and the computer
-	has been a talker. At this instant, we have "wrong way" logic; the device is holding down the Data
-	line, and the computer is holding the Clock line. We must turn this around. Here's the sequence:
+	been listening during the ATN cycle, and the computer has been a talker. At this instant, we 
+	have "wrong way" logic; the device is holding down the Data	line, and the computer is holding the 
+	Clock line. We must turn this around. Here's the sequence:
 	the computer quickly realizes what's going on, and pulls the Data line to true (it's already there), as
 	well as releasing the Clock line to false. The device waits for this: when it sees the Clock line go
 	true [sic], it releases the Data line (which stays true anyway since the computer is now holding it down)
@@ -651,8 +654,7 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 	ATNCommand c;
 
 	// Okay, we will talk soon
-	Debug_printf("(40 TALK) (%.2d DEVICE) ", atn_cmd.device);
-	Debug_printf("(%.2X SECOND) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
+	Debug_printf("(40 TALK) (%.2d DEVICE) (%.2X SECOND) (%.2X CHANNEL)\r\n", atn_cmd.device, atn_cmd.command, atn_cmd.channel);
 
 	// Record the cmd string until ATN is released
 	while(status(IEC_PIN_ATN) == pulled) 
