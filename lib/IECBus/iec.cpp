@@ -96,17 +96,18 @@ byte IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-uint8_t IEC::receiveByte(void)
+int16_t IEC::receiveByte(void)
 {
 	m_state = noFlags;
 
 	// Wait for talker ready
-	if(timeoutWait(IEC_PIN_CLK, released, FOREVER))
-	{
-		Debug_printv("Wait for talker ready");
-		m_state = errorFlag;
-		return -1; // return error because timeout
-	}
+	while(status(IEC_PIN_CLK) != released);
+	// if(timeoutWait(IEC_PIN_CLK, released, FOREVER))
+	// {
+	// 	Debug_printv("Wait for talker ready");
+	// 	m_state = errorFlag;
+	// 	return -1; // return error because timeout
+	// }
 
 	// Say we're ready
 	// STEP 2: READY FOR DATA
@@ -115,6 +116,7 @@ uint8_t IEC::receiveByte(void)
 	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
 	// to  accept  data.  What  happens  next  is  variable.
 	release(IEC_PIN_DATA);
+	while(status(IEC_PIN_DATA) != released); // Wait for all other devices to release the data line
 
 	// Either  the  talker  will pull the 
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
@@ -156,7 +158,7 @@ uint8_t IEC::receiveByte(void)
 		if(timeoutWait(IEC_PIN_CLK, pulled))
 		{
 			Debug_printv("After Acknowledge EOI");
-			m_state = errorFlag;
+			//m_state = errorFlag;
 			return -1; // return error because timeout
 		}		
 	}
@@ -196,7 +198,7 @@ uint8_t IEC::receiveByte(void)
 		if(timeoutWait(IEC_PIN_CLK, released))
 		{
 			Debug_printv("wait for bit to be ready to read");
-			m_state = errorFlag;
+			//m_state = errorFlag;
 			return -1; // return error because timeout
 		}
 
@@ -207,7 +209,7 @@ uint8_t IEC::receiveByte(void)
 		if(timeoutWait(IEC_PIN_CLK, pulled))
 		{
 			Debug_printv("wait for talker to finish sending bit");
-			m_state = errorFlag;
+			//m_state = errorFlag;
 			return -1; // return error because timeout
 		}
 	}
@@ -219,8 +221,9 @@ uint8_t IEC::receiveByte(void)
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
 
 	// Acknowledge byte received
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(5);
 	pull(IEC_PIN_DATA);
+	delayMicroseconds(50);
 
 	// STEP 5: START OVER
 	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
@@ -253,6 +256,7 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 	//m_state = noFlags;
 
 	// Say we're ready
+	delayMicroseconds(60);
 	release(IEC_PIN_CLK);
 
 	// Wait for listener to be ready
@@ -331,13 +335,15 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 	// Send bits
 #if defined(ESP8266)
 	ESP.wdtFeed();
-#endif	
+#endif
+
+	// tell listner to wait
+	pull(IEC_PIN_CLK);
+	delayMicroseconds(TIMING_BIT);
+
 	for(uint8_t n = 0; n < 8; n++) 
 	{
 		// FIXME: Here check whether data pin goes low, if so end (enter cleanup)!
-
-		// tell listner to wait
-		pull(IEC_PIN_CLK);
 
 		// set bit
 		(data bitand 1) ? release(IEC_PIN_DATA) : pull(IEC_PIN_DATA);
@@ -347,13 +353,14 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_BIT);
 
+
+		pull(IEC_PIN_CLK);
+		delayMicroseconds(22);
+		release(IEC_PIN_DATA);
+		delayMicroseconds(14);
+
 		data >>= 1; // get next bit
 	}
-	pull(IEC_PIN_CLK);	// pull clock cause we're done
-	release(IEC_PIN_DATA); // release data because we're done
-
-	// Line stabilization delay
-	delayMicroseconds(TIMING_STABLE_WAIT);
 
 	// STEP 4: FRAME HANDSHAKE
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
@@ -362,7 +369,7 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
 
 	// Wait for listener to accept data
-	if(timeoutWait(IEC_PIN_DATA, pulled))
+	if(timeoutWait(IEC_PIN_DATA, pulled, 250))
 	{
 		Debug_printv("Wait for listener to acknowledge byte received");
 		return false; // return error because timeout
@@ -723,13 +730,15 @@ void IEC::deviceUnTalk(void)
 
 // IEC_receive receives a byte
 //
-uint8_t IEC::receive()
+int16_t IEC::receive()
 {
-	uint8_t data;
+	int16_t data;
 	data = receiveByte(); // Standard CBM Timing
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
 #endif
+	if(data < 0)
+		m_state = errorFlag;
 
 	return data;
 } // receive

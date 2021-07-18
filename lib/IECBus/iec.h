@@ -102,7 +102,7 @@ public:
 	bool sendFNF();
 
 	// Recieves a byte
-	uint8_t receive();
+	int16_t receive();
 
 	// Enabled Device Bit Mask
 	uint32_t enabledDevices;
@@ -149,7 +149,7 @@ private:
 
 protected:
 	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT, size_t step = 3);
-	uint8_t receiveByte(void);
+	int16_t receiveByte(void);
 	bool sendByte(uint8_t data, bool signalEOI);
 	bool turnAround(void);
 	bool undoTurnAround(void);

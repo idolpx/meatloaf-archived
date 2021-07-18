@@ -627,8 +627,6 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 	switch (m_openState)
 	{
 		case O_NOTHING:
-			// Say file not found
-			sendFileNotFound();
 			break;
 
 		case O_STATUS:

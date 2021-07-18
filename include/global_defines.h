@@ -84,7 +84,7 @@
 // IEC protocol timing consts in microseconds (us)
 #define TIMING_BIT           65    // bit clock hi/lo time
 #define TIMING_NO_EOI        5     // delay before bits
-#define TIMING_EOI_WAIT      200   // delay to signal EOI
+#define TIMING_EOI_WAIT      256   // delay to signal EOI
 #define TIMING_EOI_ACK       60    // threshold for Acknowledging EOI
 #define TIMING_EOI_THRESH    20    // threshold for EOI detect
 #define TIMING_STABLE_WAIT   20    // line stabilization
