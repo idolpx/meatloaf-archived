@@ -135,20 +135,20 @@ public:
 
 	void debugTiming();
 
+
 private:
 	// IEC Bus Commands
 	ATNMode deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
-	//ATNMode deviceUnListen(ATNCmd &atn_cmd);  // 0x3F 				Unlisten, all devices
+	void deviceUnListen(void);  // 0x3F 				Unlisten, all devices
 	ATNMode deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
-	//ATNMode deviceUnTalk(ATNCmd &atn_cmd);	  // 0x5F 				Untalk, all devices
+	void deviceUnTalk(void);	  // 0x5F 				Untalk, all devices
 	//ATNMode deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
 	ATNMode deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
 	//ATNMode deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
 
 
-
 protected:
-	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT);
+	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT, size_t step = 3);
 	uint8_t receiveByte(void);
 	bool sendByte(uint8_t data, bool signalEOI);
 	bool turnAround(void);

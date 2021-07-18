@@ -101,7 +101,7 @@ void setup()
         // Setup interrupt for ATN
         attachInterrupt(
             digitalPinToInterrupt(IEC_PIN_ATN), 
-            onATN, 
+            onAttention, 
             FALLING
         );
     }
@@ -137,7 +137,7 @@ void loop()
 #endif
 }
 
-void onATN()
+void onAttention()
 {
     bus_state = statemachine::select;
     // iec.init();

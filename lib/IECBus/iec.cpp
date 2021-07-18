@@ -53,40 +53,37 @@ bool IEC::init()
 } // init
 
 // Wait indefinitely if wait = 0
-byte IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait)
+byte IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
 {
-	size_t t = 0;
-	
+
 #if defined(ESP8266)
 	ESP.wdtFeed();
-#endif	
-	while(t < wait || wait == 0) {
+#endif
 
+	size_t t = 0;
+	if(wait == FOREVER)
+	{
+		while(status(iecPIN) != lineStatus) {
+			delayMicroseconds(step);
+			t++;	
+		}
+		return false;
+	}
+	else
+	{
+		while(status(iecPIN) != lineStatus && (t < wait)) {
+			delayMicroseconds(step);
+			t++;	
+		}
 		// Check the waiting condition:
-		if(status(iecPIN) == lineStatus)
+		if(t < wait)
 		{
 			// Got it!  Continue!
 			return false;
-		}
-
-		delayMicroseconds(3); // The aim is to make the loop at least 3 us
-		t++;
+		}		
 	}
 
-	// If down here, we have had a timeout.
-	// Release lines and go to inactive state with error flag
-	release(IEC_PIN_CLK);
-	release(IEC_PIN_DATA);
-
-	m_state = errorFlag;
-
-	// Wait for ATN release, problem might have occured during attention
-	while(status(IEC_PIN_ATN) == pulled);
-
-	// Note: The while above is without timeout. If ATN is held low forever,
-	//       the CBM is out in the woods and needs a reset anyways.
-
-	Debug_printf("\r\ntimeoutWait: true [%d] [%d] [%d] [%d]", iecPIN, lineStatus, t, m_state);
+	Debug_printv("pin[%d] state[%d] wait[%d] step[%d] t[%d]", iecPIN, lineStatus, wait, step, t);
 	return true;
 } // timeoutWait
 
@@ -107,6 +104,7 @@ uint8_t IEC::receiveByte(void)
 	if(timeoutWait(IEC_PIN_CLK, released, FOREVER))
 	{
 		Debug_printv("Wait for talker ready");
+		m_state = errorFlag;
 		return -1; // return error because timeout
 	}
 
@@ -121,14 +119,15 @@ uint8_t IEC::receiveByte(void)
 	// Either  the  talker  will pull the 
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
 	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
-	// without  the Clock line going to true, it has a special task to perform: note EOI.	uint8_t n = 0;
+	// without  the Clock line going to true, it has a special task to perform: note EOI.
+
 	uint8_t n = 0;
 	while(status(IEC_PIN_CLK) == released && (n < 20)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
 
-	if(n >= TIMING_EOI_THRESH) 
+	if(n >= TIMING_EOI_THRESH)
 	
 	//if(timeoutWait(IEC_PIN_CLK, pulled, TIMING_EOI_WAIT))
 	{
@@ -153,10 +152,11 @@ uint8_t IEC::receiveByte(void)
 		delayMicroseconds(TIMING_BIT);
 		release(IEC_PIN_DATA);
 
-		// but still wait for clk
+		// but still wait for CLK to be pulled
 		if(timeoutWait(IEC_PIN_CLK, pulled))
 		{
 			Debug_printv("After Acknowledge EOI");
+			m_state = errorFlag;
 			return -1; // return error because timeout
 		}		
 	}
@@ -189,13 +189,14 @@ uint8_t IEC::receiveByte(void)
 	ESP.wdtFeed();
 #endif
 	uint8_t data = 0;
-	for(n = 0; n < 8; n++) {
+	for(uint8_t n = 0; n < 8; n++) {
 		data >>= 1;
 
 		// wait for bit to be ready to read
 		if(timeoutWait(IEC_PIN_CLK, released))
 		{
 			Debug_printv("wait for bit to be ready to read");
+			m_state = errorFlag;
 			return -1; // return error because timeout
 		}
 
@@ -206,6 +207,7 @@ uint8_t IEC::receiveByte(void)
 		if(timeoutWait(IEC_PIN_CLK, pulled))
 		{
 			Debug_printv("wait for talker to finish sending bit");
+			m_state = errorFlag;
 			return -1; // return error because timeout
 		}
 	}
@@ -349,7 +351,9 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 	}
 	pull(IEC_PIN_CLK);	// pull clock cause we're done
 	release(IEC_PIN_DATA); // release data because we're done
-	
+
+	// Line stabilization delay
+	delayMicroseconds(TIMING_STABLE_WAIT);
 
 	// STEP 4: FRAME HANDSHAKE
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
@@ -476,107 +480,116 @@ bool IEC::undoTurnAround(void)
 // Return value, see IEC::ATNMode definition.
 IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 {
+	IEC::ATNMode r = ATN_IDLE;
+	bool releaseLines = false;
+
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
-	if(status(IEC_PIN_RESET) == pulled) 
-	{
-		if (status(IEC_PIN_ATN) == pulled)
-		{
-			// If RESET & ATN are both pulled then CBM is off
-			return ATN_IDLE;
-		}
+	// if(status(IEC_PIN_RESET) == pulled) 
+	// {
+	// 	if (status(IEC_PIN_ATN) == pulled)
+	// 	{
+	// 		// If RESET & ATN are both pulled then CBM is off
+	// 		return ATN_IDLE;
+	// 	}
 		
-		return ATN_RESET;
+	// 	return ATN_RESET;
+	// }
+
+
+	// Attention line is pulled, go to listener mode and get message.
+	// Being fast with the next two lines here is CRITICAL!
+	release(IEC_PIN_CLK);
+	pull(IEC_PIN_DATA);
+	delayMicroseconds(TIMING_ATN_PREDELAY);
+
+	// Get first ATN byte, it is either LISTEN or TALK
+	int8_t c = (ATNCommand)receive();
+	Debug_printf("ATN: %.2X ", c);
+	if(m_state bitand errorFlag)
+	{
+		Debug_printv("Get first ATN byte");
+		return ATN_ERROR;
 	}
 
-	if (status(IEC_PIN_ATN) == pulled)
+	atn_cmd.code = c;
+	
+	int8_t cc = c;
+	if(c != ATN_CODE_UNTALK && c != ATN_CODE_UNLISTEN)
 	{
-		// Attention line is pulled, go to listener mode and get message.
-		// Being fast with the next two lines here is CRITICAL!
-		release(IEC_PIN_CLK);
-		pull(IEC_PIN_DATA);
-		delayMicroseconds(TIMING_ATN_PREDELAY);
-
-		// Get first ATN byte, it is either LISTEN or TALK
-		ATNCommand c = (ATNCommand)receive();
-		Debug_printf("ATN: %.2X ", c);
-		if(m_state bitand errorFlag)
+		// Is this a Listen or Talk command?
+		cc = (c bitand ATN_CODE_LISTEN);
+		if(cc == ATN_CODE_LISTEN)
 		{
-			Debug_printv("Get first ATN byte");
-			return ATN_ERROR;
+			atn_cmd.device = c ^ ATN_CODE_LISTEN; // device specified, '^' = XOR
+		} 
+		else
+		{
+			cc = (c bitand ATN_CODE_TALK);
+			atn_cmd.device = c ^ ATN_CODE_TALK; // device specified
 		}
 
-		atn_cmd.code = c;
-		
-		ATNCommand cc = c;
-		if(c != ATN_CODE_UNTALK && c != ATN_CODE_UNLISTEN)
+		// Is this command for us?
+		if ( isDeviceEnabled(atn_cmd.device) )
 		{
-			// Is this a Listen or Talk command?
-			cc = (ATNCommand)(c bitand ATN_CODE_LISTEN);
-			if(cc == ATN_CODE_LISTEN)
+			// Get the first cmd byte, the atn_cmd.code
+			c = receive();
+			if(m_state bitand errorFlag)
 			{
-				atn_cmd.device = c ^ ATN_CODE_LISTEN; // device specified, '^' = XOR
-			} 
-			else
-			{
-				cc = (ATNCommand)(c bitand ATN_CODE_TALK);
-				atn_cmd.device = c ^ ATN_CODE_TALK; // device specified
+				Debug_printv("Get the first cmd byte");
+				return ATN_ERROR;
 			}
+			
+			atn_cmd.code = c;
+			atn_cmd.command = c bitand 0xF0; // upper nibble, command
+			atn_cmd.channel = c bitand 0x0F; // lower nibble, channel
 
-			// Is this command for us?
-			if ( isDeviceEnabled(atn_cmd.device) )
+			if ( cc == ATN_CODE_LISTEN )
 			{
-				// Get the first cmd byte, the atn_cmd.code
-				c = (ATNCommand)receive();
-				if(m_state bitand errorFlag)
-				{
-					Debug_printv("Get the first cmd byte");
-					return ATN_ERROR;
-				}
-				
-				atn_cmd.code = c;
-				atn_cmd.command = c bitand 0xF0; // upper nibble, command
-				atn_cmd.channel = c bitand 0x0F; // lower nibble, channel
-
-				if ( cc == ATN_CODE_LISTEN )
-				{
-					return deviceListen(atn_cmd);
-				}
-				else if ( cc == ATN_CODE_TALK )
-				{
-					return deviceTalk(atn_cmd);
-				}				
+				r = deviceListen(atn_cmd);
 			}
+			else if ( cc == ATN_CODE_TALK )
+			{
+				r = deviceTalk(atn_cmd);
+			}
+			releaseLines = m_state bitand errorFlag;				
 		}
-
-		// Either the message is not for us or insignificant
-		//delayMicroseconds(TIMING_ATN_DELAY);
+		else
+		{
+			// Command is not for us
+			releaseLines = true;
+		}
+	}
+	else if ( cc == ATN_CODE_UNLISTEN )
+	{
+		Debug_println("UNLISTEN");
+		releaseLines = true;
+	}
+	else if ( cc == ATN_CODE_UNTALK )
+	{
+		Debug_println("UNTALK");
+		releaseLines = true;
+	}		
+			
+	// Was there an error?
+	if(releaseLines)
+	{
+		// Release lines
 		release(IEC_PIN_CLK);
 		release(IEC_PIN_DATA);
-		
-		if ( cc == ATN_CODE_UNTALK )
-			Debug_println("UNTALK");
-		if ( cc == ATN_CODE_UNLISTEN )
-			Debug_println("UNLISTEN");			
 
 		// Wait for ATN to release and quit
 		while(status(IEC_PIN_ATN) == pulled);
 		//delayMicroseconds(TIMING_ATN_DELAY);
-		// Don't do anything here or could cause LOAD ERROR!!!
 	}
-	else
-	{
-		release(IEC_PIN_CLK);
-		release(IEC_PIN_DATA);
-	}
+	// Don't do anything here or it could cause LOAD ERROR!!!
 
-	return ATN_IDLE;
+	return r;
 } // service
 
 IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 {
 	byte i=0;
-	ATNCommand c;
 
 	// Okay, we will listen.
 	Debug_printf("(20 LISTEN) (%.2d DEVICE) ", atn_cmd.device);
@@ -598,10 +611,10 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 		// Some other command. Record the cmd string until UNLISTEN is sent
 		for(;;) 
 		{
-			c = (ATNCommand)receive();
+			int8_t c = receive();
 			if(m_state bitand errorFlag)
 			{
-				Debug_printv("Some other command");
+				Debug_printv("Some other command [%.2X]", c);
 				return ATN_ERROR;
 			}
 				
@@ -643,15 +656,21 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 	return ATN_CMD;
 }
 
-// IEC::ATNMode  IEC::deviceUnListen(ATNCmd& atn_cmd)
-// {
+void IEC::deviceUnListen(void)
+{
+	Debug_printv("");
 
-// }
+	// Release lines
+	release(IEC_PIN_CLK);
+	release(IEC_PIN_DATA);
+
+	// Wait for ATN to release and quit
+	while(status(IEC_PIN_ATN) == pulled);
+}
 
 IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 {
 	byte i = 0;
-	ATNCommand c;
 
 	// Okay, we will talk soon
 	Debug_printf("(40 TALK) (%.2d DEVICE) (%.2X SECOND) (%.2X CHANNEL)\r\n", atn_cmd.device, atn_cmd.command, atn_cmd.channel);
@@ -659,7 +678,7 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 	// Record the cmd string until ATN is released
 	while(status(IEC_PIN_ATN) == pulled) 
 	{
-		c = (ATNCommand)receive();
+		int8_t c = receive();
 
 		if(i >= ATN_CMD_MAX_LENGTH) 
 		{
@@ -683,10 +702,17 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 	return ATN_CMD_TALK;
 }
 
-// IEC::ATNMode  IEC::deviceUnTalk(ATNCmd& atn_cmd)
-// {
+void IEC::deviceUnTalk(void)
+{
+	Debug_printv("");
 
-// }
+	// Release lines
+	release(IEC_PIN_CLK);
+	release(IEC_PIN_DATA);
+
+	// Wait for ATN to release and quit
+	while(status(IEC_PIN_ATN) == pulled);
+}
 
 // boolean  IEC::checkRESET()
 // {
@@ -704,6 +730,7 @@ uint8_t IEC::receive()
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
 #endif
+
 	return data;
 } // receive
 

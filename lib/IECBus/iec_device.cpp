@@ -61,8 +61,6 @@ void Interface::sendFileNotFound(void)
 
 void Interface::sendStatus(void)
 {
-	size_t i;
-
 	std::string status = m_device_status;
 	if (status.size() == 0)
 		status = "00, OK, 00, 00";
@@ -364,6 +362,7 @@ uint8_t Interface::service(void)
 				break;
 		} // switch
 	}
+	//Debug_printv("mode[%d] command[%.2X] channel[%.2X] state[%d]", mode, m_atn_cmd.command, m_atn_cmd.channel, m_openState);
 
 	return mode;
 } // service
@@ -477,6 +476,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	{
 		m_mfile.reset(MFSOwner::File(m_device.url()));
 		Debug_printv("!!!! device changed: unit:%d current url: [%s]", m_device.id(), m_device.url().c_str());
+		Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
 	}
 
 	size_t channel = atn_cmd.channel;
@@ -570,11 +570,10 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 			changeDir(referencedPath->url);
 		}
 		// 3. else - stream file
-		else
+		else if ( referencedPath->exists() )
 		{
 			// Set File
-			if ( referencedPath->exists() )
-				prepareFileStream(referencedPath->url);
+			prepareFileStream(referencedPath->url);
 		}
 	}
 
@@ -610,7 +609,7 @@ void Interface::changeDir(std::string url)
 	m_mfile.reset(MFSOwner::File(url));
 	m_openState = O_DIR;
 	Debug_printv("!!!! CD into [%s]", url.c_str());
-	Debug_printv("new current ur: [%s]", m_mfile->url.c_str());
+	Debug_printv("new current url: [%s]", m_mfile->url.c_str());
 	Debug_printv("LOAD $");		
 }
 
