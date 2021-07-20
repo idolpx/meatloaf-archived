@@ -8,6 +8,7 @@
 #include "scheme/smb.h"
 #include "scheme/ml.h"
 #include "scheme/cs.h"
+#include "scheme/ws.h"
 #include <vector>
 #include <sstream>
 #include "utils.h"
@@ -26,9 +27,10 @@ D64FileSystem d64FS;
 DNPFileSystem dnpFS;
 MLFileSystem mlFS;
 CServerFileSystem csFS;
+WSFileSystem wsFS;
 
 // put all available filesystems in this array - first matching system gets the file!
-std::vector<MFileSystem*> MFSOwner::availableFS{ /*&urlFS,*/ &d64FS, &dnpFS, &mlFS, &httpFS };
+std::vector<MFileSystem*> MFSOwner::availableFS{ /*&urlFS,*/ &d64FS, &dnpFS, &mlFS, &httpFS, &wsFS };
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");

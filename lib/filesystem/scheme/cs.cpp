@@ -76,7 +76,7 @@ bool CServerSessionMgr::traversePath(MFile* path) {
 
         //MFile::parsePath(&chopped, path->path); - nope this doessn't work and crases in the loop!
 
-        //Debug_printv("Before loop");
+        Debug_printv("Before loop");
         //Debug_printv("Chopped size:%d\n", chopped.size());
         delay(500);
 
