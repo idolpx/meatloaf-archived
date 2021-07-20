@@ -65,6 +65,7 @@ public:
             auto maxLen = (size < lastMsg.length()) ? size : lastMsg.length();
             strncpy((char *)buf, lastMsg.c_str(), maxLen);
             Debug_printv("Sending last msg and polling!");
+            lastMsg = "";
             client.poll();
             return maxLen;
         }
