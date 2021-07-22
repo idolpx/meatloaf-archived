@@ -8,7 +8,8 @@ Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive multi-device emulator
 [Here is a video showing it in action.](https://youtu.be/q6IYi3TIGNI)
 
 
-It's easy to wire up too.  (No need for the level shifter as shown in the circuit above)<br/>
+It's easy to wire up too. No need for the level shifter as shown in the circuit above.<br/>
+([Espressif CEO confirmed 5V tolerance of ESP8255, ESP8285 & ESP32.](https://www.facebook.com/groups/1499045113679103/permalink/1731855033731442))<br/>
 You can also leave off the edge card connector if you you just want to try out the drive emulation functionality.
 ![meatloaf64-wiring](docs/meatloaf64-wiring.png)
 
@@ -29,7 +30,6 @@ Virtual Drive - IEC Serial Port (minimal build)
 Virtual Modem - User Port (optional)
 * 1 × [24 PIN (2x12) 805 Series 3.96mm Pitch PCB Slot Solder Card Edge Connector](https://www.aliexpress.com/item/4000246156457.html)
 * 1 × [5x7cm Proto Board](https://www.aliexpress.com/item/4000285110600.html)
-
 
 To setup your own Meatloaf server check out this code.
 (https://github.com/idolpx/meatloaf-svr)
