@@ -53,7 +53,7 @@ bool IEC::init()
 } // init
 
 // Wait indefinitely if wait = 0
-byte IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
+size_t IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
 {
 
 #if defined(ESP8266)
@@ -67,7 +67,7 @@ byte IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
 			delayMicroseconds(step);
 			t++;	
 		}
-		return false;
+		return (t * step);
 	}
 	else
 	{
@@ -79,12 +79,12 @@ byte IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
 		if(t < wait)
 		{
 			// Got it!  Continue!
-			return false;
+			return (t * step);
 		}		
 	}
 
 	Debug_printv("pin[%d] state[%d] wait[%d] step[%d] t[%d]", iecPIN, lineStatus, wait, step, t);
-	return true;
+	return 0;
 } // timeoutWait
 
 
@@ -102,12 +102,6 @@ int16_t IEC::receiveByte(void)
 
 	// Wait for talker ready
 	while(status(IEC_PIN_CLK) != released);
-	// if(timeoutWait(IEC_PIN_CLK, released, FOREVER))
-	// {
-	// 	Debug_printv("Wait for talker ready");
-	// 	m_state = errorFlag;
-	// 	return -1; // return error because timeout
-	// }
 
 	// Say we're ready
 	// STEP 2: READY FOR DATA
@@ -155,10 +149,9 @@ int16_t IEC::receiveByte(void)
 		release(IEC_PIN_DATA);
 
 		// but still wait for CLK to be pulled
-		if(timeoutWait(IEC_PIN_CLK, pulled))
+		if(timeoutWait(IEC_PIN_CLK, pulled) == TIMED_OUT)
 		{
 			Debug_printv("After Acknowledge EOI");
-			//m_state = errorFlag;
 			return -1; // return error because timeout
 		}		
 	}
@@ -191,14 +184,14 @@ int16_t IEC::receiveByte(void)
 	ESP.wdtFeed();
 #endif
 	uint8_t data = 0;
+	uint8_t bit_time;  // Used to detect JiffyDOS
 	for(uint8_t n = 0; n < 8; n++) {
 		data >>= 1;
 
 		// wait for bit to be ready to read
-		if(timeoutWait(IEC_PIN_CLK, released))
+		if(timeoutWait(IEC_PIN_CLK, released) == TIMED_OUT)
 		{
 			Debug_printv("wait for bit to be ready to read");
-			//m_state = errorFlag;
 			return -1; // return error because timeout
 		}
 
@@ -206,13 +199,14 @@ int16_t IEC::receiveByte(void)
 		data or_eq (status(IEC_PIN_DATA) == released ? (1 << 7) : 0);
 
 		// wait for talker to finish sending bit
-		if(timeoutWait(IEC_PIN_CLK, pulled))
+		bit_time = timeoutWait(IEC_PIN_CLK, pulled);
+		if(bit_time == TIMED_OUT)
 		{
 			Debug_printv("wait for talker to finish sending bit");
-			//m_state = errorFlag;
 			return -1; // return error because timeout
 		}
 	}
+	//Debug_printv("Last bit time %dus", bit_time);
 
 	// STEP 4: FRAME HANDSHAKE
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
@@ -264,10 +258,10 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 	// When  the  listener  is  ready  to  listen,  it  releases  the  Data  
 	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
 	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
-	// to  accept  data.  What  happens  next  is  variable.  
-	if(timeoutWait(IEC_PIN_DATA, released))
+	// to  accept  data.  What  happens  next  is  variable.
+	if(timeoutWait(IEC_PIN_DATA, released) == TIMED_OUT)
 	{
-		Debug_printv("Wait for listener to be ready");
+		Debug_printv("Wait for listener to be ready [released]");
 		return false; // return error because timeout
 	}
 
@@ -297,13 +291,13 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 		delayMicroseconds(TIMING_EOI_WAIT);
 
 		// get eoi acknowledge:
-		if(timeoutWait(IEC_PIN_DATA, pulled))
+		if(timeoutWait(IEC_PIN_DATA, pulled) == TIMED_OUT)
 		{
 			Debug_printv("Get EOI acknowledge");
 			return false; // return error because timeout
 		}
 
-		if(timeoutWait(IEC_PIN_DATA, released))
+		if(timeoutWait(IEC_PIN_DATA, released) == TIMED_OUT)
 		{
 			Debug_printv("Listener didn't release DATA");
 			return false; // return error because timeout
@@ -369,10 +363,16 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
 
 	// Wait for listener to accept data
-	if(timeoutWait(IEC_PIN_DATA, pulled, 250))
-	{
-		Debug_printv("Wait for listener to acknowledge byte received");
-		return false; // return error because timeout
+	// if(timeoutWait(IEC_PIN_DATA, pulled, 250) == TIMED_OUT)
+	// {
+	// 	Debug_printv("Wait for listener to acknowledge byte received");
+	// 	return false; // return error because timeout
+	// }
+
+	uint8_t n = 0;
+	while(status(IEC_PIN_ATN) != released && status(IEC_PIN_DATA) != pulled && (n < 25)) {
+		delayMicroseconds(10);  // this loop should cycle in about 10 us...
+		n++;
 	}
 
 	// STEP 5: START OVER
@@ -416,11 +416,7 @@ bool IEC::turnAround(void)
 	Debug_printf("IEC turnAround: ");
 
 	// Wait until clock is released
-	if(timeoutWait(IEC_PIN_CLK, released))
-	{
-		Debug_println("timeout");
-		return false;
-	}
+	while(status(IEC_PIN_CLK) != released);
 		
 
 	release(IEC_PIN_DATA);
@@ -445,11 +441,7 @@ bool IEC::undoTurnAround(void)
 	Debug_printf("IEC undoTurnAround: ");
 
 	// wait until the computer releases the clock line
-	if(timeoutWait(IEC_PIN_CLK, pulled))
-	{
-		Debug_println("timeout");
-		return false;
-	}
+	while(status(IEC_PIN_CLK) != released);
 
 	Debug_println("complete");
 	return true;
@@ -586,7 +578,7 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 		release(IEC_PIN_DATA);
 
 		// Wait for ATN to release and quit
-		while(status(IEC_PIN_ATN) == pulled);
+		while(status(IEC_PIN_ATN) != released);
 		//delayMicroseconds(TIMING_ATN_DELAY);
 	}
 	// Don't do anything here or it could cause LOAD ERROR!!!
@@ -618,7 +610,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 		// Some other command. Record the cmd string until UNLISTEN is sent
 		for(;;) 
 		{
-			int8_t c = receive();
+			uint8_t c = receive();
 			if(m_state bitand errorFlag)
 			{
 				Debug_printv("Some other command [%.2X]", c);
@@ -642,7 +634,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 			}
 			if(c != 0x0D)
 			{
-				atn_cmd.str[i++] = c;
+				atn_cmd.str[i++] = (uint8_t)c;
 				atn_cmd.str[i] = '\0';			
 			}
 		}		
@@ -660,7 +652,10 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 		Debug_printv("OTHER (%.2X COMMAND) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
 	}
 
-	return ATN_CMD;
+	if(strlen(atn_cmd.str))
+		return ATN_CMD;
+	else
+		return ATN_IDLE;
 }
 
 void IEC::deviceUnListen(void)
@@ -685,7 +680,7 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 	// Record the cmd string until ATN is released
 	while(status(IEC_PIN_ATN) == pulled) 
 	{
-		int8_t c = receive();
+		int16_t c = receive();
 
 		if(i >= ATN_CMD_MAX_LENGTH) 
 		{
@@ -694,7 +689,7 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 			Debug_printv("ATN_CMD_MAX_LENGTH");
 			return ATN_ERROR;
 		}
-		atn_cmd.str[i++] = c;
+		atn_cmd.str[i++] = (uint8_t)c;
 		atn_cmd.str[i] = '\0';
 	}
 

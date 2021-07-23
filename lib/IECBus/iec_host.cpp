@@ -40,7 +40,7 @@ bool iecHost::deviceExists(uint8_t deviceID)
     //delayMicroseconds(TIMING_ATN_PREDELAY);
 
     // Wait for listeners to be ready
-    if(timeoutWait(IEC_PIN_DATA, pulled))
+    if(timeoutWait(IEC_PIN_DATA, pulled) == TIMED_OUT)
     {
         Debug_println(" inactive\nBus empty. Exiting.");
     }

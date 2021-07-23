@@ -25,6 +25,7 @@
 #include "../../include/petscii.h"
 #include "string_utils.h"
 
+#define TIMED_OUT 0
 
 class IEC
 {
@@ -148,7 +149,7 @@ private:
 
 
 protected:
-	uint8_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT, size_t step = 3);
+	size_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT, size_t step = 3);
 	int16_t receiveByte(void);
 	bool sendByte(uint8_t data, bool signalEOI);
 	bool turnAround(void);

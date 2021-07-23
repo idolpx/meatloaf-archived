@@ -1,3 +1,7 @@
+// .DNP - CMD hard Disk Native Partition
+// https://ist.uwaterloo.ca/~schepers/formats/D2M-DNP.TXT
+//
+
 #ifndef MEATFILE_DEFINES_DNP_H
 #define MEATFILE_DEFINES_DNP_H
 

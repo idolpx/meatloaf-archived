@@ -343,7 +343,7 @@ bool CServerFile::isDirectory() {
         return true;
     }
     if(chopped.size() == 1) {
-        // we might be in an imaga in the root
+        // we might be in an image in the root
         return mstr::endsWith((chopped[0]), ".d64", false);
     }
     if(chopped.size()>1) {

@@ -1,3 +1,9 @@
+// .D64 - The D64 disk image format
+// https://vice-emu.sourceforge.io/vice_17.html#SEC345
+// https://ist.uwaterloo.ca/~schepers/formats/D64.TXT
+//
+
+
 #ifndef MEATFILE_DEFINES_D64_H
 #define MEATFILE_DEFINES_D64_H
 
