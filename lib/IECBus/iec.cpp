@@ -64,6 +64,7 @@ size_t IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t ste
 	if(wait == FOREVER)
 	{
 		while(status(iecPIN) != lineStatus) {
+			ESP.wdtFeed();
 			delayMicroseconds(step);
 			t++;	
 		}
@@ -101,7 +102,11 @@ int16_t IEC::receiveByte(void)
 	m_state = noFlags;
 
 	// Wait for talker ready
-	while(status(IEC_PIN_CLK) != released);
+	while(status(IEC_PIN_CLK) != released)
+	{
+		ESP.wdtFeed();
+	}
+
 
 	// Say we're ready
 	// STEP 2: READY FOR DATA
@@ -111,6 +116,7 @@ int16_t IEC::receiveByte(void)
 	// to  accept  data.  What  happens  next  is  variable.
 	release(IEC_PIN_DATA);
 	while(status(IEC_PIN_DATA) != released); // Wait for all other devices to release the data line
+	//timeoutWait(IEC_PIN_DATA, released, FOREVER, 1);
 
 	// Either  the  talker  will pull the 
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
@@ -556,6 +562,14 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 		else
 		{
 			// Command is not for us
+			if ( cc == ATN_CODE_LISTEN )
+			{
+				Debug_printf("(20 LISTEN) (%.2d DEVICE)\r\n", atn_cmd.device);
+			}
+			else if ( cc == ATN_CODE_TALK )
+			{
+				Debug_printf("(40 TALK) (%.2d DEVICE)\r\n", atn_cmd.device);
+			}
 			releaseLines = true;
 		}
 	}
@@ -578,7 +592,10 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 		release(IEC_PIN_DATA);
 
 		// Wait for ATN to release and quit
-		while(status(IEC_PIN_ATN) != released);
+		while(status(IEC_PIN_ATN) != released)
+		{
+			ESP.wdtFeed();
+		}
 		//delayMicroseconds(TIMING_ATN_DELAY);
 	}
 	// Don't do anything here or it could cause LOAD ERROR!!!
@@ -667,7 +684,10 @@ void IEC::deviceUnListen(void)
 	release(IEC_PIN_DATA);
 
 	// Wait for ATN to release and quit
-	while(status(IEC_PIN_ATN) == pulled);
+	while(status(IEC_PIN_ATN) == pulled)
+	{
+		ESP.wdtFeed();
+	}
 }
 
 IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
@@ -713,7 +733,10 @@ void IEC::deviceUnTalk(void)
 	release(IEC_PIN_DATA);
 
 	// Wait for ATN to release and quit
-	while(status(IEC_PIN_ATN) == pulled);
+	while(status(IEC_PIN_ATN) == pulled)
+	{
+		ESP.wdtFeed();
+	}
 }
 
 // boolean  IEC::checkRESET()
