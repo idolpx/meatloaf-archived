@@ -329,8 +329,8 @@ uint8_t Interface::service(void)
 				handleATNCmdCodeOpen(m_atn_cmd);
 				break;
 
-			case IEC::ATN_CODE_SECOND: // data channel opened
-				Debug_printv("[SECOND]");
+			case IEC::ATN_CODE_SECONDARY: // data channel opened
+				Debug_printv("[SECONDARY]");
 				if (mode == IEC::ATN_CMD)
 				{
 					// Process a command
@@ -496,7 +496,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
 
 	Debug_printv("command[%s]", commandAndPath.command.c_str());
-	if (mstr::endsWith(commandAndPath.command, "$"))
+	if (mstr::startsWith(commandAndPath.command, "$"))
 	{
 		m_openState = O_DIR;
 		Debug_printv("LOAD $");

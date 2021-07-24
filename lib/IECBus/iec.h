@@ -48,24 +48,24 @@ public:
 	enum ATNMode
 	{
 		ATN_IDLE = 0,		// Nothing recieved of our concern
-		ATN_CMD = 1,		// A command is recieved
-		ATN_CMD_LISTEN = 2, // A command is recieved and data is coming to us
-		ATN_CMD_TALK = 3,	// A command is recieved and we must talk now
-		ATN_ERROR = 4,		// A problem occoured, reset communication
-		ATN_RESET = 5		// The IEC bus is in a reset state (RESET line).
+		ATN_CMD = 1,		  // A command is recieved
+		ATN_CMD_LISTEN = 2,   // A command is recieved and data is coming to us
+		ATN_CMD_TALK = 3,	  // A command is recieved and we must talk now
+		ATN_ERROR = 4,		  // A problem occoured, reset communication
+		ATN_RESET = 5		  // The IEC bus is in a reset state (RESET line).
 	};
 
 	// IEC ATN commands:
 	enum ATNCommand
 	{
-		ATN_CODE_GLOBAL = 0x00,	  // 0x00 + cmd (global command)
-		ATN_CODE_LISTEN = 0x20,	  // 0x20 + device_id (LISTEN)
-		ATN_CODE_UNLISTEN = 0x3F, // 0x3F (UNLISTEN)
-		ATN_CODE_TALK = 0x40,	  // 0x40 + device_id (TALK)
-		ATN_CODE_UNTALK = 0x5F,	  // 0x5F (UNTALK)
-		ATN_CODE_SECOND = 0x60,	  // 0x60 + channel (SECOND)
-		ATN_CODE_CLOSE = 0xE0,	  // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
-		ATN_CODE_OPEN = 0xF0	  // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
+		ATN_CODE_GLOBAL = 0x00,	      // 0x00 + cmd (global command)
+		ATN_CODE_LISTEN = 0x20,	      // 0x20 + device_id (LISTEN)
+		ATN_CODE_UNLISTEN = 0x3F,     // 0x3F (UNLISTEN)
+		ATN_CODE_TALK = 0x40,	      // 0x40 + device_id (TALK)
+		ATN_CODE_UNTALK = 0x5F,	      // 0x5F (UNTALK)
+		ATN_CODE_SECONDARY = 0x60,	  // 0x60 + channel (SECONDARY)
+		ATN_CODE_CLOSE = 0xE0,	      // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
+		ATN_CODE_OPEN = 0xF0	      // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
 	};
 
 	typedef struct _tagATNCMD
