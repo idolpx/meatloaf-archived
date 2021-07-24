@@ -1042,14 +1042,14 @@ void Interface::sendFile()
 	#endif
 			}
 
-			// Exit if ATN is pulled while sending
-			if ( m_iec.state() bitand atnFlag )
-			{
-				// TODO: If sending from a named channel save file pointer position
-				setDeviceStatus(74);
-				success = true;
-				break;
-			}
+			// // Exit if ATN is pulled while sending
+			// if ( m_iec.state() bitand atnFlag )
+			// {
+			// 	// TODO: If sending from a named channel save file pointer position
+			// 	setDeviceStatus(74);
+			// 	success = true;
+			// 	break;
+			// }
 
 			// Toggle LED
 			if (i % 50 == 0)

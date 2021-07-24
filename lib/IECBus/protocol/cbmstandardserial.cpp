@@ -141,6 +141,12 @@ int16_t  CBMStandardSerial::receiveByte(void)
 			Debug_printv("wait for talker to finish sending bit");
 			return -1; // return error because timeout
 		}
+
+		// // if ATN is pulled, exit and cleanup
+		// if(status(IEC_PIN_ATN) == pulled)
+		// {	
+		// 	return -1;
+		// }		
 	}
 	//Debug_printv("Last bit time %dus", bit_time);
 
@@ -274,6 +280,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	{
 		// FIXME: Here check whether data pin goes low, if so end (enter cleanup)!
 
+
 		// set bit
 		(data bitand 1) ? release(IEC_PIN_DATA) : pull(IEC_PIN_DATA);
 		delayMicroseconds(TIMING_BIT);
@@ -289,6 +296,12 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 		delayMicroseconds(14);
 
 		data >>= 1; // get next bit
+
+		// // if ATN is pulled, exit and cleanup
+		// if(status(IEC_PIN_ATN) == pulled)
+		// {	
+		// 	return false;
+		// }		
 	}
 
 	// STEP 4: FRAME HANDSHAKE
@@ -305,7 +318,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// }
 
 	uint8_t n = 0;
-	while(status(IEC_PIN_ATN) != released && status(IEC_PIN_DATA) != pulled && (n < 25)) {
+	while(status(IEC_PIN_ATN) != released && status(IEC_PIN_DATA) != pulled && (n < 1000)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
