@@ -17,7 +17,8 @@
 
 #include "iec.h"
 
-using namespace CBM;
+using namespace CBM; 
+using namespace Protocol;
 
 
 // IEC::IEC() :
@@ -30,10 +31,10 @@ using namespace CBM;
 bool IEC::init()
 {
 	// make sure the output states are initially LOW
-	release(IEC_PIN_ATN);
-	release(IEC_PIN_CLK);
-	release(IEC_PIN_DATA);
-	release(IEC_PIN_SRQ);
+	protocol.release(IEC_PIN_ATN);
+	protocol.release(IEC_PIN_CLK);
+	protocol.release(IEC_PIN_DATA);
+	protocol.release(IEC_PIN_SRQ);
 
 	// initial pin modes in GPIO
 	pinMode(IEC_PIN_ATN, INPUT);
@@ -47,47 +48,10 @@ bool IEC::init()
 	pinMode(IEC_PIN_DATA_OUT, OUTPUT);
 #endif
 
-	m_state = noFlags;
+	protocol.m_state = noFlags;
 
 	return true;
 } // init
-
-// Wait indefinitely if wait = 0
-size_t IEC::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
-{
-
-#if defined(ESP8266)
-	ESP.wdtFeed();
-#endif
-
-	size_t t = 0;
-	if(wait == FOREVER)
-	{
-		while(status(iecPIN) != lineStatus) {
-			ESP.wdtFeed();
-			delayMicroseconds(step);
-			t++;	
-		}
-		return (t * step);
-	}
-	else
-	{
-		while(status(iecPIN) != lineStatus && (t < wait)) {
-			delayMicroseconds(step);
-			t++;	
-		}
-		// Check the waiting condition:
-		if(t < wait)
-		{
-			// Got it!  Continue!
-			return (t * step);
-		}		
-	}
-
-	Debug_printv("pin[%d] state[%d] wait[%d] step[%d] t[%d]", iecPIN, lineStatus, wait, step, t);
-	return 0;
-} // timeoutWait
-
 
 // IEC turnaround
 bool IEC::turnAround(void)
@@ -96,28 +60,28 @@ bool IEC::turnAround(void)
 	TURNAROUND
 	An unusual sequence takes place following ATN if the computer wishes the remote device to
 	become a talker. This will usually take place only after a Talk command has been sent.
-	Immediately after ATN is released, the selected device will be behaving like a listener. After all, it's
+	Immediately after ATN is protocol.released, the selected device will be behaving like a listener. After all, it's
 	been listening during the ATN cycle, and the computer has been a talker. At this instant, we 
 	have "wrong way" logic; the device is holding down the Data	line, and the computer is holding the 
 	Clock line. We must turn this around. Here's the sequence:
 	the computer quickly realizes what's going on, and pulls the Data line to true (it's already there), as
 	well as releasing the Clock line to false. The device waits for this: when it sees the Clock line go
-	true [sic], it releases the Data line (which stays true anyway since the computer is now holding it down)
+	true [sic], it protocol.releases the Data line (which stays true anyway since the computer is now holding it down)
 	and then pulls down the Clock line. We're now in our starting position, with the talker (that's the
 	device) holding the Clock true, and the listener (the computer) holding the Data line true. The
 	computer watches for this state; only when it has gone through the cycle correctly will it be ready
-	to receive data. And data will be signalled, of course, with the usual sequence: the talker releases
+	to receive data. And data will be signalled, of course, with the usual sequence: the talker protocol.releases
 	the Clock line to signal that it's ready to send.
 	*/
 	Debug_printf("IEC turnAround: ");
 
-	// Wait until clock is released
-	while(status(IEC_PIN_CLK) != released);
+	// Wait until clock is protocol.released
+	while(protocol.status(IEC_PIN_CLK) != released);
 		
 
-	release(IEC_PIN_DATA);
+	protocol.release(IEC_PIN_DATA);
 	delayMicroseconds(TIMING_BIT);
-	pull(IEC_PIN_CLK);
+	protocol.pull(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
 	Debug_println("complete");
@@ -129,15 +93,15 @@ bool IEC::turnAround(void)
 // (the way it was when the computer was switched on)
 bool IEC::undoTurnAround(void)
 {
-	pull(IEC_PIN_DATA);
+	protocol.pull(IEC_PIN_DATA);
 	delayMicroseconds(TIMING_BIT);
-	release(IEC_PIN_CLK);
+	protocol.release(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
 	Debug_printf("IEC undoTurnAround: ");
 
-	// wait until the computer releases the clock line
-	while(status(IEC_PIN_CLK) != released);
+	// wait until the computer protocol.releases the clock line
+	while(protocol.status(IEC_PIN_CLK) != released);
 
 	Debug_println("complete");
 	return true;
@@ -157,10 +121,10 @@ bool IEC::undoTurnAround(void)
 //
 /** from Derogee's "IEC Disected"
  * ATN SEQUENCES
- * When ATN is pulled true, everybody stops what they are doing. The processor will quickly pull the
- * Clock line true (it's going to send soon), so it may be hard to notice that all other devices release the
- * Clock line. At the same time, the processor releases the Data line to false, but all other devices are
- * getting ready to listen and will each pull Data to true. They had better do this within one
+ * When ATN is pulled true, everybody stops what they are doing. The processor will quickly protocol.pull the
+ * Clock line true (it's going to send soon), so it may be hard to notice that all other devices protocol.release the
+ * Clock line. At the same time, the processor protocol.releases the Data line to false, but all other devices are
+ * getting ready to listen and will each protocol.pull Data to true. They had better do this within one
  * millisecond (1000 microseconds), since the processor is watching and may sound an alarm ("device
  * not available") if it doesn't see this take place. Under normal circumstances, transmission now
  * takes place as previously described. The computer is sending commands rather than data, but the
@@ -194,14 +158,14 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 
 	// Attention line is pulled, go to listener mode and get message.
 	// Being fast with the next two lines here is CRITICAL!
-	release(IEC_PIN_CLK);
-	pull(IEC_PIN_DATA);
+	protocol.release(IEC_PIN_CLK);
+	protocol.pull(IEC_PIN_DATA);
 	delayMicroseconds(TIMING_ATN_PREDELAY);
 
 	// Get first ATN byte, it is either LISTEN or TALK
 	int8_t c = (ATNCommand)receive();
 	Debug_printf("ATN: %.2X ", c);
-	if(m_state bitand errorFlag)
+	if(protocol.m_state bitand errorFlag)
 	{
 		Debug_printv("Get first ATN byte");
 		return ATN_ERROR;
@@ -229,7 +193,7 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 		{
 			// Get the first cmd byte, the atn_cmd.code
 			c = receive();
-			if(m_state bitand errorFlag)
+			if(protocol.m_state bitand errorFlag)
 			{
 				Debug_printv("Get the first cmd byte");
 				return ATN_ERROR;
@@ -247,7 +211,7 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 			{
 				r = deviceTalk(atn_cmd);
 			}
-			releaseLines = m_state bitand errorFlag;				
+			releaseLines = protocol.m_state bitand errorFlag;				
 		}
 		else
 		{
@@ -278,11 +242,11 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 	if(releaseLines)
 	{
 		// Release lines
-		release(IEC_PIN_CLK);
-		release(IEC_PIN_DATA);
+		protocol.release(IEC_PIN_CLK);
+		protocol.release(IEC_PIN_DATA);
 
-		// Wait for ATN to release and quit
-		while(status(IEC_PIN_ATN) != released)
+		// Wait for ATN to protocol.release and quit
+		while(protocol.status(IEC_PIN_ATN) != released)
 		{
 			ESP.wdtFeed();
 		}
@@ -318,7 +282,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 		for(;;) 
 		{
 			uint8_t c = receive();
-			if(m_state bitand errorFlag)
+			if(protocol.m_state bitand errorFlag)
 			{
 				Debug_printv("Some other command [%.2X]", c);
 				return ATN_ERROR;
@@ -371,11 +335,11 @@ void IEC::deviceUnListen(void)
 	Debug_printv("");
 
 	// Release lines
-	release(IEC_PIN_CLK);
-	release(IEC_PIN_DATA);
+	protocol.release(IEC_PIN_CLK);
+	protocol.release(IEC_PIN_DATA);
 
-	// Wait for ATN to release and quit
-	while(status(IEC_PIN_ATN) == pulled)
+	// Wait for ATN to protocol.release and quit
+	while(protocol.status(IEC_PIN_ATN) == pulled)
 	{
 		ESP.wdtFeed();
 	}
@@ -388,8 +352,8 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 	// Okay, we will talk soon
 	Debug_printf("(40 TALK) (%.2d DEVICE) (%.2X SECONDARY) (%.2X CHANNEL)\r\n", atn_cmd.device, atn_cmd.command, atn_cmd.channel);
 
-	// Record the cmd string until ATN is released
-	while(status(IEC_PIN_ATN) == pulled) 
+	// Record the cmd string until ATN is protocol.released
+	while(protocol.status(IEC_PIN_ATN) == pulled) 
 	{
 		int16_t c = receive();
 
@@ -404,7 +368,7 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 		atn_cmd.str[i] = '\0';
 	}
 
-	// Delay after ATN is released
+	// Delay after ATN is protocol.released
 	//delayMicroseconds(TIMING_BIT);
 
 	// Now do bus turnaround
@@ -420,11 +384,11 @@ void IEC::deviceUnTalk(void)
 	Debug_printv("");
 
 	// Release lines
-	release(IEC_PIN_CLK);
-	release(IEC_PIN_DATA);
+	protocol.release(IEC_PIN_CLK);
+	protocol.release(IEC_PIN_DATA);
 
-	// Wait for ATN to release and quit
-	while(status(IEC_PIN_ATN) == pulled)
+	// Wait for ATN to protocol.release and quit
+	while(protocol.status(IEC_PIN_ATN) == pulled)
 	{
 		ESP.wdtFeed();
 	}
@@ -447,7 +411,7 @@ int16_t IEC::receive()
 	Debug_printf("%.2X ", data);
 #endif
 	if(data < 0)
-		m_state = errorFlag;
+		protocol.m_state = errorFlag;
 
 	return data;
 } // receive
@@ -498,8 +462,8 @@ bool IEC::sendEOI(uint8_t data)
 bool IEC::sendFNF()
 {
 	// Message file not found by just releasing lines
-	release(IEC_PIN_DATA);
-	release(IEC_PIN_CLK);
+	protocol.release(IEC_PIN_DATA);
+	protocol.release(IEC_PIN_CLK);
 
 	// Hold back a little...
 	delayMicroseconds(TIMING_FNF_DELAY);
@@ -507,9 +471,6 @@ bool IEC::sendFNF()
 	Debug_println("\r\nFNF Sent!");
 	return true;
 } // sendFNF
-
-
-
 
 
 bool IEC::isDeviceEnabled(const uint8_t deviceNumber)
@@ -527,46 +488,48 @@ void IEC::disableDevice(const uint8_t deviceNumber)
 	enabledDevices &= ~(1UL << deviceNumber);
 } // disableDevice
 
-IEC::IECState IEC::state() const
+
+IECState IEC::state()
 {
-	return static_cast<IECState>(m_state);
+	return static_cast<IECState>(protocol.m_state);
 } // state
+
 
 void IEC::debugTiming()
 {
 	int pin = IEC_PIN_ATN;
-	pull(pin);
+	protocol.pull(pin);
 	delayMicroseconds(1000); // 1000
-	release(pin);
+	protocol.release(pin);
 	delayMicroseconds(1000);
 
 	pin = IEC_PIN_CLK;
-	pull(pin);
+	protocol.pull(pin);
 	delayMicroseconds(20); // 20
-	release(pin);
+	protocol.release(pin);
 	delayMicroseconds(1);
 
 	pin = IEC_PIN_DATA;
-	pull(pin);
+	protocol.pull(pin);
 	delayMicroseconds(50); // 50
-	release(pin);
+	protocol.release(pin);
 	delayMicroseconds(1);
 
 	pin = IEC_PIN_SRQ;
-	pull(pin);
+	protocol.pull(pin);
 	delayMicroseconds(60); // 60
-	release(pin);
+	protocol.release(pin);
 	delayMicroseconds(1);
 
 	pin = IEC_PIN_ATN;
-	pull(pin);
+	protocol.pull(pin);
 	delayMicroseconds(100); // 100
-	release(pin);
+	protocol.release(pin);
 	delayMicroseconds(1);
 
 	pin = IEC_PIN_CLK;
-	pull(pin);
+	protocol.pull(pin);
 	delayMicroseconds(200); // 200
-	release(pin);
+	protocol.release(pin);
 	delayMicroseconds(1);
 }

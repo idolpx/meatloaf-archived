@@ -17,7 +17,7 @@
 
 #include "cbmstandardserial.h"
 
-#include "../iec.h"
+using namespace Protocol;
 
 // STEP 1: READY TO SEND
 // Sooner or later, the talker will want to talk, and send a character. 
@@ -27,7 +27,7 @@
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-int16_t CBMStandardSerial::receiveByte(void)
+int16_t  CBMStandardSerial::receiveByte(void)
 {
 	m_state = noFlags;
 
@@ -326,3 +326,41 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 
 	return true;
 } // sendByte
+
+
+// Wait indefinitely if wait = 0
+size_t CBMStandardSerial::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
+{
+
+#if defined(ESP8266)
+	ESP.wdtFeed();
+#endif
+
+	size_t t = 0;
+	if(wait == FOREVER)
+	{
+		while(status(iecPIN) != lineStatus) {
+			ESP.wdtFeed();
+			delayMicroseconds(step);
+			t++;	
+		}
+		return (t * step);
+	}
+	else
+	{
+		while(status(iecPIN) != lineStatus && (t < wait)) {
+			delayMicroseconds(step);
+			t++;	
+		}
+		// Check the waiting condition:
+		if(t < wait)
+		{
+			// Got it!  Continue!
+			return (t * step);
+		}		
+	}
+
+	Debug_printv("pin[%d] state[%d] wait[%d] step[%d] t[%d]", iecPIN, lineStatus, wait, step, t);
+	return 0;
+} // timeoutWait
+

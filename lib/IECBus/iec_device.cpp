@@ -23,6 +23,7 @@
 #include "wrappers/iec_buffer.h"
 
 using namespace CBM;
+using namespace Protocol;
 
 namespace
 {
@@ -1042,7 +1043,7 @@ void Interface::sendFile()
 			}
 
 			// Exit if ATN is pulled while sending
-			if ( m_iec.status(IEC_PIN_ATN) == IEC::IECline::pulled )
+			if ( m_iec.state() bitand atnFlag )
 			{
 				// TODO: If sending from a named channel save file pointer position
 				setDeviceStatus(74);
@@ -1140,7 +1141,7 @@ void Interface::saveFile()
 			ostream->write(b, b_len);
 			i++;
 
-			done = (m_iec.state() bitand IEC::eoiFlag) or (m_iec.state() bitand IEC::errorFlag);
+			done = (m_iec.state() bitand eoiFlag) or (m_iec.state() bitand errorFlag);
 
 #ifdef DATA_STREAM
 			// Show ASCII Data
