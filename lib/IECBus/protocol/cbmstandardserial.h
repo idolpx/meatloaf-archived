@@ -15,19 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef PROTOCOL_JIFFYDOS_H
-#define PROTOCOL_JIFFYDOS_H
+#ifndef PROTOCOL_CBMSTANDARDSERIAL_H
+#define PROTOCOL_CBMSTANDARDSERIAL_H
 
-#include <Arduino.h>
+#include "../../../include/global_defines.h"
 
-#include "cbmstandardserial.h"
-
-class JiffyDOS : public CBMStandardSerial
+class CBMStandardSerial
 {
 
-protected:
-	int16_t receiveByte(void) override;
-	bool sendByte(uint8_t data, bool signalEOI) override;
+public:
+	virtual int16_t receiveByte(void);
+	virtual bool sendByte(uint8_t data, bool signalEOI);
 };
 
 #endif

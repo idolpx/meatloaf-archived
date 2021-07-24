@@ -25,6 +25,9 @@
 #include "../../include/petscii.h"
 #include "string_utils.h"
 
+#include "protocol/cbmstandardserial.h"
+//#include "protocol/jiffydos.h"
+
 #define TIMED_OUT 0
 
 class IEC
@@ -139,19 +142,20 @@ public:
 
 private:
 	// IEC Bus Commands
-	ATNMode deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
-	void deviceUnListen(void);  // 0x3F 				Unlisten, all devices
+	ATNMode deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id   Listen, device (0–30)
+	void deviceUnListen(void);                // 0x3F               Unlisten, all devices
 	ATNMode deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
-	void deviceUnTalk(void);	  // 0x5F 				Untalk, all devices
-	//ATNMode deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
-	ATNMode deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
-	//ATNMode deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
+	void deviceUnTalk(void);                  // 0x5F               Untalk, all devices
+	//ATNMode deviceReopen(ATNCmd &atn_cmd);  // 0x60 + channel     Reopen, channel (0–15)
+	ATNMode deviceClose(ATNCmd &atn_cmd);     // 0xE0 + channel     Close, channel
+	//ATNMode deviceOpen(ATNCmd &atn_cmd);    // 0xF0 + channel     Open, channel
 
 
 protected:
+	CBMStandardSerial protocol;
+	// int16_t receiveByte(void);
+	// bool sendByte(uint8_t data, bool signalEOI);
 	size_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT, size_t step = 3);
-	int16_t receiveByte(void);
-	bool sendByte(uint8_t data, bool signalEOI);
 	bool turnAround(void);
 	bool undoTurnAround(void);
 
@@ -168,7 +172,7 @@ protected:
 			GPC(pin) = (GPC(pin) & (0xF << GPCI)) | (1 << GPCD); //SOURCE(GPIO) | DRIVER(OPEN_DRAIN) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
 		}
 #elif defined(ESP32)
-			pinMode( pin, mode );
+		pinMode( pin, mode );
 #endif
 	}
 
