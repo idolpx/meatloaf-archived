@@ -265,10 +265,9 @@ bool IEC::sendByte(uint8_t data, bool signalEOI)
 	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
 	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
 	// to  accept  data.  What  happens  next  is  variable.
-	if(timeoutWait(IEC_PIN_DATA, released) == TIMED_OUT)
+	while(status(IEC_PIN_DATA) != released)
 	{
-		Debug_printv("Wait for listener to be ready [released]");
-		return false; // return error because timeout
+		ESP.wdtFeed();
 	}
 
 	// Either  the  talker  will pull the 
@@ -635,7 +634,8 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 			}
 				
 
-			if((m_state bitand atnFlag) and (ATN_CODE_UNLISTEN == c)) 
+			//if((m_state bitand atnFlag) and (ATN_CODE_UNLISTEN == c))
+			if(c == ATN_CODE_UNLISTEN)
 			{
 				Debug_printf("[%s]\r\n", atn_cmd.str);
 				Debug_printf("deviceListen: %.2X (UNLISTEN)\r\n", c);
@@ -661,6 +661,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 	else if(atn_cmd.command == ATN_CODE_CLOSE) 
 	{
 		Debug_printf("(%.2X CLOSE) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
+		return ATN_CMD;
 	}
 
 	// Unknown

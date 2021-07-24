@@ -47,12 +47,12 @@ public:
 	// Return values for service:
 	enum ATNMode
 	{
-		ATN_IDLE = 0,		// Nothing recieved of our concern
+		ATN_IDLE = 0,		  // Nothing recieved of our concern
 		ATN_CMD = 1,		  // A command is recieved
 		ATN_CMD_LISTEN = 2,   // A command is recieved and data is coming to us
 		ATN_CMD_TALK = 3,	  // A command is recieved and we must talk now
-		ATN_ERROR = 4,		  // A problem occoured, reset communication
-		ATN_RESET = 5		  // The IEC bus is in a reset state (RESET line).
+		ATN_ERROR = 5,		  // A problem occoured, reset communication
+		ATN_RESET = 6		  // The IEC bus is in a reset state (RESET line).
 	};
 
 	// IEC ATN commands:

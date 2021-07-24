@@ -126,9 +126,10 @@ void loop()
     //cli.readSerial();
     if ( bus_state != statemachine::idle )
     {
-        //Debug_printv("bus_state[%d]", bus_state);
-        if( drive.service() == IEC::ATN_IDLE )
+        //Debug_printv("before[%d]", bus_state);
+        if( drive.service() == IEC::ATN_IDLE)
             bus_state = statemachine::idle;
+        //Debug_printv("after[%d]", bus_state);
     }
         
 
@@ -141,6 +142,7 @@ void onAttention()
 {
     bus_state = statemachine::select;
     // iec.init();
+    //Debug_printv("hi");
 }
 
 ////////////////////////////////
