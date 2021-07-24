@@ -25,25 +25,14 @@
 #include "../../include/petscii.h"
 #include "string_utils.h"
 
-#define TIMED_OUT 0
+#include "protocol/cbmstandardserial.h"
+//#include "protocol/jiffydos.h"
+
+using namespace Protocol;
 
 class IEC
 {
 public:
-	enum IECline
-	{
-		pulled = true,
-		released = false
-	};
-
-	enum IECState
-	{
-		noFlags = 0,
-		eoiFlag = (1 << 0),	 // might be set by iec_receive
-		atnFlag = (1 << 1),	 // might be set by iec_receive
-		errorFlag = (1 << 2) // If this flag is set, something went wrong and
-	};
-
 	// Return values for service:
 	enum ATNMode
 	{
@@ -111,88 +100,25 @@ public:
 	void enableDevice(const uint8_t deviceNumber);
 	void disableDevice(const uint8_t deviceNumber);
 
-	IECState state() const;
-
-	// true => PULL => DIGI_LOW
-	inline void pull(uint8_t pinNumber)
-	{
-		espPinMode(pinNumber, OUTPUT);
-		espDigitalWrite(pinNumber, LOW);
-	}
-
-	// false => RELEASE => DIGI_HIGH
-	inline void release(uint8_t pinNumber)
-	{
-		espPinMode(pinNumber, OUTPUT);
-		espDigitalWrite(pinNumber, HIGH);
-	}
-
-	inline IECline status(uint8_t pinNumber)
-	{
-		// To be able to read line we must be set to input, not driving.
-		espPinMode(pinNumber, INPUT);
-		return espDigitalRead(pinNumber) ? released : pulled;
-	}
-
 	void debugTiming();
 
+	IECState state();	
 
 private:
 	// IEC Bus Commands
-	ATNMode deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id 	Listen, device (0–30)
-	void deviceUnListen(void);  // 0x3F 				Unlisten, all devices
+	ATNMode deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id   Listen, device (0–30)
+	void deviceUnListen(void);                // 0x3F               Unlisten, all devices
 	ATNMode deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
-	void deviceUnTalk(void);	  // 0x5F 				Untalk, all devices
-	//ATNMode deviceReopen(ATNCmd &atn_cmd);	  // 0x60 + channel		Reopen, channel (0–15)
-	ATNMode deviceClose(ATNCmd &atn_cmd);	  // 0xE0 + channel		Close, channel
-	//ATNMode deviceOpen(ATNCmd &atn_cmd);	  // 0xF0 + channel		Open, channel
+	void deviceUnTalk(void);                  // 0x5F               Untalk, all devices
+	//ATNMode deviceReopen(ATNCmd &atn_cmd);  // 0x60 + channel     Reopen, channel (0–15)
+	ATNMode deviceClose(ATNCmd &atn_cmd);     // 0xE0 + channel     Close, channel
+	//ATNMode deviceOpen(ATNCmd &atn_cmd);    // 0xF0 + channel     Open, channel
 
+	bool turnAround(void);
+	bool undoTurnAround(void);	
 
 protected:
-	size_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT, size_t step = 3);
-	int16_t receiveByte(void);
-	bool sendByte(uint8_t data, bool signalEOI);
-	bool turnAround(void);
-	bool undoTurnAround(void);
-
-
-	inline void IRAM_ATTR espPinMode(uint8_t pin, uint8_t mode) {
-#if defined(ESP8266)		
-		if(mode == OUTPUT){
-			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
-			GPC(pin) = (GPC(pin) & (0xF << GPCI)); //SOURCE(GPIO) | DRIVER(NORMAL) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
-			GPES = (1 << pin); //Enable
-		} else if(mode == INPUT){
-			GPF(pin) = GPFFS(GPFFS_GPIO(pin));//Set mode to GPIO
-			GPEC = (1 << pin); //Disable
-			GPC(pin) = (GPC(pin) & (0xF << GPCI)) | (1 << GPCD); //SOURCE(GPIO) | DRIVER(OPEN_DRAIN) | INT_TYPE(UNCHANGED) | WAKEUP_ENABLE(DISABLED)
-		}
-#elif defined(ESP32)
-			pinMode( pin, mode );
-#endif
-	}
-
-	inline void IRAM_ATTR espDigitalWrite(uint8_t pin, uint8_t val) {
-#if defined(ESP8266)
-		if(val) GPOS = (1 << pin);
-		else GPOC = (1 << pin);
-#elif defined(ESP32)
-		digitalWrite(pin, val);
-#endif
-	}
-
-	inline int IRAM_ATTR espDigitalRead(uint8_t pin) {
-		int val = -1;
-#if defined(ESP8266)
-		val = GPIP(pin);
-#elif defined(ESP32)
-		val = digitalRead(pin);
-#endif
-		return val;
-	}
-
-	// communication must be reset
-	uint8_t m_state = noFlags;
+	CBMStandardSerial protocol;
 };
 
 #endif
