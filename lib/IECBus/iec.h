@@ -41,14 +41,14 @@ class IEC
 {
 public:
 	// Return values for service:
-	enum ATNMode
+	enum BusState
 	{
-		ATN_IDLE = 0,		  // Nothing recieved of our concern
-		ATN_CMD = 1,		  // A command is recieved
-		ATN_CMD_LISTEN = 2,   // A command is recieved and data is coming to us
-		ATN_CMD_TALK = 3,	  // A command is recieved and we must talk now
-		ATN_ERROR = 5,		  // A problem occoured, reset communication
-		ATN_RESET = 6		  // The IEC bus is in a reset state (RESET line).
+		BUS_IDLE = 0,		  // Nothing recieved of our concern
+		BUS_COMMAND = 1,		  // A command is recieved
+		BUS_LISTEN = 2,   // A command is recieved and data is coming to us
+		BUS_TALK = 3,	  // A command is recieved and we must talk now
+		BUS_ERROR = 5,		  // A problem occoured, reset communication
+		BUS_RESET = 6		  // The IEC bus is in a reset state (RESET line).
 	};
 
 	// IEC ATN commands:
@@ -81,7 +81,7 @@ public:
 
 	// Checks if CBM is sending an attention message. If this is the case,
 	// the message is recieved and stored in atn_cmd.
-	ATNMode service(ATNCmd &atn_cmd);
+	BusState service(ATNCmd &atn_cmd);
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typicall
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
@@ -113,13 +113,13 @@ public:
 
 private:
 	// IEC Bus Commands
-	ATNMode deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id   Listen, device (0–30)
+	BusState deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id   Listen, device (0–30)
 	void deviceUnListen(void);                // 0x3F               Unlisten, all devices
-	ATNMode deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
+	BusState deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
 	void deviceUnTalk(void);                  // 0x5F               Untalk, all devices
-	//ATNMode deviceReopen(ATNCmd &atn_cmd);  // 0x60 + channel     Reopen, channel (0–15)
-	ATNMode deviceClose(ATNCmd &atn_cmd);     // 0xE0 + channel     Close, channel
-	//ATNMode deviceOpen(ATNCmd &atn_cmd);    // 0xF0 + channel     Open, channel
+	//BusState deviceReopen(ATNCmd &atn_cmd);  // 0x60 + channel     Reopen, channel (0–15)
+	BusState deviceClose(ATNCmd &atn_cmd);     // 0xE0 + channel     Close, channel
+	//BusState deviceOpen(ATNCmd &atn_cmd);    // 0xF0 + channel     Open, channel
 
 	bool turnAround(void);
 	bool undoTurnAround(void);	

@@ -291,28 +291,28 @@ uint8_t Interface::service(void)
 	//		reset();
 	//
 	//
-	//		return IEC::ATN_RESET;
+	//		return IEC::BUS_RESET;
 	//	}
 	//#endif
 	// Wait for it to get out of reset.
 	//while (m_iec.checkRESET())
 	//{
-	//	Debug_println("ATN_RESET");
+	//	Debug_println("BUS_RESET");
 	//}
 
 	//	noInterrupts();
-	IEC::ATNMode mode = m_iec.service(m_atn_cmd);
+	IEC::BusState mode = m_iec.service(m_atn_cmd);
 	//	interrupts();
 
 
-	if (mode == IEC::ATN_ERROR)
+	if (mode == IEC::BUS_ERROR)
 	{
 		reset();
-		mode = IEC::ATN_IDLE;
+		mode = IEC::BUS_IDLE;
 	}
 
 	// Did anything happen from the host side?
-	else if (mode not_eq IEC::ATN_IDLE)
+	else if (mode not_eq IEC::BUS_IDLE)
 	{
 		switch (m_atn_cmd.command)
 		{
@@ -332,19 +332,19 @@ uint8_t Interface::service(void)
 
 			case IEC::ATN_CODE_SECONDARY: // data channel opened
 				Debug_printv("[SECONDARY]");
-				if (mode == IEC::ATN_CMD)
+				if (mode == IEC::BUS_COMMAND)
 				{
 					// Process a command
 					Debug_printv("[Process a command]");
 					handleATNCmdCodeOpen(m_atn_cmd);
 				}
-				else if (mode == IEC::ATN_CMD_LISTEN)
+				else if (mode == IEC::BUS_LISTEN)
 				{
 					// Receive data
 					Debug_printv("[Receive data]");
 					handleATNCmdCodeDataListen();	
 				}
-				else if (mode == IEC::ATN_CMD_TALK)
+				else if (mode == IEC::BUS_TALK)
 				{
 					// Send data
 					Debug_printv("[Send data]");

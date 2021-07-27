@@ -136,10 +136,10 @@ bool IEC::undoTurnAround(void)
  * device, since the unselected devices will have dropped off when ATN ceased, leaving you with
  * nobody to talk to.
  */
-// Return value, see IEC::ATNMode definition.
-IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
+// Return value, see IEC::BusState definition.
+IEC::BusState IEC::service(ATNCmd& atn_cmd)
 {
-	IEC::ATNMode r = ATN_IDLE;
+	IEC::BusState r = BUS_IDLE;
 	bool releaseLines = false;
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
@@ -149,10 +149,10 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 	// 	if (status(IEC_PIN_ATN) == pulled)
 	// 	{
 	// 		// If RESET & ATN are both pulled then CBM is off
-	// 		return ATN_IDLE;
+	// 		return BUS_IDLE;
 	// 	}
 		
-	// 	return ATN_RESET;
+	// 	return BUS_RESET;
 	// }
 
 
@@ -168,7 +168,7 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 	if(protocol.m_state bitand errorFlag)
 	{
 		Debug_printv("Get first ATN byte");
-		return ATN_ERROR;
+		return BUS_ERROR;
 	}
 
 	atn_cmd.code = c;
@@ -196,7 +196,7 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 			if(protocol.m_state bitand errorFlag)
 			{
 				Debug_printv("Get the first cmd byte");
-				return ATN_ERROR;
+				return BUS_ERROR;
 			}
 			
 			atn_cmd.code = c;
@@ -257,7 +257,7 @@ IEC::ATNMode IEC::service(ATNCmd& atn_cmd)
 	return r;
 } // service
 
-IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
+IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 {
 	byte i=0;
 
@@ -270,7 +270,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
 		Debug_printf("(%.2X SECONDARY) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
-		return ATN_CMD_LISTEN;
+		return BUS_LISTEN;
 	}
 
 	// OPEN
@@ -285,7 +285,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 			if(protocol.m_state bitand errorFlag)
 			{
 				Debug_printv("Some other command [%.2X]", c);
-				return ATN_ERROR;
+				return BUS_ERROR;
 			}
 				
 
@@ -301,7 +301,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 				// Buffer is going to overflow, this is an error condition
 				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
 				Debug_printv("IEC_CMD_MAX_LENGTH");
-				return ATN_ERROR;
+				return BUS_ERROR;
 			}
 			if(c != 0x0D)
 			{
@@ -315,7 +315,7 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 	else if(atn_cmd.command == ATN_CODE_CLOSE) 
 	{
 		Debug_printf("(%.2X CLOSE) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
-		return ATN_CMD;
+		return BUS_COMMAND;
 	}
 
 	// Unknown
@@ -325,9 +325,9 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 	}
 
 	if(strlen(atn_cmd.str))
-		return ATN_CMD;
+		return BUS_COMMAND;
 	else
-		return ATN_IDLE;
+		return BUS_IDLE;
 }
 
 void IEC::deviceUnListen(void)
@@ -345,7 +345,7 @@ void IEC::deviceUnListen(void)
 	}
 }
 
-IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
+IEC::BusState IEC::deviceTalk(ATNCmd& atn_cmd)
 {
 	byte i = 0;
 
@@ -362,7 +362,7 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 			// Buffer is going to overflow, this is an error condition
 			// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
 			Debug_printv("IEC_CMD_MAX_LENGTH");
-			return ATN_ERROR;
+			return BUS_ERROR;
 		}
 		atn_cmd.str[i++] = (uint8_t)c;
 		atn_cmd.str[i] = '\0';
@@ -373,10 +373,10 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 
 	// Now do bus turnaround
 	if(not turnAround())
-		return ATN_ERROR;
+		return BUS_ERROR;
 
 	// We have recieved a CMD and we should talk now:
-	return ATN_CMD_TALK;
+	return BUS_TALK;
 }
 
 void IEC::deviceUnTalk(void)
