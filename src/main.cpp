@@ -127,7 +127,7 @@ void loop()
     if ( bus_state != statemachine::idle )
     {
         //Debug_printv("before[%d]", bus_state);
-        if( drive.service() == IEC::ATN_IDLE)
+        if( drive.service() == IEC::BUS_IDLE)
             bus_state = statemachine::idle;
         //Debug_printv("after[%d]", bus_state);
     }
