@@ -76,6 +76,15 @@ public:
 class iecDevice
 {
 public:
+
+	// Return values for service:
+	enum DeviceState
+	{
+		DEVICE_IDLE = 0,       // Ready and waiting
+		DEVICE_OPEN,           // Command received and channel opened
+		DEVICE_DATA,           // Data sent or received
+	};
+
 	iecDevice(IEC &iec);
 	virtual ~iecDevice() {}
 
@@ -115,13 +124,13 @@ private:
 	void sendStatus(void);
 	void sendFileNotFound(void);
 	void setDeviceStatus(int number, int track=0, int sector=0);
-	
+
 	// handler helpers.
-	void handleListenCommand(IEC::Data &cmd);
+	void handleListenCommand(IEC::Data &iec_data);
 	void handleListenData(void);
 	void handleTalk(byte chan);
-	void handleOpen(void);
-	void handleClose(void);
+	void handleOpen(IEC::Data &iec_data);
+	void handleClose(IEC::Data &iec_data);
 
 	// void handleDeviceCommand(IEC::Data &cmd);
 	// void handleMeatloafCommand(IEC::Data &cmd);

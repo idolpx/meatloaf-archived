@@ -285,9 +285,11 @@ void iecDevice::sendMeatloafVirtualDeviceStatus()
 
 uint8_t iecDevice::service(void)
 {
+	iecDevice::DeviceState r = DEVICE_IDLE;
+
 	//#ifdef HAS_RESET_LINE
 	//	if(m_iec.checkRESET()) {
-	//		// IEC reset line is in reset mode, so we should set all modes in reset.
+	//		// IEC reset line is in reset device state
 	//		reset();
 	//
 	//
@@ -301,18 +303,18 @@ uint8_t iecDevice::service(void)
 	//}
 
 	//	noInterrupts();
-	IEC::BusState mode = m_iec.service(m_iec_data);
+	IEC::BusState bus_state = m_iec.service(m_iec_data);
 	//	interrupts();
 
 
-	if (mode == IEC::BUS_ERROR)
+	if (bus_state == IEC::BUS_ERROR)
 	{
 		reset();
-		mode = IEC::BUS_IDLE;
+		bus_state = IEC::BUS_IDLE;
 	}
 
 	// Did anything happen from the host side?
-	else if (mode not_eq IEC::BUS_IDLE)
+	else if (bus_state not_eq IEC::BUS_IDLE)
 	{
 		switch (m_iec_data.command)
 		{
@@ -332,19 +334,19 @@ uint8_t iecDevice::service(void)
 
 			case IEC::IEC_DATA: // data channel opened
 				Debug_printv("[SECONDARY]");
-				if (mode == IEC::BUS_COMMAND)
+				if (bus_state == IEC::BUS_COMMAND)
 				{
 					// Process a command
 					Debug_printv("[Process a command]");
 					handleListenCommand(m_iec_data);
 				}
-				else if (mode == IEC::BUS_LISTEN)
+				else if (bus_state == IEC::BUS_LISTEN)
 				{
 					// Receive data
 					Debug_printv("[Receive data]");
 					handleListenData();	
 				}
-				else if (mode == IEC::BUS_TALK)
+				else if (bus_state == IEC::BUS_TALK)
 				{
 					// Send data
 					Debug_printv("[Send data]");
@@ -359,13 +361,13 @@ uint8_t iecDevice::service(void)
 
 			case IEC::IEC_CLOSE:
 				//Debug_printv("[CLOSE] ");
-				handleClose();
+				handleClose(m_iec_data);
 				break;
 		} // switch
 	}
 	//Debug_printv("mode[%d] command[%.2X] channel[%.2X] state[%d]", mode, m_iec_data.command, m_iec_data.channel, m_openState);
 
-	return mode;
+	return bus_state;
 } // service
 
 MFile* iecDevice::getPointed(MFile* urlFile) {
@@ -584,25 +586,14 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 	m_iec_data.str[0] = '\0';
 } // handleListenCommand
 
-void iecDevice::dumpState() {
-	Debug_println("");
-	Debug_printv("-------------------------------");
-	Debug_printv("URL: [%s]", m_mfile->url.c_str());
-    Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
-    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
-	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
-	Debug_printv("Username: [%s]", m_mfile->user.c_str());
-	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
-	Debug_printv("Host: [%s]", m_mfile->host.c_str());
-	Debug_printv("Port: [%s]", m_mfile->port.c_str());
-	Debug_printv("Path: [%s]", m_mfile->path.c_str());
-	Debug_printv("File: [%s]", m_mfile->name.c_str());
-	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
-	Debug_printv("");
-	Debug_printv("m_filename: [%s]", m_filename.c_str());
-    Debug_printv("-------------------------------");
 
-}
+void iecDevice::handleListenData()
+{
+	Debug_printv("[%s]", m_device.url().c_str());
+
+	saveFile();
+} // handleListenData
+
 
 void iecDevice::changeDir(std::string url)
 {
@@ -646,12 +637,12 @@ void iecDevice::handleTalk(byte chan)
 			break;
 
 		case O_ML_INFO:
-			// Send device info
+			// Send system information
 			sendMeatloafSystemInformation();
 			break;
 
 		case O_ML_STATUS:
-			// Send device info
+			// Send virtual device status
 			sendMeatloafVirtualDeviceStatus();
 			break;
 	}
@@ -659,17 +650,18 @@ void iecDevice::handleTalk(byte chan)
 	m_openState = O_NOTHING;
 } // handleTalk
 
-void iecDevice::handleListenData()
+
+void iecDevice::handleOpen(IEC::Data &iec_data)
 {
-	Debug_printv("[%s]", m_device.url().c_str());
+	Debug_printv("OPEN Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
+} // handleOpen
 
-	saveFile();
-} // handleListenData
 
-void iecDevice::handleClose()
+void iecDevice::handleClose(IEC::Data &iec_data)
 {
-
+	Debug_printv("CLOSE Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
 } // handleClose
+
 
 // send single basic line, including heading basic pointer and terminating zero.
 uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...)
@@ -1170,3 +1162,23 @@ void iecDevice::saveFile()
 
 	// TODO: Handle errorFlag
 } // saveFile
+
+void iecDevice::dumpState() 
+{
+	Debug_println("");
+	Debug_printv("-------------------------------");
+	Debug_printv("URL: [%s]", m_mfile->url.c_str());
+    Debug_printv("streamPath: [%s]", m_mfile->streamPath.c_str());
+    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
+	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	Debug_printv("File: [%s]", m_mfile->name.c_str());
+	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+	Debug_printv("");
+	Debug_printv("m_filename: [%s]", m_filename.c_str());
+    Debug_printv("-------------------------------");
+} // dumpState
