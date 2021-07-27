@@ -117,10 +117,11 @@ private:
 	void setDeviceStatus(int number, int track=0, int sector=0);
 	
 	// handler helpers.
-	void handleATNCmdCodeOpen(IEC::Data &cmd);
-	void handleATNCmdCodeDataListen(void);
-	void handleATNCmdCodeDataTalk(byte chan);
-	void handleATNCmdClose(void);
+	void handleListenCommand(IEC::Data &cmd);
+	void handleListenData(void);
+	void handleTalk(byte chan);
+	void handleOpen(void);
+	void handleClose(void);
 
 	// void handleDeviceCommand(IEC::Data &cmd);
 	// void handleMeatloafCommand(IEC::Data &cmd);

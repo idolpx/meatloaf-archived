@@ -327,7 +327,7 @@ uint8_t Interface::service(void)
 				}
 
 				// Open either file or prg for reading, writing or single line command on the command channel.
-				handleATNCmdCodeOpen(m_iec_data);
+				handleListenCommand(m_iec_data);
 				break;
 
 			case IEC::IEC_DATA: // data channel opened
@@ -336,13 +336,13 @@ uint8_t Interface::service(void)
 				{
 					// Process a command
 					Debug_printv("[Process a command]");
-					handleATNCmdCodeOpen(m_iec_data);
+					handleListenCommand(m_iec_data);
 				}
 				else if (mode == IEC::BUS_LISTEN)
 				{
 					// Receive data
 					Debug_printv("[Receive data]");
-					handleATNCmdCodeDataListen();	
+					handleListenData();	
 				}
 				else if (mode == IEC::BUS_TALK)
 				{
@@ -350,16 +350,16 @@ uint8_t Interface::service(void)
 					Debug_printv("[Send data]");
 					if (m_iec_data.channel == CMD_CHANNEL)
 					{
-						handleATNCmdCodeOpen(m_iec_data);		 // This is typically an empty command,
+						handleListenCommand(m_iec_data);		 // This is typically an empty command,
 					}
 
-					handleATNCmdCodeDataTalk(m_iec_data.channel);
+					handleTalk(m_iec_data.channel);
 				}
 				break;
 
 			case IEC::IEC_CLOSE:
 				//Debug_printv("[CLOSE] ");
-				handleATNCmdClose();
+				handleClose();
 				break;
 		} // switch
 	}
@@ -471,7 +471,7 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 	return tuple;
 }
 
-void Interface::handleATNCmdCodeOpen(IEC::Data &iec_data)
+void Interface::handleListenCommand(IEC::Data &iec_data)
 {
 	if (m_device.select(iec_data.device))
 	{
@@ -582,7 +582,7 @@ void Interface::handleATNCmdCodeOpen(IEC::Data &iec_data)
 
 	// Clear command string
 	m_iec_data.str[0] = '\0';
-} // handleATNCmdCodeOpen
+} // handleListenCommand
 
 void Interface::dumpState() {
 	Debug_println("");
@@ -621,7 +621,7 @@ void Interface::prepareFileStream(std::string url)
 	Debug_printv("LOAD [%s]", url.c_str());
 }
 
-void Interface::handleATNCmdCodeDataTalk(byte chan)
+void Interface::handleTalk(byte chan)
 {
 	Debug_printf("(%d CHANNEL) (%d openState)\r\n", chan, m_openState);
 
@@ -657,19 +657,19 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 	}
 
 	m_openState = O_NOTHING;
-} // handleATNCmdCodeDataTalk
+} // handleTalk
 
-void Interface::handleATNCmdCodeDataListen()
+void Interface::handleListenData()
 {
 	Debug_printv("[%s]", m_device.url().c_str());
 
 	saveFile();
-} // handleATNCmdCodeDataListen
+} // handleListenData
 
-void Interface::handleATNCmdClose()
+void Interface::handleClose()
 {
 
-} // handleATNCmdClose
+} // handleClose
 
 // send single basic line, including heading basic pointer and terminating zero.
 uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...)
