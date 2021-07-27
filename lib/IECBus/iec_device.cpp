@@ -321,11 +321,11 @@ uint8_t iecDevice::service(void)
 			case IEC::IEC_OPEN:
 				Debug_printv("[OPEN]");
 				if (m_iec_data.channel == 0)
-					Debug_printf("LOAD \"%s\",%d ", m_iec_data.str, m_iec_data.device);
+					Debug_printf("LOAD \"%s\",%d ", m_iec_data.arguments, m_iec_data.device);
 				else if (m_iec_data.channel == 1)
-					Debug_printf("SAVE \"%s\",%d ", m_iec_data.str, m_iec_data.device);
+					Debug_printf("SAVE \"%s\",%d ", m_iec_data.arguments, m_iec_data.device);
 				else {
-					Debug_printf("OPEN #,%d,%d,\"%s\"", m_iec_data.device, m_iec_data.channel, m_iec_data.str);
+					Debug_printf("OPEN #,%d,%d,\"%s\"", m_iec_data.device, m_iec_data.channel, m_iec_data.arguments);
 				}
 
 				// Open either file or prg for reading, writing or single line command on the command channel.
@@ -485,7 +485,7 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 	size_t channel = iec_data.channel;
 	m_openState = O_NOTHING;
 
-	if ( strlen(iec_data.str) == 0 )
+	if ( strlen(iec_data.arguments) == 0 )
 	{
 		Debug_printv("No command to process");
 
@@ -495,7 +495,7 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 	}
 
 	// 1. obtain command and fullPath
-	auto commandAndPath = parseLine(iec_data.str, channel);
+	auto commandAndPath = parseLine(iec_data.arguments, channel);
 	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
 
 	Debug_printv("command[%s]", commandAndPath.command.c_str());
@@ -583,7 +583,7 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 	//dumpState();
 
 	// Clear command string
-	m_iec_data.str[0] = '\0';
+	m_iec_data.arguments[0] = '\0';
 } // handleListenCommand
 
 

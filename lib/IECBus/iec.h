@@ -51,7 +51,7 @@ public:
 		BUS_RESET = 6		  // The IEC bus is in a reset state (RESET line).
 	};
 
-	// IEC ATN commands:
+	// IEC commands:
 	enum Command
 	{
 		IEC_GLOBAL = 0x00,	      // 0x00 + cmd (global command)
@@ -59,18 +59,19 @@ public:
 		IEC_UNLISTEN = 0x3F,     // 0x3F (UNLISTEN)
 		IEC_TALK = 0x40,	      // 0x40 + device_id (TALK)
 		IEC_UNTALK = 0x5F,	      // 0x5F (UNTALK)
-		IEC_DATA = 0x60,	  // 0x60 + channel (SECONDARY)
+		IEC_DATA = 0x60,          // 0x60 + channel (OPEN CHANNEL / DATA)
 		IEC_CLOSE = 0xE0,	      // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
 		IEC_OPEN = 0xF0	      // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
 	};
 
-	typedef struct _tagATNCMD
+	typedef struct _tagIECCMD
 	{
-		uint8_t code;
 		uint8_t command;
+		uint8_t device;	
+		uint8_t secondary;
 		uint8_t channel;
-		uint8_t device;
-		char str[IEC_CMD_MAX_LENGTH];
+		uint8_t flags;
+		char arguments[IEC_CMD_MAX_LENGTH];
 	} Data;
 
 	// IEC()
@@ -109,7 +110,9 @@ public:
 
 	void debugTiming();
 
-	IECState state();	
+	IECState state();
+
+	CBMStandardSerial protocol;	
 
 private:
 	// IEC Bus Commands
@@ -125,7 +128,7 @@ private:
 	bool undoTurnAround(void);	
 
 protected:
-	CBMStandardSerial protocol;
+
 };
 
 #endif

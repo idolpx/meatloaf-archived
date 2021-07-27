@@ -76,7 +76,6 @@ public:
 class iecDevice
 {
 public:
-
 	// Return values for service:
 	enum DeviceState
 	{

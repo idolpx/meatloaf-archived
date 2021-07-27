@@ -60,17 +60,17 @@ bool IEC::turnAround(void)
 	TURNAROUND
 	An unusual sequence takes place following ATN if the computer wishes the remote device to
 	become a talker. This will usually take place only after a Talk command has been sent.
-	Immediately after ATN is protocol.released, the selected device will be behaving like a listener. After all, it's
+	Immediately after ATN is released, the selected device will be behaving like a listener. After all, it's
 	been listening during the ATN cycle, and the computer has been a talker. At this instant, we 
 	have "wrong way" logic; the device is holding down the Data	line, and the computer is holding the 
 	Clock line. We must turn this around. Here's the sequence:
 	the computer quickly realizes what's going on, and pulls the Data line to true (it's already there), as
 	well as releasing the Clock line to false. The device waits for this: when it sees the Clock line go
-	true [sic], it protocol.releases the Data line (which stays true anyway since the computer is now holding it down)
+	true [sic], it releases the Data line (which stays true anyway since the computer is now holding it down)
 	and then pulls down the Clock line. We're now in our starting position, with the talker (that's the
 	device) holding the Clock true, and the listener (the computer) holding the Data line true. The
 	computer watches for this state; only when it has gone through the cycle correctly will it be ready
-	to receive data. And data will be signalled, of course, with the usual sequence: the talker protocol.releases
+	to receive data. And data will be signalled, of course, with the usual sequence: the talker releases
 	the Clock line to signal that it's ready to send.
 	*/
 	Debug_printf("IEC turnAround: ");
@@ -171,7 +171,59 @@ IEC::BusState IEC::service(Data& iec_data)
 		return BUS_ERROR;
 	}
 
-	iec_data.code = c;
+	iec_data.command = c;
+	
+	// Decode command byte
+	if((c bitand 0xF0) == IEC_GLOBAL)
+	{
+		iec_data.command = IEC_GLOBAL;
+		iec_data.device = c xor IEC_GLOBAL;
+		iec_data.secondary = 0;
+		iec_data.channel = 0;
+		Debug_printf("(00 GLOBAL) (%.2d COMMAND)\r\n", iec_data.device);
+	} 
+	else if((c bitand 0xF0) == IEC_LISTEN)
+	{
+		iec_data.command = IEC_LISTEN;
+		iec_data.device = c xor IEC_LISTEN;
+		iec_data.secondary = 0;
+		iec_data.channel = 0;
+		Debug_printf("(20 LISTEN) (%.2d DEVICE) ", iec_data.device);
+	} 
+	else if(c == IEC_UNLISTEN)
+	{
+		Debug_printf("(3F UNLISTEN)\r\n");
+	} 
+	else if((c bitand 0xF0) == IEC_TALK)
+	{
+		iec_data.command = IEC_TALK;
+		iec_data.device = c xor IEC_TALK;
+		iec_data.secondary = 0;
+		iec_data.channel = 0;
+		Debug_printf("(40 TALK) (%.2d DEVICE) ", iec_data.device);
+	}
+	else if(c == IEC_UNTALK)
+	{
+		Debug_printf("(5F UNTALK)\r\n");
+	} 
+	else if((c bitand 0xF0) == IEC_DATA)
+	{
+		iec_data.secondary = IEC_DATA;
+		iec_data.channel = c xor IEC_DATA;
+		Debug_printf("(60 DATA) (%.2d CHANNEL)\r\n", iec_data.channel);
+	}
+	else if((c bitand 0xF0) == IEC_CLOSE)
+	{
+		iec_data.secondary = IEC_CLOSE;
+		iec_data.channel = c xor IEC_CLOSE;
+		Debug_printf("(EO CLOSE) (%.2d CHANNEL)\r\n", iec_data.channel);
+	}
+	else if((c bitand 0xF0) == IEC_OPEN)
+	{
+		iec_data.secondary = IEC_OPEN;
+		iec_data.channel = c xor IEC_OPEN;
+		Debug_printf("(FO OPEN) (%.2d CHANNEL)\r\n", iec_data.channel);
+	}
 	
 	int8_t cc = c;
 	if(c != IEC_UNTALK && c != IEC_UNLISTEN)
@@ -199,7 +251,6 @@ IEC::BusState IEC::service(Data& iec_data)
 				return BUS_ERROR;
 			}
 			
-			iec_data.code = c;
 			iec_data.command = c bitand 0xF0; // upper nibble, command
 			iec_data.channel = c bitand 0x0F; // lower nibble, channel
 
@@ -292,7 +343,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 			//if((m_state bitand atnFlag) and (IEC_UNLISTEN == c))
 			if(c == IEC_UNLISTEN)
 			{
-				Debug_printf("[%s] (%.2X UNLISTEN)\r\n", iec_data.str, c);
+				Debug_printf("[%s] (%.2X UNLISTEN)\r\n", iec_data.arguments, c);
 				break;
 			}
 
@@ -305,8 +356,8 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 			}
 			if(c != 0x0D)
 			{
-				iec_data.str[i++] = (uint8_t)c;
-				iec_data.str[i] = '\0';			
+				iec_data.arguments[i++] = (uint8_t)c;
+				iec_data.arguments[i] = '\0';			
 			}
 		}		
 	}
@@ -324,7 +375,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 		Debug_printv("OTHER (%.2X COMMAND) (%.2X CHANNEL) ", iec_data.command, iec_data.channel);
 	}
 
-	if(strlen(iec_data.str))
+	if(strlen(iec_data.arguments))
 		return BUS_COMMAND;
 	else
 		return BUS_IDLE;
@@ -364,8 +415,8 @@ IEC::BusState IEC::deviceTalk(Data& iec_data)
 			Debug_printv("IEC_CMD_MAX_LENGTH");
 			return BUS_ERROR;
 		}
-		iec_data.str[i++] = (uint8_t)c;
-		iec_data.str[i] = '\0';
+		iec_data.arguments[i++] = (uint8_t)c;
+		iec_data.arguments[i] = '\0';
 	}
 
 	// Delay after ATN is protocol.released
