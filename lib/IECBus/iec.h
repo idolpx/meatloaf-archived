@@ -28,6 +28,13 @@
 #include "protocol/cbmstandardserial.h"
 //#include "protocol/jiffydos.h"
 
+#define EOI_RECVD       (1<<0)
+#define COMMAND_RECVD   (1<<1)
+#define JIFFY_ACTIVE    (1<<2)
+#define JIFFY_LOAD      (1<<3)
+
+#define	IEC_CMD_MAX_LENGTH 	100
+
 using namespace Protocol;
 
 class IEC
@@ -63,7 +70,7 @@ public:
 		uint8_t command;
 		uint8_t channel;
 		uint8_t device;
-		char str[ATN_CMD_MAX_LENGTH];
+		char str[IEC_CMD_MAX_LENGTH];
 	} ATNCmd;
 
 	// IEC()

@@ -296,11 +296,11 @@ IEC::ATNMode IEC::deviceListen(ATNCmd& atn_cmd)
 				break;
 			}
 
-			if(i >= ATN_CMD_MAX_LENGTH) 
+			if(i >= IEC_CMD_MAX_LENGTH) 
 			{
 				// Buffer is going to overflow, this is an error condition
 				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-				Debug_printv("ATN_CMD_MAX_LENGTH");
+				Debug_printv("IEC_CMD_MAX_LENGTH");
 				return ATN_ERROR;
 			}
 			if(c != 0x0D)
@@ -357,11 +357,11 @@ IEC::ATNMode IEC::deviceTalk(ATNCmd& atn_cmd)
 	{
 		int16_t c = receive();
 
-		if(i >= ATN_CMD_MAX_LENGTH) 
+		if(i >= IEC_CMD_MAX_LENGTH) 
 		{
 			// Buffer is going to overflow, this is an error condition
 			// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-			Debug_printv("ATN_CMD_MAX_LENGTH");
+			Debug_printv("IEC_CMD_MAX_LENGTH");
 			return ATN_ERROR;
 		}
 		atn_cmd.str[i++] = (uint8_t)c;
