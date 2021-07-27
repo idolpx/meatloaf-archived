@@ -81,24 +81,6 @@
     #define IEC_PIN_RESET        39      // IO15
 #endif
 
-// IEC protocol timing consts in microseconds (us)
-#define TIMING_BIT           65    // bit clock hi/lo time
-#define TIMING_NO_EOI        5     // delay before bits
-#define TIMING_EOI_WAIT      256   // delay to signal EOI
-#define TIMING_EOI_ACK       60    // threshold for Acknowledging EOI
-#define TIMING_EOI_THRESH    20    // threshold for EOI detect
-#define TIMING_STABLE_WAIT   20    // line stabilization
-#define TIMING_ATN_PREDELAY  50    // delay required in ATN
-#define TIMING_ATN_DELAY     100   // delay required after ATN
-#define TIMING_FNF_DELAY     100   // delay after FNF
-#define TIMING_BYTE_ACK      1000  // threshold for Acknowledging Byte
-
-// See timeoutWait
-#define TIMEOUT 20000 // 1ms
-#define FOREVER 0
-
-#define	ATN_CMD_MAX_LENGTH 	100
-
 #define LED_PIN LED_BUILTIN // IO2
 #define LED_ON LOW
 #define LED_OFF HIGH
@@ -132,7 +114,6 @@ inline static void IRAM_ATTR onTimer()
 }
 
 // Enable this for verbose logging of IEC interface
-// May cause ?LOAD ERROR
 #define DEBUG
 
 #ifndef DEBUG_PORT
@@ -158,7 +139,6 @@ inline static void IRAM_ATTR onTimer()
 
 // Enable this to show the data stream while loading
 // Make sure device baud rate and monitor_speed = 921600
-// May cause ?LOAD ERROR
 #define DATA_STREAM
 
 // Select the FileSystem in PLATFORMIO.INI file
