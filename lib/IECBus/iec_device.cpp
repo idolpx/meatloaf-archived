@@ -34,7 +34,7 @@ namespace
 } // unnamed namespace
 Interface::Interface(IEC &iec)
 	: m_iec(iec),
-	m_atn_cmd(*reinterpret_cast<IEC::ATNCmd *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
+	m_iec_data(*reinterpret_cast<IEC::Data *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
 	m_device(0),
 	m_mfile(MFSOwner::File(""))
 {
@@ -301,7 +301,7 @@ uint8_t Interface::service(void)
 	//}
 
 	//	noInterrupts();
-	IEC::BusState mode = m_iec.service(m_atn_cmd);
+	IEC::BusState mode = m_iec.service(m_iec_data);
 	//	interrupts();
 
 
@@ -314,20 +314,20 @@ uint8_t Interface::service(void)
 	// Did anything happen from the host side?
 	else if (mode not_eq IEC::BUS_IDLE)
 	{
-		switch (m_atn_cmd.command)
+		switch (m_iec_data.command)
 		{
 			case IEC::IEC_OPEN:
 				Debug_printv("[OPEN]");
-				if (m_atn_cmd.channel == 0)
-					Debug_printf("LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
-				else if (m_atn_cmd.channel == 1)
-					Debug_printf("SAVE \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
+				if (m_iec_data.channel == 0)
+					Debug_printf("LOAD \"%s\",%d ", m_iec_data.str, m_iec_data.device);
+				else if (m_iec_data.channel == 1)
+					Debug_printf("SAVE \"%s\",%d ", m_iec_data.str, m_iec_data.device);
 				else {
-					Debug_printf("OPEN #,%d,%d,\"%s\"", m_atn_cmd.device, m_atn_cmd.channel, m_atn_cmd.str);
+					Debug_printf("OPEN #,%d,%d,\"%s\"", m_iec_data.device, m_iec_data.channel, m_iec_data.str);
 				}
 
 				// Open either file or prg for reading, writing or single line command on the command channel.
-				handleATNCmdCodeOpen(m_atn_cmd);
+				handleATNCmdCodeOpen(m_iec_data);
 				break;
 
 			case IEC::IEC_DATA: // data channel opened
@@ -336,7 +336,7 @@ uint8_t Interface::service(void)
 				{
 					// Process a command
 					Debug_printv("[Process a command]");
-					handleATNCmdCodeOpen(m_atn_cmd);
+					handleATNCmdCodeOpen(m_iec_data);
 				}
 				else if (mode == IEC::BUS_LISTEN)
 				{
@@ -348,12 +348,12 @@ uint8_t Interface::service(void)
 				{
 					// Send data
 					Debug_printv("[Send data]");
-					if (m_atn_cmd.channel == CMD_CHANNEL)
+					if (m_iec_data.channel == CMD_CHANNEL)
 					{
-						handleATNCmdCodeOpen(m_atn_cmd);		 // This is typically an empty command,
+						handleATNCmdCodeOpen(m_iec_data);		 // This is typically an empty command,
 					}
 
-					handleATNCmdCodeDataTalk(m_atn_cmd.channel);
+					handleATNCmdCodeDataTalk(m_iec_data.channel);
 				}
 				break;
 
@@ -363,7 +363,7 @@ uint8_t Interface::service(void)
 				break;
 		} // switch
 	}
-	//Debug_printv("mode[%d] command[%.2X] channel[%.2X] state[%d]", mode, m_atn_cmd.command, m_atn_cmd.channel, m_openState);
+	//Debug_printv("mode[%d] command[%.2X] channel[%.2X] state[%d]", mode, m_iec_data.command, m_iec_data.channel, m_openState);
 
 	return mode;
 } // service
@@ -471,29 +471,29 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 	return tuple;
 }
 
-void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
+void Interface::handleATNCmdCodeOpen(IEC::Data &iec_data)
 {
-	if (m_device.select(atn_cmd.device))
+	if (m_device.select(iec_data.device))
 	{
 		m_mfile.reset(MFSOwner::File(m_device.url()));
 		Debug_printv("!!!! device changed: unit:%d current url: [%s]", m_device.id(), m_device.url().c_str());
 		Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
 	}
 
-	size_t channel = atn_cmd.channel;
+	size_t channel = iec_data.channel;
 	m_openState = O_NOTHING;
 
-	if ( strlen(atn_cmd.str) == 0 )
+	if ( strlen(iec_data.str) == 0 )
 	{
 		Debug_printv("No command to process");
 
-		if ( atn_cmd.channel == CMD_CHANNEL )
+		if ( iec_data.channel == CMD_CHANNEL )
 			m_openState = O_STATUS;
 		return;
 	}
 
 	// 1. obtain command and fullPath
-	auto commandAndPath = parseLine(atn_cmd.str, channel);
+	auto commandAndPath = parseLine(iec_data.str, channel);
 	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
 
 	Debug_printv("command[%s]", commandAndPath.command.c_str());
@@ -581,7 +581,7 @@ void Interface::handleATNCmdCodeOpen(IEC::ATNCmd &atn_cmd)
 	//dumpState();
 
 	// Clear command string
-	m_atn_cmd.str[0] = '\0';
+	m_iec_data.str[0] = '\0';
 } // handleATNCmdCodeOpen
 
 void Interface::dumpState() {

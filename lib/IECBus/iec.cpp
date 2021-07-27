@@ -116,7 +116,7 @@ bool IEC::undoTurnAround(void)
 
 // This function checks and deals with atn signal commands
 //
-// If a command is recieved, the atn_cmd.string is saved in atn_cmd. Only commands
+// If a command is recieved, the iec_data.string is saved in iec_data. Only commands
 // for *this* device are dealt with.
 //
 /** from Derogee's "IEC Disected"
@@ -137,7 +137,7 @@ bool IEC::undoTurnAround(void)
  * nobody to talk to.
  */
 // Return value, see IEC::BusState definition.
-IEC::BusState IEC::service(ATNCmd& atn_cmd)
+IEC::BusState IEC::service(Data& iec_data)
 {
 	IEC::BusState r = BUS_IDLE;
 	bool releaseLines = false;
@@ -171,7 +171,7 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 		return BUS_ERROR;
 	}
 
-	atn_cmd.code = c;
+	iec_data.code = c;
 	
 	int8_t cc = c;
 	if(c != IEC_UNTALK && c != IEC_UNLISTEN)
@@ -180,18 +180,18 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 		cc = (c bitand IEC_LISTEN);
 		if(cc == IEC_LISTEN)
 		{
-			atn_cmd.device = c ^ IEC_LISTEN; // device specified, '^' = XOR
+			iec_data.device = c ^ IEC_LISTEN; // device specified, '^' = XOR
 		} 
 		else
 		{
 			cc = (c bitand IEC_TALK);
-			atn_cmd.device = c ^ IEC_TALK; // device specified
+			iec_data.device = c ^ IEC_TALK; // device specified
 		}
 
 		// Is this command for us?
-		if ( isDeviceEnabled(atn_cmd.device) )
+		if ( isDeviceEnabled(iec_data.device) )
 		{
-			// Get the first cmd byte, the atn_cmd.code
+			// Get the first cmd byte, the iec_data.code
 			c = receive();
 			if(protocol.m_state bitand errorFlag)
 			{
@@ -199,17 +199,17 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 				return BUS_ERROR;
 			}
 			
-			atn_cmd.code = c;
-			atn_cmd.command = c bitand 0xF0; // upper nibble, command
-			atn_cmd.channel = c bitand 0x0F; // lower nibble, channel
+			iec_data.code = c;
+			iec_data.command = c bitand 0xF0; // upper nibble, command
+			iec_data.channel = c bitand 0x0F; // lower nibble, channel
 
 			if ( cc == IEC_LISTEN )
 			{
-				r = deviceListen(atn_cmd);
+				r = deviceListen(iec_data);
 			}
 			else if ( cc == IEC_TALK )
 			{
-				r = deviceTalk(atn_cmd);
+				r = deviceTalk(iec_data);
 			}
 			releaseLines = protocol.m_state bitand errorFlag;				
 		}
@@ -218,11 +218,11 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 			// Command is not for us
 			if ( cc == IEC_LISTEN )
 			{
-				Debug_printf("(20 LISTEN) (%.2d DEVICE)\r\n", atn_cmd.device);
+				Debug_printf("(20 LISTEN) (%.2d DEVICE)\r\n", iec_data.device);
 			}
 			else if ( cc == IEC_TALK )
 			{
-				Debug_printf("(40 TALK) (%.2d DEVICE)\r\n", atn_cmd.device);
+				Debug_printf("(40 TALK) (%.2d DEVICE)\r\n", iec_data.device);
 			}
 			releaseLines = true;
 		}
@@ -257,26 +257,26 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 	return r;
 } // service
 
-IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
+IEC::BusState IEC::deviceListen(Data& iec_data)
 {
 	byte i=0;
 
 	// Okay, we will listen.
-	Debug_printf("(20 LISTEN) (%.2d DEVICE) ", atn_cmd.device);
+	Debug_printf("(20 LISTEN) (%.2d DEVICE) ", iec_data.device);
 
 	// If the command is SECONDARY and it is not to expect just a small command on the command channel, then
 	// we're into something more heavy. Otherwise read it all out right here until UNLISTEN is received.
-	if(atn_cmd.command == IEC_DATA && atn_cmd.channel not_eq CMD_CHANNEL) 
+	if(iec_data.command == IEC_DATA && iec_data.channel not_eq CMD_CHANNEL) 
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
-		Debug_printf("(%.2X SECONDARY) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
+		Debug_printf("(%.2X SECONDARY) (%.2X CHANNEL)\r\n", iec_data.command, iec_data.channel);
 		return BUS_LISTEN;
 	}
 
 	// OPEN
-	else if(atn_cmd.command == IEC_DATA || atn_cmd.command == IEC_OPEN) 
+	else if(iec_data.command == IEC_DATA || iec_data.command == IEC_OPEN) 
 	{
-		Debug_printf("(%.2X OPEN) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
+		Debug_printf("(%.2X OPEN) (%.2X CHANNEL) ", iec_data.command, iec_data.channel);
 
 		// Some other command. Record the cmd string until UNLISTEN is sent
 		for(;;) 
@@ -292,7 +292,7 @@ IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 			//if((m_state bitand atnFlag) and (IEC_UNLISTEN == c))
 			if(c == IEC_UNLISTEN)
 			{
-				Debug_printf("[%s] (%.2X UNLISTEN)\r\n", atn_cmd.str, c);
+				Debug_printf("[%s] (%.2X UNLISTEN)\r\n", iec_data.str, c);
 				break;
 			}
 
@@ -305,26 +305,26 @@ IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 			}
 			if(c != 0x0D)
 			{
-				atn_cmd.str[i++] = (uint8_t)c;
-				atn_cmd.str[i] = '\0';			
+				iec_data.str[i++] = (uint8_t)c;
+				iec_data.str[i] = '\0';			
 			}
 		}		
 	}
 
 	// CLOSE Named Channel
-	else if(atn_cmd.command == IEC_CLOSE) 
+	else if(iec_data.command == IEC_CLOSE) 
 	{
-		Debug_printf("(%.2X CLOSE) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
+		Debug_printf("(%.2X CLOSE) (%.2X CHANNEL)\r\n", iec_data.command, iec_data.channel);
 		return BUS_COMMAND;
 	}
 
 	// Unknown
 	else
 	{
-		Debug_printv("OTHER (%.2X COMMAND) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
+		Debug_printv("OTHER (%.2X COMMAND) (%.2X CHANNEL) ", iec_data.command, iec_data.channel);
 	}
 
-	if(strlen(atn_cmd.str))
+	if(strlen(iec_data.str))
 		return BUS_COMMAND;
 	else
 		return BUS_IDLE;
@@ -345,12 +345,12 @@ void IEC::deviceUnListen(void)
 	}
 }
 
-IEC::BusState IEC::deviceTalk(ATNCmd& atn_cmd)
+IEC::BusState IEC::deviceTalk(Data& iec_data)
 {
 	byte i = 0;
 
 	// Okay, we will talk soon
-	Debug_printf("(40 TALK) (%.2d DEVICE) (%.2X SECONDARY) (%.2X CHANNEL)\r\n", atn_cmd.device, atn_cmd.command, atn_cmd.channel);
+	Debug_printf("(40 TALK) (%.2d DEVICE) (%.2X SECONDARY) (%.2X CHANNEL)\r\n", iec_data.device, iec_data.command, iec_data.channel);
 
 	// Record the cmd string until ATN is protocol.released
 	while(protocol.status(IEC_PIN_ATN) == pulled) 
@@ -364,8 +364,8 @@ IEC::BusState IEC::deviceTalk(ATNCmd& atn_cmd)
 			Debug_printv("IEC_CMD_MAX_LENGTH");
 			return BUS_ERROR;
 		}
-		atn_cmd.str[i++] = (uint8_t)c;
-		atn_cmd.str[i] = '\0';
+		iec_data.str[i++] = (uint8_t)c;
+		iec_data.str[i] = '\0';
 	}
 
 	// Delay after ATN is protocol.released

@@ -106,13 +106,13 @@ private:
 	void saveFile();
 
 	// handler helpers.
-	void handleATNCmdCodeOpen(IEC::ATNCmd &cmd);
+	void handleATNCmdCodeOpen(IEC::Data &cmd);
 	void handleATNCmdCodeDataListen(void);
 	void handleATNCmdCodeDataTalk(byte chan);
 	void handleATNCmdClose(void);
 
-	void handleDeviceCommand(IEC::ATNCmd &cmd);
-	void handleMeatloafCommand(IEC::ATNCmd &cmd);
+	void handleDeviceCommand(IEC::Data &cmd);
+	void handleMeatloafCommand(IEC::Data &cmd);
 
 	MFile* getPointed(MFile* urlFile);
 
@@ -123,7 +123,7 @@ private:
 	byte m_openState;
 	
 	// atn command buffer struct
-	IEC::ATNCmd &m_atn_cmd;
+	IEC::Data &m_iec_data;
 
 	DeviceDB m_device;
 	std::unique_ptr<MFile> m_mfile; // Always points to current directory

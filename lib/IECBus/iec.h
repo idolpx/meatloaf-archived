@@ -71,7 +71,7 @@ public:
 		uint8_t channel;
 		uint8_t device;
 		char str[IEC_CMD_MAX_LENGTH];
-	} ATNCmd;
+	} Data;
 
 	// IEC()
 	// ~IEC() {}
@@ -80,8 +80,8 @@ public:
 	bool init();
 
 	// Checks if CBM is sending an attention message. If this is the case,
-	// the message is recieved and stored in atn_cmd.
-	BusState service(ATNCmd &atn_cmd);
+	// the message is recieved and stored in iec_data.
+	BusState service(Data &iec_data);
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typicall
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
@@ -113,13 +113,13 @@ public:
 
 private:
 	// IEC Bus Commands
-	BusState deviceListen(ATNCmd &atn_cmd);	  // 0x20 + device_id   Listen, device (0–30)
+	BusState deviceListen(Data &iec_data);	  // 0x20 + device_id   Listen, device (0–30)
 	void deviceUnListen(void);                // 0x3F               Unlisten, all devices
-	BusState deviceTalk(ATNCmd &atn_cmd);	  // 0x40 + device_id 	Talk, device
+	BusState deviceTalk(Data &iec_data);	  // 0x40 + device_id 	Talk, device
 	void deviceUnTalk(void);                  // 0x5F               Untalk, all devices
-	//BusState deviceReopen(ATNCmd &atn_cmd);  // 0x60 + channel     Reopen, channel (0–15)
-	BusState deviceClose(ATNCmd &atn_cmd);     // 0xE0 + channel     Close, channel
-	//BusState deviceOpen(ATNCmd &atn_cmd);    // 0xF0 + channel     Open, channel
+	//BusState deviceReopen(Data &iec_data);  // 0x60 + channel     Reopen, channel (0–15)
+	BusState deviceClose(Data &iec_data);     // 0xE0 + channel     Close, channel
+	//BusState deviceOpen(Data &iec_data);    // 0xF0 + channel     Open, channel
 
 	bool turnAround(void);
 	bool undoTurnAround(void);	
