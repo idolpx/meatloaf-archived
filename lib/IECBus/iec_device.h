@@ -73,11 +73,11 @@ public:
 };
 
 
-class Interface
+class iecDevice
 {
 public:
-	Interface(IEC &iec);
-	virtual ~Interface() {}
+	iecDevice(IEC &iec);
+	virtual ~iecDevice() {}
 
 	bool begin();
 

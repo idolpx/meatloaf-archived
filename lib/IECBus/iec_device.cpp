@@ -32,7 +32,7 @@ namespace
 	char serCmdIOBuf[MAX_BYTES_PER_REQUEST];
 
 } // unnamed namespace
-Interface::Interface(IEC &iec)
+iecDevice::iecDevice(IEC &iec)
 	: m_iec(iec),
 	m_iec_data(*reinterpret_cast<IEC::Data *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
 	m_device(0),
@@ -41,12 +41,12 @@ Interface::Interface(IEC &iec)
 	reset();
 } // ctor
 
-bool Interface::begin()
+bool iecDevice::begin()
 {
 	return true;
 }
 
-void Interface::reset(void)
+void iecDevice::reset(void)
 {
 	m_openState = O_NOTHING;
 	setDeviceStatus(73);
@@ -54,13 +54,13 @@ void Interface::reset(void)
 } // reset
 
 
-void Interface::sendFileNotFound(void)
+void iecDevice::sendFileNotFound(void)
 {
 	setDeviceStatus(62);
 	m_iec.sendFNF();
 }
 
-void Interface::sendStatus(void)
+void iecDevice::sendStatus(void)
 {
 	std::string status = m_device_status;
 	if (status.size() == 0)
@@ -80,7 +80,7 @@ void Interface::sendStatus(void)
 	m_device_status.clear();
 } // sendStatus
 
-void Interface::setDeviceStatus(int number, int track, int sector)
+void iecDevice::setDeviceStatus(int number, int track, int sector)
 {
 	switch(number)
 	{
@@ -173,7 +173,7 @@ void Interface::setDeviceStatus(int number, int track, int sector)
 }
 
 
-void Interface::sendMeatloafSystemInformation()
+void iecDevice::sendMeatloafSystemInformation()
 {
 	Debug_printf("\r\nsendDeviceInfo:\r\n");
 
@@ -251,7 +251,7 @@ void Interface::sendMeatloafSystemInformation()
 	ledON();
 } // sendMeatloafSystemInformation
 
-void Interface::sendMeatloafVirtualDeviceStatus()
+void iecDevice::sendMeatloafVirtualDeviceStatus()
 {
 	Debug_printf("\r\nsendDeviceStatus:\r\n");
 
@@ -283,7 +283,7 @@ void Interface::sendMeatloafVirtualDeviceStatus()
 	ledON();
 } // sendMeatloafVirtualDeviceStatus
 
-uint8_t Interface::service(void)
+uint8_t iecDevice::service(void)
 {
 	//#ifdef HAS_RESET_LINE
 	//	if(m_iec.checkRESET()) {
@@ -368,7 +368,7 @@ uint8_t Interface::service(void)
 	return mode;
 } // service
 
-MFile* Interface::getPointed(MFile* urlFile) {
+MFile* iecDevice::getPointed(MFile* urlFile) {
 	Debug_printv("getPointed [%s]", urlFile->url);
 	auto istream = Meat::ifstream(urlFile);
 
@@ -387,7 +387,7 @@ MFile* Interface::getPointed(MFile* urlFile) {
 	}
 };
 
-CommandPathTuple Interface::parseLine(std::string command, size_t channel)
+CommandPathTuple iecDevice::parseLine(std::string command, size_t channel)
 {
 
 	Debug_printv("* PARSE INCOMING LINE *******************************");
@@ -471,7 +471,7 @@ CommandPathTuple Interface::parseLine(std::string command, size_t channel)
 	return tuple;
 }
 
-void Interface::handleListenCommand(IEC::Data &iec_data)
+void iecDevice::handleListenCommand(IEC::Data &iec_data)
 {
 	if (m_device.select(iec_data.device))
 	{
@@ -584,7 +584,7 @@ void Interface::handleListenCommand(IEC::Data &iec_data)
 	m_iec_data.str[0] = '\0';
 } // handleListenCommand
 
-void Interface::dumpState() {
+void iecDevice::dumpState() {
 	Debug_println("");
 	Debug_printv("-------------------------------");
 	Debug_printv("URL: [%s]", m_mfile->url.c_str());
@@ -604,7 +604,7 @@ void Interface::dumpState() {
 
 }
 
-void Interface::changeDir(std::string url)
+void iecDevice::changeDir(std::string url)
 {
 	m_device.url(url);
 	m_mfile.reset(MFSOwner::File(url));
@@ -614,14 +614,14 @@ void Interface::changeDir(std::string url)
 	Debug_printv("LOAD $");		
 }
 
-void Interface::prepareFileStream(std::string url)
+void iecDevice::prepareFileStream(std::string url)
 {
 	m_filename = url;
 	m_openState = O_FILE;
 	Debug_printv("LOAD [%s]", url.c_str());
 }
 
-void Interface::handleTalk(byte chan)
+void iecDevice::handleTalk(byte chan)
 {
 	Debug_printf("(%d CHANNEL) (%d openState)\r\n", chan, m_openState);
 
@@ -659,20 +659,20 @@ void Interface::handleTalk(byte chan)
 	m_openState = O_NOTHING;
 } // handleTalk
 
-void Interface::handleListenData()
+void iecDevice::handleListenData()
 {
 	Debug_printv("[%s]", m_device.url().c_str());
 
 	saveFile();
 } // handleListenData
 
-void Interface::handleClose()
+void iecDevice::handleClose()
 {
 
 } // handleClose
 
 // send single basic line, including heading basic pointer and terminating zero.
-uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...)
+uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...)
 {
 	// Format our string
 	va_list args;
@@ -684,7 +684,7 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *fo
 	return sendLine(basicPtr, blocks, text);
 }
 
-uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
+uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 {
 	byte i;
 	uint16_t b_cnt = 0;
@@ -720,7 +720,7 @@ uint16_t Interface::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 } // sendLine
 
 
-uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
+uint16_t iecDevice::sendHeader(uint16_t &basicPtr, std::string header)
 {
 	uint16_t byte_count = 0;
 	bool sent_info = false;
@@ -771,7 +771,7 @@ uint16_t Interface::sendHeader(uint16_t &basicPtr, std::string header)
 	return byte_count;
 }
 
-void Interface::sendListing()
+void iecDevice::sendListing()
 {
 	Debug_printf("sendListing: [%s]\r\n=================================\r\n", m_mfile->url.c_str());
 
@@ -876,7 +876,7 @@ void Interface::sendListing()
 } // sendListing
 
 
-uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size)
+uint16_t iecDevice::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size)
 {
 	// Send List FOOTER
 	// #if defined(USE_LITTLEFS)
@@ -905,7 +905,7 @@ uint16_t Interface::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_
 }
 
 
-void Interface::sendFile()
+void iecDevice::sendFile()
 {
 	size_t i = 0;
 	bool success = true;
@@ -1074,7 +1074,7 @@ void Interface::sendFile()
 } // sendFile
 
 
-void Interface::saveFile()
+void iecDevice::saveFile()
 {
 	uint16_t i = 0;
 	bool done = false;
