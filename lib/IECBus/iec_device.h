@@ -88,55 +88,59 @@ public:
 private:
 	void reset(void);
 
-	void sendStatus(void);
-	void sendFileNotFound(void);
-	void sendDeviceInfo(void);
-	void sendDeviceStatus(void);
-	void setDeviceStatus(int number, int track=0, int sector=0);
+	// Meatloaf Specific
+	void sendMeatloafSystemInformation(void);
+	void sendMeatloafVirtualDeviceStatus(void);
 
+	// Directory Navigation & Listing
+	bool m_show_extension = true;
+	bool m_show_hidden = false;
+	bool m_show_date = false;
+	bool m_show_load_address = false;
 	void changeDir(std::string url);
-	void prepareFileStream(std::string url);
-
 	uint16_t sendHeader(uint16_t &basicPtr, std::string header);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...);
 	uint16_t sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size);
 	void sendListing();
+
+	// File LOAD / SAVE
+	void prepareFileStream(std::string url);
+	MFile* getPointed(MFile* urlFile);
 	void sendFile();
 	void saveFile();
 
+	// Device Status
+	std::string m_device_status = "";
+	void sendStatus(void);
+	void sendFileNotFound(void);
+	void setDeviceStatus(int number, int track=0, int sector=0);
+	
 	// handler helpers.
 	void handleATNCmdCodeOpen(IEC::Data &cmd);
 	void handleATNCmdCodeDataListen(void);
 	void handleATNCmdCodeDataTalk(byte chan);
 	void handleATNCmdClose(void);
 
-	void handleDeviceCommand(IEC::Data &cmd);
-	void handleMeatloafCommand(IEC::Data &cmd);
-
-	MFile* getPointed(MFile* urlFile);
+	// void handleDeviceCommand(IEC::Data &cmd);
+	// void handleMeatloafCommand(IEC::Data &cmd);
 
 	// our iec low level driver:
 	IEC &m_iec;
 
-	// This var is set after an open command and determines what to send next
+	// This is set after an open command and determines what to send next
 	byte m_openState;
 	
-	// atn command buffer struct
+	// IEC command buffer struct
 	IEC::Data &m_iec_data;
 
 	DeviceDB m_device;
 	std::unique_ptr<MFile> m_mfile; // Always points to current directory
 	std::string m_filename; // Always points to current or last loaded file
 
-	std::string m_device_status = "";
-	bool m_show_extension = true;
-	bool m_show_hidden = false;
-	bool m_show_date = false;
-	bool m_show_load_address = false;
-
 	CommandPathTuple parseLine(std::string commandLne, size_t channel);
 
+	// Debug functions
 	void dumpState();
 };
 

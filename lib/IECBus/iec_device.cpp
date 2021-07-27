@@ -173,7 +173,7 @@ void Interface::setDeviceStatus(int number, int track, int sector)
 }
 
 
-void Interface::sendDeviceInfo()
+void Interface::sendMeatloafSystemInformation()
 {
 	Debug_printf("\r\nsendDeviceInfo:\r\n");
 
@@ -249,9 +249,9 @@ void Interface::sendDeviceInfo()
 	m_iec.sendEOI(0);
 
 	ledON();
-} // sendDeviceInfo
+} // sendMeatloafSystemInformation
 
-void Interface::sendDeviceStatus()
+void Interface::sendMeatloafVirtualDeviceStatus()
 {
 	Debug_printf("\r\nsendDeviceStatus:\r\n");
 
@@ -281,7 +281,7 @@ void Interface::sendDeviceStatus()
 	m_iec.sendEOI(0);
 
 	ledON();
-} // sendDeviceStatus
+} // sendMeatloafVirtualDeviceStatus
 
 uint8_t Interface::service(void)
 {
@@ -647,12 +647,12 @@ void Interface::handleATNCmdCodeDataTalk(byte chan)
 
 		case O_ML_INFO:
 			// Send device info
-			sendDeviceInfo();
+			sendMeatloafSystemInformation();
 			break;
 
 		case O_ML_STATUS:
 			// Send device info
-			sendDeviceStatus();
+			sendMeatloafVirtualDeviceStatus();
 			break;
 	}
 
