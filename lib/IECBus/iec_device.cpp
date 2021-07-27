@@ -330,7 +330,7 @@ uint8_t Interface::service(void)
 				handleATNCmdCodeOpen(m_atn_cmd);
 				break;
 
-			case IEC::IEC_SECONDARY: // data channel opened
+			case IEC::IEC_DATA: // data channel opened
 				Debug_printv("[SECONDARY]");
 				if (mode == IEC::BUS_COMMAND)
 				{

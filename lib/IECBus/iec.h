@@ -59,7 +59,7 @@ public:
 		IEC_UNLISTEN = 0x3F,     // 0x3F (UNLISTEN)
 		IEC_TALK = 0x40,	      // 0x40 + device_id (TALK)
 		IEC_UNTALK = 0x5F,	      // 0x5F (UNTALK)
-		IEC_SECONDARY = 0x60,	  // 0x60 + channel (SECONDARY)
+		IEC_DATA = 0x60,	  // 0x60 + channel (SECONDARY)
 		IEC_CLOSE = 0xE0,	      // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
 		IEC_OPEN = 0xF0	      // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
 	};

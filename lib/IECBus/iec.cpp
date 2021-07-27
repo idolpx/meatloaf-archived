@@ -266,7 +266,7 @@ IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 
 	// If the command is SECONDARY and it is not to expect just a small command on the command channel, then
 	// we're into something more heavy. Otherwise read it all out right here until UNLISTEN is received.
-	if(atn_cmd.command == IEC_SECONDARY && atn_cmd.channel not_eq CMD_CHANNEL) 
+	if(atn_cmd.command == IEC_DATA && atn_cmd.channel not_eq CMD_CHANNEL) 
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
 		Debug_printf("(%.2X SECONDARY) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
@@ -274,7 +274,7 @@ IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 	}
 
 	// OPEN
-	else if(atn_cmd.command == IEC_SECONDARY || atn_cmd.command == IEC_OPEN) 
+	else if(atn_cmd.command == IEC_DATA || atn_cmd.command == IEC_OPEN) 
 	{
 		Debug_printf("(%.2X OPEN) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
 
