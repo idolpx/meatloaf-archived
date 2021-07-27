@@ -163,7 +163,7 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 	delayMicroseconds(TIMING_ATN_PREDELAY);
 
 	// Get first ATN byte, it is either LISTEN or TALK
-	int8_t c = (ATNCommand)receive();
+	int8_t c = (Command)receive();
 	Debug_printf("ATN: %.2X ", c);
 	if(protocol.m_state bitand errorFlag)
 	{
@@ -174,18 +174,18 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 	atn_cmd.code = c;
 	
 	int8_t cc = c;
-	if(c != ATN_CODE_UNTALK && c != ATN_CODE_UNLISTEN)
+	if(c != IEC_UNTALK && c != IEC_UNLISTEN)
 	{
 		// Is this a Listen or Talk command?
-		cc = (c bitand ATN_CODE_LISTEN);
-		if(cc == ATN_CODE_LISTEN)
+		cc = (c bitand IEC_LISTEN);
+		if(cc == IEC_LISTEN)
 		{
-			atn_cmd.device = c ^ ATN_CODE_LISTEN; // device specified, '^' = XOR
+			atn_cmd.device = c ^ IEC_LISTEN; // device specified, '^' = XOR
 		} 
 		else
 		{
-			cc = (c bitand ATN_CODE_TALK);
-			atn_cmd.device = c ^ ATN_CODE_TALK; // device specified
+			cc = (c bitand IEC_TALK);
+			atn_cmd.device = c ^ IEC_TALK; // device specified
 		}
 
 		// Is this command for us?
@@ -203,11 +203,11 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 			atn_cmd.command = c bitand 0xF0; // upper nibble, command
 			atn_cmd.channel = c bitand 0x0F; // lower nibble, channel
 
-			if ( cc == ATN_CODE_LISTEN )
+			if ( cc == IEC_LISTEN )
 			{
 				r = deviceListen(atn_cmd);
 			}
-			else if ( cc == ATN_CODE_TALK )
+			else if ( cc == IEC_TALK )
 			{
 				r = deviceTalk(atn_cmd);
 			}
@@ -216,23 +216,23 @@ IEC::BusState IEC::service(ATNCmd& atn_cmd)
 		else
 		{
 			// Command is not for us
-			if ( cc == ATN_CODE_LISTEN )
+			if ( cc == IEC_LISTEN )
 			{
 				Debug_printf("(20 LISTEN) (%.2d DEVICE)\r\n", atn_cmd.device);
 			}
-			else if ( cc == ATN_CODE_TALK )
+			else if ( cc == IEC_TALK )
 			{
 				Debug_printf("(40 TALK) (%.2d DEVICE)\r\n", atn_cmd.device);
 			}
 			releaseLines = true;
 		}
 	}
-	else if ( cc == ATN_CODE_UNLISTEN )
+	else if ( cc == IEC_UNLISTEN )
 	{
 		Debug_println("UNLISTEN");
 		releaseLines = true;
 	}
-	else if ( cc == ATN_CODE_UNTALK )
+	else if ( cc == IEC_UNTALK )
 	{
 		Debug_println("UNTALK");
 		releaseLines = true;
@@ -266,7 +266,7 @@ IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 
 	// If the command is SECONDARY and it is not to expect just a small command on the command channel, then
 	// we're into something more heavy. Otherwise read it all out right here until UNLISTEN is received.
-	if(atn_cmd.command == ATN_CODE_SECONDARY && atn_cmd.channel not_eq CMD_CHANNEL) 
+	if(atn_cmd.command == IEC_SECONDARY && atn_cmd.channel not_eq CMD_CHANNEL) 
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
 		Debug_printf("(%.2X SECONDARY) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
@@ -274,7 +274,7 @@ IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 	}
 
 	// OPEN
-	else if(atn_cmd.command == ATN_CODE_SECONDARY || atn_cmd.command == ATN_CODE_OPEN) 
+	else if(atn_cmd.command == IEC_SECONDARY || atn_cmd.command == IEC_OPEN) 
 	{
 		Debug_printf("(%.2X OPEN) (%.2X CHANNEL) ", atn_cmd.command, atn_cmd.channel);
 
@@ -289,8 +289,8 @@ IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 			}
 				
 
-			//if((m_state bitand atnFlag) and (ATN_CODE_UNLISTEN == c))
-			if(c == ATN_CODE_UNLISTEN)
+			//if((m_state bitand atnFlag) and (IEC_UNLISTEN == c))
+			if(c == IEC_UNLISTEN)
 			{
 				Debug_printf("[%s] (%.2X UNLISTEN)\r\n", atn_cmd.str, c);
 				break;
@@ -312,7 +312,7 @@ IEC::BusState IEC::deviceListen(ATNCmd& atn_cmd)
 	}
 
 	// CLOSE Named Channel
-	else if(atn_cmd.command == ATN_CODE_CLOSE) 
+	else if(atn_cmd.command == IEC_CLOSE) 
 	{
 		Debug_printf("(%.2X CLOSE) (%.2X CHANNEL)\r\n", atn_cmd.command, atn_cmd.channel);
 		return BUS_COMMAND;

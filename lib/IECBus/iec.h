@@ -52,16 +52,16 @@ public:
 	};
 
 	// IEC ATN commands:
-	enum ATNCommand
+	enum Command
 	{
-		ATN_CODE_GLOBAL = 0x00,	      // 0x00 + cmd (global command)
-		ATN_CODE_LISTEN = 0x20,	      // 0x20 + device_id (LISTEN)
-		ATN_CODE_UNLISTEN = 0x3F,     // 0x3F (UNLISTEN)
-		ATN_CODE_TALK = 0x40,	      // 0x40 + device_id (TALK)
-		ATN_CODE_UNTALK = 0x5F,	      // 0x5F (UNTALK)
-		ATN_CODE_SECONDARY = 0x60,	  // 0x60 + channel (SECONDARY)
-		ATN_CODE_CLOSE = 0xE0,	      // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
-		ATN_CODE_OPEN = 0xF0	      // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
+		IEC_GLOBAL = 0x00,	      // 0x00 + cmd (global command)
+		IEC_LISTEN = 0x20,	      // 0x20 + device_id (LISTEN)
+		IEC_UNLISTEN = 0x3F,     // 0x3F (UNLISTEN)
+		IEC_TALK = 0x40,	      // 0x40 + device_id (TALK)
+		IEC_UNTALK = 0x5F,	      // 0x5F (UNTALK)
+		IEC_SECONDARY = 0x60,	  // 0x60 + channel (SECONDARY)
+		IEC_CLOSE = 0xE0,	      // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
+		IEC_OPEN = 0xF0	      // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
 	};
 
 	typedef struct _tagATNCMD

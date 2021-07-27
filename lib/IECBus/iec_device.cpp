@@ -316,7 +316,7 @@ uint8_t Interface::service(void)
 	{
 		switch (m_atn_cmd.command)
 		{
-			case IEC::ATN_CODE_OPEN:
+			case IEC::IEC_OPEN:
 				Debug_printv("[OPEN]");
 				if (m_atn_cmd.channel == 0)
 					Debug_printf("LOAD \"%s\",%d ", m_atn_cmd.str, m_atn_cmd.device);
@@ -330,7 +330,7 @@ uint8_t Interface::service(void)
 				handleATNCmdCodeOpen(m_atn_cmd);
 				break;
 
-			case IEC::ATN_CODE_SECONDARY: // data channel opened
+			case IEC::IEC_SECONDARY: // data channel opened
 				Debug_printv("[SECONDARY]");
 				if (mode == IEC::BUS_COMMAND)
 				{
@@ -357,7 +357,7 @@ uint8_t Interface::service(void)
 				}
 				break;
 
-			case IEC::ATN_CODE_CLOSE:
+			case IEC::IEC_CLOSE:
 				//Debug_printv("[CLOSE] ");
 				handleATNCmdClose();
 				break;

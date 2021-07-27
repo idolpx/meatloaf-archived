@@ -49,8 +49,8 @@ bool iecHost::deviceExists(uint8_t deviceID)
     else
     {
         // Send Listen Command & Device ID
-        Debug_printf( "%.2X", (ATN_CODE_LISTEN & deviceID));
-        send( ATN_CODE_LISTEN & deviceID );
+        Debug_printf( "%.2X", (IEC_LISTEN & deviceID));
+        send( IEC_LISTEN & deviceID );
         delayMicroseconds(TIMING_BIT);
 
         if ( protocol.status( IEC_PIN_DATA ) )
@@ -66,7 +66,7 @@ bool iecHost::deviceExists(uint8_t deviceID)
         delayMicroseconds(TIMING_BIT);
             
         // Send UnListen
-        send( ATN_CODE_UNLISTEN );
+        send( IEC_UNLISTEN );
         delayMicroseconds(TIMING_BIT);        
     }
 
