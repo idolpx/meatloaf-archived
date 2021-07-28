@@ -259,7 +259,7 @@ IEC::BusState IEC::service(Data& iec_data)
 	}
 	else
 	{
-		Debug_println("");
+		Debug_println("]");
 		releaseLines(false);
 		return BUS_IDLE;
 	}
