@@ -136,16 +136,16 @@ private:
 
 	// our iec low level driver:
 	IEC &m_iec;
+	IEC::Data &m_iec_data;	// IEC command buffer struct
 
 	// This is set after an open command and determines what to send next
 	byte m_openState;
 	
-	// IEC command buffer struct
-	IEC::Data &m_iec_data;
 
 	DeviceDB m_device;
 	std::unique_ptr<MFile> m_mfile; // Always points to current directory
 	std::string m_filename; // Always points to current or last loaded file
+	StaticJsonDocument<512> m_channelBuffer;
 
 	CommandPathTuple parseLine(std::string commandLne, size_t channel);
 

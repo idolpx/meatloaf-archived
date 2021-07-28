@@ -617,7 +617,7 @@ void iecDevice::prepareFileStream(std::string url)
 
 void iecDevice::handleTalk(byte chan)
 {
-	Debug_printf("(%d CHANNEL) (%d openState)\r\n", chan, m_openState);
+	Debug_printv("channel[%d] openState[%d]", chan, m_openState);
 
 	switch (m_openState)
 	{

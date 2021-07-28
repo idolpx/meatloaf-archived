@@ -67,8 +67,7 @@ public:
 	typedef struct _tagIECCMD
 	{
 		uint8_t command;
-		uint8_t device;	
-		uint8_t secondary;
+		uint8_t device;
 		uint8_t channel;
 		uint8_t flags;
 		char arguments[IEC_CMD_MAX_LENGTH];

@@ -66,8 +66,6 @@ SDFSConfig fileSystemConfig = SDFSConfig();
 #include "ESPModem.h"
 #include "ml_tests.h"
 
-extern StaticJsonDocument<512> g_mlconfig;
-
 enum class statemachine
 {
     idle,   // BUS is idle

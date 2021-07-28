@@ -161,23 +161,23 @@ IEC::BusState IEC::service(Data& iec_data)
 	protocol.pull(IEC_PIN_DATA);
 	delayMicroseconds(TIMING_ATN_PREDELAY);
 
-	// Get first ATN byte, it is either LISTEN or TALK
-	int8_t c = (Command)receive();
-	Debug_printf("IEC: %.2X ", c);
+	// Get command
+	int16_t c = (Command)receive();
+	Debug_printf("IEC: ");
 	if(protocol.m_state bitand errorFlag)
 	{
 		Debug_printv("Get first ATN byte");
 		return BUS_ERROR;
 	}
 
-	iec_data.command = c;
-	
+	iec_data.flags = (c bitand 0xFF00) >> 8; // Save flags
+	iec_data.command = c bitand 0xFF; // Clear flags in high byte
+
 	// Decode command byte
 	if((c bitand 0xF0) == IEC_GLOBAL)
 	{
 		iec_data.command = IEC_GLOBAL;
 		iec_data.device = c xor IEC_GLOBAL;
-		iec_data.secondary = 0;
 		iec_data.channel = 0;
 		Debug_printf("(00 GLOBAL) (%.2d COMMAND)\r\n", iec_data.device);
 	} 
@@ -185,7 +185,6 @@ IEC::BusState IEC::service(Data& iec_data)
 	{
 		iec_data.command = IEC_LISTEN;
 		iec_data.device = c xor IEC_LISTEN;
-		iec_data.secondary = 0;
 		iec_data.channel = 0;
 		Debug_printf("(20 LISTEN) (%.2d DEVICE) ", iec_data.device);
 	} 
@@ -199,7 +198,6 @@ IEC::BusState IEC::service(Data& iec_data)
 	{
 		iec_data.command = IEC_TALK;
 		iec_data.device = c xor IEC_TALK;
-		iec_data.secondary = 0;
 		iec_data.channel = 0;
 		Debug_printf("(40 TALK) (%.2d DEVICE) ", iec_data.device);
 	}
@@ -211,19 +209,19 @@ IEC::BusState IEC::service(Data& iec_data)
 	} 
 	else if((c bitand 0xF0) == IEC_DATA)
 	{
-		iec_data.secondary = IEC_DATA;
+		iec_data.command = IEC_DATA;
 		iec_data.channel = c xor IEC_DATA;
 		Debug_printf("(60 DATA) (%.2d CHANNEL)\r\n", iec_data.channel);
 	}
 	else if((c bitand 0xF0) == IEC_CLOSE)
 	{
-		iec_data.secondary = IEC_CLOSE;
+		iec_data.command = IEC_CLOSE;
 		iec_data.channel = c xor IEC_CLOSE;
 		Debug_printf("(EO CLOSE) (%.2d CHANNEL)\r\n", iec_data.channel);
 	}
 	else if((c bitand 0xF0) == IEC_OPEN)
 	{
-		iec_data.secondary = IEC_OPEN;
+		iec_data.command = IEC_OPEN;
 		iec_data.channel = c xor IEC_OPEN;
 		Debug_printf("(FO OPEN) (%.2d CHANNEL)\r\n", iec_data.channel);
 	}
@@ -298,10 +296,11 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 	{
 		Debug_printf("(%.2X OPEN) (%.2X CHANNEL) ", iec_data.command, iec_data.channel);
 
+
 		// Some other command. Record the cmd string until UNLISTEN is sent
 		for(;;) 
 		{
-			uint8_t c = receive();
+			int16_t c = receive();
 			if(protocol.m_state bitand errorFlag)
 			{
 				Debug_printv("Some other command [%.2X]", c);
@@ -408,7 +407,7 @@ void IEC::releaseLines(bool wait)
 	// Wait for ATN to release and quit
 	if ( wait )
 	{
-		Debug_printv("Waiting for ATN to release");
+		//Debug_printv("Waiting for ATN to release");
 		while(protocol.status(IEC_PIN_ATN) == pulled)
 		{
 			ESP.wdtFeed();

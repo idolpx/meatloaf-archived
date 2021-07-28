@@ -318,7 +318,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// }
 
 	uint8_t n = 0;
-	while(status(IEC_PIN_ATN) != released && status(IEC_PIN_DATA) != pulled && (n < 1000)) {
+	while(status(IEC_PIN_ATN) != released && status(IEC_PIN_DATA) != pulled && (n < 100)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
@@ -336,6 +336,8 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// 	release(IEC_PIN_CLK);
 	// 	// release(IEC_PIN_DATA);
 	// }
+
+
 
 	return true;
 } // sendByte
