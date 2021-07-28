@@ -140,7 +140,6 @@ bool IEC::undoTurnAround(void)
 IEC::BusState IEC::service(Data& iec_data)
 {
 	IEC::BusState r = BUS_IDLE;
-	bool releaseLines = false;
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
@@ -164,7 +163,7 @@ IEC::BusState IEC::service(Data& iec_data)
 
 	// Get first ATN byte, it is either LISTEN or TALK
 	int8_t c = (Command)receive();
-	Debug_printf("ATN: %.2X ", c);
+	Debug_printf("IEC: %.2X ", c);
 	if(protocol.m_state bitand errorFlag)
 	{
 		Debug_printv("Get first ATN byte");
@@ -193,6 +192,8 @@ IEC::BusState IEC::service(Data& iec_data)
 	else if(c == IEC_UNLISTEN)
 	{
 		Debug_printf("(3F UNLISTEN)\r\n");
+		releaseLines(false);
+		return BUS_IDLE;
 	} 
 	else if((c bitand 0xF0) == IEC_TALK)
 	{
@@ -205,6 +206,8 @@ IEC::BusState IEC::service(Data& iec_data)
 	else if(c == IEC_UNTALK)
 	{
 		Debug_printf("(5F UNTALK)\r\n");
+		releaseLines(false);
+		return BUS_IDLE;
 	} 
 	else if((c bitand 0xF0) == IEC_DATA)
 	{
@@ -224,84 +227,50 @@ IEC::BusState IEC::service(Data& iec_data)
 		iec_data.channel = c xor IEC_OPEN;
 		Debug_printf("(FO OPEN) (%.2d CHANNEL)\r\n", iec_data.channel);
 	}
-	
-	int8_t cc = c;
-	if(c != IEC_UNTALK && c != IEC_UNLISTEN)
+
+	//Debug_printv("command[%.2X] device[%.2d] secondary[%.2d] channel[%.2d]", iec_data.command, iec_data.device, iec_data.secondary, iec_data.channel);
+
+	int8_t cc = iec_data.command;
+	// Is this a Listen or Talk command and is it for us?
+	if((iec_data.command == IEC_LISTEN || iec_data.command == IEC_TALK) && isDeviceEnabled(iec_data.device))
 	{
-		// Is this a Listen or Talk command?
-		cc = (c bitand IEC_LISTEN);
-		if(cc == IEC_LISTEN)
+		// Get the secondary address
+		c = receive();
+		if(protocol.m_state bitand errorFlag)
 		{
-			iec_data.device = c ^ IEC_LISTEN; // device specified, '^' = XOR
-		} 
-		else
-		{
-			cc = (c bitand IEC_TALK);
-			iec_data.device = c ^ IEC_TALK; // device specified
+			Debug_printv("Get the first cmd byte");
+			return BUS_ERROR;
 		}
+		
+		iec_data.command = c bitand 0xF0; // upper nibble, command
+		iec_data.channel = c bitand 0x0F; // lower nibble, channel
 
-		// Is this command for us?
-		if ( isDeviceEnabled(iec_data.device) )
+		if ( cc == IEC_LISTEN )
 		{
-			// Get the first cmd byte, the iec_data.code
-			c = receive();
-			if(protocol.m_state bitand errorFlag)
-			{
-				Debug_printv("Get the first cmd byte");
-				return BUS_ERROR;
-			}
-			
-			iec_data.command = c bitand 0xF0; // upper nibble, command
-			iec_data.channel = c bitand 0x0F; // lower nibble, channel
-
-			if ( cc == IEC_LISTEN )
-			{
-				r = deviceListen(iec_data);
-			}
-			else if ( cc == IEC_TALK )
-			{
-				r = deviceTalk(iec_data);
-			}
-			releaseLines = protocol.m_state bitand errorFlag;				
+			r = deviceListen(iec_data);
 		}
 		else
 		{
-			// Command is not for us
-			if ( cc == IEC_LISTEN )
-			{
-				Debug_printf("(20 LISTEN) (%.2d DEVICE)\r\n", iec_data.device);
-			}
-			else if ( cc == IEC_TALK )
-			{
-				Debug_printf("(40 TALK) (%.2d DEVICE)\r\n", iec_data.device);
-			}
-			releaseLines = true;
+			r = deviceTalk(iec_data);
+		}
+		if(protocol.m_state bitand errorFlag)
+		{
+			Debug_printv("Listen/Talk ERROR");
+			r = BUS_ERROR;
 		}
 	}
-	else if ( cc == IEC_UNLISTEN )
+	else
 	{
-		Debug_println("UNLISTEN");
-		releaseLines = true;
+		Debug_println("");
+		releaseLines(false);
+		return BUS_IDLE;
 	}
-	else if ( cc == IEC_UNTALK )
-	{
-		Debug_println("UNTALK");
-		releaseLines = true;
-	}		
 			
 	// Was there an error?
-	if(releaseLines)
+	if(r == BUS_IDLE || r == BUS_ERROR)
 	{
-		// Release lines
-		protocol.release(IEC_PIN_CLK);
-		protocol.release(IEC_PIN_DATA);
-
-		// Wait for ATN to protocol.release and quit
-		while(protocol.status(IEC_PIN_ATN) != released)
-		{
-			ESP.wdtFeed();
-		}
-		//delayMicroseconds(TIMING_ATN_DELAY);
+		// Debug_printv("release lines");
+		releaseLines();
 	}
 	// Don't do anything here or it could cause LOAD ERROR!!!
 
@@ -313,7 +282,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 	byte i=0;
 
 	// Okay, we will listen.
-	Debug_printf("(20 LISTEN) (%.2d DEVICE) ", iec_data.device);
+	// Debug_printf("(20 LISTEN) (%.2d DEVICE) ", iec_data.device);
 
 	// If the command is SECONDARY and it is not to expect just a small command on the command channel, then
 	// we're into something more heavy. Otherwise read it all out right here until UNLISTEN is received.
@@ -381,43 +350,25 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 		return BUS_IDLE;
 }
 
-void IEC::deviceUnListen(void)
-{
-	Debug_printv("");
+// void IEC::deviceUnListen(void)
+// {
+// 	Debug_printv("");
 
-	// Release lines
-	protocol.release(IEC_PIN_CLK);
-	protocol.release(IEC_PIN_DATA);
+// 	// Release lines
+// 	protocol.release(IEC_PIN_CLK);
+// 	protocol.release(IEC_PIN_DATA);
 
-	// Wait for ATN to protocol.release and quit
-	while(protocol.status(IEC_PIN_ATN) == pulled)
-	{
-		ESP.wdtFeed();
-	}
-}
+// 	// Wait for ATN to protocol.release and quit
+// 	while(protocol.status(IEC_PIN_ATN) == pulled)
+// 	{
+// 		ESP.wdtFeed();
+// 	}
+// }
 
 IEC::BusState IEC::deviceTalk(Data& iec_data)
 {
-	byte i = 0;
-
 	// Okay, we will talk soon
-	Debug_printf("(40 TALK) (%.2d DEVICE) (%.2X SECONDARY) (%.2X CHANNEL)\r\n", iec_data.device, iec_data.command, iec_data.channel);
-
-	// Record the cmd string until ATN is protocol.released
-	while(protocol.status(IEC_PIN_ATN) == pulled) 
-	{
-		int16_t c = receive();
-
-		if(i >= IEC_CMD_MAX_LENGTH) 
-		{
-			// Buffer is going to overflow, this is an error condition
-			// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
-			Debug_printv("IEC_CMD_MAX_LENGTH");
-			return BUS_ERROR;
-		}
-		iec_data.arguments[i++] = (uint8_t)c;
-		iec_data.arguments[i] = '\0';
-	}
+	Debug_printf("(%.2X SECONDARY) (%.2X CHANNEL)\r\n", iec_data.device, iec_data.command, iec_data.channel);
 
 	// Delay after ATN is protocol.released
 	//delayMicroseconds(TIMING_BIT);
@@ -430,20 +381,41 @@ IEC::BusState IEC::deviceTalk(Data& iec_data)
 	return BUS_TALK;
 }
 
-void IEC::deviceUnTalk(void)
+// void IEC::deviceUnTalk(void)
+// {
+// 	Debug_printv("");
+
+// 	// Release lines
+// 	protocol.release(IEC_PIN_CLK);
+// 	protocol.release(IEC_PIN_DATA);
+
+// 	// Wait for ATN to protocol.release and quit
+// 	while(protocol.status(IEC_PIN_ATN) == pulled)
+// 	{
+// 		ESP.wdtFeed();
+// 	}
+// }
+
+
+void IEC::releaseLines(bool wait)
 {
-	Debug_printv("");
+	//Debug_printv("");
 
 	// Release lines
 	protocol.release(IEC_PIN_CLK);
 	protocol.release(IEC_PIN_DATA);
 
-	// Wait for ATN to protocol.release and quit
-	while(protocol.status(IEC_PIN_ATN) == pulled)
+	// Wait for ATN to release and quit
+	if ( wait )
 	{
-		ESP.wdtFeed();
+		Debug_printv("Waiting for ATN to release");
+		while(protocol.status(IEC_PIN_ATN) == pulled)
+		{
+			ESP.wdtFeed();
+		}		
 	}
 }
+
 
 // boolean  IEC::checkRESET()
 // {

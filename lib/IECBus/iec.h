@@ -117,15 +117,16 @@ public:
 private:
 	// IEC Bus Commands
 	BusState deviceListen(Data &iec_data);	  // 0x20 + device_id   Listen, device (0–30)
-	void deviceUnListen(void);                // 0x3F               Unlisten, all devices
+	//void deviceUnListen(void);                // 0x3F               Unlisten, all devices
 	BusState deviceTalk(Data &iec_data);	  // 0x40 + device_id 	Talk, device
-	void deviceUnTalk(void);                  // 0x5F               Untalk, all devices
+	//void deviceUnTalk(void);                  // 0x5F               Untalk, all devices
 	//BusState deviceReopen(Data &iec_data);  // 0x60 + channel     Reopen, channel (0–15)
 	BusState deviceClose(Data &iec_data);     // 0xE0 + channel     Close, channel
 	//BusState deviceOpen(Data &iec_data);    // 0xF0 + channel     Open, channel
 
 	bool turnAround(void);
-	bool undoTurnAround(void);	
+	bool undoTurnAround(void);
+	void releaseLines(bool wait = true);
 
 protected:
 

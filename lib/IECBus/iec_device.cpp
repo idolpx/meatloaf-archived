@@ -313,13 +313,13 @@ uint8_t iecDevice::service(void)
 		bus_state = IEC::BUS_IDLE;
 	}
 
-	// Did anything happen from the host side?
+	// Did anything happen from the controller side?
 	else if (bus_state not_eq IEC::BUS_IDLE)
 	{
 		switch (m_iec_data.command)
 		{
 			case IEC::IEC_OPEN:
-				Debug_printv("[OPEN]");
+				Debug_printf("DEVICE: OPEN CHANNEL %d\r\n", m_iec_data.channel);
 				if (m_iec_data.channel == 0)
 					Debug_printf("LOAD \"%s\",%d ", m_iec_data.arguments, m_iec_data.device);
 				else if (m_iec_data.channel == 1)
@@ -333,7 +333,7 @@ uint8_t iecDevice::service(void)
 				break;
 
 			case IEC::IEC_DATA: // data channel opened
-				Debug_printv("[SECONDARY]");
+				Debug_printf("DEVICE: DATA CHANNEL %d\r\n", m_iec_data.channel);
 				if (bus_state == IEC::BUS_COMMAND)
 				{
 					// Process a command
@@ -360,8 +360,11 @@ uint8_t iecDevice::service(void)
 				break;
 
 			case IEC::IEC_CLOSE:
-				//Debug_printv("[CLOSE] ");
-				handleClose(m_iec_data);
+				Debug_printf("DEVICE: CLOSE CHANNEL %d\r\n", m_iec_data.channel);
+				if(m_iec_data.channel > 0)
+				{
+					handleClose(m_iec_data);
+				}
 				break;
 		} // switch
 	}
