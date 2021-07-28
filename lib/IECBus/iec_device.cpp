@@ -316,24 +316,20 @@ uint8_t iecDevice::service(void)
 	// Did anything happen from the controller side?
 	else if (bus_state not_eq IEC::BUS_IDLE)
 	{
-		switch (m_iec_data.command)
+		Debug_printf("DEVICE: [%d] ", m_iec_data.device);
+
+		if (m_iec_data.command == IEC::IEC_OPEN)
 		{
-			case IEC::IEC_OPEN:
-				Debug_printf("DEVICE: OPEN CHANNEL %d\r\n", m_iec_data.channel);
+				Debug_printf("OPEN CHANNEL %d\r\n", m_iec_data.channel);
 				if (m_iec_data.channel == 0)
-					Debug_printf("LOAD \"%s\",%d ", m_iec_data.arguments, m_iec_data.device);
+					Debug_printf("LOAD \"%s\",%d ", m_iec_data.content.c_str(), m_iec_data.device);
 				else if (m_iec_data.channel == 1)
-					Debug_printf("SAVE \"%s\",%d ", m_iec_data.arguments, m_iec_data.device);
+					Debug_printf("SAVE \"%s\",%d ", m_iec_data.content.c_str(), m_iec_data.device);
 				else {
-					Debug_printf("OPEN #,%d,%d,\"%s\"", m_iec_data.device, m_iec_data.channel, m_iec_data.arguments);
+					Debug_printf("OPEN #,%d,%d,\"%s\"", m_iec_data.device, m_iec_data.channel, m_iec_data.content.c_str());
 				}
 
 				// Open either file or prg for reading, writing or single line command on the command channel.
-				handleListenCommand(m_iec_data);
-				break;
-
-			case IEC::IEC_DATA: // data channel opened
-				Debug_printf("DEVICE: DATA CHANNEL %d\r\n", m_iec_data.channel);
 				if (bus_state == IEC::BUS_COMMAND)
 				{
 					// Process a command
@@ -346,27 +342,42 @@ uint8_t iecDevice::service(void)
 					Debug_printv("[Receive data]");
 					handleListenData();	
 				}
-				else if (bus_state == IEC::BUS_TALK)
+		}
+		else if (m_iec_data.command == IEC::IEC_DATA) // data channel opened
+		{
+			Debug_printf("DATA CHANNEL %d\r\n", m_iec_data.channel);
+			if (bus_state == IEC::BUS_COMMAND)
+			{
+				// Process a command
+				Debug_printv("[Process a command]");
+				handleListenCommand(m_iec_data);
+			}
+			else if (bus_state == IEC::BUS_LISTEN)
+			{
+				// Receive data
+				Debug_printv("[Receive data]");
+				handleListenData();	
+			}
+			else if (bus_state == IEC::BUS_TALK)
+			{
+				// Send data
+				Debug_printv("[Send data]");
+				if (m_iec_data.channel == CMD_CHANNEL)
 				{
-					// Send data
-					Debug_printv("[Send data]");
-					if (m_iec_data.channel == CMD_CHANNEL)
-					{
-						handleListenCommand(m_iec_data);		 // This is typically an empty command,
-					}
-
-					handleTalk(m_iec_data.channel);
+					handleListenCommand(m_iec_data);		 // This is typically an empty command,
 				}
-				break;
 
-			case IEC::IEC_CLOSE:
-				Debug_printf("DEVICE: CLOSE CHANNEL %d\r\n", m_iec_data.channel);
-				if(m_iec_data.channel > 0)
-				{
-					handleClose(m_iec_data);
-				}
-				break;
-		} // switch
+				handleTalk(m_iec_data.channel);
+			}
+		}
+		else if (m_iec_data.command == IEC::IEC_CLOSE)
+		{
+			Debug_printf("CLOSE CHANNEL %d\r\n", m_iec_data.channel);
+			if(m_iec_data.channel > 0)
+			{
+				handleClose(m_iec_data);
+			}			
+		}
 	}
 	//Debug_printv("mode[%d] command[%.2X] channel[%.2X] state[%d]", mode, m_iec_data.command, m_iec_data.channel, m_openState);
 
@@ -488,7 +499,7 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 	size_t channel = iec_data.channel;
 	m_openState = O_NOTHING;
 
-	if ( strlen(iec_data.arguments) == 0 )
+	if (iec_data.content.size() == 0 )
 	{
 		Debug_printv("No command to process");
 
@@ -498,7 +509,7 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 	}
 
 	// 1. obtain command and fullPath
-	auto commandAndPath = parseLine(iec_data.arguments, channel);
+	auto commandAndPath = parseLine(iec_data.content, channel);
 	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
 
 	Debug_printv("command[%s]", commandAndPath.command.c_str());
@@ -586,7 +597,7 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 	//dumpState();
 
 	// Clear command string
-	m_iec_data.arguments[0] = '\0';
+	m_iec_data.content.clear();
 } // handleListenCommand
 
 

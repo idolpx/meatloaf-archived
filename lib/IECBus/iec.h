@@ -70,7 +70,8 @@ public:
 		uint8_t device;
 		uint8_t channel;
 		uint8_t flags;
-		char arguments[IEC_CMD_MAX_LENGTH];
+		//char content[IEC_CMD_MAX_LENGTH];
+		std::string content;
 	} Data;
 
 	// IEC()

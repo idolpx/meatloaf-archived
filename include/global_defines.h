@@ -115,6 +115,7 @@ inline static void IRAM_ATTR onTimer()
 
 // Enable this for verbose logging of IEC interface
 #define DEBUG
+#define BACKSPACE "\x08"
 
 #ifndef DEBUG_PORT
 #define DEBUG_PORT Serial
@@ -140,6 +141,10 @@ inline static void IRAM_ATTR onTimer()
 // Enable this to show the data stream while loading
 // Make sure device baud rate and monitor_speed = 921600
 #define DATA_STREAM
+
+// Enable this to show the data stream for other devices
+// Listens to all commands and data to all devices
+#define IEC_SNIFFER
 
 // Select the FileSystem in PLATFORMIO.INI file
 //#define USE_SPIFFS
