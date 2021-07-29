@@ -1048,7 +1048,7 @@ void iecDevice::sendFile()
 	#endif
 			}
 
-			// // Exit if ATN is pulled while sending
+			// // Exit if ATN is PULLED while sending
 			// if ( m_iec.state() bitand atnFlag )
 			// {
 			// 	// TODO: If sending from a named channel save file pointer position

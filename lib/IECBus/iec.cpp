@@ -60,7 +60,7 @@ bool IEC::turnAround(void)
 	TURNAROUND
 	An unusual sequence takes place following ATN if the computer wishes the remote device to
 	become a talker. This will usually take place only after a Talk command has been sent.
-	Immediately after ATN is released, the selected device will be behaving like a listener. After all, it's
+	Immediately after ATN is RELEASED, the selected device will be behaving like a listener. After all, it's
 	been listening during the ATN cycle, and the computer has been a talker. At this instant, we 
 	have "wrong way" logic; the device is holding down the Data	line, and the computer is holding the 
 	Clock line. We must turn this around. Here's the sequence:
@@ -75,8 +75,8 @@ bool IEC::turnAround(void)
 	*/
 	// Debug_printf("IEC turnAround: ");
 
-	// Wait until clock is protocol.released
-	while(protocol.status(IEC_PIN_CLK) != released);
+	// Wait until clock is RELEASED
+	while(protocol.status(IEC_PIN_CLK) != RELEASED);
 		
 
 	protocol.release(IEC_PIN_DATA);
@@ -101,7 +101,7 @@ bool IEC::undoTurnAround(void)
 	// Debug_printf("IEC undoTurnAround: ");
 
 	// wait until the computer protocol.releases the clock line
-	while(protocol.status(IEC_PIN_CLK) != released);
+	while(protocol.status(IEC_PIN_CLK) != RELEASED);
 
 	// Debug_println("complete");
 	return true;
@@ -121,7 +121,7 @@ bool IEC::undoTurnAround(void)
 //
 /** from Derogee's "IEC Disected"
  * ATN SEQUENCES
- * When ATN is pulled true, everybody stops what they are doing. The processor will quickly protocol.pull the
+ * When ATN is PULLED true, everybody stops what they are doing. The processor will quickly protocol.pull the
  * Clock line true (it's going to send soon), so it may be hard to notice that all other devices protocol.release the
  * Clock line. At the same time, the processor protocol.releases the Data line to false, but all other devices are
  * getting ready to listen and will each protocol.pull Data to true. They had better do this within one
@@ -143,11 +143,11 @@ IEC::BusState IEC::service(Data& iec_data)
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
-	// if(status(IEC_PIN_RESET) == pulled) 
+	// if(status(IEC_PIN_RESET) == PULLED) 
 	// {
-	// 	if (status(IEC_PIN_ATN) == pulled)
+	// 	if (status(IEC_PIN_ATN) == PULLED)
 	// 	{
-	// 		// If RESET & ATN are both pulled then CBM is off
+	// 		// If RESET & ATN are both PULLED then CBM is off
 	// 		return BUS_IDLE;
 	// 	}
 		
@@ -155,7 +155,7 @@ IEC::BusState IEC::service(Data& iec_data)
 	// }
 
 
-	// Attention line is pulled, go to listener mode and get message.
+	// Attention line is PULLED, go to listener mode and get message.
 	// Being fast with the next two lines here is CRITICAL!
 	protocol.release(IEC_PIN_CLK);
 	protocol.pull(IEC_PIN_DATA);
@@ -163,11 +163,15 @@ IEC::BusState IEC::service(Data& iec_data)
 
 	// Get command
 	Debug_printf("   IEC: [");
-	int16_t c = (Command)receive();
+	int16_t c = (Command)receive(iec_data.device);
 	if(protocol.flags bitand ERROR)
 	{
 		Debug_printv("Get first ATN byte");
 		return BUS_ERROR;
+	}
+	if(protocol.flags bitand JIFFY_ACTIVE)
+	{
+		Debug_printf("JIFFY ");
 	}
 
 	iec_data.command = c; // bitand 0xFF; // Clear flags in high byte
@@ -356,7 +360,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 // 	protocol.release(IEC_PIN_DATA);
 
 // 	// Wait for ATN to protocol.release and quit
-// 	while(protocol.status(IEC_PIN_ATN) == pulled)
+// 	while(protocol.status(IEC_PIN_ATN) == PULLED)
 // 	{
 // 		ESP.wdtFeed();
 // 	}
@@ -367,7 +371,7 @@ IEC::BusState IEC::deviceTalk(Data& iec_data)
 	// Okay, we will talk soon
 	Debug_printf(BACKSPACE "] (%.2X SECONDARY) (%d CHANNEL)\r\n", iec_data.command, iec_data.channel);
 
-	// Delay after ATN is protocol.released
+	// Delay after ATN is RELEASED
 	//delayMicroseconds(TIMING_BIT);
 
 	// Now do bus turnaround
@@ -387,7 +391,7 @@ IEC::BusState IEC::deviceTalk(Data& iec_data)
 // 	protocol.release(IEC_PIN_DATA);
 
 // 	// Wait for ATN to protocol.release and quit
-// 	while(protocol.status(IEC_PIN_ATN) == pulled)
+// 	while(protocol.status(IEC_PIN_ATN) == PULLED)
 // 	{
 // 		ESP.wdtFeed();
 // 	}
@@ -406,7 +410,7 @@ void IEC::releaseLines(bool wait)
 	if ( wait )
 	{
 		//Debug_printv("Waiting for ATN to release");
-		while(protocol.status(IEC_PIN_ATN) == pulled)
+		while(protocol.status(IEC_PIN_ATN) == PULLED)
 		{
 			ESP.wdtFeed();
 		}		
@@ -423,10 +427,10 @@ void IEC::releaseLines(bool wait)
 
 // IEC_receive receives a byte
 //
-int16_t IEC::receive()
+int16_t IEC::receive(uint8_t device)
 {
 	int16_t data;
-	data = protocol.receiveByte(); // Standard CBM Timing
+	data = protocol.receiveByte(device); // Standard CBM Timing
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
 #endif

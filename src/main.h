@@ -69,7 +69,7 @@ SDFSConfig fileSystemConfig = SDFSConfig();
 enum class statemachine
 {
     idle,   // BUS is idle
-    select, // ATN is pulled read command
+    select, // ATN is PULLED read command
     data    // READY to receive or send data
 };
 statemachine bus_state = statemachine::idle;

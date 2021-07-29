@@ -93,7 +93,7 @@ public:
 	bool sendFNF();
 
 	// Recieves a byte
-	int16_t receive();
+	int16_t receive(uint8_t device = 0);
 
 	// Enabled Device Bit Mask
 	uint32_t enabledDevices;

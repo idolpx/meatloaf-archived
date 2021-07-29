@@ -21,7 +21,7 @@
 #include "../../../include/global_defines.h"
 
 // BIT Flags
-#define CLEAR           0         // clear all flags
+#define CLEAR           0x0C      // clear all flags
 #define ATN_PULLED      (1 << 0)  // might be set by iec_receive
 #define EOI_RECVD       (1 << 1)
 #define COMMAND_RECVD   (1 << 2)
@@ -73,21 +73,15 @@
 
 namespace Protocol
 {
-	enum IECline
-	{
-		pulled = true,
-		released = false
-	};
-
 	class CBMStandardSerial
 	{
 	public:
 		// communication must be reset
-		uint8_t flags = CLEAR;
+		uint8_t flags = 0;
 
-		virtual int16_t receiveByte(void);
+		virtual int16_t receiveByte(uint8_t device);
 		virtual bool sendByte(uint8_t data, bool signalEOI);
-		virtual size_t timeoutWait(uint8_t iecPIN, IECline lineStatus, size_t wait = TIMEOUT, size_t step = 3);
+		virtual size_t timeoutWait(uint8_t iecPIN, bool lineStatus, size_t wait = TIMEOUT, size_t step = 3);
 
 
 		// true => PULL => DIGI_LOW
@@ -104,11 +98,11 @@ namespace Protocol
 			espDigitalWrite(pinNumber, HIGH);
 		}
 
-		inline IECline status(uint8_t pinNumber)
+		inline bool status(uint8_t pinNumber)
 		{
 			// To be able to read line we must be set to input, not driving.
 			espPinMode(pinNumber, INPUT);
-			return espDigitalRead(pinNumber) ? released : pulled;
+			return espDigitalRead(pinNumber) ? RELEASED : PULLED;
 		}
 
 	private:

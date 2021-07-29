@@ -141,6 +141,7 @@ void loop()
 void onAttention()
 {
     bus_state = statemachine::select;
+    iec.protocol.flags or_eq ATN_PULLED;
     // iec.init();
     //Debug_printv("hi");
 }

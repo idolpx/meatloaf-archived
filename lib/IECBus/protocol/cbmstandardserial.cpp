@@ -27,26 +27,25 @@ using namespace Protocol;
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
 // it might holdback for quite a while; there's no time limit. 
-int16_t  CBMStandardSerial::receiveByte(void)
+int16_t  CBMStandardSerial::receiveByte(uint8_t device)
 {
 	flags = CLEAR;
 
 	// Wait for talker ready
-	while(status(IEC_PIN_CLK) != released)
+	while(status(IEC_PIN_CLK) != RELEASED)
 	{
 		ESP.wdtFeed();
 	}
-
 
 	// Say we're ready
 	// STEP 2: READY FOR DATA
 	// When  the  listener  is  ready  to  listen,  it  releases  the  Data  
 	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
-	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
+	// only when all listeners have RELEASED it - in other words, when  all  listeners  are  ready  
 	// to  accept  data.  What  happens  next  is  variable.
 	release(IEC_PIN_DATA);
-	while(status(IEC_PIN_DATA) != released); // Wait for all other devices to release the data line
-	//timeoutWait(IEC_PIN_DATA, released, FOREVER, 1);
+	while(status(IEC_PIN_DATA) != RELEASED); // Wait for all other devices to release the data line
+	//timeoutWait(IEC_PIN_DATA, RELEASED, FOREVER, 1);
 
 	// Either  the  talker  will pull the 
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
@@ -54,14 +53,14 @@ int16_t  CBMStandardSerial::receiveByte(void)
 	// without  the Clock line going to true, it has a special task to perform: note EOI.
 
 	uint8_t n = 0;
-	while(status(IEC_PIN_CLK) == released && (n < 20)) {
+	while(status(IEC_PIN_CLK) == RELEASED && (n < 20)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
 
 	if(n >= TIMING_EOI_THRESH)
 	
-	//if(timeoutWait(IEC_PIN_CLK, pulled, TIMING_EOI_WAIT))
+	//if(timeoutWait(IEC_PIN_CLK, PULLED, TIMING_EOI_WAIT))
 	{
 		// INTERMISSION: EOI
 		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the 
@@ -84,28 +83,29 @@ int16_t  CBMStandardSerial::receiveByte(void)
 		delayMicroseconds(TIMING_Tye);
 		release(IEC_PIN_DATA);
 
-		// but still wait for CLK to be pulled
-		if(timeoutWait(IEC_PIN_CLK, pulled) == TIMED_OUT)
+		// but still wait for CLK to be PULLED
+		if(timeoutWait(IEC_PIN_CLK, PULLED) == TIMED_OUT)
 		{
 			Debug_printv("After Acknowledge EOI");
+			flags or_eq ERROR;
 			return -1; // return error because timeout
 		}		
 	}
 
-	// Sample ATN and set flag to indicate SELECT or DATA mode
-	if(status(IEC_PIN_ATN) == pulled)
-		flags or_eq ATN_PULLED;
+	// // Sample ATN and set flag to indicate SELECT or DATA mode
+	// if(status(IEC_PIN_ATN) == PULLED)
+	// 	flags or_eq ATN_PULLED;
 
 	
 	// STEP 3: SENDING THE BITS
 	// The talker has eight bits to send.  They will go out without handshake; in other words, 
 	// the listener had better be there to catch them, since the talker won't wait to hear from the listener.  At this 
 	// point, the talker controls both lines, Clock and Data.  At the beginning of the sequence, it is holding the 
-	// Clock true, while the Data line is released to false.  the Data line will change soon, since we'll sendthe data 
+	// Clock true, while the Data line is RELEASED to false.  the Data line will change soon, since we'll sendthe data 
 	// over it. The eights bits will go out from the character one at a time, with the least significant bit going first.  
 	// For example, if the character is the ASCII question mark, which is  written  in  binary  as  00011111,  the  ones  
 	// will  go out  first,  followed  by  the  zeros.  Now,  for  each bit, we set the Data line true or false according 
-	// to whether the bit is one or zero.  As soon as that'sset, the Clock line is released to false, signalling "data ready."  
+	// to whether the bit is one or zero.  As soon as that'sset, the Clock line is RELEASED to false, signalling "data ready."  
 	// The talker will typically have a bit in  place  and  be  signalling  ready  in  70  microseconds  or  less.  Once  
 	// the  talker  has  signalled  "data ready," it will hold the two lines steady for at least 20 microseconds timing needs 
 	// to be increased to 60  microseconds  if  the  Commodore  64  is  listening,  since  the  64's  video  chip  may  
@@ -124,31 +124,37 @@ int16_t  CBMStandardSerial::receiveByte(void)
 	for(uint8_t n = 0; n < 8; n++) {
 		data >>= 1;
 
-		// // if ATN is pulled, exit and cleanup
-		// if(status(IEC_PIN_ATN) == pulled)
-		// {	
-		// 	return -1;
-		// }
-
 		// wait for bit to be ready to read
-		if(timeoutWait(IEC_PIN_CLK, released) == TIMED_OUT)
+		if(timeoutWait(IEC_PIN_CLK, RELEASED) == TIMED_OUT)
 		{
 			Debug_printv("wait for bit to be ready to read");
+			flags or_eq ERROR;
 			return -1; // return error because timeout
 		}
 
 		// get bit
-		data or_eq (status(IEC_PIN_DATA) == released ? (1 << 7) : 0);
+		data or_eq (status(IEC_PIN_DATA) == RELEASED ? (1 << 7) : 0);
 
 		// wait for talker to finish sending bit
-		bit_time = timeoutWait(IEC_PIN_CLK, pulled);
+		bit_time = timeoutWait(IEC_PIN_CLK, PULLED);
 		if(bit_time == TIMED_OUT)
 		{
 			Debug_printv("wait for talker to finish sending bit");
+			flags or_eq ERROR;
 			return -1; // return error because timeout
 		}
 	}
-	//Debug_printv("Last bit time %dus", bit_time);
+
+	/* If there is a delay before the last bit, the controller uses JiffyDOS */
+	if (flags bitand ATN_PULLED && bit_time >= 218 && n == 7) {
+		if ((data>>1) < 0x60 && ((data>>1) & 0x1f) == device) {
+			/* If it's for us, notify controller that we support Jiffy too */
+			// pull(IEC_PIN_DATA);
+			// delayMicroseconds(101); // nlq says 405us, but the code shows only 101
+			// release(IEC_PIN_DATA);
+			flags xor_eq JIFFY_ACTIVE;
+		}
+	}
 
 	// STEP 4: FRAME HANDSHAKE
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge.  At this moment, the Clock line  is  true  
@@ -163,7 +169,7 @@ int16_t  CBMStandardSerial::receiveByte(void)
 	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
 	// and  the listener is holding the Data line true. We're ready for step 1; we may send another character - unless EOI has 
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
-	// the Clock and Data lines are released to false and transmission stops. 
+	// the Clock and Data lines are RELEASED to false and transmission stops. 
 
 	if(flags bitand EOI_RECVD)
 	{
@@ -187,7 +193,7 @@ int16_t  CBMStandardSerial::receiveByte(void)
 // it might holdback for quite a while; there's no time limit. 
 bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 {
-	//flags = CLEAR;
+	flags = CLEAR;
 
 	// Say we're ready
 	delayMicroseconds(60);
@@ -197,9 +203,9 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// STEP 2: READY FOR DATA
 	// When  the  listener  is  ready  to  listen,  it  releases  the  Data  
 	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
-	// only when all listeners have released it - in other words, when  all  listeners  are  ready  
+	// only when all listeners have RELEASED it - in other words, when  all  listeners  are  ready  
 	// to  accept  data.  What  happens  next  is  variable.
-	while(status(IEC_PIN_DATA) != released)
+	while(status(IEC_PIN_DATA) != RELEASED)
 	{
 		ESP.wdtFeed();
 	}
@@ -230,15 +236,17 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 		delayMicroseconds(TIMING_EOI_WAIT);
 
 		// get eoi acknowledge:
-		if(timeoutWait(IEC_PIN_DATA, pulled) == TIMED_OUT)
+		if(timeoutWait(IEC_PIN_DATA, PULLED) == TIMED_OUT)
 		{
 			Debug_printv("Get EOI acknowledge");
+			flags or_eq ERROR;
 			return false; // return error because timeout
 		}
 
-		if(timeoutWait(IEC_PIN_DATA, released) == TIMED_OUT)
+		if(timeoutWait(IEC_PIN_DATA, RELEASED) == TIMED_OUT)
 		{
 			Debug_printv("Listener didn't release DATA");
+			flags or_eq ERROR;
 			return false; // return error because timeout
 		}
 	}
@@ -251,11 +259,11 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// The talker has eight bits to send.  They will go out without handshake; in other words, 
 	// the listener had better be there to catch them, since the talker won't wait to hear from the listener.  At this 
 	// point, the talker controls both lines, Clock and Data.  At the beginning of the sequence, it is holding the 
-	// Clock true, while the Data line is released to false.  the Data line will change soon, since we'll sendthe data 
+	// Clock true, while the Data line is RELEASED to false.  the Data line will change soon, since we'll sendthe data 
 	// over it. The eights bits will go out from the character one at a time, with the least significant bit going first.  
 	// For example, if the character is the ASCII question mark, which is  written  in  binary  as  00011111,  the  ones  
 	// will  go out  first,  followed  by  the  zeros.  Now,  for  each bit, we set the Data line true or false according 
-	// to whether the bit is one or zero.  As soon as that'sset, the Clock line is released to false, signalling "data ready."  
+	// to whether the bit is one or zero.  As soon as that'sset, the Clock line is RELEASED to false, signalling "data ready."  
 	// The talker will typically have a bit in  place  and  be  signalling  ready  in  70  microseconds  or  less.  Once  
 	// the  talker  has  signalled  "data ready," it will hold the two lines steady for at least 20 microseconds timing needs 
 	// to be increased to 60  microseconds  if  the  Commodore  64  is  listening,  since  the  64's  video  chip  may  
@@ -276,7 +284,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 
 	for(uint8_t n = 0; n < 8; n++) 
 	{
-		// FIXME: Here check whether data pin is pulled, if so end (enter cleanup)!
+		// FIXME: Here check whether data pin is PULLED, if so end (enter cleanup)!
 
 
 		// set bit
@@ -287,8 +295,8 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 		release(IEC_PIN_CLK);
 		delayMicroseconds(TIMING_Tv);
 
-		// if ATN is pulled, exit and cleanup
-		if(status(IEC_PIN_ATN) == pulled)
+		// if ATN is PULLED, exit and cleanup
+		if(status(IEC_PIN_ATN) == PULLED)
 		{	
 			return false;
 		}
@@ -308,14 +316,14 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
 
 	// Wait for listener to accept data
-	// if(timeoutWait(IEC_PIN_DATA, pulled, 250) == TIMED_OUT)
+	// if(timeoutWait(IEC_PIN_DATA, PULLED, 250) == TIMED_OUT)
 	// {
 	// 	Debug_printv("Wait for listener to acknowledge byte received");
 	// 	return false; // return error because timeout
 	// }
 
 	uint8_t n = 0;
-	while(status(IEC_PIN_ATN) != released && status(IEC_PIN_DATA) != pulled && (n < 100)) {
+	while(status(IEC_PIN_ATN) != RELEASED && status(IEC_PIN_DATA) != PULLED && (n < 100)) {
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
@@ -325,7 +333,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
 	// and  the listener is holding the Data line true. We're ready for step 1; we may send another character - unless EOI has 
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
-	// the Clock and Data lines are released to false and transmission stops. 
+	// the Clock and Data lines are RELEASED to false and transmission stops. 
 
 	// if(signalEOI)
 	// {
@@ -340,7 +348,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 
 
 // Wait indefinitely if wait = 0
-size_t CBMStandardSerial::timeoutWait(byte iecPIN, IECline lineStatus, size_t wait, size_t step)
+size_t CBMStandardSerial::timeoutWait(byte iecPIN, bool lineStatus, size_t wait, size_t step)
 {
 
 #if defined(ESP8266)
