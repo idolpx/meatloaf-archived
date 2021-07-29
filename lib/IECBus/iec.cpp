@@ -162,7 +162,7 @@ IEC::BusState IEC::service(Data& iec_data)
 	delayMicroseconds(TIMING_ATN_PREDELAY);
 
 	// Get command
-	Debug_printf("IEC   : [");
+	Debug_printf("   IEC: [");
 	int16_t c = (Command)receive();
 	if(protocol.m_state bitand errorFlag)
 	{
