@@ -29,7 +29,7 @@ using namespace Protocol;
 // it might holdback for quite a while; there's no time limit. 
 int16_t  CBMStandardSerial::receiveByte(void)
 {
-	m_state = noFlags;
+	flags = CLEAR;
 
 	// Wait for talker ready
 	while(status(IEC_PIN_CLK) != released)
@@ -77,11 +77,11 @@ int16_t  CBMStandardSerial::receiveByte(void)
 		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common 
 		// transmission sequence.
 
-		m_state or_eq eoiFlag;
+		flags or_eq EOI_RECVD;
 
 		// Acknowledge by pull down data more than 60us
 		pull(IEC_PIN_DATA);
-		delayMicroseconds(TIMING_BIT);
+		delayMicroseconds(TIMING_Tye);
 		release(IEC_PIN_DATA);
 
 		// but still wait for CLK to be pulled
@@ -94,7 +94,7 @@ int16_t  CBMStandardSerial::receiveByte(void)
 
 	// Sample ATN and set flag to indicate SELECT or DATA mode
 	if(status(IEC_PIN_ATN) == pulled)
-		m_state or_eq atnFlag;
+		flags or_eq ATN_PULLED;
 
 	
 	// STEP 3: SENDING THE BITS
@@ -124,6 +124,12 @@ int16_t  CBMStandardSerial::receiveByte(void)
 	for(uint8_t n = 0; n < 8; n++) {
 		data >>= 1;
 
+		// // if ATN is pulled, exit and cleanup
+		// if(status(IEC_PIN_ATN) == pulled)
+		// {	
+		// 	return -1;
+		// }
+
 		// wait for bit to be ready to read
 		if(timeoutWait(IEC_PIN_CLK, released) == TIMED_OUT)
 		{
@@ -141,12 +147,6 @@ int16_t  CBMStandardSerial::receiveByte(void)
 			Debug_printv("wait for talker to finish sending bit");
 			return -1; // return error because timeout
 		}
-
-		// // if ATN is pulled, exit and cleanup
-		// if(status(IEC_PIN_ATN) == pulled)
-		// {	
-		// 	return -1;
-		// }		
 	}
 	//Debug_printv("Last bit time %dus", bit_time);
 
@@ -157,9 +157,7 @@ int16_t  CBMStandardSerial::receiveByte(void)
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
 
 	// Acknowledge byte received
-	delayMicroseconds(5);
 	pull(IEC_PIN_DATA);
-	delayMicroseconds(50);
 
 	// STEP 5: START OVER
 	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
@@ -167,13 +165,13 @@ int16_t  CBMStandardSerial::receiveByte(void)
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
 	// the Clock and Data lines are released to false and transmission stops. 
 
-	// if(m_state bitand eoiFlag)
-	// {
-	// 	// EOI Received
-	// 	delayMicroseconds(TIMING_STABLE_WAIT);
-	// 	// release(IEC_PIN_CLK);
-	// 	release(IEC_PIN_DATA);
-	// }
+	if(flags bitand EOI_RECVD)
+	{
+		// EOI Received
+		delayMicroseconds(TIMING_Tfr);
+		// release(IEC_PIN_CLK);
+		//release(IEC_PIN_DATA);
+	}
 
 	return data;
 } // receiveByte
@@ -189,7 +187,7 @@ int16_t  CBMStandardSerial::receiveByte(void)
 // it might holdback for quite a while; there's no time limit. 
 bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 {
-	//m_state = noFlags;
+	//flags = CLEAR;
 
 	// Say we're ready
 	delayMicroseconds(60);
@@ -226,7 +224,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common 
 		// transmission sequence.
 
-		//m_state or_eq eoiFlag;
+		//flags or_eq EOI_RECVD;
 
 		// Signal eoi by waiting 200 us
 		delayMicroseconds(TIMING_EOI_WAIT);
@@ -246,7 +244,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	}
 	else
 	{
-		delayMicroseconds(TIMING_NO_EOI);		
+		delayMicroseconds(TIMING_Tne);		
 	}
 
 	// STEP 3: SENDING THE BITS
@@ -274,34 +272,33 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 
 	// tell listner to wait
 	pull(IEC_PIN_CLK);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 
 	for(uint8_t n = 0; n < 8; n++) 
 	{
-		// FIXME: Here check whether data pin goes low, if so end (enter cleanup)!
+		// FIXME: Here check whether data pin is pulled, if so end (enter cleanup)!
 
 
 		// set bit
 		(data bitand 1) ? release(IEC_PIN_DATA) : pull(IEC_PIN_DATA);
-		delayMicroseconds(TIMING_BIT);
+		delayMicroseconds(TIMING_Tv);
 
 		// tell listener bit is ready to read
 		release(IEC_PIN_CLK);
-		delayMicroseconds(TIMING_BIT);
+		delayMicroseconds(TIMING_Tv);
 
+		// if ATN is pulled, exit and cleanup
+		if(status(IEC_PIN_ATN) == pulled)
+		{	
+			return false;
+		}
 
 		pull(IEC_PIN_CLK);
 		delayMicroseconds(22);
 		release(IEC_PIN_DATA);
 		delayMicroseconds(14);
 
-		data >>= 1; // get next bit
-
-		// // if ATN is pulled, exit and cleanup
-		// if(status(IEC_PIN_ATN) == pulled)
-		// {	
-		// 	return false;
-		// }		
+		data >>= 1; // get next bit		
 	}
 
 	// STEP 4: FRAME HANDSHAKE
@@ -322,6 +319,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 		delayMicroseconds(10);  // this loop should cycle in about 10 us...
 		n++;
 	}
+	delayMicroseconds(TIMING_Tbb);
 
 	// STEP 5: START OVER
 	// We're  finished,  and  back  where  we  started.    The  talker  is  holding  the  Clock  line  true,  
@@ -332,12 +330,10 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// if(signalEOI)
 	// {
 	// 	// EOI Received
-	// 	delayMicroseconds(TIMING_STABLE_WAIT);
+	// 	delayMicroseconds(TIMING_Tfr);
 	// 	release(IEC_PIN_CLK);
 	// 	// release(IEC_PIN_DATA);
 	// }
-
-
 
 	return true;
 } // sendByte

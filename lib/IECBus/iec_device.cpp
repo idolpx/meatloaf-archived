@@ -1147,7 +1147,8 @@ void iecDevice::saveFile()
 			ostream->write(b, b_len);
 			i++;
 
-			done = (m_iec.state() bitand eoiFlag) or (m_iec.state() bitand errorFlag);
+			uint8_t f = m_iec.state();
+			done = (f bitand EOI_RECVD) or (f bitand ERROR);
 
 #ifdef DATA_STREAM
 			// Show ASCII Data

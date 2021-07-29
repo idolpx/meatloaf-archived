@@ -20,6 +20,15 @@
 
 #include "../../../include/global_defines.h"
 
+// BIT Flags
+#define CLEAR           0         // clear all flags
+#define ATN_PULLED      (1 << 0)  // might be set by iec_receive
+#define EOI_RECVD       (1 << 1)
+#define COMMAND_RECVD   (1 << 2)
+#define JIFFY_ACTIVE    (1 << 3)
+#define JIFFY_LOAD      (1 << 4)
+#define ERROR           (1 << 5)  // if this flag is set, something went wrong
+
 // IEC protocol timing consts in microseconds (us)
 #define TIMING_BIT           65    // bit clock hi/lo time
 #define TIMING_NO_EOI        5     // delay before bits
@@ -38,7 +47,7 @@
 #define TIMING_Tne     40      // NON-EOI RESPONSE TO RFD - min/typ/max -/40us/200us (If maximum time exceeded, EOI response required.)
 #define TIMEOUT_Tne    200
 #define TIMING_Ts      70      // BIT SET-UP TALKER - min/typ/max 20us/70us/- (Tv and Tpr minimum must be 60μ s for external device to be a talker. )
-#define TIMING_Tv      20      // DATA VALID - min/typ/max 20us/20us/-
+#define TIMING_Tv      65      // DATA VALID - min/typ/max 20us/20us/-
 #define TIMING_Tf      20      // FRAME HANDSHAKE - min/typ/max 0/20us/1000us (If maximum time exceeded, frame error.)
 #define TIMEOUT_Tf     1000
 #define TIMING_Tr      20      // FRAME TO RELEASE OF ATN - min/typ/max 20us/-/-
@@ -59,6 +68,9 @@
 #define TIMED_OUT 0
 #define FOREVER 0
 
+#define PULLED    true
+#define RELEASED  false
+
 namespace Protocol
 {
 	enum IECline
@@ -67,19 +79,11 @@ namespace Protocol
 		released = false
 	};
 
-	enum IECState
-	{
-		noFlags = 0,
-		eoiFlag = (1 << 0),	 // might be set by iec_receive
-		atnFlag = (1 << 1),	 // might be set by iec_receive
-		errorFlag = (1 << 2) // If this flag is set, something went wrong and
-	};
-
 	class CBMStandardSerial
 	{
 	public:
 		// communication must be reset
-		uint8_t m_state = noFlags;
+		uint8_t flags = CLEAR;
 
 		virtual int16_t receiveByte(void);
 		virtual bool sendByte(uint8_t data, bool signalEOI);

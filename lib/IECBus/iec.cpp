@@ -22,7 +22,7 @@ using namespace Protocol;
 
 
 // IEC::IEC() :
-// 	m_state(noFlags)
+// 	flags(noFlags)
 // {
 // } // ctor
 
@@ -48,7 +48,7 @@ bool IEC::init()
 	pinMode(IEC_PIN_DATA_OUT, OUTPUT);
 #endif
 
-	protocol.m_state = noFlags;
+	protocol.flags = CLEAR;
 
 	return true;
 } // init
@@ -164,14 +164,13 @@ IEC::BusState IEC::service(Data& iec_data)
 	// Get command
 	Debug_printf("   IEC: [");
 	int16_t c = (Command)receive();
-	if(protocol.m_state bitand errorFlag)
+	if(protocol.flags bitand ERROR)
 	{
 		Debug_printv("Get first ATN byte");
 		return BUS_ERROR;
 	}
 
-	iec_data.flags = (c bitand 0xFF00) >> 8; // Save flags
-	iec_data.command = c bitand 0xFF; // Clear flags in high byte
+	iec_data.command = c; // bitand 0xFF; // Clear flags in high byte
 
 	// Decode command byte
 	if((c bitand 0xF0) == IEC_GLOBAL)
@@ -234,7 +233,7 @@ IEC::BusState IEC::service(Data& iec_data)
 	{
 		// Get the secondary address
 		c = receive();
-		if(protocol.m_state bitand errorFlag)
+		if(protocol.flags bitand ERROR)
 		{
 			Debug_printv("Get the first cmd byte");
 			return BUS_ERROR;
@@ -251,7 +250,7 @@ IEC::BusState IEC::service(Data& iec_data)
 		{
 			r = deviceTalk(iec_data);
 		}
-		if(protocol.m_state bitand errorFlag)
+		if(protocol.flags bitand ERROR)
 		{
 			Debug_printv("Listen/Talk ERROR");
 			r = BUS_ERROR;
@@ -301,14 +300,14 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 		for(;;) 
 		{
 			int16_t c = receive();
-			if(protocol.m_state bitand errorFlag)
+			if(protocol.flags bitand ERROR)
 			{
 				Debug_printv("Some other command [%.2X]", c);
 				return BUS_ERROR;
 			}
 				
 
-			//if((m_state bitand atnFlag) and (IEC_UNLISTEN == c))
+			//if((flags bitand atnFlag) and (IEC_UNLISTEN == c))
 			if(c == IEC_UNLISTEN)
 			{
 				Debug_printf(BACKSPACE "] [%s] (%.2X UNLISTEN)\r\n", iec_data.content.c_str(), c);
@@ -431,8 +430,8 @@ int16_t IEC::receive()
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
 #endif
-	if(data < 0)
-		protocol.m_state = errorFlag;
+	// if(data < 0)
+	// 	protocol.flags = errorFlag;
 
 	return data;
 } // receive
@@ -510,9 +509,9 @@ void IEC::disableDevice(const uint8_t deviceNumber)
 } // disableDevice
 
 
-IECState IEC::state()
+uint8_t IEC::state()
 {
-	return static_cast<IECState>(protocol.m_state);
+	return static_cast<uint8_t>(protocol.flags);
 } // state
 
 

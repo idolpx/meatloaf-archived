@@ -43,13 +43,13 @@ bool DeviceDB::select(uint8_t new_device_id)
 
     config_file = SYSTEM_DIR "device." + std::to_string(new_device_id) + ".conf";
     std::unique_ptr<MFile> file(MFSOwner::File(config_file));
-    Meat::ifstream istream(config_file);
-    istream.open();
 
     Debug_printv("config_file[%s]", config_file.c_str());
     if ( file->exists() )
     {
         // Load Device Settings
+        Meat::ifstream istream(config_file);
+        istream.open();        
         deserializeJson(m_device, istream);
         Debug_printv("loaded");
     }
