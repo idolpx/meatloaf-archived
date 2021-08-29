@@ -13,7 +13,7 @@
 
 class U8Char {
     static const char16_t utf8map[];
-    const char missing = '?';
+    const char missing = 0xa6; // PETSCII unavailable char will be replaced with PETSCII checkers
     void fromUtf8Stream(std::istream* reader);
 
 public:
