@@ -24,7 +24,8 @@ monitor_speed = 921600
 ;monitor_port = COM1 ; Windows
 ;monitor_port = /dev/ttyUSB0 ; Linux
 monitor_port = /dev/tty.SLAB_USBtoUART ; Mac
-monitor_filters = default, esp8266_exception_decoder
+monitor_filters = default, esp8266_exception_decoder, esp32_exception_decoder
+
 lib_deps = 
     ArduinoJson
     ArduinoWebsockets
@@ -40,6 +41,7 @@ board = d1_mini
 ; set frequency to 160MHz
 board_build.f_cpu = 160000000L
 board_build.filesystem = littlefs
+;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
 
 [env:d1_mini_pro]
 platform = espressif8266
@@ -47,6 +49,7 @@ board = d1_mini_pro
 ; set frequency to 160MHz
 board_build.f_cpu = 160000000L
 board_build.filesystem = littlefs
+;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
 
 [env:nodemcuv2]
 platform = espressif8266
@@ -54,16 +57,10 @@ board = nodemcuv2
 ; set frequency to 160MHz
 board_build.f_cpu = 160000000L
 board_build.filesystem = littlefs
+;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
 
 [env:esp32doit-devkit-v1]
 platform = espressif32
 board = esp32doit-devkit-v1
 board_build.filesystem = littlefs
-;lib_deps = SHA-1 Hash
-build_flags = 
-;    -D USE_SPIFFS
-    -D USE_LITTLEFS
-    -D DEBUG
-    -DCORE_DEBUG_LEVEL=5
-monitor_speed = 921600
-monitor_filters = default, esp32_exception_decoder
+;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
