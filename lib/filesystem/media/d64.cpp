@@ -277,6 +277,17 @@ bool D64OStream::isOpen() {
  * Istream impls
  ********************************************************/
 
+// Implement this to skip a queue of file streams to start of next file and return its name:
+    std::string D64IStream::seekNextEntry() {
+        return "";
+    };
+
+// OR this to skip to start of file by name:
+    bool D64IStream::seekPath(std::string path) {
+        return false;
+    };
+
+
 bool D64IStream::seek(uint32_t pos) {
     if(pos==m_position)
         return true;
@@ -354,3 +365,4 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
 bool D64IStream::isOpen() {
     return m_isOpen;
 };
+

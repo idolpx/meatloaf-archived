@@ -52,6 +52,10 @@ public:
     std::string seekNextEntry() {
         return "";
     };
+    bool seekPath(std::string path) {
+        return false;
+    };
+
 
     virtual bool isBrowsable() { return false; };
     virtual bool isRandomAccess() { return false; };
