@@ -172,16 +172,12 @@ bool D64File::isDirectory() {
     return false;
 };
 
-MIStream* D64File::inputStream() {
+MIStream* D64File::createIStream(MIStream* is) {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
     MIStream* istream = new D64IStream(url);
     istream->open();   
     return istream;
-} ; 
-
-MIStream* D64File::createIStream(MIStream* is) {
-    return is; // we've overriden istreamfunction, so this one won't be used
 }
 
 MOStream* D64File::outputStream() {
