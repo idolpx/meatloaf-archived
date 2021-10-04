@@ -168,7 +168,7 @@ void D64File::sendFile( std::string filename )
  ********************************************************/
 
 bool D64File::isDirectory() {
-    // hey, why not?
+    // D64 don't support dirs!
     return false;
 };
 
@@ -196,139 +196,58 @@ time_t D64File::getCreationTime() {
 } ;
 
 bool D64File::exists() {
-    Debug_printv("[%s]", url.c_str());
-    // we may try open the stream to check if it exists
-    std::unique_ptr<MIStream> test(inputStream());
-    // remember that MIStream destuctor should close the stream!
-    return test->isOpen();
+    // here I'd rather use D64 logic to see if such file name exists in the image!
+
+    // Debug_printv("[%s]", url.c_str());
+    // // we may try open the stream to check if it exists
+    // std::unique_ptr<MIStream> test(inputStream());
+    // // remember that MIStream destuctor should close the stream!
+    // return test->isOpen();
 } ; 
 
 size_t D64File::size() {
-    // we may take content-lenght from header if exists
-    std::unique_ptr<MIStream> test(inputStream());
+    // use D64 to get size of the file in image
+    // // we may take content-lenght from header if exists
+    // std::unique_ptr<MIStream> test(inputStream());
 
-    size_t size = 0;
+    // size_t size = 0;
 
-    if(test->isOpen())
-        size = test->available();
+    // if(test->isOpen())
+    //     size = test->available();
 
-    test->close();
+    // test->close();
 
-    return size;
+    // return size;
 };
-
-void D64File::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
-    //Serial.println("w fillpaths");   
-
-    (*matchedElement)++;
-
-    //Serial.println("w fillpaths stream pths");
-    //streamPath = mstr::joinToString(fromStart, matchedElement, "/");
-    streamPath = url;
-    //Serial.println("w fillpaths path in stream");   
-    //pathInStream = mstr::joinToString(matchedElement, last, "/");
-    pathInStream = "";
-
-    //Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
-}
-
-// void D64File::addHeader(const String& name, const String& value, bool first, bool replace) {
-//     //m_http.addHeader
-// }
-
-
-/********************************************************
- * Ostream impls
- ********************************************************/
-
-size_t D64OStream::position() { return 0; };
-void D64OStream::close() {
-    m_http.end();
-};
-bool D64OStream::open() {
-    // we'll ad a lambda that will allow adding headers
-    // m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    mstr::replaceAll(url, "HTTP:", "http:");
-    bool initOk = m_http.begin(m_file, url.c_str());
-    Debug_printv("[%s] initOk[%d]", url.c_str(), initOk);
-    if(!initOk)
-        return false;
-    
-    //int httpCode = m_http.PUT(); //Send the request
-//Serial.printf("URLSTR: httpCode=%d\n", httpCode);
-    // if(httpCode != 200)
-    //     return false;
-
-    m_isOpen = true;
-    //m_file = m_http.getStream();  //Get the response payload as Stream
-    return true;
-};
-//size_t D64OStream::write(uint8_t) {};
-size_t D64OStream::write(const uint8_t *buf, size_t size) {
-    return m_file.write(buf, size);
-};
-
-bool D64OStream::isOpen() {
-    return m_isOpen;
-};
-
 
 /********************************************************
  * Istream impls
  ********************************************************/
 
-// Implement this to skip a queue of file streams to start of next file and return its name:
-    std::string D64IStream::seekNextEntry() {
-        return "";
-    };
 
-// OR this to skip to start of file by name:
-    bool D64IStream::seekPath(std::string path) {
-        return false;
-    };
+bool D64IStream::seekPath(std::string path) {
+    // Implement this to skip a queue of file streams to start of file by name
+    // this will cause the next read to return bytes of 'path'
+    return false;
+};
 
+std::string D64IStream::seekNextEntry() {
+    // Implement this to skip a queue of file streams to start of next file and return its name
+    // this will cause the next read to return bytes of "next" file in D64 image
+    // might not have sense in this case, as D64 is kinda random access, not a stream.
+    return "";
+};
 
 bool D64IStream::seek(uint32_t pos) {
+    // seek only within current "active" ("seeked") file within the image (see above)
     if(pos==m_position)
         return true;
 
-    if(isFriendlySkipper) {
-        char str[40];
-        // Range: bytes=666-
-        snprintf(str, sizeof str, "bytes=%lu-", (unsigned long)pos);
-        m_http.addHeader("range",str);
-        int httpCode = m_http.GET(); //Send the request
-        Debug_printv("httpCode[%d]", httpCode);
-        if(httpCode != 200)
-            return false;
-
-        Debug_printv("stream opened[%s]", url.c_str());
-        m_file = m_http.getStream();  //Get the response payload as Stream
-        m_position = pos;
-        m_bytesAvailable = m_length-pos;
-        return true;
-    } else {
-        if(pos<m_position) {
-            // skipping backward and range not supported, let's simply reopen the stream...
-            m_http.end();
-            bool op = open();
-            if(!op)
-                return false;
-        }
-
-        m_position = 0;
-        // ... and then read until we reach pos
-        // while(m_position < pos) {
-        //  m_position+=m_file.readBytes(buffer, size);  <----------- trurn this on!!!!
-        // }
-        m_bytesAvailable = m_length-pos;
-
-        return true;
-    }
+    return false;
 };
 
 size_t D64IStream::position() {
-    return m_position;
+    return m_position; // return position within "seeked" file, not the D64 image!
 };
 
 void D64IStream::close() {
@@ -336,25 +255,28 @@ void D64IStream::close() {
 };
 
 bool D64IStream::open() {
-
-    m_isOpen = true;
-    Debug_printv("[%s]", url.c_str());
-    // m_length = m_http.getSize();
-    Debug_printv("length=%d", m_length);
-    m_bytesAvailable = m_length;
-
+    // return true if we were able to read the image and confirmed it is valid.
+    // it's up to you in what state the stream will be after open. Could be either:
+    // 1. EOF-like state (0 available) and the state will be cleared only after succesful seekNextEntry or seekPath
+    // 2. non-EOF-like state, and ready to send bytes of first file, because you did immediate seekNextEntry here
+    
     return true;
 };
 
 int D64IStream::available() {
+    // return bytes available in currently "seeked" file
     return m_bytesAvailable;
 };
 
 size_t D64IStream::size() {
+    // size of the "seeked" file, not the image.
     return m_length;
 };
 
 size_t D64IStream::read(uint8_t* buf, size_t size) {
+    // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
+    // or set the stream to EOF-like state, if whle file is completely read.
+    // as soon as we do seekNextEntry or seekPath, reading this stream will be possible again (available set to file size), as if nothing happened! 
     auto bytesRead= m_file.readBytes((char *) buf, size);
     m_bytesAvailable = m_file.available();
     m_position+=bytesRead;

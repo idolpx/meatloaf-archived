@@ -116,39 +116,6 @@ protected:
  * Streams
  ********************************************************/
 
-class D64IOStream: public MIStream, MOStream {
-public:
-    D64IOStream(std::string& path) {
-        url = path;
-    }
-    ~D64IOStream() {
-        close();
-    }
-
-    void close() override;
-    bool open() override;
-
-    // MStream methods
-    size_t position() override;
-    int available() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
-
-    bool isBrowsable() override { return true; };
-    bool isRandomAccess() override { return true; };
-
-protected:
-    std::string url;
-    std::unique_ptr<MFile> m_mfile;
-
-    bool m_isOpen;
-    int m_length;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
-};
-
-
 class D64IStream: public MIStream {
 
 public:
@@ -164,6 +131,8 @@ public:
     }
 
     // MIStream methods
+    bool isBrowsable() override { return true; };
+    bool isRandomAccess() override { return true; };
 
     virtual bool seek(uint32_t pos);
     int available() override;
@@ -180,36 +149,6 @@ protected:
     int m_bytesAvailable = 0;
     int m_position = 0;
 };
-
-
-class D64OStream: public MOStream {
-
-public:
-    // MStream methods
-    D64OStream(std::string path) {
-        url = path;
-    }
-    size_t position() override;
-    void close() override;
-    bool open() override;
-    ~D64OStream() {
-        close();
-    }
-
-    // MOStream methods
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
-
-protected:
-    std::string url;
-    std::unique_ptr<MFile> m_mfile;
-
-    bool m_isOpen;
-    int m_length;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
-};
-
 
 /********************************************************
  * FS
