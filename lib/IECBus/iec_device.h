@@ -73,6 +73,8 @@ public:
 };
 
 
+
+
 class iecDevice
 {
 public:
@@ -83,6 +85,20 @@ public:
 		DEVICE_OPEN,           // Command received and channel opened
 		DEVICE_DATA,           // Data sent or received
 	};
+
+	struct Channel
+	{
+		std::string command;
+
+		uint8_t device;
+		uint32_t cursor;
+		uint32_t bytesSent;
+		uint32_t open : 1;
+		uint32_t writing : 1;
+		uint32_t fileSize;
+	};
+	std::vector<Channel> channels;
+
 
 	iecDevice(IEC &iec);
 	virtual ~iecDevice() {}

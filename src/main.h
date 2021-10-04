@@ -131,6 +131,7 @@ void handleFileUpload();
 void handleNotFound();
 void handleGetEdit();
 void setupWWW ( void );
+void notFound ();
 
 
 // Main Functions

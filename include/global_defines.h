@@ -39,19 +39,24 @@
 //#define FILE_TYPES    "C64|PRG|P00|SEQ|S00|USR|U00|REL|R00"
 //#define ARCHIVE_TYPES "7Z|GZ|ZIP|RAR"
 
-// ESP8266 GPIO to C64 User Port
-#define TX_PIN               TX  // TX   //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
-#define RX_PIN               RX  // RX   //64-M+5
 //#define SWITCH_PIN  D4  // IO2              // Long press to reset to 300KBPS Mode
 
 #if defined(ESP8266)
+    // ESP8266 GPIO to C64 User Port
+    #define TX_PIN           TX  // TX   //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
+    #define RX_PIN           RX  // RX   //64-M+5
+
     #define CTS_PIN          D1  // IO5 IN  //64-D      // CTS Clear to Send, connect to host's RTS pin
     #define RTS_PIN          D2  // IO4 OUT //64-K      // RTS Request to Send, connect to host's CTS pin
     #define DCD_PIN          D3  // IO0 OUT //64-H      // DCD Carrier Status, GPIO0 (programming mode pin)
 #elif defined(ESP32)
-    #define CTS_PIN          21  // IO21 DATAIN IN  //64-D      // CTS Clear to Send, connect to host's RTS pin
-    #define RTS_PIN          22  // IO22 PROC   OUT //64-K      // RTS Request to Send, connect to host's CTS pin
-    #define DCD_PIN          26  // IO26 INT    OUT //64-H      // DCD Carrier Status
+    // ESP32 GPIO to C64 User Port
+    #define TX_PIN           21  // SIO3  DATA IN    //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
+    #define RX_PIN           33  // SIO5  DATA OUT   //64-M+5
+
+    #define CTS_PIN          39  // SIO7  COMMAND IN  //64-D      // CTS Clear to Send, connect to host's RTS pin
+    #define RTS_PIN          16  //               OUT //64-K      // RTS Request to Send, connect to host's CTS pin
+    #define DCD_PIN          17  //               OUT //64-H      // DCD Carrier Status
 #endif
 
 #define RING_INTERVAL        3000  // How often to print RING when having a new incoming connection (ms)
@@ -72,16 +77,20 @@
     #define IEC_PIN_DATA         D7    // IO13  INPUT/OUTPUT
     #define IEC_PIN_SRQ          D1    // IO5   INPUT/OUTPUT
     #define IEC_PIN_RESET        D2    // IO4   INPUT/OUTPUT
+
+    #define LED_PIN              LED_BUILTIN // IO2
 #elif defined(ESP32)
     // ESP32 GPIO to C64 IEC Serial Port
-    #define IEC_PIN_ATN          22      // PROC
-    #define IEC_PIN_CLK          27      // CKI
-    #define IEC_PIN_DATA         21      // DI
-    #define IEC_PIN_SRQ          26      // INT
-    #define IEC_PIN_RESET        39      // IO15
+    #define IEC_PIN_ATN          26    // SIO13 INTERRUPT
+    #define IEC_PIN_CLK          27    // SIO1  CLOCK IN
+    #define IEC_PIN_DATA         32    // SIO3  CLOCK OUT
+    #define IEC_PIN_SRQ          22    // SIO9  PROCEED
+    #define IEC_PIN_RESET        36    // SIO7  MOTOR
+                                       // SIO4  GND
+
+    #define LED_PIN              4     // SIO LED
 #endif
 
-#define LED_PIN LED_BUILTIN // IO2
 #define LED_ON LOW
 #define LED_OFF HIGH
 #define LED_TIME 15 // #ms between toggle
@@ -114,7 +123,7 @@ inline static void IRAM_ATTR onTimer()
 }
 
 // Enable this for verbose logging of IEC interface
-#define DEBUG
+//#define DEBUG
 #define BACKSPACE "\x08"
 
 #ifndef DEBUG_PORT

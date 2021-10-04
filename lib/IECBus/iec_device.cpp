@@ -181,8 +181,8 @@ void iecDevice::sendMeatloafSystemInformation()
 	uint16_t basicPtr = C64_BASIC_START;
 
 	// #if defined(USE_LITTLEFS)
-	//FSInfo64 fs_info;
-	//m_fileSystem->info64(fs_info);
+	// FSInfo64 fs_info;
+	// m_fileSystem->info64(fs_info);
 	// #endif
 	char floatBuffer[10]; // buffer
 	dtostrf(getFragmentation(), 3, 2, floatBuffer);
@@ -224,7 +224,7 @@ void iecDevice::sendMeatloafSystemInformation()
 
 	// FLASH
 	sendLine(basicPtr, 0, CBM_DEL_DEL "STORAGE ---");
-	//sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
+	sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
 	sendLine(basicPtr, 0, CBM_DEL_DEL "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
 
 	// // FILE SYSTEM
@@ -322,11 +322,11 @@ uint8_t iecDevice::service(void)
 		{
 				Debug_printf("OPEN CHANNEL %d\r\n", m_iec_data.channel);
 				if (m_iec_data.channel == 0)
-					Debug_printf("LOAD \"%s\",%d ", m_iec_data.content.c_str(), m_iec_data.device);
+					Debug_printf("LOAD \"%s\",%d\r\n", m_iec_data.content.c_str(), m_iec_data.device);
 				else if (m_iec_data.channel == 1)
-					Debug_printf("SAVE \"%s\",%d ", m_iec_data.content.c_str(), m_iec_data.device);
+					Debug_printf("SAVE \"%s\",%d\r\n", m_iec_data.content.c_str(), m_iec_data.device);
 				else {
-					Debug_printf("OPEN #,%d,%d,\"%s\"", m_iec_data.device, m_iec_data.channel, m_iec_data.content.c_str());
+					Debug_printf("OPEN #,%d,%d,\"%s\"\r\n", m_iec_data.device, m_iec_data.channel, m_iec_data.content.c_str());
 				}
 
 				// Open either file or prg for reading, writing or single line command on the command channel.
@@ -1058,7 +1058,7 @@ void iecDevice::sendFile()
 			// }
 
 			// Toggle LED
-			if (i % 50 == 0)
+			if (0 == i % 50)
 			{
 				ledToggle(true);
 			}
@@ -1164,7 +1164,7 @@ void iecDevice::saveFile()
 			}
 #endif
 			// Toggle LED
-			if (i % 50 == 0)
+			if (0 == i % 50)
 			{
 				ledToggle(true);
 			}

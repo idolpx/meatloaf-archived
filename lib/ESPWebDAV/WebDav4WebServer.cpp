@@ -3,37 +3,29 @@
 
 
 #if WEBSERVER_HAS_HOOK
-WebServer::HookFunction hookWebDAVForWebserver(const String& davRootDir, ESPWebDAVCore& dav)
+WebServer::HookFunction hookWebDAVForWebserver(const String& davRootDir, ESPWebDAVCore& dav, const String& fsRootDir)
 {
-    return [&dav, davRootDir](const String & method, const String & url, WiFiClient * client, WebServer::ContentTypeFunction contentType)
+    dav.setDAVRoot(davRootDir);
+    dav.setFsRoot(fsRootDir);
+    return [&dav](const String & method, const String & url, WiFiClient * client, WebServer::ContentTypeFunction contentType)
     {
-        DBG_PRINT("method: [%s], url: [%s], contentType: [%s]", method.c_str(), url.c_str(), contentType);
-
-        if (url == "/")
+        if (dav.isIgnored(url))
         {
-            DBG_PRINT("WE ARE AT ROOT!");
-            //url = "/.www/index.html";
-        }
-
-        //if (url.indexOf("/.www") > -1 || )
-        if (url.indexOf(davRootDir) != 0)
-        {
-            DBG_PRINT("CLIENT_REQUEST_CAN_CONTINUE, %s is not seen in %s", davRootDir.c_str(), url.c_str());
+            DBG_PRINT("CLIENT_REQUEST_CAN_CONTINUE, '%s' is explicitally ignored", url.c_str());
             return WebServer::CLIENT_REQUEST_CAN_CONTINUE;
         }
-        else
+        if (url.indexOf(dav.getDAVRoot()) != 0)
         {
-            if (dav.parseRequest(method, url, client, contentType))
-            {
-                DBG_PRINT("CLIENT_REQUEST_IS_HANDLED");
-                return WebServer::CLIENT_REQUEST_IS_HANDLED;
-            }
-            else
-            {
-                DBG_PRINT("CLIENT_MUST_STOP");
-                return WebServer::CLIENT_MUST_STOP;
-            }
+            DBG_PRINT("CLIENT_REQUEST_CAN_CONTINUE, '%s' is not seen in '%s'", dav.getDAVRoot().c_str(), url.c_str());
+            return WebServer::CLIENT_REQUEST_CAN_CONTINUE;
         }
+        if (dav.parseRequest(method, url, client, contentType))
+        {
+            DBG_PRINT("CLIENT_REQUEST_IS_HANDLED ('%s')", url.c_str());
+            return WebServer::CLIENT_REQUEST_IS_HANDLED;
+        }
+        DBG_PRINT("CLIENT_MUST_STOP");
+        return WebServer::CLIENT_MUST_STOP;
     };
 }
 #endif // WEBSERVER_HAS_HOOK

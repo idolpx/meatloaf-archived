@@ -668,6 +668,27 @@ void handleFileUpload()
    First try to find and return the requested file from the filesystem,
    and if it fails, return a 404 page with debug information
 */
+// void notFound ()
+// {
+//     String nf = DAVROOT;
+//     nf += ESP8266WebServer::urlDecode(server.uri());
+//     Serial.printf("User request for HTTP file '%s' from '" DAVROOT "'\n", nf.c_str() + sizeof(DAVROOT));
+//     // open file 'DAVROOT nf' (/dav/userfilename)
+//     File f = gfs.open(nf.c_str(), "r");
+//     if (!f)
+//     {
+//         Serial.printf("not found: '%s'\n", nf.c_str());
+//         server.send(404, FPSTR(TEXT_PLAIN), "webserver's notfound/404");
+//     }
+//     else
+//     {
+//         // This is a reachable piece of code if the file is
+//         // explicitally ignored in dav.setIgnored({}),
+//         // or if DAVROOT is not '/'.
+//         Serial.printf("found, streaming with HTTP (not webdav)\n");
+//         server.streamFile(f, F("application/octet-stream"));
+//     }
+// }
 void handleNotFound()
 {
     if ( !fsOK )
@@ -771,6 +792,17 @@ void setupWWW ( void )
 
     ////////////////////////////////
     // WEB SERVER INIT
+    // Set WebDAV hook
+    www.addHook ( hookWebDAVForWebserver ( "/", dav, "/.www" ) );
+
+    // Allow some paths within the WebDAV namespace to be served by the regular webwerver
+    //
+    // 1. provide a callback to verify what to ignore to WebDAV (=> thus served by webserver)
+    dav.setIgnored([] (const String& uri) { return uri == F("/index.html") || uri == F("/another.html") || uri == F("/notfound.html"); });
+    //
+    // 2. setup regular web pages callbacks (only meaningful when paths are ignored by WebDAV, like above)
+    www.on(F("/index.html"), [] () { www.send_P(200, PSTR("text/html"), PSTR("<meta http-equiv=\"Refresh\" content=\"0;url=/.www/index.html\">")); });
+    //www.on(F("/another.html"), [] () { www.send_P(200, PSTR("text/html"), PSTR("<button style=\"background-color:red;color:orange;\" onclick=\"window.location.href='notfound.html';\">heaven</button>")); });
 
     // Filesystem status
     www.on ( "/status", HTTP_GET, handleStatus );
@@ -794,10 +826,7 @@ void setupWWW ( void )
 
     // Default handler for all URIs not defined above
     // Use it to read files from filesystem
-    www.onNotFound ( handleNotFound );
-
-    // Set WebDAV hook
-    www.addHook ( hookWebDAVForWebserver ( "/", dav ) );
+    www.onNotFound ( handleNotFound );   
 
     // Start Server
     www.begin();
