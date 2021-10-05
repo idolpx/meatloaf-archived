@@ -5,7 +5,7 @@
 bool D64File::seekSector( uint8_t track, uint8_t sector, uint8_t offset)
 {
     track--;
-    uint8_t sector_count = 0;
+    uint16_t sector_count = 0;
 
     if ( track < 17 )
     {
@@ -27,43 +27,38 @@ bool D64File::seekSector( uint8_t track, uint8_t sector, uint8_t offset)
         sector_count += ((track - 30) * 17) + sector;
     }
     
-    // fseek(this->fp, (sector_count * 256));
-    // return ftell($this->fp);
-    return true;
+    return containerStream->seek((sector_count * block_size));
 }
 
-bool D64File::seekSector( uint8_t trackSector[], uint8_t offset = 0 )
+bool D64File::seekSector( uint8_t trackSector[], uint16_t offset )
 {
     return seekSector(trackSector[0], trackSector[1], offset);
 }
 
 std::string D64File::readBlock(uint8_t track, uint8_t sector)
 {
-
+    return "";
 }
 
 bool D64File::writeBlock(uint8_t track, uint8_t sector, std::string data)
 {
-
+    return true;
 }
 
 bool D64File::allocateBlock( uint8_t track, uint8_t sector)
 {
-
+    return true;
 }
 
 bool D64File::deallocateBlock( uint8_t track, uint8_t sector)
 {
-
+    return true;
 }
 
 
 void D64File::sendListing() 
 {
-    uint8_t index = 0;
-    Entry entry;
 
-    sendHeader();
     
     // Read Directory Entries
     seekSector( directory_list_offset );
@@ -105,7 +100,6 @@ void D64File::sendListing()
         index++;
     } while ( entry.next_track != 0x00 && entry.next_sector != 0xFF );
     
-    sendFooter();
 }
 
 
@@ -135,6 +129,7 @@ Entry D64File::seekFile( std::string filename )
     entry.next_sector = 0;
     entry.blocks = 0;
     entry.filename = "";
+
     return entry;
 }
 
@@ -172,6 +167,14 @@ bool D64File::isDirectory() {
     return false;
 };
 
+bool rewindDirectory() { 
+    return false; 
+}
+
+MFile* getNextFileInDir() { 
+    return nullptr; 
+}
+
 MIStream* D64File::createIStream(MIStream* is) {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
@@ -207,15 +210,7 @@ bool D64File::exists() {
 
 size_t D64File::size() {
     // use D64 to get size of the file in image
-    // // we may take content-lenght from header if exists
-    // std::unique_ptr<MIStream> test(inputStream());
 
-    // size_t size = 0;
-
-    // if(test->isOpen())
-    //     size = test->available();
-
-    // test->close();
 
     // return size;
 };

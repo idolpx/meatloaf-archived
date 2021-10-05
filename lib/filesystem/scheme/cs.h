@@ -297,7 +297,6 @@ public:
 protected:
     std::string url;
     bool m_isOpen;
-    //WiFiClient m_file;
 };
 
 

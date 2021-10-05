@@ -8,14 +8,9 @@
 #define MEATFILE_DEFINES_D64_H
 
 #include "meat_io.h"
+
 #include "../../include/global_defines.h"
-#if defined(ESP32)
-#include <WiFi.h>
-#include <HTTPClient.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#endif
+
 
 /********************************************************
  * File implementations
@@ -62,28 +57,40 @@ protected:
     uint8_t directory_header_offset[2] = {18, 0};
     uint8_t directory_list_offset[2] = {18, 1};
     uint8_t block_allocation_map[6] = {18, 0, 0x04, 1, 35, 4};
+    uint16_t block_size = 256;
+
+    std::unique_ptr<MIStream> containerStream;
 
 public:
+
     D64File(std::string path): MFile(path) {
 
+        std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
+        containerStream = containerFile->createIStream(containerFile->inputStream());
+
         // Read Header
+        Header diskHeader;
+        containerStream->read(diskHeader, sizeof(diskHeader));
+        // Count Directory Entries
         // Calculate Blocks Free
 
     };
 
     uint8_t track;
     uint8_t sector;
-    uint8_t offset;
+    uint16_t offset;
     uint64_t blocks_free;
+
+    uint8_t index = 0;  // Currently selected directory entry
+    uint8_t length = 0; // Directory list entry count
+    Entry entry;        // Directory entry data
 
     bool show_hidden = false;
 
-    void sendHeader();
     void sendListing();
-    void sendFooter();
     void sendFile( std::string filename = "" );
 
-    bool seekSector( uint8_t track, uint8_t sector, uint8_t offset = 0 );
+    bool seekSector( uint8_t track, uint8_t sector, uint16_t offset = 0 );
     bool seekSector( uint8_t trackSector[], uint8_t offset = 0 );
     Entry seekFile( std::string filename );    
 
