@@ -107,8 +107,8 @@ public:
     bool deallocateBlock( uint8_t track, uint8_t sector );
 
     bool isDirectory() override;
-    MIStream* inputStream() override; // has to return OPENED stream
-    MOStream* outputStream() override; // has to return OPENED stream
+    MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
+    MOStream* outputStream() override { return nullptr; }; // has to return OPENED stream
     time_t getLastWrite() override;
     time_t getCreationTime() override;
     bool rewindDirectory() override { return false; };
@@ -148,7 +148,8 @@ public:
     bool isBrowsable() override { return true; };
     bool isRandomAccess() override { return true; };
 
-    virtual bool seek(uint32_t pos);
+    bool seek(uint32_t pos, SeekMode mode) override { return true; }; 
+    bool seek(uint32_t pos) override { return true; };
     int available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
