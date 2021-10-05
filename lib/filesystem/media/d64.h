@@ -16,44 +16,10 @@
  * File implementations
  ********************************************************/
 
-struct Header {
-    uint8_t dos_version;
-    std::string disk_name[16];
-    std::string id_dos[5];
-};
-
-struct BAMInfo {
-    uint8_t track;
-    uint8_t sector;
-    uint8_t offset;
-    uint8_t start_track;
-    uint8_t end_track;
-    uint8_t byte_count;
-};
-
-struct Entry {
-	uint8_t next_track;
-	uint8_t next_sector;
-	uint8_t file_type;
-	uint8_t start_track;
-	uint8_t start_sector;
-	std::string filename;
-    uint8_t rel_start_track;   // Or GOES info block start track
-    uint8_t rel_start_sector;  // Or GEOS info block start sector
-    uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
-    uint8_t geos_type;         // $00 - Non-GEOS (normal C64 file)
-    uint8_t year;
-    uint8_t month;
-    uint8_t day;
-    uint8_t hour;
-    uint8_t minute;
-    uint16_t blocks;
-};
-
-std::string file_type_label[7] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR" };
-
 class D64File: public MFile {
+
 protected:
+
     uint8_t directory_header_offset[2] = {18, 0};
     uint8_t directory_list_offset[2] = {18, 1};
     uint8_t block_allocation_map[6] = {18, 0, 0x04, 1, 35, 4};
@@ -63,18 +29,59 @@ protected:
 
 public:
 
+    struct Header {
+        uint8_t dos_version;
+        std::string disk_name[16];
+        std::string id_dos[5];
+    };
+
+    struct BAMInfo {
+        uint8_t track;
+        uint8_t sector;
+        uint8_t offset;
+        uint8_t start_track;
+        uint8_t end_track;
+        uint8_t byte_count;
+    };
+
+    struct Entry {
+        uint8_t next_track;
+        uint8_t next_sector;
+        uint8_t file_type;
+        uint8_t start_track;
+        uint8_t start_sector;
+        std::string filename;
+        uint8_t rel_start_track;   // Or GOES info block start track
+        uint8_t rel_start_sector;  // Or GEOS info block start sector
+        uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
+        uint8_t geos_type;         // $00 - Non-GEOS (normal C64 file)
+        uint8_t year;
+        uint8_t month;
+        uint8_t day;
+        uint8_t hour;
+        uint8_t minute;
+        uint16_t blocks;
+    };
+
+    std::string file_type_label[7] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR" };
+
     D64File(std::string path): MFile(path) {
 
-        std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
+        std::unique_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
         containerStream = containerFile->inputStream();
 
         // Read Header
-        Header diskHeader;
-        containerStream->read(diskHeader, sizeof(diskHeader));
+        //Header diskHeader;
+        //containerStream->read(diskHeader, sizeof(diskHeader));
         // Count Directory Entries
         // Calculate Blocks Free
 
     };
+    
+    ~D64File() {
+
+        containerStream->close();
+    }
 
     uint8_t track;
     uint8_t sector;
@@ -91,7 +98,7 @@ public:
     void sendFile( std::string filename = "" );
 
     bool seekSector( uint8_t track, uint8_t sector, uint16_t offset = 0 );
-    bool seekSector( uint8_t trackSector[], uint8_t offset = 0 );
+    bool seekSector( uint8_t trackSector[], uint16_t offset = 0 );
     Entry seekFile( std::string filename );    
 
     std::string readBlock( uint8_t track, uint8_t sector );

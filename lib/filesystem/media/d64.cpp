@@ -2,7 +2,7 @@
 
 // D64 Utility Functions
 
-bool D64File::seekSector( uint8_t track, uint8_t sector, uint8_t offset)
+bool D64File::seekSector( uint8_t track, uint8_t sector, uint16_t offset)
 {
     track--;
     uint16_t sector_count = 0;
@@ -103,7 +103,7 @@ void D64File::sendListing()
 }
 
 
-Entry D64File::seekFile( std::string filename )
+D64File::Entry D64File::seekFile( std::string filename )
 {
     Entry entry;
 
@@ -183,13 +183,6 @@ MIStream* D64File::createIStream(MIStream* is) {
     return istream;
 }
 
-MOStream* D64File::outputStream() {
-    // has to return OPENED stream
-    MOStream* ostream = new D64OStream(url);
-    ostream->open();   
-    return ostream;
-} ; 
-
 time_t D64File::getLastWrite() {
     return 0;
 } ;
@@ -206,6 +199,7 @@ bool D64File::exists() {
     // std::unique_ptr<MIStream> test(inputStream());
     // // remember that MIStream destuctor should close the stream!
     // return test->isOpen();
+    return true;
 } ; 
 
 size_t D64File::size() {
@@ -213,6 +207,7 @@ size_t D64File::size() {
 
 
     // return size;
+    return 1;
 };
 
 /********************************************************
@@ -220,26 +215,26 @@ size_t D64File::size() {
  ********************************************************/
 
 
-bool D64IStream::seekPath(std::string path) {
-    // Implement this to skip a queue of file streams to start of file by name
-    // this will cause the next read to return bytes of 'path'
-    return false;
-};
+// bool D64IStream::seekPath(std::string path) {
+//     // Implement this to skip a queue of file streams to start of file by name
+//     // this will cause the next read to return bytes of 'path'
+//     return false;
+// };
 
-std::string D64IStream::seekNextEntry() {
-    // Implement this to skip a queue of file streams to start of next file and return its name
-    // this will cause the next read to return bytes of "next" file in D64 image
-    // might not have sense in this case, as D64 is kinda random access, not a stream.
-    return "";
-};
+// std::string D64IStream::seekNextEntry() {
+//     // Implement this to skip a queue of file streams to start of next file and return its name
+//     // this will cause the next read to return bytes of "next" file in D64 image
+//     // might not have sense in this case, as D64 is kinda random access, not a stream.
+//     return "";
+// };
 
-bool D64IStream::seek(uint32_t pos) {
-    // seek only within current "active" ("seeked") file within the image (see above)
-    if(pos==m_position)
-        return true;
+// bool D64IStream::seek(uint32_t pos) {
+//     // seek only within current "active" ("seeked") file within the image (see above)
+//     if(pos==m_position)
+//         return true;
 
-    return false;
-};
+//     return false;
+// };
 
 size_t D64IStream::position() {
     return m_position; // return position within "seeked" file, not the D64 image!
@@ -272,8 +267,8 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
     // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
     // or set the stream to EOF-like state, if whle file is completely read.
     // as soon as we do seekNextEntry or seekPath, reading this stream will be possible again (available set to file size), as if nothing happened! 
-    auto bytesRead= m_file.readBytes((char *) buf, size);
-    m_bytesAvailable = m_file.available();
+    auto bytesRead= 0; // m_file.readBytes((char *) buf, size);
+    m_bytesAvailable = 0; //m_file.available();
     m_position+=bytesRead;
     ledToggle(true);
     return bytesRead;
