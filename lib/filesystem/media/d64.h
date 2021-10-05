@@ -107,8 +107,8 @@ public:
     bool deallocateBlock( uint8_t track, uint8_t sector );
 
     bool isDirectory() override;
-    MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
-    MOStream* outputStream() override { return nullptr; }; // has to return OPENED stream
+//    MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
+//    MOStream* outputStream() override { return nullptr; }; // has to return OPENED stream
     time_t getLastWrite() override;
     time_t getCreationTime() override;
     bool rewindDirectory() override { return false; };
