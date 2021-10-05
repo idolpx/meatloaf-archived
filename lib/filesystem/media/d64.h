@@ -59,14 +59,14 @@ protected:
     uint8_t block_allocation_map[6] = {18, 0, 0x04, 1, 35, 4};
     uint16_t block_size = 256;
 
-    std::unique_ptr<MIStream> containerStream;
+    MIStream* containerStream;
 
 public:
 
     D64File(std::string path): MFile(path) {
 
         std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
-        containerStream = containerFile->createIStream(containerFile->inputStream());
+        containerStream = containerFile->inputStream();
 
         // Read Header
         Header diskHeader;
