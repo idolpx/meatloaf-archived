@@ -45,9 +45,16 @@ public:
     bool copyTo(MFile* dst);
 
     virtual MFile* cd(std::string newDir);
+    virtual std::string petsciiName() {
+        std::string pname = name;
+        mstr::toPETSCII(pname);
+        return pname;
+    }
+
+ 
     virtual bool isDirectory() = 0;
-    virtual MIStream* inputStream();
-    virtual MOStream* outputStream() { return nullptr; }; // has to return OPENED stream
+    virtual MIStream* inputStream() = 0;
+    virtual MOStream* outputStream() = 0;    // has to return OPENED stream
     virtual time_t getLastWrite() = 0 ;
     virtual time_t getCreationTime() = 0 ;
     virtual bool rewindDirectory() = 0 ;
@@ -57,11 +64,6 @@ public:
     virtual size_t size() = 0;
     virtual bool remove() = 0;
     virtual bool rename(std::string dest) = 0;
-    virtual std::string petsciiName() {
-        std::string pname = name;
-        mstr::toPETSCII(pname);
-        return pname;
-    }
 
     virtual ~MFile() {
         //Debug_printv("Deleting: [%s]", this->url.c_str());

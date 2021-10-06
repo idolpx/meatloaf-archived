@@ -115,7 +115,7 @@ D64File::Entry D64File::seekFile( std::string filename )
         
         if (entry.file_type & 0b00000111 && filename == "*")
         {
-            filename = entry.filename;
+            filename == entry.filename;
         }
         
         if ( filename == entry.filename )
@@ -128,7 +128,7 @@ D64File::Entry D64File::seekFile( std::string filename )
     entry.next_track = 0;
     entry.next_sector = 0;
     entry.blocks = 0;
-    entry.filename = "";
+    entry.filename[0] = '\0';
 
     return entry;
 }
@@ -167,12 +167,21 @@ bool D64File::isDirectory() {
     return false;
 };
 
-bool rewindDirectory() { 
-    return false; 
+bool D64File::rewindDirectory() {
+    seekSector( directory_list_offset );
+    return getNextFileInDir();
 }
 
-MFile* getNextFileInDir() { 
-    return nullptr; 
+MFile* D64File::getNextFileInDir() {
+    // Get entry pointed to by containerStream
+    if (containerStream->read((uint8_t *)&entry, sizeof(entry)))
+    {
+        return new D64File(streamPath + "/" + entry.filename);
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 MIStream* D64File::createIStream(MIStream* is) {
@@ -184,31 +193,29 @@ MIStream* D64File::createIStream(MIStream* is) {
 }
 
 time_t D64File::getLastWrite() {
-    return 0;
-} ;
+    return getCreationTime();
+}
 
 time_t D64File::getCreationTime() {
-    return 0;
-} ;
+    tm *entry_time = 0;
+    entry_time->tm_year = entry.year + 1900;
+    entry_time->tm_mon = entry.month;
+    entry_time->tm_mday = entry.day;
+    entry_time->tm_hour = entry.hour;
+    entry_time->tm_min = entry.minute;
+
+    return mktime(entry_time);
+}
 
 bool D64File::exists() {
     // here I'd rather use D64 logic to see if such file name exists in the image!
-
-    // Debug_printv("[%s]", url.c_str());
-    // // we may try open the stream to check if it exists
-    // std::unique_ptr<MIStream> test(inputStream());
-    // // remember that MIStream destuctor should close the stream!
-    // return test->isOpen();
     return true;
-} ; 
+} 
 
 size_t D64File::size() {
     // use D64 to get size of the file in image
-
-
-    // return size;
-    return 1;
-};
+    return entry.blocks * (media_block_size - 2);
+}
 
 /********************************************************
  * Istream impls

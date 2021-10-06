@@ -123,7 +123,7 @@ inline static void IRAM_ATTR onTimer()
 }
 
 // Enable this for verbose logging of IEC interface
-//#define DEBUG
+#define DEBUG
 #define BACKSPACE "\x08"
 
 #ifndef DEBUG_PORT

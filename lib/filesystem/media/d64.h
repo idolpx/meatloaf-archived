@@ -31,8 +31,8 @@ public:
 
     struct Header {
         uint8_t dos_version;
-        std::string disk_name[16];
-        std::string id_dos[5];
+        char disk_name[16];
+        char id_dos[5];
     };
 
     struct BAMInfo {
@@ -50,7 +50,7 @@ public:
         uint8_t file_type;
         uint8_t start_track;
         uint8_t start_sector;
-        std::string filename;
+        char filename[16];
         uint8_t rel_start_track;   // Or GOES info block start track
         uint8_t rel_start_sector;  // Or GEOS info block start sector
         uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
@@ -70,11 +70,34 @@ public:
         std::unique_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
         containerStream = containerFile->inputStream();
 
-        // Read Header
-        //Header diskHeader;
-        //containerStream->read(diskHeader, sizeof(diskHeader));
-        // Count Directory Entries
-        // Calculate Blocks Free
+        Debug_printv( "path: [%s]", path);
+        Debug_printv( "streamPath: [%s]", streamPath);
+        Debug_printv( "pathInStream: [%s]", pathInStream);
+
+        // Are we at the root of the pathInStream?
+        if ( pathInStream == "/")
+        {
+            // Read Header
+            //Header diskHeader;
+            //containerStream->read(diskHeader, sizeof(diskHeader));
+            // Count Directory Entries
+            // Calculate Blocks Free
+
+            // Set Media Info Fields
+            // media_header;
+            // media_id;
+            // media_blocks_free = 0;
+            // media_block_size = 256;
+            // media_image;             
+        }
+        else
+        {
+            // Single file
+            seekFile(pathInStream);
+            // _size = entry.blocks * (media_block_size - 2);
+
+        }
+       
 
     };
     
@@ -107,12 +130,13 @@ public:
     bool deallocateBlock( uint8_t track, uint8_t sector );
 
     bool isDirectory() override;
-//    MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
-//    MOStream* outputStream() override { return nullptr; }; // has to return OPENED stream
+    MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
+    MOStream* outputStream() override { return nullptr; }; // has to return OPENED stream
+
     time_t getLastWrite() override;
     time_t getCreationTime() override;
-    bool rewindDirectory() override { return false; };
-    MFile* getNextFileInDir() override { return nullptr; };
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
     bool mkDir() override { return false; };
     bool exists() override;
     size_t size() override;

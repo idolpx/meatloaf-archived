@@ -698,6 +698,7 @@ void handleNotFound()
 
     String uri = WebServer::urlDecode ( www.uri() ); // required to read paths with blanks
 
+    Debug_printv("url[%s]", uri);
 
     if ( handleFileRead ( uri ) )
     {
@@ -793,7 +794,7 @@ void setupWWW ( void )
     ////////////////////////////////
     // WEB SERVER INIT
     // Set WebDAV hook
-    www.addHook ( hookWebDAVForWebserver ( "/", dav, "/.www" ) );
+    www.addHook ( hookWebDAVForWebserver ( "/", dav, "/" ) );
 
     // Allow some paths within the WebDAV namespace to be served by the regular webwerver
     //
