@@ -42,11 +42,12 @@ I'm working with them to add CBM support to their device.
 Key Features
 ------------
 
-* WiFi modem for connecting to telnet BBSs
-* Can mount device's flash file system via WebDAV to edit contents
 * IEC Bus interface for loading data directly from flash memory or via HTTP
+* Can mount Meatloaf's flash file system via WebDAV to modify contents
 * Can be configured to emulate multiple IEC devices (IDs 4-30)
-* Each device's configuration is switched out and persisted on access (hidden folder ".sys")
+* Each device's configuration is switched out and persisted on access
+* WiFi modem for connecting to telnet BBSs
+* Minimal part count and easy to assemble
 * Firmware can be updated via HTTP
 
 
