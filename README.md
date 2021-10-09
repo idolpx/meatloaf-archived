@@ -1,12 +1,9 @@
 # Meatloaf (C64/C128/VIC20/+4)
 [![discord chat](docs/discord.sm.png)](https://discord.gg/FwJUe8kQpS)
 
-Commodore 64/128 WiFi Modem and IEC Serial Floppy Drive multi-device emulator
+A Commodore IEC Serial Floppy Drive and WiFi Modem multi-device emulator
 
-![meatloaf64-device](docs/meatloaf64-device.jpg)
-
-[Here is a video showing it in action.](https://youtu.be/q6IYi3TIGNI)
-
+[![meatloaf64-device](docs/meatloaf64-device.jpg)](https://www.youtube.com/embed/videoseries?list=PL6SShX9qqBKwBDr20KsASGOqcyGjA9XR5)
 
 It's easy to wire up too. No need for the level shifter as shown in the circuit above.<br/>
 ([Espressif CEO confirmed 5V tolerance of ESP8255, ESP8285 & ESP32.](https://www.facebook.com/groups/1499045113679103/permalink/1731855033731442))<br/>
