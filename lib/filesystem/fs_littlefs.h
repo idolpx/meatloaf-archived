@@ -114,6 +114,7 @@ public:
     MFile* getNextFileInDir() override ;
     bool mkDir() override ;
     bool exists() override ;
+    bool pathExists() override ;
     size_t size() override ;
     bool remove() override ;
     bool rename(std::string dest);

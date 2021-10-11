@@ -61,6 +61,7 @@ public:
     virtual MFile* getNextFileInDir() = 0 ;
     virtual bool mkDir() = 0 ;
     virtual bool exists() = 0;
+    virtual bool pathExists() = 0;
     virtual size_t size() = 0;
     virtual bool remove() = 0;
     virtual bool rename(std::string dest) = 0;

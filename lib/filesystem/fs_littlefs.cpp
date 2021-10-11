@@ -226,7 +226,7 @@ bool LittleFile::mkDir()
     if (m_isNull) {
         return false;
     }
-    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, path.c_str());
+    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, pathToFile().c_str());
     return (rc==0);
 }
 
@@ -240,6 +240,19 @@ bool LittleFile::exists()
     }
     lfs_info info;
     int rc = lfs_stat(&LittleFileSystem::lfsStruct, path.c_str(), &info);
+    return rc == 0;
+}
+
+bool LittleFile::pathExists()
+{
+    if (m_isNull) {
+        return false;
+    }
+    if (path=="/" || path=="") {
+        return true;
+    }
+    lfs_info info;
+    int rc = lfs_stat(&LittleFileSystem::lfsStruct, pathToFile().c_str(), &info);
     return rc == 0;
 }
 

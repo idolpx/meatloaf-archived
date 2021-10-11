@@ -215,6 +215,7 @@ public:
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
     bool exists() override ;
+    bool pathExists() override { return true; }
     size_t size() override ;
     bool mkDir() override ;
     bool remove() override ;

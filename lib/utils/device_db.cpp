@@ -71,6 +71,10 @@ bool DeviceDB::save()
     {
         Debug_printv("saved [%s]", config_file.c_str());
         std::unique_ptr<MFile> file(MFSOwner::File(config_file));
+
+        if ( !file->pathExists() )
+            return false;
+
         if ( file->exists() )
             file->remove();
 

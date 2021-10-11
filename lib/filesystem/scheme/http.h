@@ -32,6 +32,7 @@ public:
     MFile* getNextFileInDir() override { return nullptr; };
     bool mkDir() override { return false; };
     bool exists() override ;
+    bool pathExists() override { return true; }
     size_t size() override ;
     bool remove() override { return false; };
     bool rename(std::string dest) { return false; };
