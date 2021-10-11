@@ -24,3 +24,56 @@
 //
 
 #include "iec_host.h"
+
+using namespace Protocol;
+
+IEC iec;
+
+bool iecHost::deviceExists(uint8_t deviceID)
+{
+    bool device_status = false;
+
+    Debug_printf("device [%d] ", deviceID);
+
+    // Get Bus Attention
+    protocol.pull(IEC_PIN_ATN);
+    protocol.pull(IEC_PIN_CLK);
+    //release(IEC_PIN_DATA);
+    //delayMicroseconds(TIMING_ATN_PREDELAY);
+
+    // Wait for listeners to be ready
+    if(protocol.timeoutWait(IEC_PIN_DATA, PULLED) == TIMED_OUT)
+    {
+        Debug_println(" inactive\nBus empty. Exiting.");
+    }
+    else
+    {
+        // Send Listen Command & Device ID
+        Debug_printf( "%.2X", (IEC_LISTEN & deviceID));
+        send( IEC_LISTEN & deviceID );
+        delayMicroseconds(TIMING_BIT);
+
+        if ( protocol.status( IEC_PIN_DATA ) )
+        {
+            device_status = true;
+            Debug_println("active");
+        }
+        else
+        {
+            device_status = false;
+            Debug_println("inactive");
+        }
+        delayMicroseconds(TIMING_BIT);
+            
+        // Send UnListen
+        send( IEC_UNLISTEN );
+        delayMicroseconds(TIMING_BIT);        
+    }
+
+    // Release ATN and Clock
+    protocol.release(IEC_PIN_ATN);
+    protocol.release(IEC_PIN_CLK);
+    delayMicroseconds(TIMING_BIT);
+
+    return device_status;
+}

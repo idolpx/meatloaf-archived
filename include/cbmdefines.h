@@ -22,22 +22,64 @@
 #define C64_BASIC_START     0x0801
 
 // 1541 RAM and ROM memory map definitions.
-#define CBM1541_RAM_OFFSET 0
-#define CBM1541_RAM_SIZE  (1024 * 2)
-#define CBM1541_VIA1_OFFSET 0x1800
-#define CBM1541_VIA1_SIZE 0x10
-#define CBM1541_VIA2_OFFSET 0x1C00
-#define CBM1541_VIA2_SIZE 0x10
-#define CBM1541_ROM_OFFSET 0xC000
-#define CBM1541_ROM_SIZE (1024 * 16)
+#define CBM_1541_RAM_OFFSET 0
+#define CBM_1541_RAM_SIZE  (1024 * 2)
+#define CBM_1541_VIA1_OFFSET 0x1800
+#define CBM_1541_VIA1_SIZE 0x10
+#define CBM_1541_VIA2_OFFSET 0x1C00
+#define CBM_1541_VIA2_SIZE 0x10
+#define CBM_1541_ROM_OFFSET 0xC000
+#define CBM_1541_ROM_SIZE (1024 * 16)
 
 // Largest Serial byte buffer request from / to arduino.
 #define MAX_BYTES_PER_REQUEST 256
 
 // Back arrow character code.
-#define CBM_BACK_ARROW 0x5f
-#define CBM_EXCLAMATION_MARKS "!!"
 #define CBM_DOLLAR_SIGN '$'
+#define CBM_EXCLAMATION_MARKS "!!"
+
+#define CBM_ARROW_LEFT "\x5F"
+#define CBM_ARROW_UP "\x5E"
+#define CBM_CRSR_LEFT "\x9d"
+#define CBM_DEL_DEL "\x14\x14"
+
+#define CBM_HOME "\x13"
+#define CBM_CLEAR "\x93"
+#define CBM_INSERT "\x94"
+#define CBM_DELETE "\x14"
+#define CBM_RETURN "\x0D"
+
+#define CBM_CURSOR_DOWN "\x11"
+#define CBM_CURSOR_RIGHT "\x1D"
+#define CBM_CURSOR_UP "\x91"
+#define CBM_CURSOR_LEFT "\x9D"
+
+#define CBM_RUN "\x83"
+#define CBM_STOP "\x03"
+
+#define CBM_WHITE "\x05"
+#define CBM_RED "\x1C"
+#define CBM_GREEN "\x1E"
+#define CBM_BLUE "\x1F"
+#define CBM_ORANGE "\x81"
+#define CBM_BLACK "\x90"
+#define CBM_BROWN "\x95"
+#define CBM_PINK "\x96"
+#define CBM_DARK_GREY "\x97"
+#define CBM_GREY "\x98"
+#define CBM_LIGHT_GREEN "\x99"
+#define CBM_LIGHT_BLUE "\x9A"
+#define CBM_LIGHT_GREY "\x9B"
+#define CBM_PURPLE "\x9C"
+#define CBM_YELLOW "\x9E"
+#define CBM_CYAN "\x9F"
+
+#define CBM_REVERSE_ON "\x12"
+#define CBM_REVERSE_OFF "\x92"
+
+#define CBM_CS_UPPPER "\x0E"
+#define CBM_CS_GFX "\x8E"
+
 
 namespace CBM
 {

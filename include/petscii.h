@@ -16,23 +16,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef PETSCII
-#define PETSCII
+#ifndef MEATINCLUDE_PETSCII
+#define MEATINCLUDE_PETSCII
 
 static inline uint8_t ascii2petscii(uint8_t ch)
 {
-	if (ch > 64 && ch < 91) ch += 128;
-	else if (ch > 96 && ch < 123) ch -= 32;
-	else if (ch > 192 && ch < 219) ch -= 128;
-	else if (ch == 95) ch = 164; // to handle underscore 
+	if (ch > 64 && ch < 91) ch += 32; // A..Z <65..90>ASCII --> <97..122>PETSCII
+	else if (ch > 96 && ch < 123) ch -= 32; // <a..z> <97..122> ASCII --> <65..90>PETSCII 
 	return ch;
 }
 static inline uint8_t petscii2ascii(uint8_t ch)
 {
-	if (ch >(64 + 128) && ch < (91 + 128)) ch -= 128;
-	else if (ch >(96 - 32) && ch < (123 - 32)) ch += 32;
-	else if (ch >(192 - 128) && ch < (219 - 128)) ch += 128;
-	else if (ch == 164) ch = 95; // to handle underscore 
+	if (ch > 64 && ch < 91) ch += 32;  
+	else if(ch > 96 && ch < 123) ch -=32 ;
+	// 193..218 is also PETSCII UC
+	else if (ch >=192 && ch <= 218) ch -= 128;
 	return ch;
 }
 
@@ -53,4 +51,4 @@ static inline uint8_t screen2petscii(uint8_t ch)
 	else if ((ch >= 0xa0 && ch <= 0xbF) || (ch >= 0xd0 && ch <= 0xdf)) ch -= 0x40;
 	return ch;
 }
-#endif
+#endif /* MEATINCLUDE_PETSCII */

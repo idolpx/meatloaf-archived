@@ -2,8 +2,17 @@
 #define MEATFILE_DEFINES_FSLITTLE_H
 
 #include "meat_io.h"
+#if defined(ESP8266)
 #include "../lib/littlefs/lfs.h"
+#elif defined(ESP32)
+#include "lfs.h"
+#endif
+#include "../../include/global_defines.h"
 #include "../../include/make_unique.h"
+//#include "EdUrlParser.h"
+
+#include <string.h>
+
 
 /********************************************************
  * MFileSystem
@@ -82,21 +91,23 @@ friend class LittleOStream;
 friend class LittleIStream;
 
 public:
-    LittleFile(std::string path) : MFile(path) {
-        if(path == "/")
-            m_path=path;
-        else if(path.back()=='/')
-            m_path=path.erase(path.length()-1,1);
-
-        if(!pathValid(m_path.c_str()))
+    LittleFile(std::string path) {
+        parseUrl(path);
+        if(!pathValid(path.c_str()))
             m_isNull = true;
         else
             m_isNull = false;
     };
+    ~LittleFile() {
+        //Serial.printf("*** Destroying littlefile %s\n", url.c_str());
+        closeDir();
+    }
 
+    MFile* cd(std::string newDir);
+    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
     bool isDirectory() override;
-    MIstream* inputStream() override ; // has to return OPENED stream
-    MOstream* outputStream() override ; // has to return OPENED stream
+    MIStream* inputStream() override ; // has to return OPENED stream
+    MOStream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
     bool rewindDirectory() override ;
@@ -105,18 +116,19 @@ public:
     bool exists() override ;
     size_t size() override ;
     bool remove() override ;
-    bool rename(const char* dest);
-    MIstream* createIStream(MIstream* src);
+    bool rename(std::string dest);
+    MIStream* createIStream(MIStream* src);
 
 private:
+    void openDir(std::string path);
+    void closeDir();
     lfs_dir_t dir;
     bool dirOpened = false;
-    lfs_info _dirent;
     bool _valid;
     std::string _pattern;
 
-    bool pathValid(const char *path);
-    void openDir(const char *path);
+    bool pathValid(std::string path);
+
 };
 
 
@@ -131,10 +143,11 @@ public:
 
     LittleHandle() : rc(-255) 
     {
+        //Serial.println("*** Creating little handle");
         memset(&lfsFile, 0, sizeof(lfsFile));
     };
     ~LittleHandle();
-    void obtain(int flags, std::string m_path);
+    void obtain(int flags, std::string localPath);
     void dispose();
 
 private:
@@ -145,15 +158,13 @@ private:
  * MStreams O
  ********************************************************/
 
-class LittleOStream: public MOstream {
+class LittleOStream: public MOStream {
 public:
     // MStream methods
     LittleOStream(std::string& path) {
-        m_path = path;
+        localPath = path;
         handle = std::make_unique<LittleHandle>();
     }
-    bool seek(uint32_t pos, SeekMode mode) override;
-    bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
     bool open() override;
@@ -161,14 +172,13 @@ public:
         close();
     }
 
-    // MOstream methods
-    size_t write(uint8_t) override;
+    // MOStream methods
+    //size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
-    void flush() override;
     bool isOpen();
 
 protected:
-    std::string m_path;
+    std::string localPath;
 
     std::unique_ptr<LittleHandle> handle;    
 };
@@ -179,15 +189,13 @@ protected:
  ********************************************************/
 
 
-class LittleIStream: public MIstream {
+class LittleIStream: public MIStream {
 public:
     LittleIStream(std::string& path) {
-        m_path = path;
+        localPath = path;
         handle = std::make_unique<LittleHandle>();
     }
     // MStream methods
-    bool seek(uint32_t pos, SeekMode mode) override;
-    bool seek(uint32_t pos) override;
     size_t position() override;
     void close() override;
     bool open() override;
@@ -195,14 +203,19 @@ public:
         close();
     }
 
-    // MIstream methods
+    // MIStream methods
     int available() override;
-    uint8_t read() override;
+    size_t size() override;
+    //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
+    virtual bool seek(uint32_t pos) override;
+    virtual bool seek(uint32_t pos, SeekMode mode) override;
+
+
 
 protected:
-    std::string m_path;
+    std::string localPath;
 
     std::unique_ptr<LittleHandle> handle;    
 };

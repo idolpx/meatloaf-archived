@@ -9,41 +9,8 @@
 
 using namespace std;
 
-// convert to lowercase (in place)
-void util_string_tolower(std::string &s)
-{
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-}
 
-// convert to uppercase (in place)
-void util_string_toupper(std::string &s)
-{
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return std::toupper(c); });
-}
 
-// trim from start (in place)
-void util_string_ltrim(std::string &s)
-{
-    s.erase(
-        s.begin(),
-        std::find_if(s.begin(), s.end(), [](int ch) { return !std::isspace(ch); }));
-}
-
-// trim from end (in place)
-void util_string_rtrim(std::string &s)
-{
-    s.erase(
-        std::find_if(s.rbegin(), s.rend(), [](int ch) { return !std::isspace(ch); }).base(), s.end());
-}
-
-// trim from both ends (in place)
-void util_string_trim(std::string &s)
-{
-    util_string_ltrim(s);
-    util_string_rtrim(s);
-}
 
 int _util_peek(FILE *f)
 {
@@ -381,23 +348,6 @@ bool util_wildcard_match(const char *str, const char *pattern)
     return lookup[n][m];
 }
 
-bool util_starts_with(std::string s, const char *pattern)
-{
-    if (s.empty() || pattern == nullptr)
-        return false;
-
-    std::string ss = s.substr(0, strlen(pattern));
-    return ss.compare(pattern) == 0;
-}
-
-bool util_ends_with(std::string s, const char *pattern)
-{
-    if (s.empty() || pattern == nullptr)
-        return false;
-
-    std::string ss = s.substr((s.length() - strlen(pattern)));
-    return ss.compare(pattern) == 0;
-}
 
 /*
  Concatenates two paths by taking the parent and adding the child at the end.
@@ -405,7 +355,7 @@ bool util_ends_with(std::string s, const char *pattern)
  Results are copied into dest.
  FALSE is returned if the buffer is not big enough to hold the two parts.
 */
-bool util_concat_paths(char *dest, const char *parent, const char *child, int dest_size)
+bool util_concat_paths(char *dest, const char *parent, const char *child, size_t dest_size)
 {
     if (dest == nullptr)
         return false;
@@ -416,13 +366,13 @@ bool util_concat_paths(char *dest, const char *parent, const char *child, int de
         if (child == nullptr)
             return false;
 
-        int l = strlen(child);
+        size_t l = strlen(child);
 
         return l == strlcpy(dest, child, dest_size);
     }
 
     // Copy the parent string in first
-    int plen = strlcpy(dest, parent, dest_size);
+    size_t plen = strlcpy(dest, parent, dest_size);
 
     // Make sure we have room left after copying the parent
     if (plen >= dest_size - 3) // Allow for a minimum of a slash, one char, and NULL
@@ -444,7 +394,7 @@ bool util_concat_paths(char *dest, const char *parent, const char *child, int de
         if (child[0] == '/' && child[0] == '\\')
             child++;
 
-        int clen = strlcpy(dest + plen, child, dest_size - plen);
+        size_t clen = strlcpy(dest + plen, child, dest_size - plen);
 
         // Verify we were able to copy the whole thing
         if (clen != strlen(child))
@@ -459,10 +409,10 @@ bool util_concat_paths(char *dest, const char *parent, const char *child, int de
 
 void util_dump_bytes(uint8_t *buff, uint32_t buff_size)
 {
-    int bytes_per_line = 16;
-    for (int j = 0; j < buff_size; j += bytes_per_line)
+    uint32_t bytes_per_line = 16;
+    for (uint32_t j = 0; j < buff_size; j += bytes_per_line)
     {
-        for (int k = 0; (k + j) < buff_size && k < bytes_per_line; k++)
+        for (uint32_t k = 0; (k + j) < buff_size && k < bytes_per_line; k++)
             Debug_printf("%02X ", buff[k + j]);
         Debug_println();
     }
@@ -493,16 +443,16 @@ string util_remove_spaces(const string &s)
 
 void util_strip_nonascii(string &s)
 {
-    for (int i = 0; i < s.size(); i++)
+    for (size_t i = 0; i < s.size(); i++)
     {
         if (s[i] > 0x7F)
             s[i] = 0x00;
     }
 }
 
-void util_clean_devicespec(uint8_t *buf, unsigned short len)
+void util_clean_devicespec(size_t *buf, size_t len)
 {
-    for (int i = 0; i < len; i++)
+    for (size_t i = 0; i < len; i++)
         if (buf[i] == 0x9b)
             buf[i] = 0x00;
 }
@@ -522,7 +472,7 @@ bool util_string_value_is_true(std::string value)
     return util_string_value_is_true(value.c_str());
 }
 
-void util_replaceAll(std::string &str, const std::string &from, const std::string &to)
+void util_replace_all(std::string &str, const std::string &from, const std::string &to)
 {
     if (from.empty())
         return;
@@ -533,3 +483,4 @@ void util_replaceAll(std::string &str, const std::string &from, const std::strin
         start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
     }
 }
+

@@ -52,9 +52,10 @@ String urlencode(String str)
     char code2;
     for (uint8_t i =0; i < str.length(); i++){
       c=str.charAt(i);
-      if (c == ' '){
-        encodedString+= '+';
-      } else if (isalnum(c)){
+    //   if (c == ' '){
+    //     encodedString+= '+';
+    //   } else 
+      if (isalnum(c)){
         encodedString+=c;
       } else{
         code1=(c & 0xf)+'0';
@@ -140,47 +141,47 @@ String formatBytes ( size_t bytes )
     }
 }
 
-String readLine(FS *fileSystem, String filename)
-{
-	uint16_t i;
-	char b[1];
-    String line;
+// String readLine(FS *fileSystem, String filename)
+// {
+// 	uint16_t i;
+// 	char b[1];
+//     String line;
 
-	File file = fileSystem->open(filename, "r");
-	if (!file.available())
-	{
-		Serial.printf("\r\nFile Not Found: %s\r\n", filename.c_str());
-	}
-	else
-	{
-		size_t len = file.size();
-        line.reserve(len);
-		for(i = 0; i < len; i++) {
-			line += (char)file.read();
-		}
-		file.close();
-	}
-    return line;
-} // readLine
+// 	File file = fileSystem->open(filename, "r");
+// 	if (!file.available())
+// 	{
+// 		Serial.printf("\r\nFile Not Found: %s\r\n", filename.c_str());
+// 	}
+// 	else
+// 	{
+// 		size_t len = file.size();
+//         line.reserve(len);
+// 		for(i = 0; i < len; i++) {
+// 			line += (char)file.read();
+// 		}
+// 		file.close();
+// 	}
+//     return line;
+// } // readLine
 
-void readFile(FS *fileSystem, String filename)
-{
-	uint16_t i;
-	char b[1];
+// void readFile(FS *fileSystem, String filename)
+// {
+// 	uint16_t i;
+// 	char b[1];
 
-	File file = fileSystem->open(filename, "r");
-	if (!file.available())
-	{
-		Serial.printf("\r\nFile Not Found: %s\r\n", filename.c_str());
-	}
-	else
-	{
-		size_t len = file.size();
-		Serial.printf("\r\n[%s] (%d bytes)\r\n================================\r\n", filename.c_str(), len);
-		for(i = 0; i < len; i++) {
-			file.readBytes(b, sizeof(b));
-			Serial.print(b);
-		}
-		file.close();
-	}
-} // readFile
+// 	File file = fileSystem->open(filename, "r");
+// 	if (!file.available())
+// 	{
+// 		Serial.printf("\r\nFile Not Found: %s\r\n", filename.c_str());
+// 	}
+// 	else
+// 	{
+// 		size_t len = file.size();
+// 		Serial.printf("\r\n[%s] (%d bytes)\r\n================================\r\n", filename.c_str(), len);
+// 		for(i = 0; i < len; i++) {
+// 			file.readBytes(b, sizeof(b));
+// 			Serial.print(b);
+// 		}
+// 		file.close();
+// 	}
+// } // readFile
