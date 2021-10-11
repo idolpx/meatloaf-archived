@@ -63,7 +63,7 @@ public:
         uint16_t blocks;
     };
 
-    std::string file_type_label[7] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR" };
+    std::string file_type_label[8] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR", "???" };
 
     D64File(std::string path): MFile(path) {
 
@@ -128,6 +128,37 @@ public:
     bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
     bool allocateBlock( uint8_t track, uint8_t sector );
     bool deallocateBlock( uint8_t track, uint8_t sector );
+	uint8_t speedZone( uint8_t track)
+	{
+		return (track < 30) + (track < 24) + (track < 17);
+	};
+
+    // uint8_t d64_get_type(uint16_t imgsize)
+    // {
+    //     switch (imgsize)
+    //     {
+    //         // D64
+    //         case 174848:  // 35 tracks no errors
+    //         case 175531:  // 35 w/ errors
+    //         case 196608:  // 40 tracks no errors
+    //         case 197376:  // 40 w/ errors
+    //         case 205312:  // 42 tracks no errors
+    //         case 206114:  // 42 w/ errors
+    //             return D64_TYPE_D64;
+
+    //         // D71
+    //         case 349696:  // 70 tracks no errors
+    //         case 351062:  // 70 w/ errors
+    //             return D64_TYPE_D71;
+
+    //         // D81
+    //         case 819200:  // 80 tracks no errors
+    //         case 822400:  // 80 w/ errors
+    //             return D64_TYPE_D81;
+    //     }
+
+    //     return D64_TYPE_UNKNOWN;
+    // }
 
     bool isDirectory() override;
     MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
