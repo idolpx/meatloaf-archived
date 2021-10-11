@@ -200,7 +200,7 @@ public:
     }
 
     // MIStream methods
-    bool isBrowsable() override { return true; };
+    bool isBrowsable() override { return false; };
     bool isRandomAccess() override { return true; };
 
     bool seek(uint32_t pos, SeekMode mode) override { return true; }; 
@@ -209,6 +209,7 @@ public:
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
+    bool seekPath(std::string path);
 
 protected:
     std::string url;

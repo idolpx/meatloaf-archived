@@ -270,6 +270,12 @@ size_t D64IStream::size() {
     return m_length;
 };
 
+bool D64IStream::seekPath(std::string path) {
+    // tell she stream to start serving bytes of file "path"
+    return false;
+};
+
+
 size_t D64IStream::read(uint8_t* buf, size_t size) {
     // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
     // or set the stream to EOF-like state, if whle file is completely read.
