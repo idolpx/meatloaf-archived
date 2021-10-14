@@ -103,7 +103,7 @@ public:
         closeDir();
     }
 
-    MFile* cd(std::string newDir);
+    // MFile* cd(std::string newDir);
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
     bool isDirectory() override;
     MIStream* inputStream() override ; // has to return OPENED stream

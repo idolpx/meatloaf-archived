@@ -7,6 +7,7 @@ MLFile::~MLFile() {
 }
 
 
+
 MFile* MLFile::getNextFileInDir() {
 
     if(!dirIsOpen) // might be first call, so let's try opening the dir
@@ -88,6 +89,7 @@ bool MLFile::rewindDirectory() {
 	{
 		Serial.printf("\r\nConnection failed");
 		dirIsOpen = false;
+        m_isDir = false;
         return false;
 	}
 	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -105,6 +107,7 @@ bool MLFile::rewindDirectory() {
 	if (httpCode != 200) {
         Serial.println(m_http.errorToString(httpCode));
 		dirIsOpen = false;
+        m_isDir = false;
 
         // // Show HTTP Headers
         // Serial.println("HEADERS--------------");
@@ -121,6 +124,7 @@ bool MLFile::rewindDirectory() {
     else
     {
         dirIsOpen = true;
+        m_isDir = true;
         media_header = m_http.header("ml_media_header").c_str();
         media_id = m_http.header("ml_media_id").c_str();
         media_block_size = m_http.header("ml_media_block_size").toInt();

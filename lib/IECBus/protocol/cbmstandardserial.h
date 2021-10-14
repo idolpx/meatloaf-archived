@@ -21,7 +21,7 @@
 #include "../../../include/global_defines.h"
 
 // BIT Flags
-#define CLEAR           0x0C      // clear all flags
+#define CLEAR           0x00      // clear all flags
 #define ATN_PULLED      (1 << 0)  // might be set by iec_receive
 #define EOI_RECVD       (1 << 1)
 #define COMMAND_RECVD   (1 << 2)
@@ -81,7 +81,7 @@ namespace Protocol
 
 		virtual int16_t receiveByte(uint8_t device);
 		virtual bool sendByte(uint8_t data, bool signalEOI);
-		virtual size_t timeoutWait(uint8_t iecPIN, bool lineStatus, size_t wait = TIMEOUT, size_t step = 3);
+		virtual size_t timeoutWait(uint8_t iecPIN, bool lineStatus, size_t wait = TIMEOUT, size_t step = 1);
 
 
 		// true => PULL => DIGI_LOW

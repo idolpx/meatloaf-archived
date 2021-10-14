@@ -417,14 +417,16 @@ CommandPathTuple iecDevice::parseLine(std::string command, size_t channel)
 	mstr::toASCII(guessedPath);
 
 	// check to see if it starts with a known command token
-	if ( mstr::startsWith(command, "cd:", false) ) // would be case sensitive, but I don't know the proper case
+	if ( mstr::startsWith(command, "cd", false) ) // would be case sensitive, but I don't know the proper case
 	{
-		guessedPath = mstr::drop(guessedPath, 3);
+		guessedPath = mstr::drop(guessedPath, 2);
 		tuple.command = "cd";
-		// if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
-		// 	guessedPath = mstr::drop(guessedPath, 1);
-		// else if ( channel != 15 )
-		// 	guessedPath = command;
+		if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
+			guessedPath = mstr::drop(guessedPath, 1);
+		//else if ( channel != 15 )
+		//	guessedPath = command;
+
+		Debug_printv("guessedPath[%s]", guessedPath.c_str());
 	}
 	else if(mstr::startsWith(command, "@info", false))
 	{
@@ -470,6 +472,7 @@ CommandPathTuple iecDevice::parseLine(std::string command, size_t channel)
 	tuple.rawPath = guessedPath;
 
 	Debug_printv("found command     [%s]", tuple.command.c_str());
+	Debug_printv("guessed path      [%s]", tuple.rawPath.c_str());
 
 	if(guessedPath == "$") {
 		Debug_printv("get directory of [%s]", m_mfile->url.c_str());
@@ -594,7 +597,7 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 		}
 	}
 
-	//dumpState();
+	dumpState();
 
 	// Clear command string
 	m_iec_data.content.clear();

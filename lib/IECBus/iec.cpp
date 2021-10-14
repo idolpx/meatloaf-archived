@@ -73,7 +73,7 @@ bool IEC::turnAround(void)
 	to receive data. And data will be signalled, of course, with the usual sequence: the talker releases
 	the Clock line to signal that it's ready to send.
 	*/
-	// Debug_printf("IEC turnAround: ");
+	Debug_printf("IEC turnAround: ");
 
 	// Wait until clock is RELEASED
 	while(protocol.status(IEC_PIN_CLK) != RELEASED);
@@ -84,7 +84,7 @@ bool IEC::turnAround(void)
 	protocol.pull(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
-	// Debug_println("complete");
+	Debug_println("complete");
 	return true;
 } // turnAround
 
@@ -98,12 +98,12 @@ bool IEC::undoTurnAround(void)
 	protocol.release(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_BIT);
 
-	// Debug_printf("IEC undoTurnAround: ");
+	Debug_printf("IEC undoTurnAround: ");
 
 	// wait until the computer protocol.releases the clock line
 	while(protocol.status(IEC_PIN_CLK) != RELEASED);
 
-	// Debug_println("complete");
+	Debug_println("complete");
 	return true;
 } // undoTurnAround
 

@@ -32,8 +32,8 @@ public:
     MLFile(std::string path, size_t size = 0, bool isDir = false): 
     HttpFile(path), m_size(size), m_isDir(isDir)  
     {
-        if(path.back() == '/' || path.find_last_of("/") < 6)
-            m_isDir = true;
+        //if(path.back() == '/' || path.find_last_of("/") < 6)
+        //    m_isDir = true;
 
         parseUrl(path);
         //Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
