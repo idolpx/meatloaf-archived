@@ -471,4 +471,8 @@ void runTestsSuite() {
     // testCDMFile("CD_", 0);
     // testCDMFile("CDGAMES", 15);
     // testCDMFile("CD_", 0);
+
+    // D64 Test
+    Debug_printv("D64 Test");
+    testDirectory(MFSOwner::File("/games/arcade2.d64"), true);
 }

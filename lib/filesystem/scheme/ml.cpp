@@ -66,6 +66,39 @@ MFile* MLFile::getNextFileInDir() {
     }
 };
 
+bool MLFile::isDirectory() {
+    //String url("http://c64.meatloaf.cc/api/");
+    //String ml_url = std::string("http://" + host + "/api/").c_str();
+    std::string ml_url = "http://" + host + "/api/";
+    std::string post_data = "a=checkp=" + mstr::urlEncode(path);
+
+	// Connect to HTTP server
+	Serial.printf("\r\nConnecting!\r\n--------------------\r\n%s\r\n%s\r\n", ml_url.c_str(), post_data.c_str());
+	if (!m_http.begin(m_file, ml_url.c_str()))
+	{
+		Serial.printf("\r\nConnection failed");
+        return false;
+	}
+	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    // Setup response headers we want to collect
+    const char * headerKeys[] = {"ml_media_dir"} ;
+    const size_t numberOfHeaders = 1;
+    m_http.collectHeaders(headerKeys, numberOfHeaders);
+
+    // Send the request
+	uint8_t httpCode = m_http.POST(post_data.c_str());
+
+	Serial.printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
+
+	if (httpCode == 200) {
+        if (m_http.header("ml_media_dir") == "1")
+            return true;
+    }
+
+    return false;
+};
+
 
 bool MLFile::rewindDirectory() {
     if (!isDirectory()) { 
