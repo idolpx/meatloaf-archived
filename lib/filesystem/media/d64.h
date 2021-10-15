@@ -208,8 +208,14 @@ public:
     bool isBrowsable() override { return true; };
     bool isRandomAccess() override { return true; };
 
-    bool seek(int32_t pos, SeekMode mode) override { return true; }; 
-    bool seek(int32_t pos) override { return true; };
+    bool seek(int32_t pos, SeekMode mode) override { 
+        Debug_printv("here");
+        return true; 
+    }; 
+    bool seek(int32_t pos) override { 
+        Debug_printv("here");
+        return true; 
+    };
     int available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
