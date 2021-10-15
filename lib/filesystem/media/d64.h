@@ -67,6 +67,11 @@ public:
 
     D64File(std::string path): MFile(path) {};
 
+    void exampleFunction(uint8_t* argument) {
+        uint8_t dosVersion = argument[0]; // can we get a 69 here?
+        argument[0] = 55; // can we write dos version?
+    }
+
     void onInitialized () override {
 
         containerStream = this->inputStream();
@@ -82,7 +87,8 @@ public:
             Header diskHeader;
             // seekSector(directory_header_offset);
             // containerStream->read((uint8_t*)&diskHeader, sizeof(diskHeader));
-            diskHeader.dos_version = 1;
+            diskHeader.dos_version = 69;
+            exampleFunction((uint8_t*)&diskHeader);
             // diskHeader.disk_name = std::string("I'm just a disk!").c_str();
             Debug_printv("Disk Dos Version [%d]", diskHeader.dos_version);
 
