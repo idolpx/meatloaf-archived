@@ -124,7 +124,7 @@ public:
     void sendFile( std::string filename = "" );
 
     bool seekSector( uint8_t track, uint8_t sector, uint16_t offset = 0 );
-    bool seekSector( uint8_t trackSector[], uint16_t offset = 0 );
+    bool seekSector( uint8_t* trackSector, uint16_t offset = 0 );
     Entry seekFile( std::string filename );    
 
     std::string readBlock( uint8_t track, uint8_t sector );

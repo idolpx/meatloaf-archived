@@ -4,6 +4,8 @@
 
 bool D64File::seekSector( uint8_t track, uint8_t sector, uint16_t offset)
 {
+    Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
+
     track--;
     uint16_t sector_count = 0;
 
@@ -27,12 +29,11 @@ bool D64File::seekSector( uint8_t track, uint8_t sector, uint16_t offset)
         sector_count += ((track - 30) * 17) + sector;
     }
     
-    return containerStream->seek((sector_count * block_size));
+    return containerStream->seek((sector_count * block_size) + offset);
 }
 
-bool D64File::seekSector( uint8_t trackSector[], uint16_t offset )
+bool D64File::seekSector( uint8_t* trackSector, uint16_t offset )
 {
-    Debug_printv("track[%d] sector[%d]", trackSector[0], trackSector[1]);
     return seekSector(trackSector[0], trackSector[1], offset);
 }
 
