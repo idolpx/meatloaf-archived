@@ -70,7 +70,8 @@ public:
 
     void onInitialized () override {
 
-        containerStream = this->inputStream();
+        std::shared_ptr<MFile> containerFile(LittleFile(path));
+        containerStream = containerFile->inputStream();
 
         Debug_printv( "path: [%s]", path.c_str());
         Debug_printv( "streamPath: [%s]", streamPath.c_str());
