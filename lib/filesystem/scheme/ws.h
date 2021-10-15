@@ -153,8 +153,6 @@ public:
         return nullptr;
     };
 
-protected:
-    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {};
 };
 
 

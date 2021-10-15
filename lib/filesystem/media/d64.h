@@ -176,8 +176,6 @@ public:
     MIStream* createIStream(MIStream* src);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 
-protected:
-    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 };
 
 
