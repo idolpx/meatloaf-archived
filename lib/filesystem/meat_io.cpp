@@ -107,7 +107,7 @@ MFile* MFSOwner::File(std::string path) {
             Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), (*foundIter)->symbol);
             auto newFile = (*foundIter)->getFile(path);
             Debug_printv("newFile: '%s'", newFile->url.c_str());
-            newFile->fillPaths(&pathIterator, &begin, &end);
+            // newFile->fillPaths(&pathIterator, &begin, &end);
 
             return newFile;
          }
@@ -140,6 +140,7 @@ MFileSystem::~MFileSystem() {}
 
 MFile::MFile(std::string path) {
     parseUrl(path);
+    fillPaths(path);
 }
 
 MFile::MFile(std::string path, std::string name) : MFile(path + "/" + name) {}
@@ -148,6 +149,37 @@ MFile::MFile(MFile* path, std::string name) : MFile(path->path + "/" + name) {}
 
 bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
+}
+
+void MFile::fillPaths(std::string path) {
+    std::vector<std::string> paths = mstr::split(path,'/');
+
+    //Debug_printv("path[%s]", path.c_str());
+
+    streamPath = path;
+    pathInStream = "";
+
+    auto pathIterator = paths.end();
+    auto begin = paths.begin();
+    auto end = paths.end();
+
+    while (pathIterator != paths.begin()) {
+        pathIterator--;
+
+        auto part = *pathIterator;
+        mstr::toLower(part);
+
+        //Debug_printv("testing part '%s'\n", part.c_str());
+
+        auto foundIter=find_if(MFSOwner::availableFS.begin(), MFSOwner::availableFS.end(), [&part](MFileSystem* fs){ 
+            //Debug_printv("calling handles for '%s'\n", fs->symbol);
+            return fs->handles(part); 
+        } );
+
+        if(foundIter != MFSOwner::availableFS.end()) {
+            fillPaths(&pathIterator, &begin, &end);
+         }
+    };
 }
 
 void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {

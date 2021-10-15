@@ -76,6 +76,7 @@ public:
 protected:
     virtual MIStream* createIStream(MIStream* src) = 0;
     bool m_isNull;
+    void fillPaths(std::string path);
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 
 friend class MFSOwner;
@@ -115,9 +116,9 @@ protected:
  ********************************************************/
 
 class MFSOwner {
+public:
     static std::vector<MFileSystem*> availableFS;
 
-public:
     static MFile* File(std::string name);
     static MFile* File(std::shared_ptr<MFile> file);
     static MFile* File(MFile* file);
