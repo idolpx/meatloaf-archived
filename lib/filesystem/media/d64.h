@@ -81,7 +81,7 @@ public:
             // Read Header
             Header diskHeader;
             seekSector(directory_header_offset);
-            containerStream->read(&diskHeader, sizeof(diskHeader));
+            containerStream->read((uint8_t*)&diskHeader, sizeof(diskHeader));
             Debug_printv("Disk Header [%s]", diskHeader.disk_name);
             // Count Directory Entries
             // Calculate Blocks Free
