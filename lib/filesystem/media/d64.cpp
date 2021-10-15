@@ -58,8 +58,6 @@ bool D64File::deallocateBlock( uint8_t track, uint8_t sector)
 
 void D64File::sendListing() 
 {
-
-    
     // Read Directory Entries
     seekSector( directory_list_offset );
     do
@@ -277,7 +275,6 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
     auto bytesRead= 0; // m_file.readBytes((char *) buf, size);
     m_bytesAvailable = 0; //m_file.available();
     m_position+=bytesRead;
-    ledToggle(true);
     return bytesRead;
 };
 

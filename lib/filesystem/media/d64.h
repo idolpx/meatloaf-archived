@@ -65,25 +65,26 @@ public:
 
     std::string file_type_label[8] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR", "???" };
 
-    D64File(std::string path): MFile(path) {
-
-    };
+    D64File(std::string path): MFile(path) {};
 
     void onInitialized () override {
 
-        std::unique_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
-        containerStream = containerFile->inputStream();
+        containerStream = this->inputStream();
 
-        Debug_printv( "path: [%s]", path);
-        Debug_printv( "streamPath: [%s]", streamPath);
-        Debug_printv( "pathInStream: [%s]", pathInStream);
+        Debug_printv( "path: [%s]", path.c_str());
+        Debug_printv( "streamPath: [%s]", streamPath.c_str());
+        Debug_printv( "pathInStream: [%s]", pathInStream.c_str());
 
         // Are we at the root of the pathInStream?
-        if ( pathInStream == "/")
+        if ( pathInStream == "")
         {
             // Read Header
-            //Header diskHeader;
-            //containerStream->read(diskHeader, sizeof(diskHeader));
+            uint8_t *buff[22];
+            // Header *diskHeader;
+            seekSector(directory_header_offset);
+            //containerStream->read((uint8_t *)diskHeader, sizeof(diskHeader));
+            containerStream->read(*buff, sizeof(buff));
+            Debug_printv("Disk Header [%s]", buff);
             // Count Directory Entries
             // Calculate Blocks Free
 

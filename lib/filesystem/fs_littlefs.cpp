@@ -414,8 +414,6 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     // ponizszy fs jest inicjalizowany jako drugi arg LittleFSDirImpl
     //  i jest typu lfs_t
 
-    ledToggle(true);
-
     //Serial.println("before lfs_file_write");
 
     int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
@@ -424,7 +422,6 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     //Serial.println("after lfs_file_write");
 
     if (result < 0) {
-        ledOFF();
         DEBUGV("lfs_write rc=%d\n", result);
     }
     return result;
@@ -475,7 +472,6 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
         return 0;
     }
     
-    ledToggle(true);
     int result = lfs_file_read(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
         ledOFF();
@@ -494,8 +490,8 @@ bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
     if (!isOpen()) {
         return false;
     }
-    lfs_file_seek(&LittleFileSystem::lfsStruct, &handle->lfsFile, pos, mode);
-    return false;
+    Debug_printv("isOpen");
+    return (lfs_file_seek(&LittleFileSystem::lfsStruct, &handle->lfsFile, pos, mode))? true: false;
 }
 
 

@@ -46,7 +46,6 @@ MFile* MLFile::getNextFileInDir() {
 
             */
             dirIsOpen = true;
-            ledToggle(true);
 
             std::string fname ="ml://" + host + "/" + urldecode(m_jsonHTTP["name"]).c_str();
             size_t size = m_jsonHTTP["size"];

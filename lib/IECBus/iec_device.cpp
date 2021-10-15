@@ -979,7 +979,6 @@ void iecDevice::sendFile()
 		}
 
 		while(!istream.eof()) {
-			ledToggle(true);
 			auto cp = istream.getUtf8();
 
 			ostream.putUtf8(&cp);
