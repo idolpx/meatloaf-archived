@@ -65,6 +65,7 @@ public:
     virtual bool remove() = 0;
     virtual bool rename(std::string dest) = 0;
 
+
     virtual ~MFile() {
         //Debug_printv("Deleting: [%s]", this->url.c_str());
 
@@ -76,7 +77,8 @@ public:
 protected:
     virtual MIStream* createIStream(MIStream* src) = 0;
     bool m_isNull;
-    void fillPaths(std::string path);
+
+    virtual void onInitialized();
     void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 
 friend class MFSOwner;
