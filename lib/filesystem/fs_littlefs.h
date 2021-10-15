@@ -209,8 +209,8 @@ public:
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
-    virtual bool seek(uint32_t pos) override;
-    virtual bool seek(uint32_t pos, SeekMode mode) override;
+    virtual bool seek(int32_t pos) override;
+    virtual bool seek(int32_t pos, SeekMode mode) override;
 
 
 

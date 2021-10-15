@@ -97,7 +97,7 @@ public:
 
     // MIStream methods
 
-    virtual bool seek(uint32_t pos);
+    virtual bool seek(int32_t pos);
     int available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;

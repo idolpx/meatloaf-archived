@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 //#include "FS.h"
+#include "../../include/global_defines.h"
 
 /********************************************************
  * Universal streams
@@ -33,7 +34,8 @@ public:
 
 class MIStream: public MStream {
 public:
-    virtual bool seek(uint32_t pos, SeekMode mode) {
+    virtual bool seek(int32_t pos, SeekMode mode) {
+        Debug_printv("here");
         if(mode == SeekSet) {
             return seek(pos);
         }
@@ -44,7 +46,7 @@ public:
             return seek(size() - pos);
         }
     }
-    virtual bool seek(uint32_t pos) = 0;
+    virtual bool seek(int32_t pos) = 0;
 
     virtual int available() = 0;
     virtual size_t size() = 0;

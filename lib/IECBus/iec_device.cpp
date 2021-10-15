@@ -787,7 +787,6 @@ void iecDevice::sendListing()
 	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 
 	if(entry == nullptr) {
-		ledOFF();
 		sendFileNotFound();
 		return;
 	}

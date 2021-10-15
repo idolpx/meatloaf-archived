@@ -8,6 +8,7 @@
 #define MEATFILE_DEFINES_D64_H
 
 #include "meat_io.h"
+#include "MemoryInfo.h"
 
 #include "../../include/global_defines.h"
 
@@ -67,11 +68,6 @@ public:
 
     D64File(std::string path): MFile(path) {};
 
-    void exampleFunction(uint8_t* argument) {
-        uint8_t dosVersion = argument[0]; // can we get a 69 here?
-        argument[0] = 55; // can we write dos version?
-    }
-
     void onInitialized () override {
 
         containerStream = this->inputStream();
@@ -84,13 +80,10 @@ public:
         if ( pathInStream == "")
         {
             // Read Header
-            Header diskHeader;
-            // seekSector(directory_header_offset);
-            // containerStream->read((uint8_t*)&diskHeader, sizeof(diskHeader));
-            diskHeader.dos_version = 69;
-            exampleFunction((uint8_t*)&diskHeader);
-            // diskHeader.disk_name = std::string("I'm just a disk!").c_str();
-            Debug_printv("Disk Dos Version [%d]", diskHeader.dos_version);
+            Debug_printv("SizeOf Header %d", sizeof(header));
+            seekSector(directory_header_offset);
+            containerStream->read((uint8_t*)&header, sizeof(header));
+            Debug_printv("Disk Header [%s]", header.disk_name);
 
             // Count Directory Entries
             // Calculate Blocks Free
@@ -125,6 +118,8 @@ public:
 
     uint8_t index = 0;  // Currently selected directory entry
     uint8_t length = 0; // Directory list entry count
+
+    Header header;
     Entry entry;        // Directory entry data
 
     bool show_hidden = false;
@@ -213,8 +208,8 @@ public:
     bool isBrowsable() override { return true; };
     bool isRandomAccess() override { return true; };
 
-    bool seek(uint32_t pos, SeekMode mode) override { return true; }; 
-    bool seek(uint32_t pos) override { return true; };
+    bool seek(int32_t pos, SeekMode mode) override { return true; }; 
+    bool seek(int32_t pos) override { return true; };
     int available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;

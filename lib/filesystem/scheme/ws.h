@@ -52,7 +52,7 @@ public:
     size_t position() override { return 0; };
     int available() override { return INT_MAX; };
     bool isOpen() { return m_isOpen; };
-    bool seek(uint32_t pos) { return false; };
+    bool seek(int32_t pos) { return false; };
     size_t size() { return INT_MAX; };
 
     size_t read(uint8_t* buf, size_t size) override {

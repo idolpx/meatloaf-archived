@@ -434,6 +434,7 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
  ********************************************************/
 
 bool LittleIStream::isOpen() {
+    Debug_printv("here!");
     return handle->rc >= 0;
 }
 
@@ -468,13 +469,15 @@ size_t LittleIStream::size() {
 // };
 
 size_t LittleIStream::read(uint8_t* buf, size_t size) {
+    Debug_printv("here");
     if (!isOpen() || !buf) {
+        Debug_printv("Not open");
         return 0;
     }
     
+    Debug_printv("buffer size [%d]", sizeof(buf));
     int result = lfs_file_read(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
-        ledOFF();
         DEBUGV("lfs_read rc=%d\n", result);
         return 0;
     }
@@ -482,11 +485,13 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
     return result;
 };
 
-bool LittleIStream::seek(uint32_t pos) {
+bool LittleIStream::seek(int32_t pos) {
+    Debug_printv("here");
     return seek(pos, SeekMode::SeekSet);
 };
 
-bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
+bool LittleIStream::seek(int32_t pos, SeekMode mode) {
+    Debug_printv("here");
     if (!isOpen()) {
         return false;
     }
@@ -540,7 +545,6 @@ void LittleHandle::dispose() {
         //         DEBUGV("Unable to set last write time on '%s' to %d\n", _name.get(), now);
         //     }
         // }
-        ledOFF();
         rc = -255;
     }
 }
