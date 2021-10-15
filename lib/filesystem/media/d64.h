@@ -67,6 +67,10 @@ public:
 
     D64File(std::string path): MFile(path) {
 
+    };
+
+    void onInitialized () override {
+
         std::unique_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
         containerStream = containerFile->inputStream();
 
