@@ -80,9 +80,12 @@ public:
         {
             // Read Header
             Header diskHeader;
-            seekSector(directory_header_offset);
-            containerStream->read((uint8_t*)&diskHeader, sizeof(diskHeader));
-            Debug_printv("Disk Header [%s]", diskHeader.disk_name);
+            // seekSector(directory_header_offset);
+            // containerStream->read((uint8_t*)&diskHeader, sizeof(diskHeader));
+            diskHeader.dos_version = 1;
+            // diskHeader.disk_name = std::string("I'm just a disk!").c_str();
+            Debug_printv("Disk Dos Version [%d]", diskHeader.dos_version);
+
             // Count Directory Entries
             // Calculate Blocks Free
 
