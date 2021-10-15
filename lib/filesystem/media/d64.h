@@ -79,12 +79,10 @@ public:
         if ( pathInStream == "")
         {
             // Read Header
-            uint8_t *buff[22];
-            // Header *diskHeader;
+            Header diskHeader;
             seekSector(directory_header_offset);
-            //containerStream->read((uint8_t *)diskHeader, sizeof(diskHeader));
-            containerStream->read(*buff, sizeof(buff));
-            Debug_printv("Disk Header [%s]", buff);
+            containerStream->read(&diskHeader, sizeof(diskHeader));
+            Debug_printv("Disk Header [%s]", diskHeader.disk_name);
             // Count Directory Entries
             // Calculate Blocks Free
 

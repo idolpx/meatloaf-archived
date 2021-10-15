@@ -32,6 +32,7 @@ bool D64File::seekSector( uint8_t track, uint8_t sector, uint16_t offset)
 
 bool D64File::seekSector( uint8_t trackSector[], uint16_t offset )
 {
+    Debug_printv("track[%d] sector[%d]", trackSector[0], trackSector[1]);
     return seekSector(trackSector[0], trackSector[1], offset);
 }
 
