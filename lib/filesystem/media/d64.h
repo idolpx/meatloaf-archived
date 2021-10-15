@@ -9,6 +9,7 @@
 
 #include "meat_io.h"
 #include "MemoryInfo.h"
+#include "LittleFS.h"
 
 #include "../../include/global_defines.h"
 
@@ -70,7 +71,10 @@ public:
 
     void onInitialized () override {
 
-        std::shared_ptr<MFile> containerFile(LittleFile(path));
+        MFile* containerFile = new LittleFile(path);
+        containerFile->streamPath = path;
+        containerFile->pathInStream = "";
+
         containerStream = containerFile->inputStream();
 
         Debug_printv( "path: [%s]", path.c_str());
