@@ -10,6 +10,7 @@
 #include "meat_io.h"
 #include "fs_littlefs.h"
 #include "MemoryInfo.h"
+#include "LittleFS.h"
 
 #include "../../include/global_defines.h"
 
@@ -73,6 +74,9 @@ public:
     void onInitialized () override {
 
         MFile* containerFile = new LittleFile(path);
+        containerFile->streamPath = path;
+        containerFile->pathInStream = "";
+
         containerStream = containerFile->inputStream();
 
         Debug_printv( "path: [%s]", path.c_str());
