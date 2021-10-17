@@ -8,6 +8,7 @@
 #define MEATFILE_DEFINES_D64_H
 
 #include "meat_io.h"
+#include "fs_littlefs.h"
 #include "MemoryInfo.h"
 
 #include "../../include/global_defines.h"
@@ -30,9 +31,10 @@ protected:
 
 public:
 
+    uint8_t dos_version;
     struct Header {
-        uint8_t dos_version;
         char disk_name[16];
+        char unused[2];
         char id_dos[5];
     };
 
@@ -70,7 +72,7 @@ public:
 
     void onInitialized () override {
 
-        std::shared_ptr<MFile> containerFile(LittleFile(path));
+        MFile* containerFile = new LittleFile(path);
         containerStream = containerFile->inputStream();
 
         Debug_printv( "path: [%s]", path.c_str());
@@ -82,9 +84,9 @@ public:
         {
             // Read Header
             Debug_printv("SizeOf Header %d", sizeof(header));
-            seekSector(directory_header_offset);
+            seekSector(directory_header_offset, 0x90);
             containerStream->read((uint8_t*)&header, sizeof(header));
-            Debug_printv("Disk Header [%s]", header.disk_name);
+            Debug_printv("Disk Header [%.16s] [%.5s]", header.disk_name, header.id_dos);
 
             // Count Directory Entries
             // Calculate Blocks Free
@@ -99,7 +101,7 @@ public:
         else
         {
             // Single file
-            seekFile(pathInStream);
+            // seekFile(pathInStream);
             // _size = entry.blocks * (media_block_size - 2);
 
         }
@@ -128,8 +130,9 @@ public:
     void sendListing();
     void sendFile( std::string filename = "" );
 
-    bool seekSector( uint8_t track, uint8_t sector, uint16_t offset = 0 );
-    bool seekSector( uint8_t* trackSector, uint16_t offset = 0 );
+    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
+    bool seekSector( uint8_t* trackSector, size_t offset = 0 );
+    bool seekEntry( size_t index = 0 );
     Entry seekFile( std::string filename );    
 
     std::string readBlock( uint8_t track, uint8_t sector );
@@ -184,6 +187,9 @@ public:
     MIStream* createIStream(MIStream* src);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 
+private:
+    bool dirIsOpen = false;
+    size_t entryIndex = 0;
 };
 
 

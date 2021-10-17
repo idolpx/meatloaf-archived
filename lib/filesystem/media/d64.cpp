@@ -2,7 +2,7 @@
 
 // D64 Utility Functions
 
-bool D64File::seekSector( uint8_t track, uint8_t sector, uint16_t offset)
+bool D64File::seekSector( uint8_t track, uint8_t sector, size_t offset)
 {
     Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
 
@@ -34,10 +34,12 @@ bool D64File::seekSector( uint8_t track, uint8_t sector, uint16_t offset)
     return containerStream->seek(x);
 }
 
-bool D64File::seekSector( uint8_t* trackSector, uint16_t offset )
+bool D64File::seekSector( uint8_t* trackSector, size_t offset )
 {
     return seekSector(trackSector[0], trackSector[1], offset);
 }
+
+
 
 std::string D64File::readBlock(uint8_t track, uint8_t sector)
 {
@@ -59,6 +61,34 @@ bool D64File::deallocateBlock( uint8_t track, uint8_t sector)
     return true;
 }
 
+bool D64File::seekEntry( size_t index )
+{
+    bool r = false;
+
+    if (index != entryIndex + 1)
+    {
+        // Calculate Sector offset & Entry offset
+        // 8 Entries Per Sector, 32 bytes Per Entry
+        uint8_t sectorOffset = (index - 1) / 8;
+        uint8_t entryOffset = (index % 8) * 32;
+
+        Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d]", index, sectorOffset, entryOffset);
+
+        // Start at first sector of directory
+        r = seekSector( directory_list_offset, entryOffset );
+        while ( sectorOffset-- > 0 )
+        {
+            Debug_printv("sectorOffset[%d]", sectorOffset);
+            containerStream->read((uint8_t *)&entry, sizeof(entry));
+            r = seekSector( entry.next_track, entry.next_sector, entryOffset );
+        }
+    }
+
+    entryIndex = index;
+    containerStream->read((uint8_t *)&entry, sizeof(entry));
+
+    return r;
+}
 
 void D64File::sendListing() 
 {
@@ -171,17 +201,28 @@ bool D64File::isDirectory() {
 
 bool D64File::rewindDirectory() {
     seekSector( directory_list_offset );
+    dirIsOpen = true;
+    entryIndex = 0;
     return getNextFileInDir();
 }
 
 MFile* D64File::getNextFileInDir() {
+    bool r = false;
+
+    if(!dirIsOpen)
+        rewindDirectory();
+
     // Get entry pointed to by containerStream
-    if (containerStream->read((uint8_t *)&entry, sizeof(entry)))
+    r = seekEntry(entryIndex);
+    
+    if ( r )
     {
+        Debug_printv( "entry[%.16s]", (streamPath + "/" + entry.filename).c_str() );
         return new D64File(streamPath + "/" + entry.filename);
     }
     else
     {
+
         return nullptr;
     }
 }
