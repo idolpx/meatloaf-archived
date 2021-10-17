@@ -110,7 +110,7 @@ public:
     };
     
     ~D64File() {
-        containerStream->close();
+        // containerStream->close();
     }
 
     uint8_t track;

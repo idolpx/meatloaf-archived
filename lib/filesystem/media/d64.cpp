@@ -213,8 +213,7 @@ MFile* D64File::getNextFileInDir() {
         rewindDirectory();
 
     // Get entry pointed to by containerStream
-    r = seekEntry(entryIndex);
-    
+    r = containerStream->read((uint8_t *)&entry, sizeof(entry));
     if ( r )
     {
         Debug_printv( "entry[%s]", (streamPath + "/" + entry.filename).c_str() );
