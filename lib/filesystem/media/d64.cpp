@@ -69,8 +69,8 @@ bool D64File::seekEntry( size_t index )
     {
         // Calculate Sector offset & Entry offset
         // 8 Entries Per Sector, 32 bytes Per Entry
-        uint8_t sectorOffset = (index - 1) / 8;
-        uint8_t entryOffset = (index % 8) * 32;
+        int8_t sectorOffset = (index - 1) / 8;
+        int8_t entryOffset = (index % 8) * 32;
 
         Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d]", index, sectorOffset, entryOffset);
 
@@ -217,12 +217,11 @@ MFile* D64File::getNextFileInDir() {
     
     if ( r )
     {
-        Debug_printv( "entry[%.16s]", (streamPath + "/" + entry.filename).c_str() );
+        Debug_printv( "entry[%s]", (streamPath + "/" + entry.filename).c_str() );
         return new D64File(streamPath + "/" + entry.filename);
     }
     else
     {
-
         return nullptr;
     }
 }

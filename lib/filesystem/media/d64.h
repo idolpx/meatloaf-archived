@@ -73,7 +73,7 @@ public:
     void onInitialized () override {
 
         MFile* containerFile = new LittleFile(path);
-       containerStream = containerFile->inputStream();
+        containerStream = containerFile->inputStream();
 
         Debug_printv( "path: [%s]", path.c_str());
         Debug_printv( "streamPath: [%s]", streamPath.c_str());
@@ -110,7 +110,6 @@ public:
     };
     
     ~D64File() {
-
         containerStream->close();
     }
 
