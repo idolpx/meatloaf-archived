@@ -216,8 +216,8 @@ MFile* D64File::getNextFileInDir() {
     r = containerStream->read((uint8_t *)&entry, sizeof(entry));
     if ( r )
     {
-        Debug_printv( "entry[%s]", (streamPath + "/" + entry.filename).c_str() );
-        return new D64File(streamPath + "/" + entry.filename);
+        Debug_printv( "entry[%s]", (streamFile->path + "/" + entry.filename).c_str() );
+        return new D64File(streamFile->path + "/" + entry.filename);
     }
     else
     {

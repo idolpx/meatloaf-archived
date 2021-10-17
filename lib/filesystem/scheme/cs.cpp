@@ -260,7 +260,7 @@ MFile* CServerFile::cd(std::string newDir) {
             // user entered: CD:/ or CD/
             // means: change to container root
             // *** might require a fix for flash fs!
-            return MFSOwner::File(streamPath);
+            return MFSOwner::File(streamFile);
         }
         else {
             Debug_printv("[/]");

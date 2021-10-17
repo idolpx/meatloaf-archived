@@ -67,7 +67,7 @@ void dumpFileProperties(MFile* testMFile) {
     Serial.printf("Host: [%s]\n", testMFile->host.c_str());
     Serial.printf("Port: [%s]\n", testMFile->port.c_str());    
     Serial.printf("Path: [%s]\n", testMFile->path.c_str());
-    Serial.printf("stream src: [%s]\n", testMFile->streamPath.c_str());
+    Serial.printf("stream src: [%s]\n", testMFile->streamFile->path.c_str());
     Serial.printf("path in stream: [%s]\n", testMFile->pathInStream.c_str());
     Serial.printf("File: [%s]\n", testMFile->name.c_str());
     Serial.printf("Extension: [%s]\n", testMFile->extension.c_str());
