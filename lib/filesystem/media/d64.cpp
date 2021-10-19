@@ -214,11 +214,7 @@ void D64File::sendFile( std::string filename )
  ********************************************************/
 
 bool D64File::isDirectory() {
-    // D64 don't support dirs!
-    if ( pathInStream == "" )
-        return true;
-    else
-        return false;
+    return isDir;
 };
 
 bool D64File::rewindDirectory() {
@@ -236,8 +232,10 @@ MFile* D64File::getNextFileInDir() {
     // Get entry pointed to by containerStream
     if ( seekEntry(entryIndex + 1) )
     {
-        Debug_printv( "entry[%s]", (streamPath + "/" + entry.filename).c_str() );
-        return new D64File(streamPath + "/" + entry.filename);
+        std::string fileName = entry.filename;
+        mstr::replaceAll(fileName, "/", "\\");
+        Debug_printv( "entry[%s]", (streamPath + "/" + fileName).c_str() );
+        return new D64File(streamPath + "/" + fileName, false);
     }
     else
     {

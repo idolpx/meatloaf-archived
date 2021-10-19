@@ -342,12 +342,13 @@ MFile* MFile::cd(std::string newDir) {
             return root(mstr::drop(newDir,2));
         }
     }
-    else if(newDir[0]=='/') {
+    else if(newDir[0]=='/' || newDir[0]=='^') {
         if(newDir.size()==1) {
             // user entered: CD:/ or CD/
             // means: change to container root
             // *** might require a fix for flash fs!
-            return MFSOwner::File(streamPath);
+            //return MFSOwner::File(streamPath);
+            return MFSOwner::File("/");
         }
         else {
             // user entered: CD:/DIR or CD/DIR
@@ -362,12 +363,12 @@ MFile* MFile::cd(std::string newDir) {
             return parent();
         }
         else {
-            Debug_printv("[_]");
             // user entered: CD:_DIR or CD_DIR
             // means: go to a directory in the same directory as this one
             return parent(mstr::drop(newDir,1));
         }
     }
+
     if(newDir[0]=='.' && newDir[1]=='.') {
         if(newDir.size()==2) {
             // user entered: CD:.. or CD..
@@ -381,19 +382,19 @@ MFile* MFile::cd(std::string newDir) {
         }
     }
 
-    if(newDir[0]=='~' /*&& newDir[1]=='/' let's be consistent!*/) {
+    if(newDir[0]=='@' /*&& newDir[1]=='/' let's be consistent!*/) {
         if(newDir.size() == 1) {
-            // user entered: CD:~ or CD~
+            // user entered: CD:@ or CD@
             // meaning: go to the .sys folder
             return MFSOwner::File("/.sys");
         }
         else {
-            Debug_printv("[~]");
-            // user entered: CD:~FOLDER or CD~FOLDER
+            // user entered: CD:@FOLDER or CD@FOLDER
             // meaning: go to a folder in .sys folder
             return MFSOwner::File("/.sys/" + mstr::drop(newDir,1));
         }
-    }    
+    }
+
     if(newDir.find(':') != std::string::npos) {
         // I can only guess we're CDing into another url scheme, this means we're changing whole path
         return MFSOwner::File(newDir);

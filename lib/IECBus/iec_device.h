@@ -122,7 +122,8 @@ private:
 	bool m_show_date = false;
 	bool m_show_load_address = false;
 	void changeDir(std::string url);
-	uint16_t sendHeader(uint16_t &basicPtr, std::string header);
+	uint16_t sendHeader(uint16_t &basicPtr, std::string header, std::string id);
+	//uint16_t sendHeader(uint16_t &basicPtr, const char *format, ...);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...);
 	uint16_t sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size);

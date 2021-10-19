@@ -69,7 +69,8 @@ public:
 
     std::string file_type_label[8] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR", "???" };
 
-    D64File(std::string path): MFile(path) {
+    D64File(std::string path, bool is_dir = true): MFile(path) {
+        isDir = is_dir;
         extension = "";
     };
 
@@ -98,7 +99,9 @@ public:
 
             // Set Media Info Fields
             media_header = header.disk_name;
+            media_header[16] = '\0';
             media_id = header.id_dos;
+            media_id[5] = '\0';
             media_blocks_free = 0;
             media_block_size = 256;
             media_image = name;
@@ -176,6 +179,12 @@ public:
     //     return D64_TYPE_UNKNOWN;
     // }
 
+    virtual std::string petsciiName() {
+        // It's already in PETSCII
+        mstr::replaceAll(name, "\\", "/");
+        return name;
+    }
+
     bool isDirectory() override;
     MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
     MOStream* outputStream() override { return nullptr; }; // has to return OPENED stream
@@ -193,6 +202,7 @@ public:
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 
 private:
+    bool isDir = true;
     bool dirIsOpen = false;
     size_t entryIndex = 0;
 };

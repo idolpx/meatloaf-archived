@@ -123,35 +123,35 @@ int LittleFileSystem::lfs_flash_sync(const struct lfs_config *c) {
  * MFile implementations
  ********************************************************/
 
-MFile* LittleFile::cd(std::string newDir) {
-    if(newDir[0]=='/' && newDir[1]=='/') {
-        if(newDir.size()==2) {
-            // user entered: CD:// or CD//
-            // means: change to the root of roots
-            return MFSOwner::File("/"); // chedked, works ad flash root!
-        }
-        else {
-            // user entered: CD://DIR or CD//DIR
-            // means: change to a dir in root of roots
-            return root(mstr::drop(newDir,2));
-        }
-    }
-    else if(newDir[0]=='/') {
-        if(newDir.size()==1) {
-            // user entered: CD:/ or CD/
-            // means: change to container root
-            // *** might require a fix for flash fs!
-            return MFSOwner::File("/");
-        }
-        else {
-            // user entered: CD:/DIR or CD/DIR
-            // means: change to a dir in container root
-            return MFSOwner::File("/"+newDir);
-        }
-    }
-    else
-        return MFile::cd(newDir);
-};
+// MFile* LittleFile::cd(std::string newDir) {
+//     if(newDir[0]=='/' && newDir[1]=='/') {
+//         if(newDir.size()==2) {
+//             // user entered: CD:// or CD//
+//             // means: change to the root of roots
+//             return MFSOwner::File("/"); // chedked, works ad flash root!
+//         }
+//         else {
+//             // user entered: CD://DIR or CD//DIR
+//             // means: change to a dir in root of roots
+//             return root(mstr::drop(newDir,2));
+//         }
+//     }
+//     else if(newDir[0]=='/') {
+//         if(newDir.size()==1) {
+//             // user entered: CD:/ or CD/
+//             // means: change to container root
+//             // *** might require a fix for flash fs!
+//             return MFSOwner::File("/");
+//         }
+//         else {
+//             // user entered: CD:/DIR or CD/DIR
+//             // means: change to a dir in container root
+//             return MFSOwner::File("/"+newDir);
+//         }
+//     }
+//     else
+//         return MFile::cd(newDir);
+// };
 
 
 void LittleFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {

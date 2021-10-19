@@ -417,14 +417,16 @@ CommandPathTuple iecDevice::parseLine(std::string command, size_t channel)
 	mstr::toASCII(guessedPath);
 
 	// check to see if it starts with a known command token
-	if ( mstr::startsWith(command, "cd:", false) ) // would be case sensitive, but I don't know the proper case
+	if ( mstr::startsWith(command, "cd", false) ) // would be case sensitive, but I don't know the proper case
 	{
-		guessedPath = mstr::drop(guessedPath, 3);
+		guessedPath = mstr::drop(guessedPath, 2);
 		tuple.command = "cd";
-		// if ( mstr::startsWith(guessedPath, ":" ) ) // drop ":" if it was specified
-		// 	guessedPath = mstr::drop(guessedPath, 1);
-		// else if ( channel != 15 )
-		// 	guessedPath = command;
+		if ( mstr::startsWith(guessedPath, ":") || mstr::startsWith(guessedPath, " " ) ) // drop ":" if it was specified
+			guessedPath = mstr::drop(guessedPath, 1);
+		//else if ( channel != 15 )
+		//	guessedPath = command;
+
+		Debug_printv("guessedPath[%s]", guessedPath.c_str());
 	}
 	else if(mstr::startsWith(command, "@info", false))
 	{
@@ -594,7 +596,7 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 		}
 	}
 
-	//dumpState();
+	dumpState();
 
 	// Clear command string
 	m_iec_data.content.clear();
@@ -725,8 +727,23 @@ uint16_t iecDevice::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 	return b_cnt;
 } // sendLine
 
+// uint16_t iecDevice::sendHeader(uint16_t &basicPtr, const char *format, ...)
+// {
+// 	Debug_printv("formatting header");
 
-uint16_t iecDevice::sendHeader(uint16_t &basicPtr, std::string header)
+// 	// Format our string
+// 	va_list args;
+// 	va_start(args, format);
+// 	char text[vsnprintf(NULL, 0, format, args) + 1];
+// 	vsnprintf(text, sizeof text, format, args);
+// 	va_end(args);
+
+// 	Debug_printv("header[%s]", text);
+
+// 	return sendHeader(basicPtr, std::string(text));
+// }
+
+uint16_t iecDevice::sendHeader(uint16_t &basicPtr, std::string header, std::string id)
 {
 	uint16_t byte_count = 0;
 	bool sent_info = false;
@@ -741,9 +758,19 @@ uint16_t iecDevice::sendHeader(uint16_t &basicPtr, std::string header)
 	std::string path = p.pathToFile();
 	std::string image = p.name;
 
+	
+
 	// Send List HEADER
+	uint8_t space_cnt = 0;
+	space_cnt = (16 - header.size()) / 2;
+	space_cnt = (space_cnt > 8 ) ? 0 : space_cnt;
+
+	Debug_printv("header[%s] id[%s] space_cnt[%d]", header.c_str(), id.c_str(), space_cnt);
+
+	byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "\"%*s%s%*s\" %s", space_cnt, "", header.c_str(), space_cnt, "", id.c_str());
+
 	//byte_count += sendLine(basicPtr, 0, "\x12\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.device());
-	byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "%s", header.c_str());
+	//byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "%s", header.c_str());
 
 	// Send Extra INFO
 	if (url.size())
@@ -801,20 +828,17 @@ void iecDevice::sendListing()
 	Debug_println("");
 
 	// Send Listing Header
-	char buffer[100];
-	byte space_cnt = 0;
-	// if (m_mfile->media_header.size() == 0)
+	if (m_mfile->media_header.size() == 0)
 	{
 		// Set device default Listing Header
-		space_cnt = (16 - strlen(PRODUCT_ID)) / 2;
-		sprintf(buffer, "\"%*s%s%*s\" %.02d 2A", space_cnt, "", PRODUCT_ID, space_cnt, "", m_device.id());
+		char buf[6] = { '\0' };
+		sprintf(buf, "%.02d 2A", m_device.id());
+		byte_count += sendHeader(basicPtr, PRODUCT_ID, buf);
 	}
-	// else
-	// {
-	// 	space_cnt = (16 - m_mfile->media_header.size()) / 2;
-	// 	sprintf(buffer, "\"%*s%s%*s\" %s\x00", space_cnt, "", m_mfile->media_header.c_str(), space_cnt, "", m_mfile->media_id.c_str());
-	// }
-	byte_count += sendHeader(basicPtr, buffer);
+	else
+	{
+		byte_count += sendHeader(basicPtr, m_mfile->media_header.c_str(), m_mfile->media_id.c_str());
+	}
 	
 	// Send Directory Items
 	while(entry != nullptr)
@@ -933,9 +957,11 @@ void iecDevice::sendFile()
 
 	if(!file->exists())
 	{
+		Debug_printv("File Not Found!");
 		sendFileNotFound();
 		return;
 	}
+	Debug_printv("Sending File [%s]", file->name.c_str());
 
 
 	// TODO!!!! you should check istream for nullptr here and return error immediately if null
