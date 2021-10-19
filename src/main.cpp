@@ -64,7 +64,9 @@ void setup()
         Serial.println ( "Flash File System started" );
 
         // Start the Web Server with WebDAV
+        #if defined(WWW_WEBDAV)
         setupWWW();
+        #endif
 
 
         // mDNS INIT
@@ -121,7 +123,10 @@ void loop()
     MDNS.update();
 #endif
 
+#if defined(WWW_WEBDAV)
     www.handleClient();
+#endif
+
     modem.service();
     //cli.readSerial();
     if ( bus_state != statemachine::idle )
@@ -146,6 +151,8 @@ void onAttention()
     //Debug_printv("hi");
 }
 
+
+#if defined(WWW_WEBDAV)
 ////////////////////////////////
 // Utils to return HTTP codes, and determine content-type
 
@@ -837,4 +844,4 @@ void setupWWW ( void )
 
 }
 
-
+#endif

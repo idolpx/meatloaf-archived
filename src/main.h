@@ -93,6 +93,7 @@ ESPModem modem;
 //
 // Web Server & WebDAV
 //
+#if defined(WWW_WEBDAV)
 #include <WebDav4WebServer.h>
 
 #if !WEBSERVER_HAS_HOOK
@@ -101,6 +102,7 @@ ESPModem modem;
 
 WebServer www ( SERVER_PORT );
 ESPWebDAVCore dav;
+#endif
 
 bool fsOK;
 String unsupportedFiles;

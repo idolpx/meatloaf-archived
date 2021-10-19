@@ -160,6 +160,8 @@ inline static void IRAM_ATTR onTimer()
 //#define USE_LITTLEFS
 //#define USE_SDFS
 
+// Enable WWW & WEBDAV
+//#define WWW_WEBDAV
 
 // Format storage if a valid file system is not found
 #define AUTO_FORMAT true
