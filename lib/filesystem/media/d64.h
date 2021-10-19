@@ -73,11 +73,14 @@ public:
 
     void onInitialized () override {
 
-        MFile* containerFile = new LittleFile(path);
-        containerStream = containerFile->inputStream();
+        // THIS should work now. If it still doesn't just comment this, and uncomment two lines below :D
+        containerStream = streamFile->inputStream();
+
+        // MFile* containerFile = new LittleFile(path);
+        // containerStream = containerFile->inputStream();
 
         Debug_printv( "path: [%s]", path.c_str());
-        Debug_printv( "streamPath: [%s]", streamPath.c_str());
+        Debug_printv( "streamFile: [%s]", streamFile->path.c_str());
         Debug_printv( "pathInStream: [%s]", pathInStream.c_str());
 
         // Are we at the root of the pathInStream?
