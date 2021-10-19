@@ -474,5 +474,5 @@ void runTestsSuite() {
 
     // D64 Test
     Debug_printv("D64 Test");
-    testDirectory(MFSOwner::File("/games/arcade2.d64"), true);
+    testDirectory(MFSOwner::File("/games/arcade7.d64"), true);
 }
