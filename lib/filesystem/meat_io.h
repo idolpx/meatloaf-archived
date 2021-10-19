@@ -68,10 +68,14 @@ public:
 
     virtual ~MFile() {
         //Debug_printv("Deleting: [%s]", this->url.c_str());
-
+        if(streamFile == nullptr)
+            Debug_printv("WARNING: streamFile null in MFile destructor. This MFile was obviously not initialized properly!");
+        
+        delete streamFile; // and if it was null this will crash anyway, but you will see the error above
     };
 
     std::string streamPath;
+    MFile* streamFile;
     std::string pathInStream;
 
 protected:
@@ -124,6 +128,9 @@ public:
     static MFile* File(std::string name);
     static MFile* File(std::shared_ptr<MFile> file);
     static MFile* File(MFile* file);
+
+    static MFileSystem* scanPathLeft(std::vector<std::string> paths, std::vector<std::string>::iterator &pathIterator);
+
 
     static bool mount(std::string name);
     static bool umount(std::string name);
