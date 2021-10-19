@@ -20,6 +20,14 @@ DeviceDB::DeviceDB(uint8_t device)
 {
     select(device);
     m_dirty = false;
+
+    // Create .sys folder if it doesn't exist
+    std::unique_ptr<MFile> file(MFSOwner::File(SYSTEM_DIR));
+    if ( !file->exists() )
+    {
+        Debug_printv("Create '/.sys' folder!");
+        file->mkDir();
+    }
 } // constructor
 
 DeviceDB::~DeviceDB()

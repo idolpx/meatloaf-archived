@@ -79,7 +79,7 @@ MFile* MFSOwner::File(std::shared_ptr<MFile> file) {
 MFile* MFSOwner::File(std::string path) {
     std::vector<std::string> paths = mstr::split(path,'/');
 
-    //Debug_printv("path[%s]", path.c_str());
+    Debug_printv("path[%s]", path.c_str());
 
     auto pathIterator = paths.end();
     auto begin = paths.begin();
@@ -96,7 +96,7 @@ MFile* MFSOwner::File(std::string path) {
         auto part = *pathIterator;
         mstr::toLower(part);
 
-        //Debug_printv("testing part '%s'\n", part.c_str());
+        Debug_printv("testing part '%s'\n", part.c_str());
 
         auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
             //Debug_printv("calling handles for '%s'\n", fs->symbol);
@@ -114,7 +114,7 @@ MFile* MFSOwner::File(std::string path) {
          }
     };
 
-    //Debug_printv("** warning! %s - Little fs fallback", path.c_str());
+    Debug_printv("** warning! %s - Little fs fallback", path.c_str());
 
     MFile* newFile = new LittleFile(path);
     newFile->streamPath = path;
@@ -251,8 +251,10 @@ void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::v
 
 MIStream* MFile::inputStream() {
     ; // has to return OPENED stream
-    //std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
-    std::shared_ptr<MIStream> containerStream(streamFile->inputStream()); // get its base stream, i.e. zip raw file contents
+    std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
+    std::shared_ptr<MIStream> containerStream(containerFile->inputStream());
+
+    // std::shared_ptr<MIStream> containerStream(streamFile->inputStream()); // get its base stream, i.e. zip raw file contents
 
     std::shared_ptr<MIStream> decodedStream(createIStream(containerStream.get())); // wrap this stream into decodec stream, i.e. unpacked zip files
 
@@ -345,7 +347,7 @@ MFile* MFile::cd(std::string newDir) {
             // user entered: CD:/ or CD/
             // means: change to container root
             // *** might require a fix for flash fs!
-            return MFSOwner::File(streamFile);
+            return MFSOwner::File(streamPath);
         }
         else {
             // user entered: CD:/DIR or CD/DIR

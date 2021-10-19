@@ -69,7 +69,9 @@ public:
 
     std::string file_type_label[8] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR", "???" };
 
-    D64File(std::string path): MFile(path) {};
+    D64File(std::string path): MFile(path) {
+        extension = "";
+    };
 
     void onInitialized () override {
 
@@ -80,14 +82,13 @@ public:
         containerStream = containerFile->inputStream();
 
         Debug_printv( "path: [%s]", path.c_str());
-        Debug_printv( "streamFile: [%s]", streamPath.c_str());
+        Debug_printv( "streamPath: [%s]", streamPath.c_str());
         Debug_printv( "pathInStream: [%s]", pathInStream.c_str());
 
         // Are we at the root of the pathInStream?
         if ( pathInStream == "")
         {
             // Read Header
-            Debug_printv("SizeOf Header %d", sizeof(header));
             seekSector(directory_header_offset, 0x90);
             containerStream->read((uint8_t*)&header, sizeof(header));
             Debug_printv("Disk Header [%.16s] [%.5s]", header.disk_name, header.id_dos);
@@ -110,11 +111,11 @@ public:
 
         }
        
-
+        delete containerFile;
     };
     
     ~D64File() {
-        // containerStream->close();
+        containerStream->close();
     }
 
     uint8_t track;
@@ -142,6 +143,7 @@ public:
     bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
     bool allocateBlock( uint8_t track, uint8_t sector );
     bool deallocateBlock( uint8_t track, uint8_t sector );
+
 	uint8_t speedZone( uint8_t track)
 	{
 		return (track < 30) + (track < 24) + (track < 17);
