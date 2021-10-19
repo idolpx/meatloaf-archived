@@ -10,10 +10,10 @@ bool D64File::seekSector( uint8_t track, uint8_t sector, size_t offset )
 
     track--;
 	for (uint8_t index = 0; index < track; ++index)
-    {
+	{
 		sectorOffset += sectorsPerTrack[speedZone(index)];
         // Debug_printv("track[%d] speedZone[%d] secotorsPerTrack[%d] sectorOffset[%d]", index, speedZone(index), sectorsPerTrack[speedZone(index)], sectorOffset);
-    }
+	}
 	sectorOffset += sector;
 
     this->track = track + 1;
@@ -55,11 +55,11 @@ bool D64File::seekEntry( size_t index )
     static uint8_t next_track = 0;
     static uint8_t next_sector = 0;
 
-        // Calculate Sector offset & Entry offset
-        // 8 Entries Per Sector, 32 bytes Per Entry
+    // Calculate Sector offset & Entry offset
+    // 8 Entries Per Sector, 32 bytes Per Entry
     index--;
     int8_t sectorOffset = index / 8;
-        int8_t entryOffset = (index % 8) * 32;
+    int8_t entryOffset = (index % 8) * 32;
 
     Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d] entryIndex[%d]", index, sectorOffset, entryOffset, entryIndex);
 
@@ -88,7 +88,7 @@ bool D64File::seekEntry( size_t index )
         {
             Debug_printv("Follow link track[%d] sector[%d] entryOffset[%d]", next_track, next_sector, entryOffset);
             r = seekSector( next_track, next_sector, entryOffset );
-    }
+        }
 
         containerStream->read((uint8_t *)&entry, sizeof(entry));        
     }
@@ -236,8 +236,8 @@ MFile* D64File::getNextFileInDir() {
     // Get entry pointed to by containerStream
     if ( seekEntry(entryIndex + 1) )
     {
-        Debug_printv( "entry[%s]", (streamPath + "/" + entry.filename).c_str() );
-        return new D64File(streamPath + "/" + entry.filename);
+        Debug_printv( "entry[%s]", (streamFile->path + "/" + entry.filename).c_str() );
+        return new D64File(streamFile->path + "/" + entry.filename);
     }
     else
     {

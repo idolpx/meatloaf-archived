@@ -74,7 +74,6 @@ public:
         delete streamFile; // and if it was null this will crash anyway, but you will see the error above
     };
 
-    std::string streamPath;
     MFile* streamFile;
     std::string pathInStream;
 
@@ -83,7 +82,6 @@ protected:
     bool m_isNull;
 
     virtual void onInitialized();
-    virtual void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 
 friend class MFSOwner;
 };
