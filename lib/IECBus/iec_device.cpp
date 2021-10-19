@@ -1181,7 +1181,7 @@ void iecDevice::dumpState()
 	Debug_println("");
 	Debug_printv("-------------------------------");
 	Debug_printv("URL: [%s]", m_mfile->url.c_str());
-    Debug_printv("streamFile: [%s]", m_mfile->streamFile->path.c_str());
+    Debug_printv("streamFile: [%s]", m_mfile->streamPath.c_str());
     Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
 	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
 	Debug_printv("Username: [%s]", m_mfile->user.c_str());

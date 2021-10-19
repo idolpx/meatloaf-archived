@@ -236,8 +236,8 @@ MFile* D64File::getNextFileInDir() {
     // Get entry pointed to by containerStream
     if ( seekEntry(entryIndex + 1) )
     {
-        Debug_printv( "entry[%s]", (streamFile->path + "/" + entry.filename).c_str() );
-        return new D64File(streamFile->path + "/" + entry.filename);
+        Debug_printv( "entry[%s]", (streamPath + "/" + entry.filename).c_str() );
+        return new D64File(streamPath + "/" + entry.filename);
     }
     else
     {

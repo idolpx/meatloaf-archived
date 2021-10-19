@@ -75,6 +75,7 @@ public:
     };
 
     MFile* streamFile;
+    std::string streamPath;
     std::string pathInStream;
 
 protected:
@@ -82,6 +83,7 @@ protected:
     bool m_isNull;
 
     virtual void onInitialized();
+    virtual void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 
 friend class MFSOwner;
 };
