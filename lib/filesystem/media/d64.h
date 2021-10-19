@@ -25,6 +25,7 @@ protected:
     uint8_t directory_header_offset[2] = {18, 0};
     uint8_t directory_list_offset[2] = {18, 1};
     uint8_t block_allocation_map[6] = {18, 0, 0x04, 1, 35, 4};
+    uint8_t sectorsPerTrack[4] = { 17, 18, 19, 21 };
     uint16_t block_size = 256;
 
     MIStream* containerStream;
@@ -92,11 +93,11 @@ public:
             // Calculate Blocks Free
 
             // Set Media Info Fields
-            // media_header;
-            // media_id;
-            // media_blocks_free = 0;
-            // media_block_size = 256;
-            // media_image;             
+            media_header = header.disk_name;
+            media_id = header.id_dos;
+            media_blocks_free = 0;
+            media_block_size = 256;
+            media_image = name;
         }
         else
         {

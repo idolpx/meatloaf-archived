@@ -473,7 +473,6 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
         return 0;
     }
     
-    Debug_printv("buffer size [%d]", size);
     int result = lfs_file_read(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
         DEBUGV("lfs_read rc=%d\n", result);
@@ -484,12 +483,12 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
 };
 
 bool LittleIStream::seek(int32_t pos) {
-    Debug_printv("pos[%d]", pos);
+    // Debug_printv("pos[%d]", pos);
     return seek(pos, SeekMode::SeekSet);
 };
 
 bool LittleIStream::seek(int32_t pos, SeekMode mode) {
-    Debug_printv("pos[%d] mode[%d]", pos, mode);
+    // Debug_printv("pos[%d] mode[%d]", pos, mode);
     if (!isOpen()) {
         Debug_printv("Not open");
         return false;
