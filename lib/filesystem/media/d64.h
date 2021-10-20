@@ -166,7 +166,7 @@ class D64File: public MFile {
     std::shared_ptr<D64Image> _d64UtilStruct;
 
     // a function for lazily initializing the struct
-    std::shared_ptr<D64Image> util() {
+    std::shared_ptr<D64Image> image() {
         if(_d64UtilStruct == nullptr) {
             _d64UtilStruct = std::make_shared<D64Image>(streamFile->inputStream());
         }
@@ -201,20 +201,20 @@ public:
         if ( pathInStream == "")
         {
             // Read Header
-            util().get()->seekHeader();
-            util().get()->fillHeader();
-            Debug_printv("Disk Header [%.16s] [%.5s]", util().get()->header.disk_name, util().get()->header.id_dos);
+            image().get()->seekHeader();
+            image().get()->fillHeader();
+            Debug_printv("Disk Header [%.16s] [%.5s]", image().get()->header.disk_name, image().get()->header.id_dos);
 
             // Count Directory Entries
             // Calculate Blocks Free
 
             // Set Media Info Fields
-            media_header = util().get()->header.disk_name;
+            media_header = image().get()->header.disk_name;
             mstr::A02Space(media_header);
-            media_id = util().get()->header.id_dos;
+            media_id = image().get()->header.id_dos;
             mstr::A02Space(media_id);
             media_blocks_free = 0;
-            media_block_size = util().get()->block_size;
+            media_block_size = image().get()->block_size;
             media_image = name;
         }
         else

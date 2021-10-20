@@ -202,7 +202,7 @@ bool D64File::isDirectory() {
 
 bool D64File::rewindDirectory() {
     dirIsOpen = true;
-    util().get()->resetEntryCounter();
+    image().get()->resetEntryCounter();
     return getNextFileInDir();
 }
 
@@ -212,9 +212,9 @@ MFile* D64File::getNextFileInDir() {
         rewindDirectory();
 
     // Get entry pointed to by containerStream
-    if ( util().get()->seekNextEntry() )
+    if ( image().get()->seekNextEntry() )
     {
-        std::string fileName = util().get()->entry.filename;
+        std::string fileName = image().get()->entry.filename;
         mstr::replaceAll(fileName, "/", "\\");
         Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
         return new D64File(_d64UtilStruct, streamFile->url + "/" + fileName, false);
@@ -241,7 +241,7 @@ time_t D64File::getLastWrite() {
 
 time_t D64File::getCreationTime() {
     tm *entry_time = 0;
-    auto entry = util().get()->entry;
+    auto entry = image().get()->entry;
     entry_time->tm_year = entry.year + 1900;
     entry_time->tm_mon = entry.month;
     entry_time->tm_mday = entry.day;
@@ -258,7 +258,7 @@ bool D64File::exists() {
 
 size_t D64File::size() {
     // use D64 to get size of the file in image
-    auto entry = util().get()->entry;
+    auto entry = image().get()->entry;
     uint16_t blocks = (entry.blocks[0] * 256) + entry.blocks[1];
     return blocks;
 }
