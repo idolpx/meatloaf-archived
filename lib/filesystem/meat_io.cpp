@@ -76,114 +76,114 @@ MFile* MFSOwner::File(std::shared_ptr<MFile> file) {
     return File(file->url);
 }
 
-MFile* MFSOwner::File(std::string path) {
-    std::vector<std::string> paths = mstr::split(path,'/');
-
-    Debug_printv("path[%s]", path.c_str());
-
-    auto pathIterator = paths.end();
-    auto begin = paths.begin();
-    auto end = paths.end();
-
-    if(mstr::startsWith(path,"cs:", false)) {
-        //Serial.printf("CServer path found!\n");
-        return csFS.getFile(path);
-    }
-
-    while (pathIterator != paths.begin()) {
-        pathIterator--;
-
-        auto part = *pathIterator;
-        mstr::toLower(part);
-
-        Debug_printv("testing part '%s'\n", part.c_str());
-
-        auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
-            //Debug_printv("calling handles for '%s'\n", fs->symbol);
-            return fs->handles(part); 
-        } );
-
-        if(foundIter != availableFS.end()) {
-            Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), (*foundIter)->symbol);
-            auto newFile = (*foundIter)->getFile(path);
-            Debug_printv("newFile: '%s'", newFile->url.c_str());
-            newFile->fillPaths(&pathIterator, &begin, &end);
-            newFile->onInitialized();
-
-            return newFile;
-         }
-    };
-
-    Debug_printv("** warning! %s - Little fs fallback", path.c_str());
-
-    MFile* newFile = new LittleFile(path);
-    newFile->streamPath = path;
-    newFile->pathInStream = "";
-
-    return newFile;
-}
-
-
 // MFile* MFSOwner::File(std::string path) {
-//     //Debug_printv("path[%s]", path.c_str());
+//     std::vector<std::string> paths = mstr::split(path,'/');
+
+//     Debug_printv("path[%s]", path.c_str());
+
+//     auto pathIterator = paths.end();
+//     auto begin = paths.begin();
+//     auto end = paths.end();
 
 //     if(mstr::startsWith(path,"cs:", false)) {
 //         //Serial.printf("CServer path found!\n");
 //         return csFS.getFile(path);
 //     }
 
-//     std::vector<std::string> paths = mstr::split(path,'/');
+//     while (pathIterator != paths.begin()) {
+//         pathIterator--;
 
-//     auto pathIterator = paths.end();
-//     auto begin = paths.begin();
-//     auto end = paths.end();
-//     MFile* thisFile;
-    
-//     // This path will be handled by...
-//     auto thisPathFS = scanPathLeft(paths, pathIterator);
+//         auto part = *pathIterator;
+//         mstr::toLower(part);
 
-//     if(thisPathFS == nullptr) {
-//         // we couldn't find any supported fs in this path, let's fall back to LittleFS!
-//         thisFile = new LittleFile(path);
-//         thisFile->streamFile = new LittleFile(path);
-//         thisFile->pathInStream = "";
-//     }
-//     else {
-//         // first FS that matched when going left is thisPathFS, the path we should return will be of this FS type:
-//         thisFile = thisPathFS->getFile(path);
+//         Debug_printv("testing part '%s'\n", part.c_str());
 
-//         // let's continue left to see if another FS matches - this will be the container stream...
-//         Debug_printv("looking for containerStreamFS now");
-//         auto containerStreamFS = scanPathLeft(paths, pathIterator);
+//         auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
+//             //Debug_printv("calling handles for '%s'\n", fs->symbol);
+//             return fs->handles(part); 
+//         } );
 
-//         if(containerStreamFS == nullptr) {
-//             // oh, no container? So
-//             thisFile->streamFile = thisPathFS->getFile(path);
-//             thisFile->pathInStream = "";
-//         }
-//         else {
-//             // another FS matched to the left? OK, so we have to create stream path and path in stream
-//             pathIterator++;
-            
-//             auto containerPath = mstr::joinToString(&begin, &pathIterator, "/");
-//             auto pathInContainer = mstr::joinToString(&pathIterator, &end, "/");
+//         if(foundIter != availableFS.end()) {
+//             Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), (*foundIter)->symbol);
+//             auto newFile = (*foundIter)->getFile(path);
+//             Debug_printv("newFile: '%s'", newFile->url.c_str());
+//             newFile->fillPaths(&pathIterator, &begin, &end);
+//             newFile->onInitialized();
 
-//             // Debug_println("w fillpaths stream pths");
-//             thisFile->streamFile = containerStreamFS->getFile(containerPath);
-//             // Debug_println("w fillpaths path in stream");   
-//             thisFile->pathInStream = pathInContainer;
+//             return newFile;
+//          }
+//     };
 
-//             // so for path like:
-//             // http://someserverurl.com/path/storage.zip/geos.d64"
-//             // this will lef us with:
-//             // 1. thisFile wihich is of type D64File
-//             // 2. thisFile->streamFile - which is of the type of the container that contains this file (ZipFile in this case, so you will read your D64 bytes from a ZIP)
-//             // 3. thisFile->pathInStream - which is /geos.d64 - telling ZipFile.getInputStream that the stream should be skipped where geos.d64 begins!
-//         }
-//     }
+//     Debug_printv("** warning! %s - Little fs fallback", path.c_str());
 
-//     return thisFile;
+//     MFile* newFile = new LittleFile(path);
+//     newFile->streamPath = path;
+//     newFile->pathInStream = "";
+
+//     return newFile;
 // }
+
+
+MFile* MFSOwner::File(std::string path) {
+    //Debug_printv("path[%s]", path.c_str());
+
+    if(mstr::startsWith(path,"cs:", false)) {
+        //Serial.printf("CServer path found!\n");
+        return csFS.getFile(path);
+    }
+
+    std::vector<std::string> paths = mstr::split(path,'/');
+
+    auto pathIterator = paths.end();
+    auto begin = paths.begin();
+    auto end = paths.end();
+    MFile* thisFile;
+    
+    // This path will be handled by...
+    auto thisPathFS = scanPathLeft(paths, pathIterator);
+
+    if(thisPathFS == nullptr) {
+        // we couldn't find any supported fs in this path, let's fall back to LittleFS!
+        thisFile = new LittleFile(path);
+        thisFile->streamFile = new LittleFile(path);
+        thisFile->pathInStream = "";
+    }
+    else {
+        // first FS that matched when going left is thisPathFS, the path we should return will be of this FS type:
+        thisFile = thisPathFS->getFile(path);
+
+        // let's continue left to see if another FS matches - this will be the container stream...
+        Debug_printv("looking for containerStreamFS now");
+        auto containerStreamFS = scanPathLeft(paths, pathIterator);
+
+        if(containerStreamFS == nullptr) {
+            // oh, no container? So
+            thisFile->streamFile = thisPathFS->getFile(path);
+            thisFile->pathInStream = "";
+        }
+        else {
+            // another FS matched to the left? OK, so we have to create stream path and path in stream
+            pathIterator++;
+            
+            auto containerPath = mstr::joinToString(&begin, &pathIterator, "/");
+            auto pathInContainer = mstr::joinToString(&pathIterator, &end, "/");
+
+            // Debug_println("w fillpaths stream pths");
+            thisFile->streamFile = containerStreamFS->getFile(containerPath);
+            // Debug_println("w fillpaths path in stream");   
+            thisFile->pathInStream = pathInContainer;
+
+            // so for path like:
+            // http://someserverurl.com/path/storage.zip/geos.d64"
+            // this will lef us with:
+            // 1. thisFile wihich is of type D64File
+            // 2. thisFile->streamFile - which is of the type of the container that contains this file (ZipFile in this case, so you will read your D64 bytes from a ZIP)
+            // 3. thisFile->pathInStream - which is /geos.d64 - telling ZipFile.getInputStream that the stream should be skipped where geos.d64 begins!
+        }
+    }
+
+    return thisFile;
+}
 
 // MFileSystem* MFSOwner::scanPathLeft(std::vector<std::string> paths, std::vector<std::string>::iterator &pathIterator) {
 //     while (pathIterator != paths.begin()) {
