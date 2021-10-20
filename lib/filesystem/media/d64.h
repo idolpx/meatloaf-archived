@@ -4,8 +4,8 @@
 // https://ist.uwaterloo.ca/~schepers/formats/GEOS.TXT
 //
 
-#ifndef MEATFILE_DEFINES_D64_H
-#define MEATFILE_DEFINES_D64_H
+#ifndef MEATFILESYSTEM_MEDIA_D64
+#define MEATFILESYSTEM_MEDIA_D64
 
 #include "meat_io.h"
 #include "fs_littlefs.h"
@@ -18,8 +18,34 @@
  ********************************************************/
 
 class D64Util {
+    MIStream* containerStream;
+    size_t entryIndex = 0;
 
-protected:
+public:
+
+    D64Util(MIStream* istream) : containerStream(istream) {
+        
+    }
+
+    ~D64Util() {
+        containerStream->close();
+    }
+
+    void fillHeader() {
+        containerStream->read((uint8_t*)&header, sizeof(header));
+    }
+
+    void seekHeader() {
+        seekSector(directory_header_offset, 0x90);
+    }
+
+    bool seekNextEntry() {
+        return seekEntry(entryIndex + 1);
+    }
+
+    void resetEntryCounter() {
+        entryIndex = 0;
+    }
 
     uint8_t directory_header_offset[2] = {18, 0};
     uint8_t directory_list_offset[2] = {18, 1};
@@ -27,10 +53,6 @@ protected:
     uint8_t sectorsPerTrack[4] = { 17, 18, 19, 21 };
     uint16_t block_size = 256;
 
-    MIStream* containerStream;
-    size_t entryIndex = 0;
-
-public:
 
     uint8_t dos_version;
     struct Header {
@@ -138,7 +160,17 @@ private:
  * File implementations
  ********************************************************/
 
-class D64File: public D64Util, public MFile {
+class D64File: public MFile {
+
+    std::shared_ptr<D64Util> _d64UtilStruct;
+
+    // a function for lazily initializing the struct
+    std::shared_ptr<D64Util> util() {
+        if(_d64UtilStruct == nullptr) {
+            _d64UtilStruct = std::make_shared<D64Util>(streamFile->inputStream());
+        }
+        return _d64UtilStruct;
+    }
 
 public:
 
@@ -147,13 +179,19 @@ public:
         extension = "";
     };
 
+    D64File(std::shared_ptr<D64Util> util, std::string path, bool is_dir = true): MFile(path) {
+        _d64UtilStruct = util;
+        isDir = is_dir;
+        extension = "";
+    };
+
+
     void onInitialized () override {
 
         // THIS should work now. If it still doesn't just comment this, and uncomment two lines below :D
         // containerStream = streamFile->inputStream();
 
         //MFile* containerFile = new LittleFile(path);
-        containerStream = streamFile->inputStream();
 
         Debug_printv( "streamPath: [%s]", streamFile->url.c_str());
         Debug_printv( "pathInStream: [%s]", pathInStream.c_str());
@@ -162,17 +200,17 @@ public:
         if ( pathInStream == "")
         {
             // Read Header
-            seekSector(directory_header_offset, 0x90);
-            containerStream->read((uint8_t*)&header, sizeof(header));
-            Debug_printv("Disk Header [%.16s] [%.5s]", header.disk_name, header.id_dos);
+            util().get()->seekHeader();
+            util().get()->fillHeader();
+            Debug_printv("Disk Header [%.16s] [%.5s]", util().get()->header.disk_name, util().get()->header.id_dos);
 
             // Count Directory Entries
             // Calculate Blocks Free
 
             // Set Media Info Fields
-            media_header = header.disk_name;
+            media_header = util().get()->header.disk_name;
             media_header[16] = '\0';
-            media_id = header.id_dos;
+            media_id = util().get()->header.id_dos;
             media_id[5] = '\0';
             media_blocks_free = 0;
             media_block_size = 256;
@@ -188,7 +226,7 @@ public:
     };
     
     ~D64File() {
-//        containerStream->close();
+        // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
     virtual std::string petsciiName() {
@@ -223,7 +261,7 @@ private:
  * Streams
  ********************************************************/
 
-class D64IStream: public D64Util, public MIStream {
+class D64IStream: public MIStream {
 
 public:
     D64IStream(std::string path) {
@@ -284,4 +322,4 @@ public:
 };
 
 
-#endif
+#endif /* MEATFILESYSTEM_MEDIA_D64 */
