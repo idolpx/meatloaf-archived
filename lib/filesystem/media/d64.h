@@ -182,8 +182,8 @@ public:
         extension = "";
     };
 
-    D64File(std::shared_ptr<D64Image> util, std::string path, bool is_dir = true): MFile(path) {
-        _d64ImageStruct = util;
+    D64File(std::shared_ptr<D64Image> image, std::string path, bool is_dir = true): MFile(path) {
+        _d64ImageStruct = image;
         isDir = is_dir;
         extension = "";
     };
