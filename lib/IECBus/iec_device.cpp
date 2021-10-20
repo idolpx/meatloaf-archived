@@ -385,7 +385,7 @@ uint8_t iecDevice::service(void)
 } // service
 
 MFile* iecDevice::getPointed(MFile* urlFile) {
-	Debug_printv("getPointed [%s]", urlFile->url);
+	Debug_printv("getPointed [%s]", urlFile->url.c_str());
 	auto istream = Meat::ifstream(urlFile);
 
 	istream.open();
