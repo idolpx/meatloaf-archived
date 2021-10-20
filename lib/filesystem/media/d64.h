@@ -113,6 +113,8 @@ public:
     bool seekEntry( std::string filename );
     bool seekEntry( size_t index = 0 );
 
+    std::vector<Entry> getEntries(uint8_t track, uint8_t sector);
+
     void decodeEntry();
 
     std::string readBlock( uint8_t track, uint8_t sector );
@@ -163,14 +165,14 @@ private:
 
 class D64File: public MFile {
 
-    std::shared_ptr<D64Image> _d64UtilStruct;
+    std::shared_ptr<D64Image> _d64ImageStruct;
 
     // a function for lazily initializing the struct
     std::shared_ptr<D64Image> image() {
-        if(_d64UtilStruct == nullptr) {
-            _d64UtilStruct = std::make_shared<D64Image>(streamFile->inputStream());
+        if(_d64ImageStruct == nullptr) {
+            _d64ImageStruct = std::make_shared<D64Image>(streamFile->inputStream());
         }
-        return _d64UtilStruct;
+        return _d64ImageStruct;
     }
 
 public:
@@ -181,7 +183,7 @@ public:
     };
 
     D64File(std::shared_ptr<D64Image> util, std::string path, bool is_dir = true): MFile(path) {
-        _d64UtilStruct = util;
+        _d64ImageStruct = util;
         isDir = is_dir;
         extension = "";
     };
