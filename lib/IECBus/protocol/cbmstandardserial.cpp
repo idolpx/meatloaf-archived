@@ -51,16 +51,8 @@ int16_t  CBMStandardSerial::receiveByte(uint8_t device)
 	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
 	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
 	// without  the Clock line going to true, it has a special task to perform: note EOI.
-
-	uint8_t n = 0;
-	while(status(IEC_PIN_CLK) == RELEASED && (n < 20)) {
-		delayMicroseconds(10);  // this loop should cycle in about 10 us...
-		n++;
-	}
-
-	if(n >= TIMING_EOI_THRESH)
 	
-	//if(timeoutWait(IEC_PIN_CLK, PULLED, TIMING_EOI_WAIT))
+	if(timeoutWait(IEC_PIN_CLK, PULLED, TIMEOUT_Tne) == TIMED_OUT)
 	{
 		// INTERMISSION: EOI
 		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the 
@@ -80,7 +72,7 @@ int16_t  CBMStandardSerial::receiveByte(uint8_t device)
 
 		// Acknowledge by pull down data more than 60us
 		pull(IEC_PIN_DATA);
-		delayMicroseconds(TIMING_Tye);
+		delayMicroseconds(TIMING_Tei);
 		release(IEC_PIN_DATA);
 
 		// but still wait for CLK to be PULLED
@@ -121,7 +113,10 @@ int16_t  CBMStandardSerial::receiveByte(uint8_t device)
 #endif
 	uint8_t data = 0;
 	uint8_t bit_time;  // Used to detect JiffyDOS
-	for(uint8_t n = 0; n < 8; n++) {
+	
+	uint8_t n = 0;
+	for(n = 0; n < 8; n++) 
+	{
 		data >>= 1;
 
 		// wait for bit to be ready to read
@@ -233,7 +228,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 		//flags or_eq EOI_RECVD;
 
 		// Signal eoi by waiting 200 us
-		delayMicroseconds(TIMING_EOI_WAIT);
+		delayMicroseconds(TIMING_Tye);
 
 		// get eoi acknowledge:
 		if(timeoutWait(IEC_PIN_DATA, PULLED) == TIMED_OUT)
@@ -348,7 +343,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 
 
 // Wait indefinitely if wait = 0
-size_t CBMStandardSerial::timeoutWait(byte iecPIN, bool lineStatus, size_t wait, size_t step)
+int16_t CBMStandardSerial::timeoutWait(byte iecPIN, bool lineStatus, size_t wait, size_t step)
 {
 
 #if defined(ESP8266)
@@ -380,6 +375,6 @@ size_t CBMStandardSerial::timeoutWait(byte iecPIN, bool lineStatus, size_t wait,
 	}
 
 	Debug_printv("pin[%d] state[%d] wait[%d] step[%d] t[%d]", iecPIN, lineStatus, wait, step, t);
-	return 0;
+	return -1;
 } // timeoutWait
 

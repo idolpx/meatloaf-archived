@@ -21,7 +21,7 @@
 #include "../../../include/global_defines.h"
 
 // BIT Flags
-#define CLEAR           0x0C      // clear all flags
+#define CLEAR           0x00      // clear all flags
 #define ATN_PULLED      (1 << 0)  // might be set by iec_receive
 #define EOI_RECVD       (1 << 1)
 #define COMMAND_RECVD   (1 << 2)
@@ -47,7 +47,7 @@
 #define TIMING_Tne     40      // NON-EOI RESPONSE TO RFD - min/typ/max -/40us/200us (If maximum time exceeded, EOI response required.)
 #define TIMEOUT_Tne    200
 #define TIMING_Ts      70      // BIT SET-UP TALKER - min/typ/max 20us/70us/- (Tv and Tpr minimum must be 60μ s for external device to be a talker. )
-#define TIMING_Tv      65      // DATA VALID - min/typ/max 20us/20us/-
+#define TIMING_Tv      65      // DATA VALID - min/typ/max 20us/20us/- (65 spec)
 #define TIMING_Tf      20      // FRAME HANDSHAKE - min/typ/max 0/20us/1000us (If maximum time exceeded, frame error.)
 #define TIMEOUT_Tf     1000
 #define TIMING_Tr      20      // FRAME TO RELEASE OF ATN - min/typ/max 20us/-/-
@@ -65,7 +65,7 @@
 
 // See timeoutWait
 #define TIMEOUT 20000 // 1ms
-#define TIMED_OUT 0
+#define TIMED_OUT -1
 #define FOREVER 0
 
 #define PULLED    true
@@ -77,28 +77,28 @@ namespace Protocol
 	{
 	public:
 		// communication must be reset
-		uint8_t flags = 0;
+		uint8_t flags = CLEAR;
 
 		virtual int16_t receiveByte(uint8_t device);
 		virtual bool sendByte(uint8_t data, bool signalEOI);
-		virtual size_t timeoutWait(uint8_t iecPIN, bool lineStatus, size_t wait = TIMEOUT, size_t step = 3);
+		virtual int16_t timeoutWait(uint8_t iecPIN, bool lineStatus, size_t wait = TIMEOUT, size_t step = 1);
 
 
 		// true => PULL => DIGI_LOW
-		inline void pull(uint8_t pinNumber)
+		inline void IRAM_ATTR pull(uint8_t pinNumber)
 		{
 			espPinMode(pinNumber, OUTPUT);
 			espDigitalWrite(pinNumber, LOW);
 		}
 
 		// false => RELEASE => DIGI_HIGH
-		inline void release(uint8_t pinNumber)
+		inline void IRAM_ATTR release(uint8_t pinNumber)
 		{
 			espPinMode(pinNumber, OUTPUT);
 			espDigitalWrite(pinNumber, HIGH);
 		}
 
-		inline bool status(uint8_t pinNumber)
+		inline bool IRAM_ATTR status(uint8_t pinNumber)
 		{
 			// To be able to read line we must be set to input, not driving.
 			espPinMode(pinNumber, INPUT);

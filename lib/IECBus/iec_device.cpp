@@ -1096,11 +1096,11 @@ void iecDevice::sendFile()
 
 	ledON();
 
-	if (!success)
-	{
-		Debug_println("sendFile: Transfer aborted!");
-		// TODO: Send something to signal that there was an error to the C64
-	}
+	// if (!success)
+	// {
+	// 	Debug_println("sendFile: Transfer aborted!");
+	// 	// TODO: Send something to signal that there was an error to the C64
+	// }
 } // sendFile
 
 
