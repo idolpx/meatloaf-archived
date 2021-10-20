@@ -185,27 +185,27 @@ MFile* MFSOwner::File(std::string path) {
 //     return thisFile;
 // }
 
-// MFileSystem* MFSOwner::scanPathLeft(std::vector<std::string> paths, std::vector<std::string>::iterator &pathIterator) {
-//     while (pathIterator != paths.begin()) {
-//         pathIterator--;
+MFileSystem* MFSOwner::scanPathLeft(std::vector<std::string> paths, std::vector<std::string>::iterator &pathIterator) {
+    while (pathIterator != paths.begin()) {
+        pathIterator--;
 
-//         auto part = *pathIterator;
-//         mstr::toLower(part);
+        std::string part = *pathIterator;
+        mstr::toLower(part);
 
-//         //Debug_printv("testing part '%s'\n", part.c_str());
+        // //Debug_printv("testing part '%s'\n", part.c_str());
 
-//         auto theRightFS=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
-//             //Debug_printv("calling handles for '%s'\n", fs->symbol);
-//             return fs->handles(part); 
-//         } );
+        auto theRightFS=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
+            //Debug_printv("calling handles for '%s'\n", fs->symbol);
+            return fs->handles(part); 
+        } );
 
-//         if(theRightFS != availableFS.end()) {
-//             return *theRightFS;
-//         }
-//     };
+        if(theRightFS != availableFS.end()) {
+            return *theRightFS;
+        }
+    };
 
-//     return nullptr;
-// }
+    return nullptr;
+}
 
 /********************************************************
  * MFileSystem implementations
