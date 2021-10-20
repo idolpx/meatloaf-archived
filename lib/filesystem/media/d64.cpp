@@ -2,7 +2,7 @@
 
 // D64 Utility Functions
 
-bool D64Util::seekSector( uint8_t track, uint8_t sector, size_t offset )
+bool D64Image::seekSector( uint8_t track, uint8_t sector, size_t offset )
 {
 	uint16_t sectorOffset = 0;
 
@@ -22,34 +22,34 @@ bool D64Util::seekSector( uint8_t track, uint8_t sector, size_t offset )
     return containerStream->seek( (sectorOffset * block_size) + offset );
 }
 
-bool D64Util::seekSector( uint8_t* trackSector, size_t offset )
+bool D64Image::seekSector( uint8_t* trackSector, size_t offset )
 {
     return seekSector(trackSector[0], trackSector[1], offset);
 }
 
 
 
-std::string D64Util::readBlock(uint8_t track, uint8_t sector)
+std::string D64Image::readBlock(uint8_t track, uint8_t sector)
 {
     return "";
 }
 
-bool D64Util::writeBlock(uint8_t track, uint8_t sector, std::string data)
+bool D64Image::writeBlock(uint8_t track, uint8_t sector, std::string data)
 {
     return true;
 }
 
-bool D64Util::allocateBlock( uint8_t track, uint8_t sector)
+bool D64Image::allocateBlock( uint8_t track, uint8_t sector)
 {
     return true;
 }
 
-bool D64Util::deallocateBlock( uint8_t track, uint8_t sector)
+bool D64Image::deallocateBlock( uint8_t track, uint8_t sector)
 {
     return true;
 }
 
-bool D64Util::seekEntry( std::string filename )
+bool D64Image::seekEntry( std::string filename )
 {
     Entry entry;
 
@@ -80,7 +80,7 @@ bool D64Util::seekEntry( std::string filename )
     return false;
 }
 
-bool D64Util::seekEntry( size_t index )
+bool D64Image::seekEntry( size_t index )
 {
     bool r = false;
     static uint8_t next_track = 0;
@@ -140,7 +140,7 @@ bool D64Util::seekEntry( size_t index )
         return true;
 }
 
-void D64Util::decodeEntry() 
+void D64Image::decodeEntry() 
 {
     bool hide = false;
     uint8_t file_type = entry.file_type & 0b00000111;
@@ -165,7 +165,7 @@ void D64Util::decodeEntry()
 }
 
 
-void D64Util::sendFile( std::string filename )
+void D64Image::sendFile( std::string filename )
 {
     if ( seekEntry( filename ) )
     {

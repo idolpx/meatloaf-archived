@@ -165,6 +165,13 @@ namespace mstr {
                     [](unsigned char c) { return ascii2petscii(c); });
     }
 
+    // convert to A0 space to 20 space (in place)
+    void A02Space(std::string &s)
+    {
+        std::transform(s.begin(), s.end(), s.begin(),
+                    [](unsigned char c) { return (c == '\xA0') ? '\x20': c; });
+    }
+
     bool isText(std::string &s) 
     {
         // extensions

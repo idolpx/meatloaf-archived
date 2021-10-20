@@ -67,8 +67,8 @@ public:
 		std::string content;
 	} Data;
 
-	// IEC()
-	// ~IEC() {}
+	IEC();
+	~IEC() {};
 
 	// Initialise iec driver
 	bool init();

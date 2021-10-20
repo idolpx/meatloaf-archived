@@ -31,6 +31,7 @@ namespace mstr {
     void toPETSCII(std::string &s);
     bool isText(std::string &s);
     bool isA0Space(int ch);
+    void A02Space(std::string &s);
 }
 
 #endif

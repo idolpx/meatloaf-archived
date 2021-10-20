@@ -8,8 +8,9 @@
 #define MEATFILESYSTEM_MEDIA_D64
 
 #include "meat_io.h"
-#include "fs_littlefs.h"
-#include "MemoryInfo.h"
+// #include "fs_littlefs.h"
+// #include "MemoryInfo.h"
+#include "string_utils.h"
 
 #include "../../include/global_defines.h"
 
@@ -17,17 +18,17 @@
  * Utility implementations
  ********************************************************/
 
-class D64Util {
+class D64Image {
     MIStream* containerStream;
     size_t entryIndex = 0;
 
 public:
 
-    D64Util(MIStream* istream) : containerStream(istream) {
+    D64Image(MIStream* istream) : containerStream(istream) {
         
     }
 
-    ~D64Util() {
+    ~D64Image() {
         containerStream->close();
     }
 
@@ -162,12 +163,12 @@ private:
 
 class D64File: public MFile {
 
-    std::shared_ptr<D64Util> _d64UtilStruct;
+    std::shared_ptr<D64Image> _d64UtilStruct;
 
     // a function for lazily initializing the struct
-    std::shared_ptr<D64Util> util() {
+    std::shared_ptr<D64Image> util() {
         if(_d64UtilStruct == nullptr) {
-            _d64UtilStruct = std::make_shared<D64Util>(streamFile->inputStream());
+            _d64UtilStruct = std::make_shared<D64Image>(streamFile->inputStream());
         }
         return _d64UtilStruct;
     }
@@ -179,7 +180,7 @@ public:
         extension = "";
     };
 
-    D64File(std::shared_ptr<D64Util> util, std::string path, bool is_dir = true): MFile(path) {
+    D64File(std::shared_ptr<D64Image> util, std::string path, bool is_dir = true): MFile(path) {
         _d64UtilStruct = util;
         isDir = is_dir;
         extension = "";
@@ -209,11 +210,11 @@ public:
 
             // Set Media Info Fields
             media_header = util().get()->header.disk_name;
-            media_header[16] = '\0';
+            mstr::A02Space(media_header);
             media_id = util().get()->header.id_dos;
-            media_id[5] = '\0';
+            mstr::A02Space(media_id);
             media_blocks_free = 0;
-            media_block_size = 256;
+            media_block_size = util().get()->block_size;
             media_image = name;
         }
         else

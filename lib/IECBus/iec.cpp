@@ -21,10 +21,10 @@ using namespace CBM;
 using namespace Protocol;
 
 
-// IEC::IEC() :
-// 	flags(noFlags)
-// {
-// } // ctor
+IEC::IEC()
+{
+	init();
+} // ctor
 
 // Set all IEC_signal lines in the correct mode
 //
