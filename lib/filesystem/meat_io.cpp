@@ -76,57 +76,8 @@ MFile* MFSOwner::File(std::shared_ptr<MFile> file) {
     return File(file->url);
 }
 
-// MFile* MFSOwner::File(std::string path) {
-//     std::vector<std::string> paths = mstr::split(path,'/');
-
-//     Debug_printv("path[%s]", path.c_str());
-
-//     auto pathIterator = paths.end();
-//     auto begin = paths.begin();
-//     auto end = paths.end();
-
-//     if(mstr::startsWith(path,"cs:", false)) {
-//         //Serial.printf("CServer path found!\n");
-//         return csFS.getFile(path);
-//     }
-
-//     while (pathIterator != paths.begin()) {
-//         pathIterator--;
-
-//         auto part = *pathIterator;
-//         mstr::toLower(part);
-
-//         Debug_printv("testing part '%s'\n", part.c_str());
-
-//         auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
-//             //Debug_printv("calling handles for '%s'\n", fs->symbol);
-//             return fs->handles(part); 
-//         } );
-
-//         if(foundIter != availableFS.end()) {
-//             Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), (*foundIter)->symbol);
-//             auto newFile = (*foundIter)->getFile(path);
-//             Debug_printv("newFile: '%s'", newFile->url.c_str());
-//             newFile->fillPaths(&pathIterator, &begin, &end);
-//             newFile->onInitialized();
-
-//             return newFile;
-//          }
-//     };
-
-//     Debug_printv("** warning! %s - Little fs fallback", path.c_str());
-
-//     MFile* newFile = new LittleFile(path);
-//     newFile->streamPath = path;
-//     newFile->pathInStream = "";
-
-//     return newFile;
-// }
-
 
 MFile* MFSOwner::File(std::string path) {
-    //Debug_printv("path[%s]", path.c_str());
-
     if(mstr::startsWith(path,"cs:", false)) {
         //Serial.printf("CServer path found!\n");
         return csFS.getFile(path);
@@ -134,78 +85,83 @@ MFile* MFSOwner::File(std::string path) {
 
     std::vector<std::string> paths = mstr::split(path,'/');
 
+    Debug_printv("Trying to factory path [%s]", path.c_str());
+
     auto pathIterator = paths.end();
     auto begin = paths.begin();
     auto end = paths.end();
-    MFile* thisFile;
-    
-    // This path will be handled by...
-    auto thisPathFS = scanPathLeft(paths, pathIterator);
 
-    if(thisPathFS == nullptr) {
-        // we couldn't find any supported fs in this path, let's fall back to LittleFS!
-        thisFile = new LittleFile(path);
-        thisFile->streamFile = new LittleFile(path);
-        thisFile->pathInStream = "";
+    auto foundFS = testScan(begin, end, pathIterator);
+
+    if(foundFS != nullptr) {
+        //Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), foundFS->symbol);
+        auto newFile = foundFS->getFile(path);
+        //Debug_printv("newFile: '%s'", newFile->url.c_str());
+
+        pathIterator++;
+        newFile->pathInStream = mstr::joinToString(&pathIterator, &end, "/");
+
+        auto endHere = pathIterator;
+        pathIterator--;
+
+        if(begin == pathIterator) {
+            // Debug_printv("** LOOK DOWN PATH NOT NEEDED");
+            newFile->streamFile = foundFS->getFile(mstr::joinToString(&begin, &pathIterator, "/")); 
+        } 
+        else {
+            auto upperPath = mstr::joinToString(&begin, &pathIterator, "/");
+            // Debug_printv("** LOOK DOWN PATH: %s", upperPath.c_str());
+
+            auto upperFS = testScan(begin, end, pathIterator);
+
+            if(upperFS != nullptr) {
+                auto wholePath = mstr::joinToString(&begin, &endHere, "/");
+
+                //auto cp = mstr::joinToString(&begin, &pathIterator, "/");
+                //Debug_printv("CONTAINER PATH WILL BE: '%s' ", wholePath.c_str());
+                newFile->streamFile = upperFS->getFile(wholePath); // skończy się na d64
+                //Debug_printv("CONTAINER: '%s' is in FS [%s]", newFile->streamFile->url.c_str(), upperFS->symbol);
+            }
+            else {
+                Debug_printv("WARNING!!!! CONTAINER FAILED FOR: '%s'", upperPath.c_str());
+            }
+        }
+
+        newFile->onInitialized();
+
+        return newFile;
     }
     else {
-        // first FS that matched when going left is thisPathFS, the path we should return will be of this FS type:
-        thisFile = thisPathFS->getFile(path);
+        //Debug_printv("** warning! %s - Little fs fallback", path.c_str());
 
-        // let's continue left to see if another FS matches - this will be the container stream...
-        Debug_printv("looking for containerStreamFS now");
-        auto containerStreamFS = scanPathLeft(paths, pathIterator);
+        auto newFile = new LittleFile(path);
+        newFile->streamFile = new LittleFile(path);
+        newFile->pathInStream = "";
 
-        if(containerStreamFS == nullptr) {
-            // oh, no container? So
-            thisFile->streamFile = thisPathFS->getFile(path);
-            thisFile->pathInStream = "";
-        }
-        else {
-            // another FS matched to the left? OK, so we have to create stream path and path in stream
-            pathIterator++;
-            
-            auto containerPath = mstr::joinToString(&begin, &pathIterator, "/");
-            auto pathInContainer = mstr::joinToString(&pathIterator, &end, "/");
-
-            // Debug_println("w fillpaths stream pths");
-            thisFile->streamFile = containerStreamFS->getFile(containerPath);
-            // Debug_println("w fillpaths path in stream");   
-            thisFile->pathInStream = pathInContainer;
-
-            // so for path like:
-            // http://someserverurl.com/path/storage.zip/geos.d64"
-            // this will lef us with:
-            // 1. thisFile wihich is of type D64File
-            // 2. thisFile->streamFile - which is of the type of the container that contains this file (ZipFile in this case, so you will read your D64 bytes from a ZIP)
-            // 3. thisFile->pathInStream - which is /geos.d64 - telling ZipFile.getInputStream that the stream should be skipped where geos.d64 begins!
-        }
+        return newFile;
     }
-
-    return thisFile;
 }
 
-// MFileSystem* MFSOwner::scanPathLeft(std::vector<std::string> paths, std::vector<std::string>::iterator &pathIterator) {
-//     while (pathIterator != paths.begin()) {
-//         pathIterator--;
 
-//         auto part = *pathIterator;
-//         mstr::toLower(part);
 
-//         //Debug_printv("testing part '%s'\n", part.c_str());
+MFileSystem* MFSOwner::testScan(std::vector<std::string>::iterator &begin, std::vector<std::string>::iterator &end, std::vector<std::string>::iterator &pathIterator) {
+    while (pathIterator != begin) {
+        pathIterator--;
 
-//         auto theRightFS=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
-//             //Debug_printv("calling handles for '%s'\n", fs->symbol);
-//             return fs->handles(part); 
-//         } );
+        auto part = *pathIterator;
+        mstr::toLower(part);
 
-//         if(theRightFS != availableFS.end()) {
-//             return *theRightFS;
-//         }
-//     };
+        auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
+            return fs->handles(part); 
+        } );
 
-//     return nullptr;
-// }
+        if(foundIter != availableFS.end()) {
+            //Debug_printv("matched part '%s'\n", part.c_str());
+            return (*foundIter);
+        }
+    };
+    return nullptr;
+}
 
 /********************************************************
  * MFileSystem implementations
@@ -236,23 +192,10 @@ bool MFile::operator!=(nullptr_t ptr) {
 
 void MFile::onInitialized() {}
 
-void MFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
-    // Debug_println("w fillpaths");   
-
-    (*matchedElement)++;
-
-    // Debug_println("w fillpaths stream pths");
-    streamPath = mstr::joinToString(fromStart, matchedElement, "/");
-    // Debug_println("w fillpaths path in stream");   
-    pathInStream = mstr::joinToString(matchedElement, last, "/");
-
-    //Debug_printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
-}
-
 MIStream* MFile::inputStream() {
     ; // has to return OPENED stream
-    std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
-    std::shared_ptr<MIStream> containerStream(containerFile->inputStream());
+    //std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
+    std::shared_ptr<MIStream> containerStream(streamFile->inputStream());
 
     // std::shared_ptr<MIStream> containerStream(streamFile->inputStream()); // get its base stream, i.e. zip raw file contents
 
@@ -307,8 +250,8 @@ MFile* MFile::localParent(std::string plus) {
     // add plus
     int lastSlash = url.find_last_of('/');
     std::string parent = mstr::dropLast(url, lastSlash);
-    if(parent.length()-streamPath.length()>1)
-        parent = streamPath;
+    if(parent.length()-streamFile->url.length()>1)
+        parent = streamFile->url;
     return MFSOwner::File(parent+"/"+plus);
 };
 
@@ -317,7 +260,7 @@ MFile* MFile::root(std::string plus) {
 };
 
 MFile* MFile::localRoot(std::string plus) {
-    return MFSOwner::File(streamPath+"/"+plus);
+    return MFSOwner::File(streamFile->url+"/"+plus);
 };
 
 MFile* MFile::cd(std::string newDir) {
@@ -436,5 +379,8 @@ bool MFile::copyTo(MFile* dst) {
 
     return true;
 };
+
+
+
 
 

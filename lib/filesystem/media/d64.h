@@ -152,11 +152,10 @@ public:
         // THIS should work now. If it still doesn't just comment this, and uncomment two lines below :D
         // containerStream = streamFile->inputStream();
 
-        MFile* containerFile = new LittleFile(path);
-        containerStream = containerFile->inputStream();
+        //MFile* containerFile = new LittleFile(path);
+        containerStream = streamFile->inputStream();
 
-        Debug_printv( "path: [%s]", path.c_str());
-        Debug_printv( "streamPath: [%s]", streamPath.c_str());
+        Debug_printv( "streamPath: [%s]", streamFile->url.c_str());
         Debug_printv( "pathInStream: [%s]", pathInStream.c_str());
 
         // Are we at the root of the pathInStream?
@@ -185,9 +184,7 @@ public:
             // seekFile(pathInStream);
             // _size = entry.blocks * (media_block_size - 2);
 
-        }
-       
-        delete containerFile;
+        }       
     };
     
     ~D64File() {

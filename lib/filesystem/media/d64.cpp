@@ -216,8 +216,8 @@ MFile* D64File::getNextFileInDir() {
     {
         std::string fileName = entry.filename;
         mstr::replaceAll(fileName, "/", "\\");
-        Debug_printv( "entry[%s]", (streamPath + "/" + fileName).c_str() );
-        return new D64File(streamPath + "/" + fileName, false);
+        Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
+        return new D64File(streamFile->url + "/" + fileName, false);
     }
     else
     {

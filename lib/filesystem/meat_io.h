@@ -68,14 +68,15 @@ public:
 
     virtual ~MFile() {
         // //Debug_printv("Deleting: [%s]", this->url.c_str());
-        // if(streamFile == nullptr)
-        //     Debug_printv("WARNING: streamFile null in MFile destructor. This MFile was obviously not initialized properly!");
-        
-        // delete streamFile; // and if it was null this will crash anyway, but you will see the error above
+        if(streamFile == nullptr) {
+            Debug_printv("WARNING: streamFile null in '%s' destructor. This MFile was obviously not initialized properly!", url.c_str());
+        }
+        else {
+            delete streamFile;
+        }
     };
 
     MFile* streamFile;
-    std::string streamPath;
     std::string pathInStream;
 
 protected:
@@ -83,7 +84,6 @@ protected:
     bool m_isNull;
 
     virtual void onInitialized();
-    virtual void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 
 friend class MFSOwner;
 };
@@ -130,6 +130,8 @@ public:
     static MFile* File(MFile* file);
 
     static MFileSystem* scanPathLeft(std::vector<std::string> paths, std::vector<std::string>::iterator &pathIterator);
+
+    static MFileSystem* testScan(std::vector<std::string>::iterator &begin, std::vector<std::string>::iterator &end, std::vector<std::string>::iterator &pathIterator);
 
 
     static bool mount(std::string name);
@@ -310,13 +312,14 @@ namespace Meat {
  ********************************************************/
 
     class omfilebuf : public std::filebuf {
+        static const size_t obufsize = 256;
         std::unique_ptr<MOStream> mostream;
         std::unique_ptr<MFile> mfile;
         char* data;
 
     public:
         omfilebuf() {
-            data = new char[1024];
+            data = new char[obufsize];
         };
 
         ~omfilebuf() {
@@ -330,7 +333,7 @@ namespace Meat {
             mfile.reset(MFSOwner::File(filename));
             mostream.reset(mfile->outputStream());
             if(mostream->isOpen()) {
-                setp(data, data+1024);
+                setp(data, data+obufsize);
                 return this;
             }
             else
