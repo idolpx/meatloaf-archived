@@ -13,12 +13,11 @@
 
 #include "../../include/global_defines.h"
 
-
 /********************************************************
- * File implementations
+ * Utility implementations
  ********************************************************/
 
-class D64File: public MFile {
+class D64Util {
 
 protected:
 
@@ -29,6 +28,7 @@ protected:
     uint16_t block_size = 256;
 
     MIStream* containerStream;
+    size_t entryIndex = 0;
 
 public:
 
@@ -64,10 +64,83 @@ public:
         uint8_t day;
         uint8_t hour;
         uint8_t minute;
-        uint16_t blocks;
+        uint8_t blocks[2];
     };
 
     std::string file_type_label[8] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR", "???" };
+
+    uint8_t track;
+    uint8_t sector;
+    uint16_t offset;
+    uint64_t blocks_free;
+
+    uint8_t index = 0;  // Currently selected directory entry
+    uint8_t length = 0; // Directory list entry count
+
+    Header header;
+    Entry entry;        // Directory entry data
+
+    bool show_hidden = false;
+
+    void sendListing();
+    void sendFile( std::string filename = "" );
+
+    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
+    bool seekSector( uint8_t* trackSector, size_t offset = 0 );
+    bool seekEntry( std::string filename );
+    bool seekEntry( size_t index = 0 );
+
+    void decodeEntry();
+
+    std::string readBlock( uint8_t track, uint8_t sector );
+    bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
+    bool allocateBlock( uint8_t track, uint8_t sector );
+    bool deallocateBlock( uint8_t track, uint8_t sector );
+
+	uint8_t speedZone( uint8_t track)
+	{
+		return (track < 30) + (track < 24) + (track < 17);
+	};
+
+    // uint8_t d64_get_type(uint16_t imgsize)
+    // {
+    //     switch (imgsize)
+    //     {
+    //         // D64
+    //         case 174848:  // 35 tracks no errors
+    //         case 175531:  // 35 w/ errors
+    //         case 196608:  // 40 tracks no errors
+    //         case 197376:  // 40 w/ errors
+    //         case 205312:  // 42 tracks no errors
+    //         case 206114:  // 42 w/ errors
+    //             return D64_TYPE_D64;
+
+    //         // D71
+    //         case 349696:  // 70 tracks no errors
+    //         case 351062:  // 70 w/ errors
+    //             return D64_TYPE_D71;
+
+    //         // D81
+    //         case 819200:  // 80 tracks no errors
+    //         case 822400:  // 80 w/ errors
+    //             return D64_TYPE_D81;
+    //     }
+
+    //     return D64_TYPE_UNKNOWN;
+    // }
+
+private:
+
+};
+
+
+/********************************************************
+ * File implementations
+ ********************************************************/
+
+class D64File: public D64Util, public MFile {
+
+public:
 
     D64File(std::string path, bool is_dir = true): MFile(path) {
         isDir = is_dir;
@@ -121,64 +194,6 @@ public:
 //        containerStream->close();
     }
 
-    uint8_t track;
-    uint8_t sector;
-    uint16_t offset;
-    uint64_t blocks_free;
-
-    uint8_t index = 0;  // Currently selected directory entry
-    uint8_t length = 0; // Directory list entry count
-
-    Header header;
-    Entry entry;        // Directory entry data
-
-    bool show_hidden = false;
-
-    void sendListing();
-    void sendFile( std::string filename = "" );
-
-    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
-    bool seekSector( uint8_t* trackSector, size_t offset = 0 );
-    bool seekEntry( size_t index = 0 );
-    Entry seekFile( std::string filename );    
-
-    std::string readBlock( uint8_t track, uint8_t sector );
-    bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
-    bool allocateBlock( uint8_t track, uint8_t sector );
-    bool deallocateBlock( uint8_t track, uint8_t sector );
-
-	uint8_t speedZone( uint8_t track)
-	{
-		return (track < 30) + (track < 24) + (track < 17);
-	};
-
-    // uint8_t d64_get_type(uint16_t imgsize)
-    // {
-    //     switch (imgsize)
-    //     {
-    //         // D64
-    //         case 174848:  // 35 tracks no errors
-    //         case 175531:  // 35 w/ errors
-    //         case 196608:  // 40 tracks no errors
-    //         case 197376:  // 40 w/ errors
-    //         case 205312:  // 42 tracks no errors
-    //         case 206114:  // 42 w/ errors
-    //             return D64_TYPE_D64;
-
-    //         // D71
-    //         case 349696:  // 70 tracks no errors
-    //         case 351062:  // 70 w/ errors
-    //             return D64_TYPE_D71;
-
-    //         // D81
-    //         case 819200:  // 80 tracks no errors
-    //         case 822400:  // 80 w/ errors
-    //             return D64_TYPE_D81;
-    //     }
-
-    //     return D64_TYPE_UNKNOWN;
-    // }
-
     virtual std::string petsciiName() {
         // It's already in PETSCII
         mstr::replaceAll(name, "\\", "/");
@@ -204,7 +219,6 @@ public:
 private:
     bool isDir = true;
     bool dirIsOpen = false;
-    size_t entryIndex = 0;
 };
 
 
@@ -212,7 +226,7 @@ private:
  * Streams
  ********************************************************/
 
-class D64IStream: public MIStream {
+class D64IStream: public D64Util, public MIStream {
 
 public:
     D64IStream(std::string path) {

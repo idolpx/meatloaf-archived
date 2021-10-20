@@ -2,7 +2,7 @@
 
 // D64 Utility Functions
 
-bool D64File::seekSector( uint8_t track, uint8_t sector, size_t offset )
+bool D64Util::seekSector( uint8_t track, uint8_t sector, size_t offset )
 {
 	uint16_t sectorOffset = 0;
 
@@ -22,34 +22,65 @@ bool D64File::seekSector( uint8_t track, uint8_t sector, size_t offset )
     return containerStream->seek( (sectorOffset * block_size) + offset );
 }
 
-bool D64File::seekSector( uint8_t* trackSector, size_t offset )
+bool D64Util::seekSector( uint8_t* trackSector, size_t offset )
 {
     return seekSector(trackSector[0], trackSector[1], offset);
 }
 
 
 
-std::string D64File::readBlock(uint8_t track, uint8_t sector)
+std::string D64Util::readBlock(uint8_t track, uint8_t sector)
 {
     return "";
 }
 
-bool D64File::writeBlock(uint8_t track, uint8_t sector, std::string data)
+bool D64Util::writeBlock(uint8_t track, uint8_t sector, std::string data)
 {
     return true;
 }
 
-bool D64File::allocateBlock( uint8_t track, uint8_t sector)
+bool D64Util::allocateBlock( uint8_t track, uint8_t sector)
 {
     return true;
 }
 
-bool D64File::deallocateBlock( uint8_t track, uint8_t sector)
+bool D64Util::deallocateBlock( uint8_t track, uint8_t sector)
 {
     return true;
 }
 
-bool D64File::seekEntry( size_t index )
+bool D64Util::seekEntry( std::string filename )
+{
+    Entry entry;
+
+    // Read Directory Entries
+    seekSector( directory_list_offset );
+    do
+    {		
+        // Read Entry From Stream
+        
+        if (entry.file_type & 0b00000111 && filename == "*")
+        {
+            filename == entry.filename;
+        }
+        
+        if ( filename == entry.filename )
+        {
+            // Move stream pointer to start track/sector
+            return true;
+        }
+    } while ( entry.file_type > 0 );
+    
+    entry.next_track = 0;
+    entry.next_sector = 0;
+    entry.blocks[0] = 0;
+    entry.blocks[1] = 0;
+    entry.filename[0] = '\0';
+
+    return false;
+}
+
+bool D64Util::seekEntry( size_t index )
 {
     bool r = false;
     static uint8_t next_track = 0;
@@ -109,103 +140,55 @@ bool D64File::seekEntry( size_t index )
         return true;
 }
 
-void D64File::sendListing() 
+void D64Util::decodeEntry() 
 {
-    // Read Directory Entries
-    seekSector( directory_list_offset );
-    do
-    {		
-        // Read Entry From Stream
-        
-        //echo ord($file_type); exit();
-        bool hide = false;
-        uint8_t file_type = entry.file_type & 0b00000111;
-        std::string type = file_type_label[ file_type ];
-        if ( file_type == 0 )
-            hide = true;
+    bool hide = false;
+    uint8_t file_type = entry.file_type & 0b00000111;
+    std::string type = file_type_label[ file_type ];
+    if ( file_type == 0 )
+        hide = true;
 
-        switch ( file_type & 0b11000000 )
-        {
-            case 0xC0:			// Bit 6: Locked flag (Set produces "<" locked files)
-                type += "<";
-                hide = false;
-                break;
-                
-            case 0x00:
-                type += "*";	// Bit 7: Closed flag  (Not  set  produces  "*", or "splat" files)
-                hide = true;
-                break;					
-        }
-        
-        uint8_t block_spc = 3;
-        if (entry.blocks > 9) block_spc--;
-        if (entry.blocks > 99) block_spc--;
-        if (entry.blocks > 999) block_spc--;
-        
-        if ( !hide || show_hidden)
-        {
-            // line = sprintf("%s%-19s%s", str_repeat(" ", block_spc), "\"".$filename."\"", $type);
-            // $this->sendLine( $blocks, $line, $type );
-        }
-
-        index++;
-    } while ( entry.next_track != 0x00 && entry.next_sector != 0xFF );
-    
-}
-
-
-D64File::Entry D64File::seekFile( std::string filename )
-{
-    Entry entry;
-
-    // Read Directory Entries
-    seekSector( directory_list_offset );
-    do
-    {		
-        // Read Entry From Stream
-        
-        if (entry.file_type & 0b00000111 && filename == "*")
-        {
-            filename == entry.filename;
-        }
-        
-        if ( filename == entry.filename )
-        {
-            // Move stream pointer to start track/sector
-            return entry;
-        }
-    } while ( entry.file_type > 0 );
-    
-    entry.next_track = 0;
-    entry.next_sector = 0;
-    entry.blocks = 0;
-    entry.filename[0] = '\0';
-
-    return entry;
-}
-
-void D64File::sendFile( std::string filename )
-{
-    Entry entry = seekFile( filename );
-    seekSector( entry.start_track, entry.start_sector );
-
-    bool last_block = false;
-    do
+    switch ( file_type & 0b11000000 )
     {
-        uint8_t next_track = 0;  // Read first byte of sector
-        uint8_t next_sector = 0; // Read second byte of sector
-        
-        if (next_track == 0) // Is this the last block?
+        case 0xC0:			// Bit 6: Locked flag (Set produces "<" locked files)
+            type += "<";
+            hide = false;
+            break;
+            
+        case 0x00:
+            type += "*";	// Bit 7: Closed flag  (Not  set  produces  "*", or "splat" files)
+            hide = true;
+            break;					
+    }
+    
+    uint16_t blocks = (entry.blocks[0] * 256) + entry.blocks[1];
+}
+
+
+void D64Util::sendFile( std::string filename )
+{
+    if ( seekEntry( filename ) )
+    {
+        seekSector( entry.start_track, entry.start_sector );
+
+        bool last_block = false;
+        do
         {
-            //echo fread($this->fp, $next_sector); // Read number of bytes specified by next_sector since this is the last block
-            last_block = true;
-        }
-        else
-        {
-            // echo fread($this->fp, 254);  // Read next 254 bytes
-            seekSector( next_track, next_sector);
-        }
-    } while ( !last_block );
+            uint8_t next_track = 0;  // Read first byte of sector
+            uint8_t next_sector = 0; // Read second byte of sector
+            
+            if (next_track == 0) // Is this the last block?
+            {
+                //echo fread($this->fp, $next_sector); // Read number of bytes specified by next_sector since this is the last block
+                last_block = true;
+            }
+            else
+            {
+                // echo fread($this->fp, 254);  // Read next 254 bytes
+                seekSector( next_track, next_sector);
+            }
+        } while ( !last_block );        
+    }
 }
 
 
@@ -224,7 +207,6 @@ bool D64File::rewindDirectory() {
 }
 
 MFile* D64File::getNextFileInDir() {
-
 
     if(!dirIsOpen)
         rewindDirectory();
@@ -275,7 +257,8 @@ bool D64File::exists() {
 
 size_t D64File::size() {
     // use D64 to get size of the file in image
-    return entry.blocks * (media_block_size - 2);
+    uint16_t blocks = (entry.blocks[0] * 256) + entry.blocks[1];
+    return blocks;
 }
 
 /********************************************************
@@ -286,6 +269,7 @@ size_t D64File::size() {
 // bool D64IStream::seekPath(std::string path) {
 //     // Implement this to skip a queue of file streams to start of file by name
 //     // this will cause the next read to return bytes of 'path'
+
 //     return false;
 // };
 
