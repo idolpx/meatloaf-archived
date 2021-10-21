@@ -1,14 +1,17 @@
 #include "meat_io.h"
 
 #include "MIOException.h"
-#include "fs_littlefs.h"
-#include "media/d64.h"
-#include "media/dnp.h"
+
+#include "scheme/littlefs.h"
 #include "scheme/http.h"
 #include "scheme/smb.h"
 #include "scheme/ml.h"
 #include "scheme/cs.h"
 #include "scheme/ws.h"
+
+#include "media/d64.h"
+#include "media/dnp.h"
+
 #include <vector>
 #include <sstream>
 #include "utils.h"
@@ -106,7 +109,7 @@ MFile* MFSOwner::File(std::string path) {
 
         if(begin == pathIterator) {
             // Debug_printv("** LOOK DOWN PATH NOT NEEDED");
-            newFile->streamFile = foundFS->getFile(mstr::joinToString(&begin, &pathIterator, "/")); 
+            newFile->streamFile = std::make_shared<MFile>(foundFS->getFile(mstr::joinToString(&begin, &pathIterator, "/"))); 
         } 
         else {
             auto upperPath = mstr::joinToString(&begin, &pathIterator, "/");
@@ -119,7 +122,7 @@ MFile* MFSOwner::File(std::string path) {
 
                 //auto cp = mstr::joinToString(&begin, &pathIterator, "/");
                 //Debug_printv("CONTAINER PATH WILL BE: '%s' ", wholePath.c_str());
-                newFile->streamFile = upperFS->getFile(wholePath); // skończy się na d64
+                newFile->streamFile = std::make_shared<MFile>(upperFS->getFile(wholePath)); // skończy się na d64
                 //Debug_printv("CONTAINER: '%s' is in FS [%s]", newFile->streamFile->url.c_str(), upperFS->symbol);
             }
             else {
@@ -135,7 +138,7 @@ MFile* MFSOwner::File(std::string path) {
         //Debug_printv("** warning! %s - Little fs fallback", path.c_str());
 
         auto newFile = new LittleFile(path);
-        newFile->streamFile = new LittleFile(path);
+        newFile->streamFile = std::make_shared<MFile>(LittleFile(path));
         newFile->pathInStream = "";
 
         return newFile;
@@ -156,7 +159,7 @@ MFileSystem* MFSOwner::testScan(std::vector<std::string>::iterator &begin, std::
         } );
 
         if(foundIter != availableFS.end()) {
-            //Debug_printv("matched part '%s'\n", part.c_str());
+            Debug_printv("matched part '%s'\n", part.c_str());
             return (*foundIter);
         }
     };

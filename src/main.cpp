@@ -64,8 +64,16 @@ void setup()
         Serial.println ( "Flash File System started" );
 
         // Start the Web Server with WebDAV
-        #if defined(WWW_WEBDAV)
-        setupWWW();
+        #if defined(WEB_SERVER)
+            setupWWW();
+        #else if defined(WEBDAV)
+            // WebDAV Server Setup
+            dav.begin ( &tcp, fileSystem );
+            dav.setTransferStatusCallback ( [] ( const char *name, int percent, bool receive )
+            {
+                Serial.printf ( "WebDAV %s: '%s': %d%%\n", receive ? "recv" : "send", name, percent );
+            } );
+            Serial.println("WebDAV server started");
         #endif
 
 
@@ -123,8 +131,10 @@ void loop()
     MDNS.update();
 #endif
 
-#if defined(WWW_WEBDAV)
+#if defined(WEB_SERVER)
     www.handleClient();
+#else if defined(WEBDAV)
+    dav.handleClient();
 #endif
 
     modem.service();
@@ -147,12 +157,10 @@ void onAttention()
 {
     bus_state = statemachine::select;
     iec.protocol.flags or_eq ATN_PULLED;
-    // iec.init();
-    //Debug_printv("hi");
 }
 
 
-#if defined(WWW_WEBDAV)
+#if defined(WEB_SERVER)
 ////////////////////////////////
 // Utils to return HTTP codes, and determine content-type
 

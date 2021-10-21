@@ -93,15 +93,21 @@ ESPModem modem;
 //
 // Web Server & WebDAV
 //
-#if defined(WWW_WEBDAV)
-#include <WebDav4WebServer.h>
+#if defined(WEB_SERVER)
+    #include "WebDav4WebServer.h"
 
-#if !WEBSERVER_HAS_HOOK
-#error This sketch needs ESP8266WebServer::HookFunction and ESP8266WebServer::addHook
-#endif
+    #if !WEBSERVER_HAS_HOOK
+    #error This sketch needs ESP8266WebServer::HookFunction and ESP8266WebServer::addHook
+    #endif
 
-WebServer www ( SERVER_PORT );
-ESPWebDAVCore dav;
+    WebServer www ( SERVER_PORT );
+    ESPWebDAVCore dav;
+
+#else if defined(WEBDAV)
+    #include "ESPWebDAV.h"
+
+    WiFiServer tcp ( SERVER_PORT );
+    ESPWebDAV dav;
 #endif
 
 bool fsOK;

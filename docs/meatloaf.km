@@ -1,0 +1,258 @@
+{
+    "root": {
+        "data": {
+            "id": "cf58qzh0a4g0",
+            "created": 1634835306054,
+            "text": "Meatloaf",
+            "progress": null,
+            "priority": null,
+            "note": null
+        },
+        "children": [
+            {
+                "data": {
+                    "id": "cf5atolr2q80",
+                    "created": 1634841159709,
+                    "text": "IEC Bus",
+                    "layout_mind_offset": {
+                        "x": 86,
+                        "y": 3
+                    },
+                    "expandState": "expand",
+                    "note": "Properties\n------------\n\n\n\nFunctions\n------------\n"
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "cf5atvplsdc0",
+                            "created": 1634841175179,
+                            "text": "Protocol",
+                            "layout_right_offset": {
+                                "x": 77,
+                                "y": -42
+                            },
+                            "note": "Properties\n------------\n\n\n\nFunctions\n------------\nsendByte\nreceiveByte"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "cf5awqyaunk0",
+                                    "created": 1634841399914,
+                                    "text": "Standard Serial",
+                                    "layout_right_offset": {
+                                        "x": 24,
+                                        "y": 2
+                                    }
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "cf5awu8tlt40",
+                                    "created": 1634841407080,
+                                    "text": "Fast Serial",
+                                    "layout_right_offset": {
+                                        "x": 24,
+                                        "y": 2
+                                    }
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "cf5awx61q2o0",
+                                    "created": 1634841413443,
+                                    "text": "JiffyDOS",
+                                    "layout_right_offset": {
+                                        "x": 24,
+                                        "y": 2
+                                    }
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "cf5ax0i1vtk0",
+                                    "created": 1634841420699,
+                                    "text": "Epyx Fastloader",
+                                    "layout_right_offset": {
+                                        "x": 24,
+                                        "y": 2
+                                    }
+                                },
+                                "children": []
+                            },
+                            {
+                                "data": {
+                                    "id": "cf5b6ji17qw0",
+                                    "created": 1634842167334,
+                                    "text": "Parallel (User Port)",
+                                    "layout_right_offset": {
+                                        "x": 26,
+                                        "y": 9
+                                    }
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "data": {
+                            "id": "cf5au0n51lk0",
+                            "created": 1634841185914,
+                            "text": "Device",
+                            "layout_right_offset": {
+                                "x": 82,
+                                "y": -15
+                            },
+                            "expandState": "expand",
+                            "note": "Properties\n------------\nDevice ID\n\nFunctions\n------------\n"
+                        },
+                        "children": [
+                            {
+                                "data": {
+                                    "id": "cf5au7q9mk00",
+                                    "created": 1634841201341,
+                                    "text": "Drive",
+                                    "expandState": "expand",
+                                    "layout_right_offset": {
+                                        "x": 25,
+                                        "y": 29
+                                    },
+                                    "note": "Functions\n- CD [Change Directory]"
+                                },
+                                "children": [
+                                    {
+                                        "data": {
+                                            "id": "cf5avoqn9000",
+                                            "created": 1634841316733,
+                                            "text": "sendDirectory",
+                                            "layout_right_offset": {
+                                                "x": 29,
+                                                "y": 62
+                                            }
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "cf5avwyg9aw0",
+                                            "created": 1634841334619,
+                                            "text": "sendFile",
+                                            "layout_right_offset": {
+                                                "x": 29,
+                                                "y": 62
+                                            }
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "cf5aw6d9fog0",
+                                            "created": 1634841355106,
+                                            "text": "sendSID",
+                                            "layout_right_offset": {
+                                                "x": 29,
+                                                "y": 62
+                                            }
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "cf5aw9uap5k0",
+                                            "created": 1634841362666,
+                                            "text": "sendKOA",
+                                            "layout_right_offset": {
+                                                "x": 29,
+                                                "y": 62
+                                            }
+                                        },
+                                        "children": []
+                                    },
+                                    {
+                                        "data": {
+                                            "id": "cf5azivkt940",
+                                            "created": 1634841617427,
+                                            "text": "Media",
+                                            "layout_right_offset": {
+                                                "x": 41,
+                                                "y": 118
+                                            },
+                                            "note": "Properties\n------------\n\n\n\nFunctions\n------------\ndirectoryStream\nfileStream"
+                                        },
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "data": {
+                    "id": "cf5b4modrew0",
+                    "created": 1634842017520,
+                    "text": "WebDAV",
+                    "layout_mind_offset": {
+                        "x": 85,
+                        "y": 44
+                    }
+                },
+                "children": []
+            },
+            {
+                "data": {
+                    "id": "cf5b4t21trk0",
+                    "created": 1634842031407,
+                    "text": "Web Server",
+                    "layout_mind_offset": {
+                        "x": 332,
+                        "y": 62
+                    }
+                },
+                "children": []
+            },
+            {
+                "data": {
+                    "id": "cf5b6757pwo0",
+                    "created": 1634842140438,
+                    "text": "Modem",
+                    "layout_mind_offset": {
+                        "x": 442,
+                        "y": 172
+                    }
+                },
+                "children": [
+                    {
+                        "data": {
+                            "id": "cf5b70kg4qo0",
+                            "created": 1634842204486,
+                            "text": "Standard Serial",
+                            "layout_right_offset": {
+                                "x": 24,
+                                "y": 31
+                            }
+                        },
+                        "children": []
+                    },
+                    {
+                        "data": {
+                            "id": "cf5b742f7x40",
+                            "created": 1634842212103,
+                            "text": "Parallel (User Port)",
+                            "layout_right_offset": {
+                                "x": 24,
+                                "y": 31
+                            }
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+    "template": "default",
+    "theme": "fresh-green-compat",
+    "version": "1.4.43"
+}
