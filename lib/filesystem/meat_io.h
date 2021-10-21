@@ -68,15 +68,16 @@ public:
 
     virtual ~MFile() {
         // //Debug_printv("Deleting: [%s]", this->url.c_str());
-        if(streamFile == nullptr) {
-            Debug_printv("WARNING: streamFile null in '%s' destructor. This MFile was obviously not initialized properly!", url.c_str());
-        }
-        else {
-            delete streamFile;
-        }
+        // if(streamFile == nullptr) {
+        //     Debug_printv("WARNING: streamFile null in '%s' destructor. This MFile was obviously not initialized properly!", url.c_str());
+        // }
+        // else {
+        //     delete streamFile;
+        // }
     };
 
-    MFile* streamFile;
+    //MFile* streamFile = nullptr;
+    std::shared_ptr<MFile> streamFile;
     std::string pathInStream;
 
 protected:
