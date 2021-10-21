@@ -41,27 +41,27 @@
 #define TIMING_FNF_DELAY     100   // delay after FNF
 #define TIMING_BYTE_ACK      1000  // threshold for Acknowledging Byte
 
-// IEC-Disected p10-11
-#define TIMEOUT_Tat    1000    // ATN RESPONSE (REQUIRED) - min/typ/max -/-/1000us (If maximum time exceeded, device not present error.)
-#define TIMING_Th      0       // LISTENER HOLD-OFF - min/typ/max 0/-/infinte
-#define TIMING_Tne     40      // NON-EOI RESPONSE TO RFD - min/typ/max -/40us/200us (If maximum time exceeded, EOI response required.)
+// IEC-Disected p10-11         // Description              // min    typical    max      // Notes
+#define TIMEOUT_Tat    1000    // ATN RESPONSE (REQUIRED)     -      -          1000us      (If maximum time exceeded, device not present error.)
+#define TIMING_Th      0       // LISTENER HOLD-OFF           0      -          infinte
+#define TIMING_Tne     40      // NON-EOI RESPONSE TO RFD     -      40us       200us       (If maximum time exceeded, EOI response required.)
 #define TIMEOUT_Tne    200
-#define TIMING_Ts      70      // BIT SET-UP TALKER - min/typ/max 20us/70us/- (Tv and Tpr minimum must be 60μ s for external device to be a talker. )
-#define TIMING_Tv      65      // DATA VALID - min/typ/max 20us/20us/- (65 spec)
-#define TIMING_Tf      20      // FRAME HANDSHAKE - min/typ/max 0/20us/1000us (If maximum time exceeded, frame error.)
+#define TIMING_Ts      70      // BIT SET-UP TALKER           20us   70us       -           (Tv and Tpr minimum must be 60μ s for external device to be a talker. )
+#define TIMING_Tv      65      // DATA VALID                  20us   20us       -
+#define TIMING_Tf      20      // FRAME HANDSHAKE             0      20us       1000us      (If maximum time exceeded, frame error.)
 #define TIMEOUT_Tf     1000
-#define TIMING_Tr      20      // FRAME TO RELEASE OF ATN - min/typ/max 20us/-/-
-#define TIMING_Tbb     100     // BETWEEN BYTES TIME - min/typ/max 100us/-/-
-#define TIMING_Tye     250     // EOI RESPONSE TIME - min/typ/max 200us/250us/-
-#define TIMING_Tei     60      // EOI RESPONSE HOLD TIME - min/typ/max 60us/-/- (Tei minimum must be 80μ s for external device to be a listener.)
-#define TIMING_Try     30      // TALKER RESPONSE LIMIT - min/typ/max 0/30us/60us
+#define TIMING_Tr      20      // FRAME TO RELEASE OF ATN     20us   -          -
+#define TIMING_Tbb     100     // BETWEEN BYTES TIME          100us  -          -
+#define TIMING_Tye     200     // EOI RESPONSE TIME           200us  250us      -
+#define TIMING_Tei     60      // EOI RESPONSE HOLD TIME      60us   -          -           (Tei minimum must be 80μ s for external device to be a listener.)
+#define TIMING_Try     30      // TALKER RESPONSE LIMIT       0      30us       60us
 #define TIMEOUT_Try    60
-#define TIMING_Tpr     30      // BYTE-ACKNOWLEDGE 4 - min/typ/max 20us/30us/- (Tv and Tpr minimum must be 60μ s for external device to be a talker.)
-#define TIMING_Ttk     30      // TALK-ATTENTION RELEASE - min/typ/max 20us/30us/100us
+#define TIMING_Tpr     30      // BYTE-ACKNOWLEDGE            20us   30us       -           (Tv and Tpr minimum must be 60μ s for external device to be a talker.)
+#define TIMING_Ttk     30      // TALK-ATTENTION RELEASE      20us   30us       100us
 #define TIMEOUT_Ttk    100
-#define TIMING_Tdc     0       // TALK-ATTENTION ACKNOWLEDGE - min/typ/max 0/-/-
-#define TIMING_Tda     80      // TALK-ATTENTION ACK. HOLD - min/typ/max 80us/-/-
-#define TIMING_Tfr     60      // EOI ACKNOWLEDGE - min/typ/max 60us/-/-
+#define TIMING_Tdc     0       // TALK-ATTENTION ACKNOWLEDGE  0      -          -
+#define TIMING_Tda     80      // TALK-ATTENTION ACK. HOLD    80us   -          -
+#define TIMING_Tfr     60      // EOI ACKNOWLEDGE             60us   -          -
 
 // See timeoutWait
 #define TIMEOUT 20000 // 1ms

@@ -493,8 +493,8 @@ void iecDevice::handleListenCommand(IEC::Data &iec_data)
 {
 	if (m_device.select(iec_data.device))
 	{
-		m_mfile.reset(MFSOwner::File(m_device.url()));
 		Debug_printv("!!!! device changed: unit:%d current url: [%s]", m_device.id(), m_device.url().c_str());
+		m_mfile.reset(MFSOwner::File(m_device.url()));
 		Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
 	}
 

@@ -158,6 +158,7 @@ int16_t  CBMStandardSerial::receiveByte(uint8_t device)
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
 
 	// Acknowledge byte received
+	delayMicroseconds(TIMING_Tf);
 	pull(IEC_PIN_DATA);
 
 	// STEP 5: START OVER
@@ -166,13 +167,13 @@ int16_t  CBMStandardSerial::receiveByte(uint8_t device)
 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause, 
 	// the Clock and Data lines are RELEASED to false and transmission stops. 
 
-	if(flags bitand EOI_RECVD)
-	{
-		// EOI Received
-		delayMicroseconds(TIMING_Tfr);
-		// release(IEC_PIN_CLK);
-		//release(IEC_PIN_DATA);
-	}
+	// if(flags bitand EOI_RECVD)
+	// {
+	// 	// EOI Received
+	// 	// delayMicroseconds(TIMING_Tfr);
+	// 	// release(IEC_PIN_CLK);
+	// 	// release(IEC_PIN_DATA);
+	// }
 
 	return data;
 } // receiveByte
@@ -191,7 +192,6 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	flags = CLEAR;
 
 	// Say we're ready
-	delayMicroseconds(60);
 	release(IEC_PIN_CLK);
 
 	// Wait for listener to be ready
@@ -297,9 +297,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 		}
 
 		pull(IEC_PIN_CLK);
-		delayMicroseconds(22);
-		release(IEC_PIN_DATA);
-		delayMicroseconds(14);
+		delayMicroseconds(TIMING_Tv);
 
 		data >>= 1; // get next bit		
 	}
@@ -311,17 +309,13 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 	// one  millisecond  -  one  thousand  microseconds  -  it  will  know  that something's wrong and may alarm appropriately.
 
 	// Wait for listener to accept data
-	// if(timeoutWait(IEC_PIN_DATA, PULLED, 250) == TIMED_OUT)
-	// {
-	// 	Debug_printv("Wait for listener to acknowledge byte received");
-	// 	return false; // return error because timeout
-	// }
-
-	uint8_t n = 0;
-	while(status(IEC_PIN_ATN) != RELEASED && status(IEC_PIN_DATA) != PULLED && (n < 100)) {
-		delayMicroseconds(10);  // this loop should cycle in about 10 us...
-		n++;
+	if(timeoutWait(IEC_PIN_DATA, PULLED, TIMEOUT_Tf) == TIMED_OUT)
+	{
+		Debug_printv("Wait for listener to acknowledge byte received");
+		return false; // return error because timeout
 	}
+
+	// BETWEEN BYTES TIME
 	delayMicroseconds(TIMING_Tbb);
 
 	// STEP 5: START OVER
