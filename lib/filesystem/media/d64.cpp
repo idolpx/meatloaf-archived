@@ -339,13 +339,20 @@ size_t D64IStream::size() {
 };
 
 size_t D64IStream::read(uint8_t* buf, size_t size) {
-    // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
-    // or set the stream to EOF-like state, if whle file is completely read.
-    // as soon as we do seekNextEntry or seekPath, reading this stream will be possible again (available set to file size), as if nothing happened! 
-    auto bytesRead= 0; // m_file.readBytes((char *) buf, size);
-    m_bytesAvailable = 0; //m_file.available();
-    m_position+=bytesRead;
-    return bytesRead;
+    if(seekCalled) {
+        // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
+        // or set the stream to EOF-like state, if whle file is completely read.
+        auto bytesRead= 0; // m_file.readBytes((char *) buf, size);
+        m_bytesAvailable = 0; //m_file.available();
+        m_position+=bytesRead;
+        //bytesRead = D64Image.readFileBytes(containerIStream, path, fromWhere, buffer[], bufferSize);
+        return bytesRead;
+    }
+    else {
+        // seekXXX not called - just pipe image bytes, so it can be i.e. copied verbatim
+        return containerIStream->read(buf, size);
+    }
+
 };
 
 bool D64IStream::isOpen() {

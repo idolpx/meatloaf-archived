@@ -271,9 +271,13 @@ private:
 
 class D64IStream: public MIStream {
 
+    bool seekCalled = false;
+    MIStream* containerIStream;
+
 public:
     D64IStream(MIStream* is) {
         // TODO - store is somewhere, so you can read from it!
+        containerIStream = is;
     }
     // MStream methods
     size_t position() override;
@@ -284,7 +288,7 @@ public:
     }
 
     // MIStream methods
-    bool isBrowsable() override { return true; };
+    bool isBrowsable() override { return false; };
     bool isRandomAccess() override { return true; };
 
     bool seek(int32_t pos, SeekMode mode) override { 
@@ -295,6 +299,15 @@ public:
         Debug_printv("here");
         return true; 
     };
+
+    bool seekPath(std::string path) {
+        seekCalled = true;
+
+        // call D54Image method to obtain file bytes here, return true on success:
+        // return D64Image.seekFile(containerIStream, path);
+        return false;
+    };
+
     int available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
