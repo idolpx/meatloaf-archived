@@ -32,6 +32,7 @@ namespace mstr {
     bool isText(std::string &s);
     bool isA0Space(int ch);
     void A02Space(std::string &s);
+    std::string sprintf(const char *format, ...);
 }
 
 #endif

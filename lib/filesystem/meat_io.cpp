@@ -33,13 +33,14 @@ CServerFileSystem csFS;
 WSFileSystem wsFS;
 
 // put all available filesystems in this array - first matching system gets the file!
-std::vector<MFileSystem*> MFSOwner::availableFS{ /*&urlFS,*/ &d64FS, &dnpFS, &mlFS, &httpFS, &wsFS };
+// fist in list is default
+std::vector<MFileSystem*> MFSOwner::availableFS{ &littleFS, &d64FS, &dnpFS, &mlFS, &httpFS, &wsFS };
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");
     Serial.print(name.c_str());
 
-    for(auto i = availableFS.begin(); i < availableFS.end() ; i ++) {
+    for(auto i = availableFS.begin() + 1; i < availableFS.end() ; i ++) {
         auto fs = (*i);
 
         if(fs->handles(name)) {
@@ -61,7 +62,7 @@ bool MFSOwner::mount(std::string name) {
 }
 
 bool MFSOwner::umount(std::string name) {
-    for(auto i = availableFS.begin(); i < availableFS.end() ; i ++) {
+    for(auto i = availableFS.begin() + 1; i < availableFS.end() ; i ++) {
         auto fs = (*i);
 
         if(fs->handles(name)) {
@@ -97,23 +98,24 @@ MFile* MFSOwner::File(std::string path) {
     auto foundFS = testScan(begin, end, pathIterator);
 
     if(foundFS != nullptr) {
-        //Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), foundFS->symbol);
+        Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), foundFS->symbol);
         auto newFile = foundFS->getFile(path);
-        //Debug_printv("newFile: '%s'", newFile->url.c_str());
+        Debug_printv("newFile: '%s'", newFile->url.c_str());
 
         pathIterator++;
         newFile->pathInStream = mstr::joinToString(&pathIterator, &end, "/");
+        Debug_printv("newFile->pathInStream: '%s'", newFile->pathInStream.c_str());
 
         auto endHere = pathIterator;
         pathIterator--;
 
         if(begin == pathIterator) {
-            // Debug_printv("** LOOK DOWN PATH NOT NEEDED");
+            Debug_printv("** LOOK DOWN PATH NOT NEEDED");
             newFile->streamFile = foundFS->getFile(mstr::joinToString(&begin, &pathIterator, "/")); 
         } 
         else {
             auto upperPath = mstr::joinToString(&begin, &pathIterator, "/");
-            // Debug_printv("** LOOK DOWN PATH: %s", upperPath.c_str());
+            Debug_printv("** LOOK DOWN PATH: %s", upperPath.c_str());
 
             auto upperFS = testScan(begin, end, pathIterator);
 
@@ -121,9 +123,9 @@ MFile* MFSOwner::File(std::string path) {
                 auto wholePath = mstr::joinToString(&begin, &endHere, "/");
 
                 //auto cp = mstr::joinToString(&begin, &pathIterator, "/");
-                //Debug_printv("CONTAINER PATH WILL BE: '%s' ", wholePath.c_str());
+                Debug_printv("CONTAINER PATH WILL BE: '%s' ", wholePath.c_str());
                 newFile->streamFile = upperFS->getFile(wholePath); // skończy się na d64
-                //Debug_printv("CONTAINER: '%s' is in FS [%s]", newFile->streamFile->url.c_str(), upperFS->symbol);
+                Debug_printv("CONTAINER: '%s' is in FS [%s]", newFile->streamFile->url.c_str(), upperFS->symbol);
             }
             else {
                 Debug_printv("WARNING!!!! CONTAINER FAILED FOR: '%s'", upperPath.c_str());
@@ -148,19 +150,26 @@ MFile* MFSOwner::File(std::string path) {
 
 
 MFileSystem* MFSOwner::testScan(std::vector<std::string>::iterator &begin, std::vector<std::string>::iterator &end, std::vector<std::string>::iterator &pathIterator) {
-    while (pathIterator != begin) {
+    while (pathIterator != begin && pathIterator->size()) {
         pathIterator--;
 
         auto part = *pathIterator;
         mstr::toLower(part);
 
-        auto foundIter=find_if(availableFS.begin(), availableFS.end(), [&part](MFileSystem* fs){ 
+        Debug_printv("pathIterator[%s] size[%d]", pathIterator->c_str(), pathIterator->size());
+
+        auto foundIter=find_if(availableFS.begin() + 1, availableFS.end(), [&part](MFileSystem* fs){ 
+            Debug_printv("symbol[%s]", fs->symbol);
             return fs->handles(part); 
         } );
 
         if(foundIter != availableFS.end()) {
             Debug_printv("matched part '%s'\n", part.c_str());
             return (*foundIter);
+        } else {
+            auto fs = *availableFS.begin();
+            Debug_printv("return default file system [%s]", fs->symbol);
+            return fs;
         }
     };
     return nullptr;

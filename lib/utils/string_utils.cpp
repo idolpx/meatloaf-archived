@@ -305,4 +305,15 @@ namespace mstr {
         return ret;
     }
 
+    std::string sprintf(const char *format, ...)
+    {
+        // Format our string
+        va_list args;
+        va_start(args, format);
+        char text[vsnprintf(NULL, 0, format, args) + 1];
+        vsnprintf(text, sizeof text, format, args);
+        va_end(args);
+
+        return text;
+    }
 }

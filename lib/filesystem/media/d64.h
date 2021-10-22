@@ -211,9 +211,9 @@ public:
             // Calculate Blocks Free
 
             // Set Media Info Fields
-            media_header = image().get()->header.disk_name;
+            media_header = mstr::sprintf("%.16s", image().get()->header.disk_name);
             mstr::A02Space(media_header);
-            media_id = image().get()->header.id_dos;
+            media_id = mstr::sprintf("%.5s", image().get()->header.id_dos);
             mstr::A02Space(media_id);
             media_blocks_free = 0;
             media_block_size = image().get()->block_size;
