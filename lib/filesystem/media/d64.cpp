@@ -6,7 +6,7 @@ bool D64Image::seekSector( uint8_t track, uint8_t sector, size_t offset )
 {
 	uint16_t sectorOffset = 0;
 
-    Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
+    //Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
 
     track--;
 	for (uint8_t index = 0; index < track; ++index)
@@ -92,7 +92,7 @@ bool D64Image::seekEntry( size_t index )
     int8_t sectorOffset = index / 8;
     int8_t entryOffset = (index % 8) * 32;
 
-    Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d] entryIndex[%d]", index, sectorOffset, entryOffset, entryIndex);
+    //Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d] entryIndex[%d]", index, sectorOffset, entryOffset, entryIndex);
 
 
     if (index == 0 || index != entryIndex)
@@ -109,7 +109,7 @@ bool D64Image::seekEntry( size_t index )
             next_track = entry.next_track;
             next_sector = entry.next_sector;
 
-            Debug_printv("sectorOffset[%d] -> track[%d] sector[%d]", sectorOffset, this->track, this->sector);
+            //Debug_printv("sectorOffset[%d] -> track[%d] sector[%d]", sectorOffset, this->track, this->sector);
         } while ( sectorOffset-- > 0 );
         r = seekSector( this->track, this->sector, entryOffset );
     }
@@ -117,7 +117,7 @@ bool D64Image::seekEntry( size_t index )
     {
         if ( entryOffset == 0 )
         {
-            Debug_printv("Follow link track[%d] sector[%d] entryOffset[%d]", next_track, next_sector, entryOffset);
+            //Debug_printv("Follow link track[%d] sector[%d] entryOffset[%d]", next_track, next_sector, entryOffset);
             r = seekSector( next_track, next_sector, entryOffset );
         }
 
@@ -130,7 +130,7 @@ bool D64Image::seekEntry( size_t index )
         next_sector = entry.next_sector;
     }
 
-    Debug_printv("r[%d] file_type[%02X] file_name[%.16s]", r, entry.file_type, entry.filename);
+    //Debug_printv("r[%d] file_type[%02X] file_name[%.16s]", r, entry.file_type, entry.filename);
 
     //if ( next_track == 0 && next_sector == 0xFF )
     entryIndex = index + 1;    
@@ -234,14 +234,14 @@ MFile* D64File::getNextFileInDir() {
     {
         std::string fileName = image().get()->entry.filename;
         mstr::replaceAll(fileName, "/", "\\");
-        Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
+        //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
         auto d64_file = new D64File(_d64ImageStruct, streamFile->url + "/" + fileName, false);
         d64_file->extension = d64_file->_d64ImageStruct->decodeEntry();
         return d64_file;
     }
     else
     {
-        Debug_printv( "END OF DIRECTORY");
+        //Debug_printv( "END OF DIRECTORY");
         dirIsOpen = false;
         return nullptr;
     }
