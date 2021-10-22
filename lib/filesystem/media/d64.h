@@ -207,6 +207,7 @@ public:
         // Are we at the root of the pathInStream?
         if ( pathInStream == "")
         {
+            Debug_printv("ROOT FOLDER");
             // Read Header
             image().get()->seekHeader();
             image().get()->fillHeader();
@@ -223,12 +224,26 @@ public:
             media_blocks_free = image().get()->blocksFree();
             media_block_size = image().get()->block_size;
             media_image = name;
+            isDir = true;
         }
         else
         {
+            Debug_printv("SINGLE FILE");
             // Single file
-            // seekFile(pathInStream);
-            // _size = entry.blocks * (media_block_size - 2);
+            isDir = false;
+            mstr::toPETSCII(pathInStream);
+            if ( image().get()->seekEntry(pathInStream) )
+            {
+                auto entry = image().get()->entry;
+                auto type = image().get()->decodeEntry().c_str();
+                auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
+                Debug_printv("filename [%.16s] type[%s] blocks[%d]", entry.filename, type, blocks);
+                image().get()->seekSector(entry.start_track, entry.start_sector);
+            }
+            else
+            {
+                Debug_printv( "Not found! [%s]", pathInStream.c_str());
+            }
 
         }       
     };

@@ -51,14 +51,14 @@ bool D64Image::deallocateBlock( uint8_t track, uint8_t sector)
 
 bool D64Image::seekEntry( std::string filename )
 {
-    Entry entry;
+    entryIndex = 0;
 
     // Read Directory Entries
-    seekSector( directory_list_offset );
-    do
-    {		
+    while ( seekEntry( entryIndex ) )
+    {
+        Debug_printv("filename[%s] entry.filename[%.16s]", filename.c_str(), entry.filename);
+
         // Read Entry From Stream
-        
         if (entry.file_type & 0b00000111 && filename == "*")
         {
             filename == entry.filename;
@@ -69,7 +69,7 @@ bool D64Image::seekEntry( std::string filename )
             // Move stream pointer to start track/sector
             return true;
         }
-    } while ( entry.file_type > 0 );
+    }
     
     entry.next_track = 0;
     entry.next_sector = 0;
@@ -251,7 +251,7 @@ MIStream* D64File::createIStream(MIStream* is) {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
     MIStream* istream = new D64IStream(is);
-    istream->open();   
+    istream->open();
     return istream;
 }
 
@@ -330,11 +330,13 @@ bool D64IStream::open() {
 
 int D64IStream::available() {
     // return bytes available in currently "seeked" file
+    Debug_printv("available[%d]", m_bytesAvailable);
     return m_bytesAvailable;
 };
 
 size_t D64IStream::size() {
     // size of the "seeked" file, not the image.
+    Debug_printv("size[%d]", m_length);
     return m_length;
 };
 
