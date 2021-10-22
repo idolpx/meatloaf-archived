@@ -148,7 +148,7 @@ std::string D64Image::decodeEntry()
     if ( file_type == 0 )
         hide = true;
 
-    switch ( file_type & 0b11000000 )
+    switch ( entry.file_type & 0b11000000 )
     {
         case 0xC0:			// Bit 6: Locked flag (Set produces "<" locked files)
             type += "<";
@@ -160,6 +160,7 @@ std::string D64Image::decodeEntry()
             hide = true;
             break;					
     }
+
     return type;
 }
 
@@ -234,7 +235,9 @@ MFile* D64File::getNextFileInDir() {
         std::string fileName = image().get()->entry.filename;
         mstr::replaceAll(fileName, "/", "\\");
         Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
-        return new D64File(_d64ImageStruct, streamFile->url + "/" + fileName, false);
+        auto d64_file = new D64File(_d64ImageStruct, streamFile->url + "/" + fileName, false);
+        d64_file->extension = d64_file->_d64ImageStruct->decodeEntry();
+        return d64_file;
     }
     else
     {

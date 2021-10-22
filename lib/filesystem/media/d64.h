@@ -96,7 +96,7 @@ public:
     uint8_t sectorsPerTrack[4] = { 17, 18, 19, 21 };
     uint16_t block_size = 256;
 
-    std::string file_type_label[8] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR", "???" };
+    std::string file_type_label[8] = { "del", "seq", "prg", "usr", "rel", "cbm", "dir", "???" };
 
     uint8_t track;
     uint8_t sector;
@@ -186,14 +186,11 @@ public:
 
     D64File(std::string path, bool is_dir = true): MFile(path) {
         isDir = is_dir;
-
-        extension = ""; //_d64ImageStruct->decodeEntry();
     };
 
     D64File(std::shared_ptr<D64Image> image, std::string path, bool is_dir = true): MFile(path) {
         _d64ImageStruct = image;
         isDir = is_dir;
-        extension = "";
     };
 
 
