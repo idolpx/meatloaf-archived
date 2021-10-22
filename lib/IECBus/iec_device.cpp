@@ -765,7 +765,7 @@ uint16_t iecDevice::sendHeader(uint16_t &basicPtr, std::string header, std::stri
 	space_cnt = (16 - header.size()) / 2;
 	space_cnt = (space_cnt > 8 ) ? 0 : space_cnt;
 
-	Debug_printv("header[%s] id[%s] space_cnt[%d]", header.c_str(), id.c_str(), space_cnt);
+	//Debug_printv("header[%s] id[%s] space_cnt[%d]", header.c_str(), id.c_str(), space_cnt);
 
 	byte_count += sendLine(basicPtr, 0, CBM_REVERSE_ON "\"%*s%s%*s\" %s", space_cnt, "", header.c_str(), space_cnt, "", id.c_str());
 
