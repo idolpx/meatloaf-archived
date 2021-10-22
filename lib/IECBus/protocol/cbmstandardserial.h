@@ -53,7 +53,7 @@
 #define TIMING_Tfr     60      // EOI ACKNOWLEDGE             60us   -          -
 
 // See timeoutWait
-#define TIMEOUT 20000 // 1ms
+#define TIMEOUT 1000 // 1ms
 #define TIMED_OUT -1
 #define FOREVER 0
 
