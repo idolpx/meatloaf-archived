@@ -69,6 +69,7 @@ bool D64Image::seekEntry( std::string filename )
             // Move stream pointer to start track/sector
             return true;
         }
+        entryIndex++;
     }
     
     entry.next_track = 0;
@@ -273,10 +274,12 @@ time_t D64File::getCreationTime() {
 
 bool D64File::exists() {
     // here I'd rather use D64 logic to see if such file name exists in the image!
+    Debug_printv("here");
     return true;
 } 
 
 size_t D64File::size() {
+    Debug_printv("here");
     // use D64 to get size of the file in image
     auto entry = image().get()->entry;
     // (_ui16 << 8 | _ui16 >> 8)
@@ -312,11 +315,12 @@ size_t D64File::size() {
 // };
 
 size_t D64IStream::position() {
+    Debug_printv("here");
     return m_position; // return position within "seeked" file, not the D64 image!
 };
 
 void D64IStream::close() {
-
+    Debug_printv("here");
 };
 
 bool D64IStream::open() {
@@ -324,8 +328,8 @@ bool D64IStream::open() {
     // it's up to you in what state the stream will be after open. Could be either:
     // 1. EOF-like state (0 available) and the state will be cleared only after succesful seekNextEntry or seekPath
     // 2. non-EOF-like state, and ready to send bytes of first file, because you did immediate seekNextEntry here
-    
-    return true;
+    Debug_printv("here");
+    return false;
 };
 
 int D64IStream::available() {
@@ -341,6 +345,7 @@ size_t D64IStream::size() {
 };
 
 size_t D64IStream::read(uint8_t* buf, size_t size) {
+    Debug_printv("here");
     if(seekCalled) {
         // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
         // or set the stream to EOF-like state, if whle file is completely read.
@@ -358,6 +363,7 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
 };
 
 bool D64IStream::isOpen() {
+    Debug_printv("here");
     return m_isOpen;
 };
 

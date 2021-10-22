@@ -316,6 +316,7 @@ public:
     };
 
     bool seekPath(std::string path) {
+        Debug_printv("here");
         seekCalled = true;
 
         // call D54Image method to obtain file bytes here, return true on success:
