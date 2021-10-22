@@ -80,9 +80,9 @@ bool IEC::turnAround(void)
 		
 
 	protocol.release(IEC_PIN_DATA);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 	protocol.pull(IEC_PIN_CLK);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 
 	// Debug_println("complete");
 	return true;
@@ -94,9 +94,9 @@ bool IEC::turnAround(void)
 bool IEC::undoTurnAround(void)
 {
 	protocol.pull(IEC_PIN_DATA);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 	protocol.release(IEC_PIN_CLK);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 
 	// Debug_printf("IEC undoTurnAround: ");
 
@@ -159,7 +159,7 @@ IEC::BusState IEC::service(Data& iec_data)
 	// Being fast with the next two lines here is CRITICAL!
 	protocol.release(IEC_PIN_CLK);
 	protocol.pull(IEC_PIN_DATA);
-	delayMicroseconds(TIMING_ATN_PREDELAY);
+	delayMicroseconds(TIMING_Tne);
 
 	// Get command
 	Debug_printf("   IEC: [");
@@ -489,8 +489,8 @@ bool IEC::sendFNF()
 	protocol.release(IEC_PIN_DATA);
 	protocol.release(IEC_PIN_CLK);
 
-	// Hold back a little...
-	delayMicroseconds(TIMING_FNF_DELAY);
+	// BETWEEN BYTES TIME
+	delayMicroseconds(TIMING_Tbb);
 
 	Debug_println("\r\nFNF Sent!");
 	return true;

@@ -30,17 +30,6 @@
 #define ERROR           (1 << 5)  // if this flag is set, something went wrong
 
 // IEC protocol timing consts in microseconds (us)
-#define TIMING_BIT           65    // bit clock hi/lo time
-#define TIMING_NO_EOI        5     // delay before bits
-#define TIMING_EOI_WAIT      256   // delay to signal EOI
-#define TIMING_EOI_ACK       60    // threshold for Acknowledging EOI
-#define TIMING_EOI_THRESH    20    // threshold for EOI detect
-#define TIMING_STABLE_WAIT   20    // line stabilization
-#define TIMING_ATN_PREDELAY  50    // delay required in ATN
-#define TIMING_ATN_DELAY     100   // delay required after ATN
-#define TIMING_FNF_DELAY     100   // delay after FNF
-#define TIMING_BYTE_ACK      1000  // threshold for Acknowledging Byte
-
 // IEC-Disected p10-11         // Description              // min    typical    max      // Notes
 #define TIMEOUT_Tat    1000    // ATN RESPONSE (REQUIRED)     -      -          1000us      (If maximum time exceeded, device not present error.)
 #define TIMING_Th      0       // LISTENER HOLD-OFF           0      -          infinte
