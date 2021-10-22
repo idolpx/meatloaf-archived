@@ -98,24 +98,25 @@ MFile* MFSOwner::File(std::string path) {
     auto foundFS = testScan(begin, end, pathIterator);
 
     if(foundFS != nullptr) {
-        Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), foundFS->symbol);
+        //Debug_printv("PATH: '%s' is in FS [%s]", path.c_str(), foundFS->symbol);
         auto newFile = foundFS->getFile(path);
-        Debug_printv("newFile: '%s'", newFile->url.c_str());
+        //Debug_printv("newFile: '%s'", newFile->url.c_str());
 
         pathIterator++;
         newFile->pathInStream = mstr::joinToString(&pathIterator, &end, "/");
-        Debug_printv("newFile->pathInStream: '%s'", newFile->pathInStream.c_str());
+        //Debug_printv("newFile->pathInStream: '%s'", newFile->pathInStream.c_str());
 
         auto endHere = pathIterator;
         pathIterator--;
 
         if(begin == pathIterator) {
-            Debug_printv("** LOOK DOWN PATH NOT NEEDED");
-            newFile->streamFile = foundFS->getFile(mstr::joinToString(&begin, &pathIterator, "/")); 
+            //Debug_printv("** LOOK DOWN PATH NOT NEEDED   path[%s]", path.c_str());
+            newFile->streamFile = foundFS->getFile(mstr::joinToString(&begin, &pathIterator, "/"));
+            //newFile->streamFile = foundFS->getFile(path);
         } 
         else {
             auto upperPath = mstr::joinToString(&begin, &pathIterator, "/");
-            Debug_printv("** LOOK DOWN PATH: %s", upperPath.c_str());
+            //Debug_printv("** LOOK DOWN PATH: %s", upperPath.c_str());
 
             auto upperFS = testScan(begin, end, pathIterator);
 
@@ -123,9 +124,9 @@ MFile* MFSOwner::File(std::string path) {
                 auto wholePath = mstr::joinToString(&begin, &endHere, "/");
 
                 //auto cp = mstr::joinToString(&begin, &pathIterator, "/");
-                Debug_printv("CONTAINER PATH WILL BE: '%s' ", wholePath.c_str());
+                //Debug_printv("CONTAINER PATH WILL BE: '%s' ", wholePath.c_str());
                 newFile->streamFile = upperFS->getFile(wholePath); // skończy się na d64
-                Debug_printv("CONTAINER: '%s' is in FS [%s]", newFile->streamFile->url.c_str(), upperFS->symbol);
+                //Debug_printv("CONTAINER: '%s' is in FS [%s]", newFile->streamFile->url.c_str(), upperFS->symbol);
             }
             else {
                 Debug_printv("WARNING!!!! CONTAINER FAILED FOR: '%s'", upperPath.c_str());
@@ -136,43 +137,34 @@ MFile* MFSOwner::File(std::string path) {
 
         return newFile;
     }
-    else {
-        //Debug_printv("** warning! %s - Little fs fallback", path.c_str());
 
-        auto newFile = new LittleFile(path);
-        newFile->streamFile = new LittleFile(path);
-        newFile->pathInStream = "";
-
-        return newFile;
-    }
+    return nullptr;
 }
 
 
-
 MFileSystem* MFSOwner::testScan(std::vector<std::string>::iterator &begin, std::vector<std::string>::iterator &end, std::vector<std::string>::iterator &pathIterator) {
-    while (pathIterator != begin && pathIterator->size()) {
+    while (pathIterator != begin) {
         pathIterator--;
 
         auto part = *pathIterator;
         mstr::toLower(part);
 
-        Debug_printv("pathIterator[%s] size[%d]", pathIterator->c_str(), pathIterator->size());
+        //Debug_printv("index[%d] pathIterator[%s] size[%d]", pathIterator, pathIterator->c_str(), pathIterator->size());
 
         auto foundIter=find_if(availableFS.begin() + 1, availableFS.end(), [&part](MFileSystem* fs){ 
-            Debug_printv("symbol[%s]", fs->symbol);
+            //Debug_printv("symbol[%s]", fs->symbol);
             return fs->handles(part); 
         } );
 
         if(foundIter != availableFS.end()) {
-            Debug_printv("matched part '%s'\n", part.c_str());
+            //Debug_printv("matched part '%s'\n", part.c_str());
             return (*foundIter);
-        } else {
-            auto fs = *availableFS.begin();
-            Debug_printv("return default file system [%s]", fs->symbol);
-            return fs;
         }
     };
-    return nullptr;
+
+    auto fs = *availableFS.begin();
+    //Debug_printv("return default file system [%s]", fs->symbol);
+    return fs;
 }
 
 /********************************************************

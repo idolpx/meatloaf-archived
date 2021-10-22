@@ -247,6 +247,7 @@ namespace mstr {
 
             //Debug_printv("a %d res [%s]", i, res.c_str());
         }
+        //Debug_printv("res[%s] length[%d] size[%d]", res.c_str(), res.length(), res.size());
 
         return res.erase(res.length()-1,1);
     }
@@ -305,7 +306,7 @@ namespace mstr {
         return ret;
     }
 
-    std::string sprintf(const char *format, ...)
+    std::string format(const char *format, ...)
     {
         // Format our string
         va_list args;

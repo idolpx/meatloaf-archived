@@ -140,7 +140,7 @@ bool D64Image::seekEntry( size_t index )
         return true;
 }
 
-void D64Image::decodeEntry() 
+std::string D64Image::decodeEntry() 
 {
     bool hide = false;
     uint8_t file_type = entry.file_type & 0b00000111;
@@ -160,8 +160,25 @@ void D64Image::decodeEntry()
             hide = true;
             break;					
     }
-    
-    uint16_t blocks = (entry.blocks[0] * 256) + entry.blocks[1];
+    return type;
+}
+
+uint16_t D64Image::blocksFree()
+{
+    uint16_t free_count = 0;
+    BAMEntry bam = { 0 };
+    seekSector(block_allocation_map->track, block_allocation_map->sector, block_allocation_map->offset);
+    for(uint8_t i = block_allocation_map->start_track; i <= block_allocation_map->end_track; i++)
+    {
+        containerStream->read((uint8_t *)&bam, sizeof(bam));
+        if ( i != block_allocation_map->track )
+        {
+            //Debug_printv("track[%d] count[%d]", i, bam.free_sectors);
+            free_count += bam.free_sectors;            
+        }
+    }
+
+    return free_count;
 }
 
 
@@ -259,7 +276,8 @@ bool D64File::exists() {
 size_t D64File::size() {
     // use D64 to get size of the file in image
     auto entry = image().get()->entry;
-    uint16_t blocks = (entry.blocks[0] * 256) + entry.blocks[1];
+    // (_ui16 << 8 | _ui16 >> 8)
+    uint16_t blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
     return blocks;
 }
 

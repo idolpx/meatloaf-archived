@@ -24,6 +24,48 @@ class D64Image {
 
 public:
 
+    uint8_t dos_version;
+    struct Header {
+        char disk_name[16];
+        char unused[2];
+        char id_dos[5];
+    };
+
+    struct BAMInfo {
+        uint8_t track;
+        uint8_t sector;
+        uint8_t offset;
+        uint8_t start_track;
+        uint8_t end_track;
+        uint8_t byte_count;
+    };
+
+    struct BAMEntry {
+        uint8_t free_sectors;
+        uint8_t sectors_00_07;
+        uint8_t sectors_08_15;
+        uint8_t sectors_16_20;
+    };
+
+    struct Entry {
+        uint8_t next_track;
+        uint8_t next_sector;
+        uint8_t file_type;
+        uint8_t start_track;
+        uint8_t start_sector;
+        char filename[16];
+        uint8_t rel_start_track;   // Or GOES info block start track
+        uint8_t rel_start_sector;  // Or GEOS info block start sector
+        uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
+        uint8_t geos_type;         // $00 - Non-GEOS (normal C64 file)
+        uint8_t year;
+        uint8_t month;
+        uint8_t day;
+        uint8_t hour;
+        uint8_t minute;
+        uint8_t blocks[2];
+    };
+
     D64Image(MIStream* istream) : containerStream(istream) {
         
     }
@@ -50,45 +92,9 @@ public:
 
     uint8_t directory_header_offset[2] = {18, 0};
     uint8_t directory_list_offset[2] = {18, 1};
-    uint8_t block_allocation_map[6] = {18, 0, 0x04, 1, 35, 4};
+    BAMInfo block_allocation_map[1] = {18, 0, 0x04, 1, 35, 4};
     uint8_t sectorsPerTrack[4] = { 17, 18, 19, 21 };
     uint16_t block_size = 256;
-
-
-    uint8_t dos_version;
-    struct Header {
-        char disk_name[16];
-        char unused[2];
-        char id_dos[5];
-    };
-
-    struct BAMInfo {
-        uint8_t track;
-        uint8_t sector;
-        uint8_t offset;
-        uint8_t start_track;
-        uint8_t end_track;
-        uint8_t byte_count;
-    };
-
-    struct Entry {
-        uint8_t next_track;
-        uint8_t next_sector;
-        uint8_t file_type;
-        uint8_t start_track;
-        uint8_t start_sector;
-        char filename[16];
-        uint8_t rel_start_track;   // Or GOES info block start track
-        uint8_t rel_start_sector;  // Or GEOS info block start sector
-        uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
-        uint8_t geos_type;         // $00 - Non-GEOS (normal C64 file)
-        uint8_t year;
-        uint8_t month;
-        uint8_t day;
-        uint8_t hour;
-        uint8_t minute;
-        uint8_t blocks[2];
-    };
 
     std::string file_type_label[8] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR", "???" };
 
@@ -115,8 +121,9 @@ public:
 
     std::vector<Entry> getEntries(uint8_t track, uint8_t sector);
 
-    void decodeEntry();
+    std::string decodeEntry();
 
+    uint16_t blocksFree();
     std::string readBlock( uint8_t track, uint8_t sector );
     bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
     bool allocateBlock( uint8_t track, uint8_t sector );
@@ -179,7 +186,8 @@ public:
 
     D64File(std::string path, bool is_dir = true): MFile(path) {
         isDir = is_dir;
-        extension = "";
+
+        extension = ""; //_d64ImageStruct->decodeEntry();
     };
 
     D64File(std::shared_ptr<D64Image> image, std::string path, bool is_dir = true): MFile(path) {
@@ -211,11 +219,11 @@ public:
             // Calculate Blocks Free
 
             // Set Media Info Fields
-            media_header = mstr::sprintf("%.16s", image().get()->header.disk_name);
+            media_header = mstr::format("%.16s", image().get()->header.disk_name);
             mstr::A02Space(media_header);
-            media_id = mstr::sprintf("%.5s", image().get()->header.id_dos);
+            media_id = mstr::format("%.5s", image().get()->header.id_dos);
             mstr::A02Space(media_id);
-            media_blocks_free = 0;
+            media_blocks_free = image().get()->blocksFree();
             media_block_size = image().get()->block_size;
             media_image = name;
         }

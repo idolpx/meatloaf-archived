@@ -858,8 +858,8 @@ void iecDevice::sendListing()
 
 		if (!entry->isDirectory())
 		{
-			if ( block_cnt < 1)
-				block_cnt = 1;
+			// if ( block_cnt < 1)
+			// 	block_cnt = 1;
 
 			// Get extension
 			if (entry->extension.length())
