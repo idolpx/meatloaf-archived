@@ -272,8 +272,8 @@ private:
 class D64IStream: public MIStream {
 
 public:
-    D64IStream(std::string path) {
-        url = path;
+    D64IStream(MIStream* is) {
+        // TODO - store is somewhere, so you can read from it!
     }
     // MStream methods
     size_t position() override;
@@ -301,7 +301,6 @@ public:
     bool isOpen();
 
 protected:
-    std::string url;
     std::unique_ptr<MFile> m_mfile;
 
     bool m_isOpen;

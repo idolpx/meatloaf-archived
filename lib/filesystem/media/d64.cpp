@@ -250,7 +250,7 @@ MFile* D64File::getNextFileInDir() {
 MIStream* D64File::createIStream(MIStream* is) {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
-    MIStream* istream = new D64IStream(url);
+    MIStream* istream = new D64IStream(is);
     istream->open();   
     return istream;
 }
