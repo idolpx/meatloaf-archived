@@ -35,7 +35,6 @@ public:
 class MIStream: public MStream {
 public:
     virtual bool seek(int32_t pos, SeekMode mode) {
-        Debug_printv("here");
         if(mode == SeekSet) {
             return seek(pos);
         }
@@ -51,13 +50,18 @@ public:
     virtual int available() = 0;
     virtual size_t size() = 0;
     virtual size_t read(uint8_t* buf, size_t size) = 0;
-    std::string seekNextEntry() {
-        return "";
-    };
-    bool seekPath(std::string path) {
+
+    // For files with a browsable random access directory structure
+    // d64, d74, d81, dnp, etc.
+    virtual bool seekPath(std::string path) {
         return false;
     };
 
+    // For files with no directory structure
+    // tap, crt, tar
+    virtual std::string seekNextEntry() {
+        return "";
+    };
 
     virtual bool isBrowsable() { return false; };
     virtual bool isRandomAccess() { return false; };

@@ -19,8 +19,9 @@
  ********************************************************/
 
 class D64Image {
-    MIStream* containerStream;
-    size_t entryIndex = 0;
+
+    // MIStream* containerStream;
+    // size_t entryIndex = 0;
 
 public:
 
@@ -66,29 +67,25 @@ public:
         uint8_t blocks[2];
     };
 
-    D64Image(MIStream* istream) : containerStream(istream) {
+    // D64Image(MIStream* istream) : containerStream(istream) {
         
+    // }
+
+    // ~D64Image() {
+    //     containerStream->close();
+    // }
+
+    void seekHeader(MIStream* containerStream) {
+        seekSector(containerStream, directory_header_offset, 0x90);
     }
 
-    ~D64Image() {
-        containerStream->close();
-    }
+    // bool seekNextEntry() {
+    //     return seekEntry(entryIndex + 1);
+    // }
 
-    void fillHeader() {
-        containerStream->read((uint8_t*)&header, sizeof(header));
-    }
-
-    void seekHeader() {
-        seekSector(directory_header_offset, 0x90);
-    }
-
-    bool seekNextEntry() {
-        return seekEntry(entryIndex + 1);
-    }
-
-    void resetEntryCounter() {
-        entryIndex = 0;
-    }
+    // void resetEntryCounter() {
+    //     entryIndex = 0;
+    // }
 
     uint8_t directory_header_offset[2] = {18, 0};
     uint8_t directory_list_offset[2] = {18, 1};
@@ -106,28 +103,25 @@ public:
     uint8_t index = 0;  // Currently selected directory entry
     uint8_t length = 0; // Directory list entry count
 
-    Header header;
-    Entry entry;        // Directory entry data
-
     bool show_hidden = false;
 
     void sendListing();
     void sendFile( std::string filename = "" );
 
-    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
-    bool seekSector( uint8_t* trackSector, size_t offset = 0 );
-    bool seekEntry( std::string filename );
-    bool seekEntry( size_t index = 0 );
+    bool seekSector( MIStream* containerStream, uint8_t track, uint8_t sector, size_t offset = 0 );
+    bool seekSector( MIStream* containerStream, uint8_t* trackSector, size_t offset = 0 );
+    bool seekEntry( MIStream* containerStream, std::string filename );
+    bool seekEntry( MIStream* containerStream, size_t entryIndex, size_t index );
 
     std::vector<Entry> getEntries(uint8_t track, uint8_t sector);
 
-    std::string decodeEntry();
+    std::string decodeEntry( Entry entry );
 
-    uint16_t blocksFree();
-    std::string readBlock( uint8_t track, uint8_t sector );
-    bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
-    bool allocateBlock( uint8_t track, uint8_t sector );
-    bool deallocateBlock( uint8_t track, uint8_t sector );
+    uint16_t blocksFree( MIStream* containerStream );
+    std::string readBlock( MIStream* containerStream, uint8_t track, uint8_t sector );
+    bool writeBlock( MIStream* containerStream, uint8_t track, uint8_t sector, std::string data );    
+    bool allocateBlock( MIStream* containerStream, uint8_t track, uint8_t sector );
+    bool deallocateBlock( MIStream* containerStream, uint8_t track, uint8_t sector );
 
 	uint8_t speedZone( uint8_t track)
 	{
@@ -165,6 +159,8 @@ private:
 
 };
 
+extern D64Image MediaImage;
+
 
 /********************************************************
  * File implementations
@@ -172,27 +168,18 @@ private:
 
 class D64File: public MFile {
 
-    std::shared_ptr<D64Image> _d64ImageStruct;
-
-    // a function for lazily initializing the struct
-    std::shared_ptr<D64Image> image() {
-        if(_d64ImageStruct == nullptr) {
-            _d64ImageStruct = std::make_shared<D64Image>(streamFile->inputStream());
-        }
-        return _d64ImageStruct;
-    }
-
 public:
+
+    uint8_t entryIndex = 0;
+    uint8_t track;
+    uint8_t sector;
+    uint16_t offset;
+    D64Image::Header header;
+    D64Image::Entry entry;        // Directory entry data
 
     D64File(std::string path, bool is_dir = true): MFile(path) {
         isDir = is_dir;
     };
-
-    D64File(std::shared_ptr<D64Image> image, std::string path, bool is_dir = true): MFile(path) {
-        _d64ImageStruct = image;
-        isDir = is_dir;
-    };
-
 
     void onInitialized () override {
 
@@ -209,20 +196,23 @@ public:
         {
             Debug_printv("ROOT FOLDER");
             // Read Header
-            image().get()->seekHeader();
-            image().get()->fillHeader();
-            Debug_printv("Disk Header [%.16s] [%.5s]", image().get()->header.disk_name, image().get()->header.id_dos);
+            //image().get()->seekHeader();
+            //image().get()->fillHeader();
+            MediaImage.seekHeader(streamFile->inputStream());
+            streamFile->inputStream()->read((uint8_t*)&header, sizeof(header));
+            //Debug_printv("Disk Header [%.16s] [%.5s]", image().get()->header.disk_name, image().get()->header.id_dos);
+            Debug_printv("Disk Header [%.16s] [%.5s]", header.disk_name, header.id_dos);
 
             // Count Directory Entries
             // Calculate Blocks Free
 
             // Set Media Info Fields
-            media_header = mstr::format("%.16s", image().get()->header.disk_name);
+            media_header = mstr::format("%.16s", header.disk_name);
             mstr::A02Space(media_header);
-            media_id = mstr::format("%.5s", image().get()->header.id_dos);
+            media_id = mstr::format("%.5s", header.id_dos);
             mstr::A02Space(media_id);
-            media_blocks_free = image().get()->blocksFree();
-            media_block_size = image().get()->block_size;
+            media_blocks_free = MediaImage.blocksFree(streamFile->inputStream());
+            media_block_size = MediaImage.block_size;
             media_image = name;
             isDir = true;
         }
@@ -284,7 +274,7 @@ private:
  * Streams
  ********************************************************/
 
-class D64IStream: public MIStream {
+class D64IStream:public D64Image,  public MIStream {
 
     bool seekCalled = false;
     MIStream* containerIStream;
@@ -293,14 +283,14 @@ public:
     D64IStream(MIStream* is) {
         // TODO - store is somewhere, so you can read from it!
         containerIStream = is;
-    }
+    };
     // MStream methods
     size_t position() override;
     void close() override;
     bool open() override;
     ~D64IStream() {
         close();
-    }
+    };
 
     // MIStream methods
     bool isBrowsable() override { return false; };
@@ -315,13 +305,7 @@ public:
         return true; 
     };
 
-    bool seekPath(std::string path) {
-        seekCalled = true;
-
-        // call D54Image method to obtain file bytes here, return true on success:
-        // return D64Image.seekFile(containerIStream, path);
-        return false;
-    };
+    bool seekPath(std::string path) override;
 
     int available() override;
     size_t size() override;
@@ -336,6 +320,7 @@ protected:
     int m_bytesAvailable = 0;
     int m_position = 0;
 };
+
 
 /********************************************************
  * FS
