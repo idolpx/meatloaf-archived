@@ -203,13 +203,13 @@ MIStream* MFile::inputStream() {
 
     // std::shared_ptr<MIStream> containerStream(streamFile->inputStream()); // get its base stream, i.e. zip raw file contents
 
-    std::shared_ptr<MIStream> decodedStream(createIStream(containerStream.get())); // wrap this stream into decodec stream, i.e. unpacked zip files
+    MIStream* decodedStream(createIStream(containerStream.get())); // wrap this stream into decodec stream, i.e. unpacked zip files
 
     if(pathInStream != "" && decodedStream->isRandomAccess()) {
         bool foundIt = decodedStream->seekPath(this->pathInStream);
 
         if(foundIt)
-            return decodedStream.get();
+            return decodedStream;
     }
     else if(pathInStream != "" && decodedStream->isBrowsable()) {
         // stream is browsable and path was requested, let's skip the stream to requested file
@@ -218,7 +218,7 @@ MIStream* MFile::inputStream() {
         while (!pointedFile.empty())
         {
             if(pointedFile == this->pathInStream)
-                return decodedStream.get();
+                return decodedStream;
 
             pointedFile = decodedStream->seekNextEntry();
         }
@@ -228,7 +228,7 @@ MIStream* MFile::inputStream() {
         return nullptr; // path requested for unbrowsable stream
     }
 
-    return decodedStream.get();
+    return decodedStream;
 };
 
 
