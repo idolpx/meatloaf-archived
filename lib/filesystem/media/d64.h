@@ -330,6 +330,8 @@ public:
             auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
             Debug_printv("filename [%.16s] type[%s] blocks[%d] start_track[%d] start_sector[%d]", entry.filename, type, blocks, entry.start_track, entry.start_sector);
             image().get()->seekSector(entry.start_track, entry.start_sector);
+
+            m_length = blocks;
         }
         else
         {
@@ -345,7 +347,7 @@ public:
     bool isOpen();
 
 protected:
-    std::unique_ptr<MFile> m_mfile;
+    // std::unique_ptr<MFile> m_mfile;
 
     bool m_isOpen;
     int m_length;

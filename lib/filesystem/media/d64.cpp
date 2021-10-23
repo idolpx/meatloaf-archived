@@ -341,13 +341,12 @@ int D64IStream::available() {
 
 size_t D64IStream::size() {
     // size of the "seeked" file, not the image.
-    m_length = 37376;
     Debug_printv("size[%d]", m_length);
     return m_length;
 };
 
 size_t D64IStream::read(uint8_t* buf, size_t size) {
-    Debug_printv("here");
+    Debug_printv("size[%d]", size);
     if(seekCalled) {
         // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
         // or set the stream to EOF-like state, if whle file is completely read.
@@ -355,12 +354,11 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
         m_bytesAvailable = 0; //m_file.available();
         m_position+=bytesRead;
         //bytesRead = D64Image.readFileBytes(containerIStream, path, fromWhere, buffer[], bufferSize);
-        return bytesRead;
     }
-    else {
+    //else {
         // seekXXX not called - just pipe image bytes, so it can be i.e. copied verbatim
         return containerIStream->read(buf, size);
-    }
+    //}
 
 };
 
