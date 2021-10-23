@@ -51,12 +51,12 @@ bool D64Image::deallocateBlock( uint8_t track, uint8_t sector)
 
 bool D64Image::seekEntry( std::string filename )
 {
-    entryIndex = 0;
+    uint8_t index = 0;
 
     // Read Directory Entries
-    while ( seekEntry( entryIndex ) )
+    while ( seekEntry( index ) )
     {
-        Debug_printv("filename[%s] entry.filename[%.16s]", filename.c_str(), entry.filename);
+        Debug_printv("track[%d] sector[%d] filename[%s] entry.filename[%.16s]", track, sector, filename.c_str(), entry.filename);
 
         // Read Entry From Stream
         if (entry.file_type & 0b00000111 && filename == "*")
@@ -69,7 +69,7 @@ bool D64Image::seekEntry( std::string filename )
             // Move stream pointer to start track/sector
             return true;
         }
-        entryIndex++;
+        index++;
     }
     
     entry.next_track = 0;
@@ -93,7 +93,7 @@ bool D64Image::seekEntry( size_t index )
     int8_t sectorOffset = index / 8;
     int8_t entryOffset = (index % 8) * 32;
 
-    //Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d] entryIndex[%d]", index, sectorOffset, entryOffset, entryIndex);
+    Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d] entryIndex[%d]", index, sectorOffset, entryOffset, entryIndex);
 
 
     if (index == 0 || index != entryIndex)
@@ -251,7 +251,7 @@ MFile* D64File::getNextFileInDir() {
 MIStream* D64File::createIStream(MIStream* is) {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
-    MIStream* istream = new D64IStream(is);
+    MIStream* istream = new D64IStream(_d64ImageStruct, is);
     istream->open();
     return istream;
 }
@@ -334,12 +334,14 @@ bool D64IStream::open() {
 
 int D64IStream::available() {
     // return bytes available in currently "seeked" file
+    m_bytesAvailable = 37376;
     Debug_printv("available[%d]", m_bytesAvailable);
     return m_bytesAvailable;
 };
 
 size_t D64IStream::size() {
     // size of the "seeked" file, not the image.
+    m_length = 37376;
     Debug_printv("size[%d]", m_length);
     return m_length;
 };

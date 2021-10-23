@@ -231,20 +231,6 @@ public:
             Debug_printv("SINGLE FILE");
             // Single file
             isDir = false;
-            mstr::toPETSCII(pathInStream);
-            if ( image().get()->seekEntry(pathInStream) )
-            {
-                auto entry = image().get()->entry;
-                auto type = image().get()->decodeEntry().c_str();
-                auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
-                Debug_printv("filename [%.16s] type[%s] blocks[%d]", entry.filename, type, blocks);
-                image().get()->seekSector(entry.start_track, entry.start_sector);
-            }
-            else
-            {
-                Debug_printv( "Not found! [%s]", pathInStream.c_str());
-            }
-
         }       
     };
     
@@ -259,8 +245,8 @@ public:
     }
 
     bool isDirectory() override;
-    MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
-    MOStream* outputStream() override { return nullptr; }; // has to return OPENED stream
+//    MIStream* inputStream() override { Debug_printv("here"); return nullptr; }; // has to return OPENED stream
+//    MOStream* outputStream() override { Debug_printv("here"); return nullptr; }; // has to return OPENED stream
 
     time_t getLastWrite() override;
     time_t getCreationTime() override;
@@ -289,11 +275,26 @@ class D64IStream: public MIStream {
     bool seekCalled = false;
     MIStream* containerIStream;
 
+    std::shared_ptr<D64Image> _d64ImageStruct;
+
+    // a function for lazily initializing the struct
+    std::shared_ptr<D64Image> image() {
+        if(_d64ImageStruct == nullptr) {
+            _d64ImageStruct = std::make_shared<D64Image>(containerIStream);
+        }
+        return _d64ImageStruct;
+    }
+
 public:
     D64IStream(MIStream* is) {
         // TODO - store is somewhere, so you can read from it!
         containerIStream = is;
     }
+    D64IStream(std::shared_ptr<D64Image> image, MIStream* is) {
+        containerIStream = is;
+        _d64ImageStruct = image;
+    };
+
     // MStream methods
     size_t position() override;
     void close() override;
@@ -321,6 +322,20 @@ public:
 
         // call D54Image method to obtain file bytes here, return true on success:
         // return D64Image.seekFile(containerIStream, path);
+        mstr::toPETSCII(path);
+        if ( image().get()->seekEntry(path) )
+        {
+            auto entry = image().get()->entry;
+            auto type = image().get()->decodeEntry().c_str();
+            auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
+            Debug_printv("filename [%.16s] type[%s] blocks[%d] start_track[%d] start_sector[%d]", entry.filename, type, blocks, entry.start_track, entry.start_sector);
+            image().get()->seekSector(entry.start_track, entry.start_sector);
+        }
+        else
+        {
+            Debug_printv( "Not found! [%s]", path.c_str());
+        }
+
         return false;
     };
 

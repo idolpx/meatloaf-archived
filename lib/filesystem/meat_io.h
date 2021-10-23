@@ -51,10 +51,11 @@ public:
         return pname;
     }
 
- 
+    // has to return OPENED stream
+    virtual MIStream* inputStream();
+    virtual MOStream* outputStream() { Debug_printv("here"); return nullptr; };
+
     virtual bool isDirectory() = 0;
-    virtual MIStream* inputStream() = 0;
-    virtual MOStream* outputStream() = 0;    // has to return OPENED stream
     virtual time_t getLastWrite() = 0 ;
     virtual time_t getCreationTime() = 0 ;
     virtual bool rewindDirectory() = 0 ;
