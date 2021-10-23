@@ -19,6 +19,7 @@
  ********************************************************/
 
 class D64Image {
+
     MIStream* containerStream;
     size_t entryIndex = 0;
 
@@ -95,6 +96,7 @@ public:
     BAMInfo block_allocation_map[1] = {18, 0, 0x04, 1, 35, 4};
     uint8_t sectorsPerTrack[4] = { 17, 18, 19, 21 };
     uint16_t block_size = 256;
+    uint8_t sector_buffer[256] = { 0 };
 
     std::string file_type_label[8] = { "del", "seq", "prg", "usr", "rel", "cbm", "dir", "???" };
 
@@ -128,6 +130,8 @@ public:
     bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
     bool allocateBlock( uint8_t track, uint8_t sector );
     bool deallocateBlock( uint8_t track, uint8_t sector );
+
+    size_t readFile(uint8_t* buf, size_t size);
 
 	uint8_t speedZone( uint8_t track)
 	{
@@ -328,7 +332,7 @@ public:
             auto entry = image().get()->entry;
             auto type = image().get()->decodeEntry().c_str();
             auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
-            Debug_printv("filename [%.16s] type[%s] blocks[%d] start_track[%d] start_sector[%d]", entry.filename, type, blocks, entry.start_track, entry.start_sector);
+            Debug_printv("filename [%.16s] type[%s] size[%d] start_track[%d] start_sector[%d]", entry.filename, type, blocks, entry.start_track, entry.start_sector);
             image().get()->seekSector(entry.start_track, entry.start_sector);
 
             m_length = blocks;
@@ -347,7 +351,6 @@ public:
     bool isOpen();
 
 protected:
-    // std::unique_ptr<MFile> m_mfile;
 
     bool m_isOpen;
     int m_length;

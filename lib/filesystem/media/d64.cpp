@@ -210,6 +210,15 @@ void D64Image::sendFile( std::string filename )
     }
 }
 
+size_t D64Image::readFile(uint8_t* buf, size_t size) {
+    uint8_t bytesRead = 0;
+    static uint8_t next_track = 0;
+    static uint8_t next_sector = 0;
+
+    bytesRead = containerStream->read(buf, size);
+    return bytesRead;
+};
+
 
 /********************************************************
  * File impls
@@ -315,7 +324,6 @@ size_t D64File::size() {
 // };
 
 size_t D64IStream::position() {
-    Debug_printv("here");
     return m_position; // return position within "seeked" file, not the D64 image!
 };
 
@@ -334,32 +342,38 @@ bool D64IStream::open() {
 
 int D64IStream::available() {
     // return bytes available in currently "seeked" file
-    m_bytesAvailable = 37376;
-    Debug_printv("available[%d]", m_bytesAvailable);
     return m_bytesAvailable;
 };
 
 size_t D64IStream::size() {
     // size of the "seeked" file, not the image.
-    Debug_printv("size[%d]", m_length);
     return m_length;
 };
 
 size_t D64IStream::read(uint8_t* buf, size_t size) {
-    Debug_printv("size[%d]", size);
+    uint8_t bytesRead = 0;
+
     if(seekCalled) {
         // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
         // or set the stream to EOF-like state, if whle file is completely read.
-        auto bytesRead= 0; // m_file.readBytes((char *) buf, size);
-        m_bytesAvailable = 0; //m_file.available();
-        m_position+=bytesRead;
+        //auto bytesRead= 0; // m_file.readBytes((char *) buf, size);
+        //m_bytesAvailable = 0; //m_file.available();
+        bytesRead = image().get()->readFile(buf, size);
+
         //bytesRead = D64Image.readFileBytes(containerIStream, path, fromWhere, buffer[], bufferSize);
     }
-    //else {
+    else {
         // seekXXX not called - just pipe image bytes, so it can be i.e. copied verbatim
-        return containerIStream->read(buf, size);
-    //}
+        //Debug_printv("containerIStream.isOpen[%d]", containerIStream->isOpen());
+        if ( containerIStream == nullptr)
+            Debug_printv("containerIStream is null");
 
+        bytesRead = containerIStream->read(buf, size);
+    }
+
+    m_position+=bytesRead;
+    m_bytesAvailable = m_length - m_position;
+    return bytesRead;
 };
 
 bool D64IStream::isOpen() {
