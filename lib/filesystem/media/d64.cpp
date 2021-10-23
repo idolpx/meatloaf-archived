@@ -212,10 +212,23 @@ void D64Image::sendFile( std::string filename )
 
 size_t D64Image::readFile(uint8_t* buf, size_t size) {
     uint8_t bytesRead = 0;
+    static uint8_t position = 0;
     static uint8_t next_track = 0;
     static uint8_t next_sector = 0;
 
+    if ( position % block_size == 0 )
+    {
+        // We are at the beginning of the block
+        // Read track/sector link
+        containerStream->read(&next_track, 1);
+        containerStream->read(&next_sector, 1);
+        position += 2;
+        Debug_printv("position[%d] next_track[%d] next_sector[%d]", position, next_track, next_sector);
+    }
+
     bytesRead = containerStream->read(buf, size);
+
+    position += bytesRead;
     return bytesRead;
 };
 
