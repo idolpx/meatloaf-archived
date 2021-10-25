@@ -72,6 +72,7 @@ public:
     }
 
     ~D64Image() {
+        Debug_printv("close");
         containerStream->close();
     }
 
@@ -304,6 +305,7 @@ public:
     void close() override;
     bool open() override;
     ~D64IStream() {
+        Debug_printv("close");
         close();
     }
 
@@ -320,30 +322,8 @@ public:
         return true; 
     };
 
-    bool seekPath(std::string path) {
-        Debug_printv("here");
-        seekCalled = true;
+    bool seekPath(std::string path) override;
 
-        // call D54Image method to obtain file bytes here, return true on success:
-        // return D64Image.seekFile(containerIStream, path);
-        mstr::toPETSCII(path);
-        if ( image().get()->seekEntry(path) )
-        {
-            auto entry = image().get()->entry;
-            auto type = image().get()->decodeEntry().c_str();
-            auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
-            Debug_printv("filename [%.16s] type[%s] size[%d] start_track[%d] start_sector[%d]", entry.filename, type, blocks, entry.start_track, entry.start_sector);
-            image().get()->seekSector(entry.start_track, entry.start_sector);
-
-            m_length = blocks;
-        }
-        else
-        {
-            Debug_printv( "Not found! [%s]", path.c_str());
-        }
-
-        return false;
-    };
 
     int available() override;
     size_t size() override;

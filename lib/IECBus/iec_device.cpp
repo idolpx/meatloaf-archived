@@ -939,11 +939,10 @@ void iecDevice::sendFile()
 	size_t i = 0;
 	bool success = true;
 
+	uint8_t b;
 	uint16_t bi = 0;
 	uint16_t load_address = 0;
 	uint16_t sys_address = 0;
-	size_t b_len = 1;
-	uint8_t b[b_len];
 
 #ifdef DATA_STREAM
 	char ba[9];
@@ -967,11 +966,12 @@ void iecDevice::sendFile()
 	// TODO!!!! you should check istream for nullptr here and return error immediately if null
 
 	
-	if(
+	if 
+	(
 		mstr::equals(file->extension, "txt", false) ||
 		mstr::equals(file->extension, "htm", false) ||
 		mstr::equals(file->extension, "html", false)
-		) 
+	) 
 	{
 		// convert UTF8 files on the fly
 
@@ -1025,19 +1025,19 @@ void iecDevice::sendFile()
 		size_t avail = istream->available();
 
 		i = 2;
-		istream->read(b, b_len);
-		success = m_iec.send(b[0]);
-		load_address = *b & 0x00FF; // low byte
-		sys_address = *b;
-		istream->read(b, b_len);
-		success = m_iec.send(b[0]);
-		load_address = load_address | *b << 8;  // high byte
-		sys_address += *b * 256;
+		istream->read((uint8_t *)&b, 1);
+		success = m_iec.send(b);
+		load_address = b & 0x00FF; // low byte
+		sys_address = b;
+		istream->read((uint8_t *)&b, 1);
+		success = m_iec.send(b);
+		load_address = load_address | b << 8;  // high byte
+		sys_address += b * 256;
 
 		Debug_printf("sendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
 		while( len && success )
 		{
-			success = istream->read(b, b_len);
+			success = istream->read((uint8_t *)&b, 1);
 			if (success)
 			{
 	#ifdef DATA_STREAM
@@ -1049,19 +1049,19 @@ void iecDevice::sendFile()
 	#endif
 				if ( avail == 1 )
 				{
-					success = m_iec.sendEOI(b[0]); // indicate end of file.
+					success = m_iec.sendEOI(b); // indicate end of file.
 				}
 				else
 				{
-					success = m_iec.send(b[0]);
+					success = m_iec.send(b);
 				}
 
 	#ifdef DATA_STREAM
 				// Show ASCII Data
-				if (b[0] < 32 || b[0] >= 127) 
-				b[0] = 46;
+				if (b < 32 || b >= 127) 
+				b = 46;
 
-				ba[bi++] = b[0];
+				ba[bi++] = b;
 
 				if(bi == 8)
 				{

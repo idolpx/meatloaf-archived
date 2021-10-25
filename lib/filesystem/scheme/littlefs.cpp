@@ -451,13 +451,11 @@ bool LittleIStream::open() {
 
 // MIStream methods
 int LittleIStream::available() {
-    Debug_printv("here");
     if(!isOpen()) return 0;
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
 };
 
 size_t LittleIStream::size() {
-    Debug_printv("here");
     return available();
 };
 

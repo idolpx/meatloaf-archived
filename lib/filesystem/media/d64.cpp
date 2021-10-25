@@ -6,13 +6,13 @@ bool D64Image::seekSector( uint8_t track, uint8_t sector, size_t offset )
 {
 	uint16_t sectorOffset = 0;
 
-    //Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
+    Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
 
     track--;
 	for (uint8_t index = 0; index < track; ++index)
 	{
 		sectorOffset += sectorsPerTrack[speedZone(index)];
-        // Debug_printv("track[%d] speedZone[%d] secotorsPerTrack[%d] sectorOffset[%d]", index, speedZone(index), sectorsPerTrack[speedZone(index)], sectorOffset);
+        //Debug_printv("track[%d] speedZone[%d] secotorsPerTrack[%d] sectorOffset[%d]", index, speedZone(index), sectorsPerTrack[speedZone(index)], sectorOffset);
 	}
 	sectorOffset += sector;
 
@@ -216,6 +216,8 @@ size_t D64Image::readFile(uint8_t* buf, size_t size) {
     static uint8_t next_track = 0;
     static uint8_t next_sector = 0;
 
+    Debug_printv("track[%d] sector[%d]", track, sector);
+
     if ( position % block_size == 0 )
     {
         // We are at the beginning of the block
@@ -314,12 +316,39 @@ size_t D64File::size() {
  ********************************************************/
 
 
-// bool D64IStream::seekPath(std::string path) {
-//     // Implement this to skip a queue of file streams to start of file by name
-//     // this will cause the next read to return bytes of 'path'
+bool D64IStream::seekPath(std::string path) {
+    // Implement this to skip a queue of file streams to start of file by name
+    // this will cause the next read to return bytes of 'path'
+    Debug_printv("here");
+    seekCalled = true;
 
-//     return false;
-// };
+    // call D54Image method to obtain file bytes here, return true on success:
+    // return D64Image.seekFile(containerIStream, path);
+    mstr::toPETSCII(path);
+    if ( image().get()->seekEntry(path) )
+    {
+        auto entry = image().get()->entry;
+        auto type = image().get()->decodeEntry().c_str();
+        auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
+        Debug_printv("filename [%.16s] type[%s] size[%d] start_track[%d] start_sector[%d]", entry.filename, type, blocks, entry.start_track, entry.start_sector);
+        image().get()->seekSector(entry.start_track, entry.start_sector);
+
+        static uint8_t next_track = 0;
+        static uint8_t next_sector = 0;
+        image().get()->readFile(&next_track, 1);
+        image().get()->readFile(&next_sector, 1);
+
+        Debug_printv("next_track[%d] next_sector[%d]", next_track, next_sector);
+
+        m_length = blocks;
+    }
+    else
+    {
+        Debug_printv( "Not found! [%s]", path.c_str());
+    }
+
+    return false;
+};
 
 // std::string D64IStream::seekNextEntry() {
 //     // Implement this to skip a queue of file streams to start of next file and return its name
