@@ -20,10 +20,10 @@
 
 class D64Image {
 
+public:
+
     MIStream* containerStream;
     size_t entryIndex = 0;
-
-public:
 
     uint8_t dos_version;
     struct Header {
@@ -132,8 +132,6 @@ public:
     bool allocateBlock( uint8_t track, uint8_t sector );
     bool deallocateBlock( uint8_t track, uint8_t sector );
 
-    size_t readFile(uint8_t* buf, size_t size);
-
 	uint8_t speedZone( uint8_t track)
 	{
 		return (track < 30) + (track < 24) + (track < 17);
@@ -182,6 +180,7 @@ class D64File: public MFile {
     // a function for lazily initializing the struct
     std::shared_ptr<D64Image> image() {
         if(_d64ImageStruct == nullptr) {
+            Debug_printv("nullptr!");
             _d64ImageStruct = std::make_shared<D64Image>(streamFile->inputStream());
         }
         return _d64ImageStruct;
@@ -280,25 +279,27 @@ class D64IStream: public MIStream {
     bool seekCalled = false;
     MIStream* containerIStream;
 
-    std::shared_ptr<D64Image> _d64ImageStruct;
+    D64Image* containerImage;
 
-    // a function for lazily initializing the struct
-    std::shared_ptr<D64Image> image() {
-        if(_d64ImageStruct == nullptr) {
-            _d64ImageStruct = std::make_shared<D64Image>(containerIStream);
-        }
-        return _d64ImageStruct;
-    }
+    // // a function for lazily initializing the struct
+    // std::shared_ptr<D64Image> image() {
+    //     if(_d64ImageStruct == nullptr) {
+    //         Debug_printv("nullptr!");
+    //         _d64ImageStruct = std::make_shared<D64Image>(containerIStream);
+    //     }
+    //     return _d64ImageStruct;
+    // }
 
 public:
     D64IStream(MIStream* is) {
         // TODO - store is somewhere, so you can read from it!
         containerIStream = is;
+        containerImage = new D64Image(containerIStream);
     }
-    D64IStream(std::shared_ptr<D64Image> image, MIStream* is) {
-        containerIStream = is;
-        _d64ImageStruct = image;
-    };
+    // D64IStream(D64Image* image, MIStream* is) {
+    //     containerIStream = is;
+    //     containerImage = image;
+    // };
 
     // MStream methods
     size_t position() override;
@@ -306,6 +307,7 @@ public:
     bool open() override;
     ~D64IStream() {
         Debug_printv("close");
+        delete containerImage;
         close();
     }
 

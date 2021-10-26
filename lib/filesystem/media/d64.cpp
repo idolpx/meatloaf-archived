@@ -210,30 +210,6 @@ void D64Image::sendFile( std::string filename )
     }
 }
 
-size_t D64Image::readFile(uint8_t* buf, size_t size) {
-    uint8_t bytesRead = 0;
-    static uint8_t position = 0;
-    static uint8_t next_track = 0;
-    static uint8_t next_sector = 0;
-
-    Debug_printv("track[%d] sector[%d]", track, sector);
-
-    if ( position % block_size == 0 )
-    {
-        // We are at the beginning of the block
-        // Read track/sector link
-        containerStream->read(&next_track, 1);
-        containerStream->read(&next_sector, 1);
-        position += 2;
-        Debug_printv("position[%d] next_track[%d] next_sector[%d]", position, next_track, next_sector);
-    }
-
-    bytesRead = containerStream->read(buf, size);
-
-    position += bytesRead;
-    return bytesRead;
-};
-
 
 /********************************************************
  * File impls
@@ -275,7 +251,7 @@ MFile* D64File::getNextFileInDir() {
 MIStream* D64File::createIStream(MIStream* is) {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
-    MIStream* istream = new D64IStream(_d64ImageStruct, is);
+    MIStream* istream = new D64IStream(is);
     istream->open();
     return istream;
 }
@@ -325,22 +301,16 @@ bool D64IStream::seekPath(std::string path) {
     // call D54Image method to obtain file bytes here, return true on success:
     // return D64Image.seekFile(containerIStream, path);
     mstr::toPETSCII(path);
-    if ( image().get()->seekEntry(path) )
+    if ( containerImage->seekEntry(path) )
     {
-        auto entry = image().get()->entry;
-        auto type = image().get()->decodeEntry().c_str();
+        auto entry = containerImage->entry;
+        auto type = containerImage->decodeEntry().c_str();
         auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
         Debug_printv("filename [%.16s] type[%s] size[%d] start_track[%d] start_sector[%d]", entry.filename, type, blocks, entry.start_track, entry.start_sector);
-        image().get()->seekSector(entry.start_track, entry.start_sector);
-
-        static uint8_t next_track = 0;
-        static uint8_t next_sector = 0;
-        image().get()->readFile(&next_track, 1);
-        image().get()->readFile(&next_sector, 1);
-
-        Debug_printv("next_track[%d] next_sector[%d]", next_track, next_sector);
+        containerImage->seekSector(entry.start_track, entry.start_sector);
 
         m_length = blocks;
+        m_bytesAvailable = blocks;
     }
     else
     {
@@ -370,7 +340,7 @@ size_t D64IStream::position() {
 };
 
 void D64IStream::close() {
-    Debug_printv("here");
+
 };
 
 bool D64IStream::open() {
@@ -393,14 +363,36 @@ size_t D64IStream::size() {
 };
 
 size_t D64IStream::read(uint8_t* buf, size_t size) {
-    uint8_t bytesRead = 0;
+    size_t bytesRead = 0;
+    
+    static uint8_t next_track = 0;
+    static uint8_t next_sector = 0;
+    static uint8_t sector_offset = 0;
 
     if(seekCalled) {
         // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
         // or set the stream to EOF-like state, if whle file is completely read.
         //auto bytesRead= 0; // m_file.readBytes((char *) buf, size);
         //m_bytesAvailable = 0; //m_file.available();
-        bytesRead = image().get()->readFile(buf, size);
+        //bytesRead = image().get()->readFile(buf, size);
+
+        //Debug_printv("track[%d] sector[%d] sector_offset[%d]", image().get()->track, image().get()->sector, sector_offset);
+
+        if ( sector_offset % containerImage->block_size == 0 )
+        {
+            // We are at the beginning of the block
+            // Read track/sector link
+            // containerImage->containerStream->read(&next_track, 1);
+            // containerImage->containerStream->read(&next_sector, 1);
+            // sector_offset += 2;
+            //Debug_printv("next_track[%d] next_sector[%d] sector_offset[%d]", next_track, next_sector, sector_offset);
+        }
+
+        bytesRead = containerImage->containerStream->read((uint8_t *)&buf, size);
+        //buf[0] = 8;
+        //bytesRead = 1;
+
+        sector_offset += bytesRead;
 
         //bytesRead = D64Image.readFileBytes(containerIStream, path, fromWhere, buffer[], bufferSize);
     }

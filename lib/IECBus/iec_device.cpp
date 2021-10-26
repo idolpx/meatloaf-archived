@@ -1034,10 +1034,13 @@ void iecDevice::sendFile()
 		load_address = load_address | b << 8;  // high byte
 		sys_address += b * 256;
 
+		Debug_printv("len[%d] avail[%d] success[%d]", len, avail, success);
+
 		Debug_printf("sendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
-		while( len && success )
+		while( len && avail && success )
 		{
 			success = istream->read((uint8_t *)&b, 1);
+			// Debug_printv("b[%02X] success[%d]", b, success);
 			if (success)
 			{
 	#ifdef DATA_STREAM
@@ -1082,7 +1085,7 @@ void iecDevice::sendFile()
 			// }
 
 			// Toggle LED
-			if (0 == i % 50)
+			if (i % 50 == 0)
 			{
 				ledToggle(true);
 			}
