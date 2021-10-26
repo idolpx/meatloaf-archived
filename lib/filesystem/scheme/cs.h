@@ -223,7 +223,7 @@ public:
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override  { return 0; };
     bool rename(std::string dest) { return false; };
-    MIStream* createIStream(MIStream* src) { return src; };
+    MIStream* createIStream(std::shared_ptr<MIStream> src) { return src.get(); };
 
     std::string petsciiName() override {
         return name;

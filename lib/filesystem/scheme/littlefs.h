@@ -116,7 +116,7 @@ public:
     size_t size() override ;
     bool remove() override ;
     bool rename(std::string dest);
-    MIStream* createIStream(MIStream* src);
+    MIStream* createIStream(std::shared_ptr<MIStream> src);
 
 private:
     void openDir(std::string path);

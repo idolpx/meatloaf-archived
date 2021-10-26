@@ -81,7 +81,7 @@ public:
     std::string pathInStream;
 
 protected:
-    virtual MIStream* createIStream(MIStream* src) = 0;
+    virtual MIStream* createIStream(std::shared_ptr<MIStream> src) = 0;
     bool m_isNull;
 
     virtual void onInitialized();

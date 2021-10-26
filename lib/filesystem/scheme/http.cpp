@@ -17,8 +17,8 @@ MIStream* HttpFile::inputStream() {
     return istream;
 } ; 
 
-MIStream* HttpFile::createIStream(MIStream* is) {
-    return is; // we've overriden istreamfunction, so this one won't be used
+MIStream* HttpFile::createIStream(std::shared_ptr<MIStream> is) {
+    return is.get(); // we've overriden istreamfunction, so this one won't be used
 }
 
 MOStream* HttpFile::outputStream() {

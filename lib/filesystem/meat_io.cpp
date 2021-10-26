@@ -203,7 +203,7 @@ MIStream* MFile::inputStream() {
 
     // std::shared_ptr<MIStream> containerStream(streamFile->inputStream()); // get its base stream, i.e. zip raw file contents
 
-    MIStream* decodedStream(createIStream(containerStream.get())); // wrap this stream into decodec stream, i.e. unpacked zip files
+    MIStream* decodedStream(createIStream(containerStream)); // wrap this stream into decodec stream, i.e. unpacked zip files
 
     if(pathInStream != "" && decodedStream->isRandomAccess()) {
         bool foundIt = decodedStream->seekPath(this->pathInStream);

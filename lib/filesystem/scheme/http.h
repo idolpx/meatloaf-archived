@@ -35,7 +35,7 @@ public:
     size_t size() override ;
     bool remove() override { return false; };
     bool rename(std::string dest) { return false; };
-    MIStream* createIStream(MIStream* src);
+    MIStream* createIStream(std::shared_ptr<MIStream> src);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 };
 
