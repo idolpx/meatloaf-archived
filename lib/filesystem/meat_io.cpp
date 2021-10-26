@@ -193,7 +193,7 @@ bool MFile::operator!=(nullptr_t ptr) {
 }
 
 MIStream* MFile::inputStream() {
-    ; // has to return OPENED stream
+    // has to return OPENED stream
     //std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
     std::shared_ptr<MIStream> containerStream(streamFile->inputStream());
 

@@ -27,11 +27,11 @@ using namespace Protocol;
 
 namespace
 {
-
 	// Buffer for incoming and outgoing serial bytes and other stuff.
 	char serCmdIOBuf[MAX_BYTES_PER_REQUEST];
 
 } // unnamed namespace
+
 iecDevice::iecDevice(IEC &iec)
 	: m_iec(iec),
 	m_iec_data(*reinterpret_cast<IEC::Data *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
