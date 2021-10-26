@@ -226,7 +226,7 @@ public:
         return newStream;
     }
 
-    static void disposeImage(std::string url) {
+    static void dispose(std::string url) {
         if(repo.find(url)!=repo.end()) {
             auto toDelete = repo.at(url);
             repo.erase(url);
