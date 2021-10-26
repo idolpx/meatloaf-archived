@@ -133,8 +133,6 @@ MFile* MFSOwner::File(std::string path) {
             }
         }
 
-        newFile->onInitialized();
-
         return newFile;
     }
 
@@ -193,8 +191,6 @@ MFile::MFile(MFile* path, std::string name) : MFile(path->path + "/" + name) {}
 bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
 }
-
-void MFile::onInitialized() {}
 
 MIStream* MFile::inputStream() {
     ; // has to return OPENED stream

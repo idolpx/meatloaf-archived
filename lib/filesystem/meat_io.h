@@ -84,7 +84,7 @@ protected:
     virtual MIStream* createIStream(std::shared_ptr<MIStream> src) = 0;
     bool m_isNull;
 
-    virtual void onInitialized();
+
 
 friend class MFSOwner;
 };

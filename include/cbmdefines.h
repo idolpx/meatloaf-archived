@@ -31,7 +31,7 @@
 #define CBM_1541_ROM_OFFSET 0xC000
 #define CBM_1541_ROM_SIZE (1024 * 16)
 
-// Largest Serial byte buffer request from / to arduino.
+// Largest Serial byte buffer request from / to.
 #define MAX_BYTES_PER_REQUEST 256
 
 // Back arrow character code.

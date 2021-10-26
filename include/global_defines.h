@@ -21,7 +21,7 @@
 #include <Arduino.h>
 
 #define PRODUCT_ID "MEATLOAF CBM"
-#define FW_VERSION "20211021.1" // Dynamically set at compile time in "platformio.ini"
+#define FW_VERSION "20211026.1" // Dynamically set at compile time in "platformio.ini"
 #define USER_AGENT PRODUCT_ID " [" FW_VERSION "]"
 //#define UPDATE_URL      "http://meatloaf.cc/fw/?p=meatloaf&d={{DEVICE_ID}}&a="
 #define UPDATE_URL "http://meatloaf.cc/fw/meatloaf.4MB.bin"
@@ -40,6 +40,12 @@
 //#define ARCHIVE_TYPES "7Z|GZ|ZIP|RAR"
 
 //#define SWITCH_PIN  D4  // IO2              // Long press to reset to 300KBPS Mode
+
+/* 
+ * Virtual Modem 
+ */
+
+#define VIRTUAL_MODEM
 
 #if defined(ESP8266)
     // ESP8266 GPIO to C64 User Port
@@ -64,11 +70,16 @@
 #define TX_BUF_SIZE          256   // Buffer where to read from serial before writing to TCP
 
 
+
+/* 
+ * Virtual Floppy Drive 
+ */
+
 // CLK & DATA lines in/out are split between two pins
 //#define SPLIT_LINES
 
 // CLK_OUT & DATA_OUT are inverted
-#define INVERTED_LINES      false
+//#define INVERTED_LINES
 
 #if defined(ESP8266)
     // ESP8266 GPIO to C64 IEC Serial Port
@@ -90,6 +101,11 @@
 
     #define LED_PIN              4     // SIO LED
 #endif
+
+
+/*
+ * LED Functions
+ */
 
 #define LED_ON LOW
 #define LED_OFF HIGH
@@ -116,11 +132,20 @@ inline static void ledOFF()
     digitalWrite(LED_PIN, LED_OFF);
 }
 
+
+/*
+ * Hardware Timer
+ */
+
 static bool m_timedout;
 inline static void IRAM_ATTR onTimer() 
 {
     m_timedout = true;
 }
+
+/*
+ * DEBUG SETTINGS
+ */ 
 
 // Enable this for verbose logging of IEC interface
 #define DEBUG
@@ -162,7 +187,7 @@ inline static void IRAM_ATTR onTimer()
 
 // Enable WEB SERVER or WEBDAV
 //#define WEB_SERVER
-#define WEBDAV
+//#define WEBDAV
 
 // Format storage if a valid file system is not found
 #define AUTO_FORMAT true

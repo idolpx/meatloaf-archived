@@ -244,12 +244,33 @@ void D64IStream::sendFile( std::string filename )
  ********************************************************/
 
 bool D64File::isDirectory() {
-    return isDir;
+    if ( pathInStream == "")
+    {
+        auto image = ImageBroker::obtain(streamFile->url);
+
+        // Read Header
+        image->seekHeader();
+        image->fillHeader();
+
+        // Set Media Info Fields
+        media_header = mstr::format("%.16s", image->header.disk_name);
+        mstr::A02Space(media_header);
+        media_id = mstr::format("%.5s", image->header.id_dos);
+        mstr::A02Space(media_id);
+        media_blocks_free = image->blocksFree();
+        media_block_size = image->block_size;
+        media_image = name;
+
+        return true;
+    }
+    else
+        return false;
 };
 
 bool D64File::rewindDirectory() {
     dirIsOpen = true;
-    ImageBroker::obtain(streamFile->url)->resetEntryCounter();
+    auto image = ImageBroker::obtain(streamFile->url);
+    image->resetEntryCounter();
     return getNextFileInDir();
 }
 

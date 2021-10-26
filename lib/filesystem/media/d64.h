@@ -220,8 +220,21 @@ public:
         if(repo.find(url)!=repo.end()) {
             return repo.at(url);
         }
+
+        // create and add stream to broker if not found
         auto newFile = MFSOwner::File(url);
         D64IStream* newStream = (D64IStream*)newFile->inputStream();
+
+        // Are we at the root of the pathInStream?
+        if ( newFile->pathInStream == "")
+        {
+            Debug_printv("DIRECTORY");
+        }
+        else
+        {
+            Debug_printv("SINGLE FILE");
+        } 
+
         repo.insert(std::make_pair(url, newStream));
         delete newFile;
         return newStream;
@@ -245,48 +258,6 @@ public:
 
     D64File(std::string path, bool is_dir = true): MFile(path) {
         isDir = is_dir;
-    };
-
-    void onInitialized () override {
-
-        // THIS should work now. If it still doesn't just comment this, and uncomment two lines below :D
-        // containerStream = streamFile->inputStream();
-
-        //MFile* containerFile = new LittleFile(path);
-
-        Debug_printv( "streamPath: [%s]", streamFile->url.c_str());
-        Debug_printv( "pathInStream: [%s]", pathInStream.c_str());
-
-        auto image = ImageBroker::obtain(streamFile->url);
-
-        // Are we at the root of the pathInStream?
-        if ( pathInStream == "")
-        {
-            Debug_printv("ROOT FOLDER");
-            // Read Header
-            image->seekHeader();
-            image->fillHeader();
-            //Debug_printv("Disk Header [%.16s] [%.5s]", image().get()->header.disk_name, image().get()->header.id_dos);
-
-            // Count Directory Entries
-            // Calculate Blocks Free
-
-            // Set Media Info Fields
-            media_header = mstr::format("%.16s", image->header.disk_name);
-            mstr::A02Space(media_header);
-            media_id = mstr::format("%.5s", image->header.id_dos);
-            mstr::A02Space(media_id);
-            media_blocks_free = image->blocksFree();
-            media_block_size = image->block_size;
-            media_image = name;
-            isDir = true;
-        }
-        else
-        {
-            Debug_printv("SINGLE FILE");
-            // Single file
-            isDir = false;
-        }       
     };
     
     ~D64File() {
