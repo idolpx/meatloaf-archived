@@ -216,6 +216,7 @@ class ImageBroker {
     static std::unordered_map<std::string, D64IStream*> repo;
 public:
     static D64IStream* obtain(std::string url) {
+        // obviously you have to supply STREAMFILE.url to this function!
         if(repo.find(url)!=repo.end()) {
             return repo.at(url);
         }
@@ -256,7 +257,7 @@ public:
         Debug_printv( "streamPath: [%s]", streamFile->url.c_str());
         Debug_printv( "pathInStream: [%s]", pathInStream.c_str());
 
-        auto image = ImageBroker::obtain(url);
+        auto image = ImageBroker::obtain(streamFile->url);
 
         // Are we at the root of the pathInStream?
         if ( pathInStream == "")

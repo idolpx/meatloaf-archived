@@ -249,7 +249,7 @@ bool D64File::isDirectory() {
 
 bool D64File::rewindDirectory() {
     dirIsOpen = true;
-    ImageBroker::obtain(url)->resetEntryCounter();
+    ImageBroker::obtain(streamFile->url)->resetEntryCounter();
     return getNextFileInDir();
 }
 
@@ -259,7 +259,7 @@ MFile* D64File::getNextFileInDir() {
         rewindDirectory();
 
     // Get entry pointed to by containerStream
-    auto image = ImageBroker::obtain(url);
+    auto image = ImageBroker::obtain(streamFile->url);
 
     if ( image->seekNextImageEntry() )
     {
@@ -290,7 +290,7 @@ time_t D64File::getLastWrite() {
 
 time_t D64File::getCreationTime() {
     tm *entry_time = 0;
-    auto entry = ImageBroker::obtain(url)->entry;
+    auto entry = ImageBroker::obtain(streamFile->url)->entry;
     entry_time->tm_year = entry.year + 1900;
     entry_time->tm_mon = entry.month;
     entry_time->tm_mday = entry.day;
@@ -309,7 +309,7 @@ bool D64File::exists() {
 size_t D64File::size() {
     Debug_printv("here");
     // use D64 to get size of the file in image
-    auto entry = ImageBroker::obtain(url)->entry;
+    auto entry = ImageBroker::obtain(streamFile->url)->entry;
     // (_ui16 << 8 | _ui16 >> 8)
     uint16_t blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
     return blocks;
