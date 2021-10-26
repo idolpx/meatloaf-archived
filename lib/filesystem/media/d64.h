@@ -217,7 +217,7 @@ private:
  ********************************************************/
 class ImageBroker {
 public:
-    static D64IStream* obtain() {
+    static D64IStream* obtain(std::string url) {
         return nullptr;
     }
 };
@@ -243,25 +243,27 @@ public:
         Debug_printv( "streamPath: [%s]", streamFile->url.c_str());
         Debug_printv( "pathInStream: [%s]", pathInStream.c_str());
 
+        auto image = ImageBroker::obtain(url);
+
         // Are we at the root of the pathInStream?
         if ( pathInStream == "")
         {
             Debug_printv("ROOT FOLDER");
             // Read Header
-            ImageBroker::obtain()->seekHeader();
-            ImageBroker::obtain()->fillHeader();
+            image->seekHeader();
+            image->fillHeader();
             //Debug_printv("Disk Header [%.16s] [%.5s]", image().get()->header.disk_name, image().get()->header.id_dos);
 
             // Count Directory Entries
             // Calculate Blocks Free
 
             // Set Media Info Fields
-            media_header = mstr::format("%.16s", ImageBroker::obtain()->header.disk_name);
+            media_header = mstr::format("%.16s", image->header.disk_name);
             mstr::A02Space(media_header);
-            media_id = mstr::format("%.5s", ImageBroker::obtain()->header.id_dos);
+            media_id = mstr::format("%.5s", image->header.id_dos);
             mstr::A02Space(media_id);
-            media_blocks_free = ImageBroker::obtain()->blocksFree();
-            media_block_size = ImageBroker::obtain()->block_size;
+            media_blocks_free = image->blocksFree();
+            media_block_size = image->block_size;
             media_image = name;
             isDir = true;
         }
