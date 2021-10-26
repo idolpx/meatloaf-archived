@@ -11,6 +11,7 @@
 // #include "fs_littlefs.h"
 // #include "MemoryInfo.h"
 #include "string_utils.h"
+#include <map>
 
 #include "../../include/global_defines.h"
 
@@ -65,11 +66,7 @@ protected:
     int m_bytesAvailable = 0;
     int m_position = 0;
 
-
-
-// D64Image methods
-
-
+    // D64Image methods
     D64IStream* decodedStream;
 
     size_t entryIndex = 0;
@@ -115,7 +112,7 @@ protected:
         uint8_t minute;
         uint8_t blocks[2];
     };
-public:
+
     void fillHeader() {
         containerStream->read((uint8_t*)&header, sizeof(header));
     }
@@ -209,16 +206,23 @@ private:
 
     //     return D64_TYPE_UNKNOWN;
     // }
-
+    friend class D64File;
 };
 
 /********************************************************
  * Utility implementations
  ********************************************************/
 class ImageBroker {
+    static std::unordered_map<std::string, D64IStream*> repo;
 public:
     static D64IStream* obtain(std::string url) {
-        return nullptr;
+        if(repo.find(url)!=repo.end()) {
+            return repo.at(url);
+        }
+        auto newFile = MFSOwner::File(url);
+        D64IStream* newStream = (D64IStream*)newFile->inputStream();
+        repo.insert(std::make_pair(url, newStream));
+        return newStream;
     }
 };
 

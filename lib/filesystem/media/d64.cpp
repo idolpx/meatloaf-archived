@@ -425,3 +425,5 @@ bool D64IStream::isOpen() {
     return m_isOpen;
 };
 
+
+std::unordered_map<std::string, D64IStream*> ImageBroker::repo;
