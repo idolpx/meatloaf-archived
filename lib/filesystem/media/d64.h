@@ -114,6 +114,8 @@ public:
 
     bool show_hidden = false;
 
+    size_t read(uint8_t* buf, size_t size);
+
     void sendListing();
     void sendFile( std::string filename = "" );
 
