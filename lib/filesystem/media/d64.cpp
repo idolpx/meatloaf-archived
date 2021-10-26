@@ -204,6 +204,8 @@ size_t D64Image::read(uint8_t* buf, size_t size) {
 
     if ( sector_offset % block_size == 0 )
     {
+        // We are at the end of the block
+        // Follow track/sector link to move to next block
         seekSector( next_track, next_sector );
     }
 
