@@ -194,18 +194,23 @@ bool MFile::operator!=(nullptr_t ptr) {
 
 MIStream* MFile::inputStream() {
     // has to return OPENED stream
+    Debug_printv("pathInStream[%s] streamFile[%s]", pathInStream.c_str(), streamFile->url.c_str());
     //std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
-    std::shared_ptr<MIStream> containerStream(streamFile->inputStream());
 
-    // std::shared_ptr<MIStream> containerStream(streamFile->inputStream()); // get its base stream, i.e. zip raw file contents
+    std::shared_ptr<MIStream> containerStream(streamFile->inputStream()); // get its base stream, i.e. zip raw file contents
+    Debug_printv("containerStream isRandomAccess[%d] isBrowsable[%d]", containerStream->isRandomAccess(), containerStream->isBrowsable());
 
     MIStream* decodedStream(createIStream(containerStream)); // wrap this stream into decodec stream, i.e. unpacked zip files
+    Debug_printv("decodedStream isRandomAccess[%d] isBrowsable[%d]", decodedStream->isRandomAccess(), decodedStream->isBrowsable());
 
     if(pathInStream != "" && decodedStream->isRandomAccess()) {
         bool foundIt = decodedStream->seekPath(this->pathInStream);
 
         if(foundIt)
+        {
+            Debug_printv("returning decodedStream");
             return decodedStream;
+        }  
     }
     else if(pathInStream != "" && decodedStream->isBrowsable()) {
         // stream is browsable and path was requested, let's skip the stream to requested file
@@ -214,16 +219,22 @@ MIStream* MFile::inputStream() {
         while (!pointedFile.empty())
         {
             if(pointedFile == this->pathInStream)
-                return decodedStream;
+            {
+                Debug_printv("returning decodedStream");
+                return decodedStream;                
+            }
 
             pointedFile = decodedStream->seekNextEntry();
         }
+        Debug_printv("returning nullptr");
         return nullptr; // there was no file with that name in this stream!
     }
-    else {
+    else if(!decodedStream->isBrowsable()) {
+        Debug_printv("returning nullptr");
         return nullptr; // path requested for unbrowsable stream
     }
 
+    Debug_printv("returning decodedStream");
     return decodedStream;
 };
 

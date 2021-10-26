@@ -211,8 +211,6 @@ public:
     virtual bool seek(int32_t pos) override;
     virtual bool seek(int32_t pos, SeekMode mode) override;
 
-
-
 protected:
     std::string localPath;
 

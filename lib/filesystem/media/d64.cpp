@@ -269,7 +269,11 @@ bool D64File::isDirectory() {
 
 bool D64File::rewindDirectory() {
     dirIsOpen = true;
+    Debug_printv("streamFile->url[%s]", streamFile->url.c_str());
     auto image = ImageBroker::obtain(streamFile->url);
+    if ( image == nullptr )
+        Debug_printv("image pointer is null");
+
     image->resetEntryCounter();
     return getNextFileInDir();
 }
