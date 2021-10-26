@@ -2,7 +2,7 @@
 
 // D64 Utility Functions
 
-bool D64Image::seekSector( uint8_t track, uint8_t sector, size_t offset )
+bool D64IStream::seekSector( uint8_t track, uint8_t sector, size_t offset )
 {
 	uint16_t sectorOffset = 0;
 
@@ -22,34 +22,34 @@ bool D64Image::seekSector( uint8_t track, uint8_t sector, size_t offset )
     return containerStream->seek( (sectorOffset * block_size) + offset );
 }
 
-bool D64Image::seekSector( uint8_t* trackSector, size_t offset )
+bool D64IStream::seekSector( uint8_t* trackSector, size_t offset )
 {
     return seekSector(trackSector[0], trackSector[1], offset);
 }
 
 
 
-std::string D64Image::readBlock(uint8_t track, uint8_t sector)
+std::string D64IStream::readBlock(uint8_t track, uint8_t sector)
 {
     return "";
 }
 
-bool D64Image::writeBlock(uint8_t track, uint8_t sector, std::string data)
+bool D64IStream::writeBlock(uint8_t track, uint8_t sector, std::string data)
 {
     return true;
 }
 
-bool D64Image::allocateBlock( uint8_t track, uint8_t sector)
+bool D64IStream::allocateBlock( uint8_t track, uint8_t sector)
 {
     return true;
 }
 
-bool D64Image::deallocateBlock( uint8_t track, uint8_t sector)
+bool D64IStream::deallocateBlock( uint8_t track, uint8_t sector)
 {
     return true;
 }
 
-bool D64Image::seekEntry( std::string filename )
+bool D64IStream::seekEntry( std::string filename )
 {
     uint8_t index = 0;
 
@@ -81,7 +81,7 @@ bool D64Image::seekEntry( std::string filename )
     return false;
 }
 
-bool D64Image::seekEntry( size_t index )
+bool D64IStream::seekEntry( size_t index )
 {
     bool r = false;
     static uint8_t next_track = 0;
@@ -141,7 +141,7 @@ bool D64Image::seekEntry( size_t index )
         return true;
 }
 
-std::string D64Image::decodeEntry() 
+std::string D64IStream::decodeEntry() 
 {
     bool hide = false;
     uint8_t file_type = entry.file_type & 0b00000111;
@@ -165,7 +165,7 @@ std::string D64Image::decodeEntry()
     return type;
 }
 
-uint16_t D64Image::blocksFree()
+uint16_t D64IStream::blocksFree()
 {
     uint16_t free_count = 0;
     BAMEntry bam = { 0 };
@@ -183,7 +183,7 @@ uint16_t D64Image::blocksFree()
     return free_count;
 }
 
-size_t D64Image::read(uint8_t* buf, size_t size) {
+size_t D64IStream::imageRead(uint8_t* buf, size_t size) {
     size_t bytesRead = 0;
     static uint8_t next_track = 0;
     static uint8_t next_sector = 0;
@@ -212,7 +212,7 @@ size_t D64Image::read(uint8_t* buf, size_t size) {
     return bytesRead;
 }
 
-void D64Image::sendFile( std::string filename )
+void D64IStream::sendFile( std::string filename )
 {
     if ( seekEntry( filename ) )
     {
@@ -249,7 +249,7 @@ bool D64File::isDirectory() {
 
 bool D64File::rewindDirectory() {
     dirIsOpen = true;
-    image().get()->resetEntryCounter();
+    ImageBroker::obtain()->resetEntryCounter();
     return getNextFileInDir();
 }
 
@@ -259,13 +259,13 @@ MFile* D64File::getNextFileInDir() {
         rewindDirectory();
 
     // Get entry pointed to by containerStream
-    if ( image().get()->seekNextEntry() )
+    if ( ImageBroker::obtain()->seekNextImageEntry() )
     {
-        std::string fileName = image().get()->entry.filename;
+        std::string fileName = ImageBroker::obtain()->entry.filename;
         mstr::replaceAll(fileName, "/", "\\");
         //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
-        auto d64_file = new D64File(_d64ImageStruct, streamFile->url + "/" + fileName, false);
-        d64_file->extension = d64_file->_d64ImageStruct->decodeEntry();
+        auto d64_file = new D64File(streamFile->url + "/" + fileName, false);
+        d64_file->extension = ImageBroker::obtain()->decodeEntry();
         return d64_file;
     }
     else
@@ -276,12 +276,10 @@ MFile* D64File::getNextFileInDir() {
     }
 }
 
-MIStream* D64File::createIStream(std::shared_ptr<MIStream> is) {
-    // has to return OPENED stream
+MIStream* D64File::createIStream(std::shared_ptr<MIStream> containerIstream) {
     Debug_printv("[%s]", url.c_str());
-    MIStream* istream = new D64IStream(is.get());
-    istream->open();
-    return istream;
+
+    return new D64IStream(containerIstream);
 }
 
 time_t D64File::getLastWrite() {
@@ -290,7 +288,7 @@ time_t D64File::getLastWrite() {
 
 time_t D64File::getCreationTime() {
     tm *entry_time = 0;
-    auto entry = image().get()->entry;
+    auto entry = ImageBroker::obtain()->entry;
     entry_time->tm_year = entry.year + 1900;
     entry_time->tm_mon = entry.month;
     entry_time->tm_mday = entry.day;
@@ -309,7 +307,7 @@ bool D64File::exists() {
 size_t D64File::size() {
     Debug_printv("here");
     // use D64 to get size of the file in image
-    auto entry = image().get()->entry;
+    auto entry = ImageBroker::obtain()->entry;
     // (_ui16 << 8 | _ui16 >> 8)
     uint16_t blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
     return blocks;
@@ -329,13 +327,13 @@ bool D64IStream::seekPath(std::string path) {
     // call D54Image method to obtain file bytes here, return true on success:
     // return D64Image.seekFile(containerIStream, path);
     mstr::toPETSCII(path);
-    if ( containerImage->seekEntry(path) )
+    if ( seekEntry(path) )
     {
-        auto entry = containerImage->entry;
-        auto type = containerImage->decodeEntry().c_str();
+        //auto entry = containerImage->entry;
+        auto type = decodeEntry().c_str();
         auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
         Debug_printv("filename [%.16s] type[%s] size[%d] start_track[%d] start_sector[%d]", entry.filename, type, blocks, entry.start_track, entry.start_sector);
-        containerImage->seekSector(entry.start_track, entry.start_sector);
+        seekSector(entry.start_track, entry.start_sector);
 
         m_length = blocks;
         m_bytesAvailable = blocks;
@@ -402,7 +400,7 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
 
         //Debug_printv("track[%d] sector[%d] sector_offset[%d]", image().get()->track, image().get()->sector, sector_offset);
 
-        bytesRead = containerImage->read((uint8_t *)&buf, size);
+        bytesRead = imageRead((uint8_t *)&buf, size);
         //buf[0] = 8;
         //bytesRead = 1;
 
@@ -412,7 +410,7 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
         // seekXXX not called - just pipe image bytes, so it can be i.e. copied verbatim
         //Debug_printv("containerIStream.isOpen[%d]", containerIStream->isOpen());
 
-        bytesRead = containerIStream->read(buf, size);
+        bytesRead = imageRead(buf, size);
     }
 
     m_position += bytesRead;
