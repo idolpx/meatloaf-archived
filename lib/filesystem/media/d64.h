@@ -222,7 +222,16 @@ public:
         auto newFile = MFSOwner::File(url);
         D64IStream* newStream = (D64IStream*)newFile->inputStream();
         repo.insert(std::make_pair(url, newStream));
+        delete newFile;
         return newStream;
+    }
+
+    static void disposeImage(std::string url) {
+        if(repo.find(url)!=repo.end()) {
+            auto toDelete = repo.at(url);
+            repo.erase(url);
+            delete toDelete;
+        }
     }
 };
 
