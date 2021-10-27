@@ -71,7 +71,7 @@ void iecDevice::sendStatus(void)
 	
 	m_iec.send(status);
 
-	Debug_println("]");
+	Debug_println(BACKSPACE "]");
 
 	// Send CR with EOI marker.
 	m_iec.sendEOI('\x0D');

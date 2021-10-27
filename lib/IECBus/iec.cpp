@@ -299,10 +299,15 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 	{
 		Debug_printf(BACKSPACE "] (%.2X OPEN) (%.2X CHANNEL) [", iec_data.command, iec_data.channel);
 
-
 		// Some other command. Record the cmd string until UNLISTEN is sent
-		for(;;) 
+		while (1)
 		{
+			if(protocol.status(IEC_PIN_ATN) == RELEASED)
+			{
+				Debug_printf(BACKSPACE BACKSPACE "\r\n");
+				return BUS_IDLE;
+			}
+
 			int16_t c = receive();
 			if(protocol.flags bitand ERROR)
 			{
@@ -310,7 +315,6 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 				return BUS_ERROR;
 			}
 				
-
 			//if((flags bitand atnFlag) and (IEC_UNLISTEN == c))
 			if(c == IEC_UNLISTEN)
 			{

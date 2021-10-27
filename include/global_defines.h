@@ -88,8 +88,6 @@
     #define IEC_PIN_DATA         D7    // IO13  INPUT/OUTPUT
     #define IEC_PIN_SRQ          D1    // IO5   INPUT/OUTPUT
     #define IEC_PIN_RESET        D2    // IO4   INPUT/OUTPUT
-
-    #define LED_PIN              LED_BUILTIN // IO2
 #elif defined(ESP32)
     // ESP32 GPIO to C64 IEC Serial Port
     #define IEC_PIN_ATN          26    // SIO13 INTERRUPT
@@ -98,14 +96,17 @@
     #define IEC_PIN_SRQ          22    // SIO9  PROCEED
     #define IEC_PIN_RESET        36    // SIO7  MOTOR
                                        // SIO4  GND
-
-    #define LED_PIN              4     // SIO LED
 #endif
 
 
 /*
  * LED Functions
  */
+#if defined(ESP8266)
+    #define LED_PIN              LED_BUILTIN // IO2
+#elif defined(ESP32)
+    #define LED_PIN              4     // SIO LED
+#endif
 
 #define LED_ON LOW
 #define LED_OFF HIGH

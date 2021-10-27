@@ -34,7 +34,7 @@ int16_t  CBMStandardSerial::receiveByte(uint8_t device)
 	// Wait for talker ready
 	while(status(IEC_PIN_CLK) != RELEASED)
 	{
-		ESP.wdtFeed();
+		ESP.wdtFeed();		
 	}
 
 	// Say we're ready
@@ -84,11 +84,10 @@ int16_t  CBMStandardSerial::receiveByte(uint8_t device)
 		}		
 	}
 
-	// // Sample ATN and set flag to indicate SELECT or DATA mode
-	// if(status(IEC_PIN_ATN) == PULLED)
-	// 	flags or_eq ATN_PULLED;
+	// Sample ATN and set flag to indicate SELECT or DATA mode
+	if(status(IEC_PIN_ATN) == PULLED)
+		flags or_eq ATN_PULLED;
 
-	
 	// STEP 3: SENDING THE BITS
 	// The talker has eight bits to send.  They will go out without handshake; in other words, 
 	// the listener had better be there to catch them, since the talker won't wait to hear from the listener.  At this 
@@ -293,6 +292,7 @@ bool CBMStandardSerial::sendByte(uint8_t data, bool signalEOI)
 		// if ATN is PULLED, exit and cleanup
 		if(status(IEC_PIN_ATN) == PULLED)
 		{	
+			flags or_eq ATN_PULLED;
 			return false;
 		}
 
