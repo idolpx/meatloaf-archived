@@ -203,17 +203,16 @@ MIStream* MFile::inputStream() {
     MIStream* decodedStream(createIStream(containerStream)); // wrap this stream into decodec stream, i.e. unpacked zip files
     Debug_printv("decodedStream isRandomAccess[%d] isBrowsable[%d]", decodedStream->isRandomAccess(), decodedStream->isBrowsable());
 
-    if(pathInStream != "" && decodedStream->isRandomAccess()) {
+    if(decodedStream->isRandomAccess() && pathInStream != "") {
         bool foundIt = decodedStream->seekPath(this->pathInStream);
 
-        if(foundIt)
+        if(!foundIt)
         {
-            Debug_printv("returning decodedStream");
-            return decodedStream;
-        }  
+            Debug_printv("path in stream not found");
+            return nullptr;
+        }        
     }
-    else if(pathInStream != "" && decodedStream->isBrowsable()) {
-        // stream is browsable and path was requested, let's skip the stream to requested file
+    else if(decodedStream->isBrowsable() && pathInStream != "") {
         auto pointedFile = decodedStream->seekNextEntry();
 
         while (!pointedFile.empty())
@@ -226,12 +225,9 @@ MIStream* MFile::inputStream() {
 
             pointedFile = decodedStream->seekNextEntry();
         }
-        Debug_printv("returning nullptr");
-        return nullptr; // there was no file with that name in this stream!
-    }
-    else if(!decodedStream->isBrowsable()) {
-        Debug_printv("returning nullptr");
-        return nullptr; // path requested for unbrowsable stream
+        Debug_printv("path in stream not found!");
+        if(pointedFile.empty())
+            return nullptr;        
     }
 
     Debug_printv("returning decodedStream");
