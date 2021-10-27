@@ -199,7 +199,7 @@ size_t D64IStream::imageRead(uint8_t* buf, size_t size) {
         //Debug_printv("next_track[%d] next_sector[%d] sector_offset[%d]", next_track, next_sector, sector_offset);
     }
 
-    bytesRead = containerStream->read((uint8_t *)buf, size);
+    bytesRead = containerStream->read(buf, size);
     sector_offset += bytesRead;
 
     if ( sector_offset % block_size == 0 )
@@ -362,6 +362,7 @@ bool D64IStream::seekPath(std::string path) {
 
         m_length = blocks;
         m_bytesAvailable = blocks;
+        return true;
     }
     else
     {
@@ -423,9 +424,9 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
         //m_bytesAvailable = 0; //m_file.available();
         //bytesRead = image().get()->readFile(buf, size);
 
-        //Debug_printv("track[%d] sector[%d] sector_offset[%d]", image().get()->track, image().get()->sector, sector_offset);
+        //Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
 
-        bytesRead = imageRead((uint8_t *)&buf, size);
+        bytesRead = imageRead(buf, size);
         //buf[0] = 8;
         //bytesRead = 1;
 

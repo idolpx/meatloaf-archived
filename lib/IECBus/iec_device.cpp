@@ -1025,11 +1025,11 @@ void iecDevice::sendFile()
 		size_t avail = istream->available();
 
 		i = 2;
-		istream->read((uint8_t *)&b, 1);
+		istream->read(&b, 1);
 		success = m_iec.send(b);
 		load_address = b & 0x00FF; // low byte
 		sys_address = b;
-		istream->read((uint8_t *)&b, 1);
+		istream->read(&b, 1);
 		success = m_iec.send(b);
 		load_address = load_address | b << 8;  // high byte
 		sys_address += b * 256;
@@ -1039,7 +1039,7 @@ void iecDevice::sendFile()
 		Debug_printf("sendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
 		while( len && avail && success )
 		{
-			success = istream->read((uint8_t *)&b, 1);
+			success = istream->read(&b, 1);
 			// Debug_printv("b[%02X] success[%d]", b, success);
 			if (success)
 			{
