@@ -1037,7 +1037,7 @@ void iecDevice::sendFile()
 		Debug_printv("len[%d] avail[%d] success[%d]", len, avail, success);
 
 		Debug_printf("sendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
-		while( len && avail && success )
+		while( len && success )
 		{
 			success = istream->read(&b, 1);
 			// Debug_printv("b[%02X] success[%d]", b, success);
@@ -1095,15 +1095,19 @@ void iecDevice::sendFile()
 		}
 		istream->close();
 		Debug_printf("=================================\r\n%d of %d bytes sent [SYS%d]\r\n", i, len, sys_address);
+
+		Debug_printv("len[%d] avail[%d] success[%d]", len, avail, success);		
 	}
+
 
 	ledON();
 
-	// if (!success)
-	// {
-	// 	Debug_println("sendFile: Transfer aborted!");
-	// 	// TODO: Send something to signal that there was an error to the C64
-	// }
+	if (!success)
+	{
+		Debug_println("sendFile: Transfer aborted!");
+		// TODO: Send something to signal that there was an error to the C64
+		m_iec.sendEOI(0);
+	}
 } // sendFile
 
 

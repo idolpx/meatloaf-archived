@@ -189,6 +189,7 @@ inline static void IRAM_ATTR onTimer()
 // Enable WEB SERVER or WEBDAV
 //#define WEB_SERVER
 //#define WEBDAV
+//#define MDNS
 
 // Format storage if a valid file system is not found
 #define AUTO_FORMAT true

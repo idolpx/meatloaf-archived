@@ -157,10 +157,9 @@ private:
 
     bool show_hidden = false;
 
-    size_t imageRead(uint8_t* buf, size_t size);
+    size_t readFile(uint8_t* buf, size_t size);
 
     void sendListing();
-    void sendFile( std::string filename = "" );
 
     bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
     bool seekSector( uint8_t* trackSector, size_t offset = 0 );

@@ -115,7 +115,7 @@ bool HttpIStream::seek(int32_t pos) {
         snprintf(str, sizeof str, "bytes=%lu-", (unsigned long)pos);
         m_http.addHeader("range",str);
         int httpCode = m_http.GET(); //Send the request
-        Debug_printv("httpCode[%d]", httpCode);
+        Debug_printv("httpCode[%d] str[%s]", httpCode, str);
         if(httpCode != 200)
             return false;
 
@@ -172,6 +172,7 @@ bool HttpIStream::open() {
 
     // Accept-Ranges: bytes - if we get such header from any request, good!
     isFriendlySkipper = m_http.header("accept-ranges") == "bytes";
+    Debug_printv("isFriendlySkipper[%d]", isFriendlySkipper);
     m_isOpen = true;
     Debug_printv("[%s]", url.c_str());
     //m_file = m_http.getStream();  //Get the response payload as Stream

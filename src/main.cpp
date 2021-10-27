@@ -66,7 +66,8 @@ void setup()
         // Start the Web Server with WebDAV
         #if defined(WEB_SERVER)
             setupWWW();
-        #else if defined(WEBDAV)
+        #endif 
+        #if defined(WEBDAV)
             // WebDAV Server Setup
             dav.begin ( &tcp, fileSystem );
             dav.setTransferStatusCallback ( [] ( const char *name, int percent, bool receive )
@@ -78,18 +79,20 @@ void setup()
 
 
         // mDNS INIT
-        if ( MDNS.begin ( HOSTNAME ) )
-        {
-            MDNS.addService ( "http", "tcp", SERVER_PORT );
-            Serial.println ( "mDNS service started" );
-            Serial.println ( ">>> http://" HOSTNAME ".local" );
-        }
-        else
-        {
-            Serial.println ( "mDNS service failed to start" );
-            Serial.print ( ">>> http://" );
-            Serial.println ( WiFi.localIP() );
-        }
+        #if defined(MDNS)
+            if ( MDNS.begin ( HOSTNAME ) )
+            {
+                MDNS.addService ( "http", "tcp", SERVER_PORT );
+                Serial.println ( "mDNS service started" );
+                Serial.println ( ">>> http://" HOSTNAME ".local" );
+            }
+            else
+            {
+                Serial.println ( "mDNS service failed to start" );
+                Serial.print ( ">>> http://" );
+                Serial.println ( WiFi.localIP() );
+            }
+        #endif
 
         // Setup IEC Bus
         iec.enabledDevices = DEVICE_MASK;
@@ -127,7 +130,7 @@ void setup()
 // ------------------------
 void loop()
 {
-#if defined(ESP8266)
+#if defined(MDNS)
     MDNS.update();
 #endif
 
