@@ -228,11 +228,11 @@ public:
         // Are we at the root of the pathInStream?
         if ( newFile->pathInStream == "")
         {
-            Debug_printv("DIRECTORY");
+            Debug_printv("DIRECTORY [%s]", url.c_str());
         }
         else
         {
-            Debug_printv("SINGLE FILE");
+            Debug_printv("SINGLE FILE [%s]", url.c_str());
         } 
 
         repo.insert(std::make_pair(url, newStream));

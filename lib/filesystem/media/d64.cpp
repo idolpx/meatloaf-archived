@@ -244,25 +244,9 @@ void D64IStream::sendFile( std::string filename )
  ********************************************************/
 
 bool D64File::isDirectory() {
-    if ( pathInStream == "")
-    {
-        auto image = ImageBroker::obtain(streamFile->url);
-
-        // Read Header
-        image->seekHeader();
-        image->fillHeader();
-
-        // Set Media Info Fields
-        media_header = mstr::format("%.16s", image->header.disk_name);
-        mstr::A02Space(media_header);
-        media_id = mstr::format("%.5s", image->header.id_dos);
-        mstr::A02Space(media_id);
-        media_blocks_free = image->blocksFree();
-        media_block_size = image->block_size;
-        media_image = name;
-
+    Debug_printv("pathInStream[%s]", pathInStream.c_str());
+    if ( pathInStream == "" )
         return true;
-    }
     else
         return false;
 };
@@ -275,6 +259,20 @@ bool D64File::rewindDirectory() {
         Debug_printv("image pointer is null");
 
     image->resetEntryCounter();
+
+    // Read Header
+    image->seekHeader();
+    image->fillHeader();
+
+    // Set Media Info Fields
+    media_header = mstr::format("%.16s", image->header.disk_name);
+    mstr::A02Space(media_header);
+    media_id = mstr::format("%.5s", image->header.id_dos);
+    mstr::A02Space(media_id);
+    media_blocks_free = image->blocksFree();
+    media_block_size = image->block_size;
+    media_image = name;
+
     return getNextFileInDir();
 }
 
@@ -332,7 +330,7 @@ bool D64File::exists() {
 } 
 
 size_t D64File::size() {
-    Debug_printv("here");
+    Debug_printv("[%s]", streamFile->url.c_str());
     // use D64 to get size of the file in image
     auto entry = ImageBroker::obtain(streamFile->url)->entry;
     // (_ui16 << 8 | _ui16 >> 8)

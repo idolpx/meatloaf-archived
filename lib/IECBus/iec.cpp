@@ -300,9 +300,10 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 		Debug_printf(BACKSPACE "] (%.2X OPEN) (%.2X CHANNEL) [", iec_data.command, iec_data.channel);
 
 		// Some other command. Record the cmd string until UNLISTEN is sent
+		delayMicroseconds(200);
 		while (1)
 		{
-			if(protocol.status(IEC_PIN_ATN) == RELEASED)
+			if(protocol.status(IEC_PIN_ATN) == PULLED)
 			{
 				Debug_printf(BACKSPACE BACKSPACE "\r\n");
 				return BUS_IDLE;
