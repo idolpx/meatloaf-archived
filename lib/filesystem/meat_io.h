@@ -68,13 +68,13 @@ public:
 
 
     virtual ~MFile() {
-        // if(streamFile != nullptr) {
-        // //     Debug_printv("WARNING: streamFile null in '%s' destructor. This MFile was obviously not initialized properly!", url.c_str());
-        // // }
-        // // else {
-        //     Debug_printv("Deleting: [%s]", this->url.c_str());
-        //     delete streamFile;
+        if(streamFile != nullptr) {
+        //     Debug_printv("WARNING: streamFile null in '%s' destructor. This MFile was obviously not initialized properly!", url.c_str());
         // }
+        // else {
+            //Debug_printv("Deleting: [%s]", this->url.c_str());
+            delete streamFile;
+        }
     };
 
     MFile* streamFile = nullptr;

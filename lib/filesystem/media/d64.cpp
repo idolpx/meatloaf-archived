@@ -288,8 +288,8 @@ MFile* D64File::getNextFileInDir() {
     {
         std::string fileName = image->entry.filename;
         mstr::replaceAll(fileName, "/", "\\");
-        //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
-        auto d64_file = new D64File(streamFile->url + "/" + fileName, false);
+        Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
+        auto d64_file = MFSOwner::File(streamFile->url + "/" + fileName);
         d64_file->extension = image->decodeEntry();
         return d64_file;
     }
