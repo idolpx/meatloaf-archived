@@ -254,6 +254,7 @@ IEC::BusState IEC::service(Data& iec_data)
 		{
 			r = deviceTalk(iec_data);
 		}
+		mstr::rtrimA0(iec_data.content);
 		if(protocol.flags bitand ERROR)
 		{
 			Debug_printv("Listen/Talk ERROR");

@@ -320,28 +320,31 @@ uint8_t iecDevice::service(void)
 
 		if (m_iec_data.command == IEC::IEC_OPEN)
 		{
-				Debug_printf("OPEN CHANNEL %d\r\n", m_iec_data.channel);
-				if (m_iec_data.channel == 0)
-					Debug_printf("LOAD \"%s\",%d\r\n", m_iec_data.content.c_str(), m_iec_data.device);
-				else if (m_iec_data.channel == 1)
-					Debug_printf("SAVE \"%s\",%d\r\n", m_iec_data.content.c_str(), m_iec_data.device);
-				else {
-					Debug_printf("OPEN #,%d,%d,\"%s\"\r\n", m_iec_data.device, m_iec_data.channel, m_iec_data.content.c_str());
-				}
+			Debug_printf("OPEN CHANNEL %d\r\n", m_iec_data.channel);
+			if (m_iec_data.channel == 0)
+				Debug_printf("LOAD \"%s\",%d\r\n", m_iec_data.content.c_str(), m_iec_data.device);
+			else if (m_iec_data.channel == 1)
+				Debug_printf("SAVE \"%s\",%d\r\n", m_iec_data.content.c_str(), m_iec_data.device);
+			else {
+				Debug_printf("OPEN #,%d,%d,\"%s\"\r\n", m_iec_data.device, m_iec_data.channel, m_iec_data.content.c_str());
+			}
 
-				// Open either file or prg for reading, writing or single line command on the command channel.
-				if (bus_state == IEC::BUS_COMMAND)
-				{
-					// Process a command
-					Debug_printv("[Process a command]");
-					handleListenCommand(m_iec_data);
-				}
-				else if (bus_state == IEC::BUS_LISTEN)
-				{
-					// Receive data
-					Debug_printv("[Receive data]");
-					handleListenData();	
-				}
+			// Open Named Channel
+			handleOpen(m_iec_data);
+
+			// Open either file or prg for reading, writing or single line command on the command channel.
+			if (bus_state == IEC::BUS_COMMAND)
+			{
+				// Process a command
+				Debug_printv("[Process a command]");
+				handleListenCommand(m_iec_data);
+			}
+			else if (bus_state == IEC::BUS_LISTEN)
+			{
+				// Receive data
+				Debug_printv("[Receive data]");
+				handleListenData();	
+			}
 		}
 		else if (m_iec_data.command == IEC::IEC_DATA) // data channel opened
 		{
@@ -670,12 +673,24 @@ void iecDevice::handleTalk(byte chan)
 void iecDevice::handleOpen(IEC::Data &iec_data)
 {
 	Debug_printv("OPEN Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
+	auto channel = channels[iec_data.command];
+
+	// Are we writing?  Appending?
+	channels[iec_data.command].name = iec_data.content;
+	channels[iec_data.command].cursor = 0;
+	channels[iec_data.command].writing = 0;
 } // handleOpen
 
 
 void iecDevice::handleClose(IEC::Data &iec_data)
 {
 	Debug_printv("CLOSE Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
+	auto channel = channels[iec_data.command];
+
+	// If writing update BAM & Directory
+	
+	// Remove channel from map
+
 } // handleClose
 
 
@@ -1019,11 +1034,16 @@ void iecDevice::sendFile()
 	}
 	else
 	{
-		// Get file load address
 		std::unique_ptr<MIStream> istream(file->inputStream());
-		size_t len = istream->size() - 1;
+
+		// Position file pointer
+		//istream->seek(m_device.position(m_iec_data.channel));
+
+
+		size_t len = istream->size();
 		size_t avail = istream->available();
 
+		// Get file load address
 		i = 2;
 		istream->read(&b, 1);
 		success = m_iec.send(b);
@@ -1037,7 +1057,7 @@ void iecDevice::sendFile()
 		Debug_printv("len[%d] avail[%d] success[%d]", len, avail, success);
 
 		Debug_printf("sendFile: [%s] [$%.4X] (%d bytes)\r\n=================================\r\n", file->url.c_str(), load_address, len);
-		while( len && success )
+		while( i < len && success )
 		{
 			success = istream->read(&b, 1);
 			// Debug_printv("b[%02X] success[%d]", b, success);
@@ -1050,7 +1070,7 @@ void iecDevice::sendFile()
 					load_address += 8;
 				}
 	#endif
-				if ( avail == 1 )
+				if ( ++i == len )
 				{
 					success = m_iec.sendEOI(b); // indicate end of file.
 				}
@@ -1091,7 +1111,7 @@ void iecDevice::sendFile()
 			}
 
 			avail = istream->available();
-			i++;
+			//i++;
 		}
 		istream->close();
 		Debug_printf("=================================\r\n%d of %d bytes sent [SYS%d]\r\n", i, len, sys_address);

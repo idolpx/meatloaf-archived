@@ -88,17 +88,11 @@ public:
 
 	struct Channel
 	{
-		std::string command;
-
-		uint8_t device;
+		std::string name;
 		uint32_t cursor;
-		uint32_t bytesSent;
-		uint32_t open : 1;
-		uint32_t writing : 1;
-		uint32_t fileSize;
+		bool writing;
 	};
-	std::vector<Channel> channels;
-
+	std::unordered_map<uint8_t, Channel> channels;
 
 	iecDevice(IEC &iec);
 	virtual ~iecDevice() {}

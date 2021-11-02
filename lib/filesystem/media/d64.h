@@ -168,7 +168,6 @@ private:
 
     std::vector<Entry> getEntries(uint8_t track, uint8_t sector);
 
-
     std::string readBlock( uint8_t track, uint8_t sector );
     bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
     bool allocateBlock( uint8_t track, uint8_t sector );
