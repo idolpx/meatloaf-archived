@@ -105,20 +105,24 @@ bool D64IStream::seekEntry( size_t index )
     if (index == 0 || index != entryIndex)
     {
         // Start at first sector of directory
+        next_track = 0;
         r = seekSector( directory_list_offset );
         
         do
         {
             if ( next_track )
+            {
+                Debug_printv("next_track[%d] next_sector[%d]", entry.next_track, entry.next_sector);
                 r = seekSector( entry.next_track, entry.next_sector );
+            }
 
             containerStream->read((uint8_t *)&entry, sizeof(entry));
             next_track = entry.next_track;
             next_sector = entry.next_sector;
 
-            Debug_printv("sectorOffset[%d] -> track[%d] sector[%d]", sectorOffset, this->track, this->sector);
+            Debug_printv("sectorOffset[%d] -> track[%d] sector[%d]", sectorOffset, track, sector);
         } while ( sectorOffset-- > 0 );
-        r = seekSector( this->track, this->sector, entryOffset );
+        r = seekSector( track, sector, entryOffset );
     }
     else
     {

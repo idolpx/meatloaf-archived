@@ -71,6 +71,7 @@ SDFSConfig fileSystemConfig = SDFSConfig();
 
 #include "iec.h"
 #include "iec_device.h"
+#include "drive.h"
 #include "ESPModem.h"
 #include "ml_tests.h"
 
@@ -87,7 +88,7 @@ String statusMessage;
 bool initFailed = false;
 
 static IEC iec;
-static iecDevice drive ( iec );
+static deviceDrive drive ( iec );
 
 
 //Zimodem modem;
