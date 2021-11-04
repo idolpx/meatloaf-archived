@@ -135,7 +135,7 @@ void loop()
 
 #if defined(WEB_SERVER)
     www.handleClient();
-#else if defined(WEBDAV)
+#elif defined(WEBDAV)
     dav.handleClient();
 #endif
 

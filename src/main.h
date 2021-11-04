@@ -138,7 +138,7 @@ ESPModem modem;
     void handleGetEdit();
     void setupWWW ( void );
     void notFound ();
-#else if defined(WEBDAV)
+#elif defined(WEBDAV)
     #include "ESPWebDAV.h"
 
     WiFiServer tcp ( SERVER_PORT );

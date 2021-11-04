@@ -52,11 +52,6 @@
 #include "utils.h"
 #include "string_utils.h"
 
-//#include "doscmd.h"
-
-
-
-
 class CommandPathTuple {
 public:
 	std::string command;

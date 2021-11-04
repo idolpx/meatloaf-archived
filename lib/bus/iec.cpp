@@ -459,7 +459,7 @@ bool IEC::send(uint8_t data)
 
 bool IEC::send(std::string data)
 {
-	for (int i = 0; i < data.length(); ++i)
+	for (size_t i = 0; i < data.length(); ++i)
 		send(data[i]);
 
 	return true;
