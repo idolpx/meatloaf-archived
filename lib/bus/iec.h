@@ -39,9 +39,9 @@ public:
 	enum BusState
 	{
 		BUS_IDLE = 0,		  // Nothing recieved of our concern
-		BUS_COMMAND = 1,		  // A command is recieved
-		BUS_LISTEN = 2,   // A command is recieved and data is coming to us
-		BUS_TALK = 3,	  // A command is recieved and we must talk now
+		BUS_COMMAND = 1,      // A command is recieved
+		BUS_LISTEN = 2,       // A command is recieved and data is coming to us
+		BUS_TALK = 3,	      // A command is recieved and we must talk now
 		BUS_ERROR = 5,		  // A problem occoured, reset communication
 		BUS_RESET = 6		  // The IEC bus is in a reset state (RESET line).
 	};
@@ -49,14 +49,14 @@ public:
 	// IEC commands:
 	enum Command
 	{
-		IEC_GLOBAL = 0x00,	      // 0x00 + cmd (global command)
-		IEC_LISTEN = 0x20,	      // 0x20 + device_id (LISTEN)
-		IEC_UNLISTEN = 0x3F,     // 0x3F (UNLISTEN)
-		IEC_TALK = 0x40,	      // 0x40 + device_id (TALK)
-		IEC_UNTALK = 0x5F,	      // 0x5F (UNTALK)
-		IEC_DATA = 0x60,          // 0x60 + channel (OPEN CHANNEL / DATA)
-		IEC_CLOSE = 0xE0,	      // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
-		IEC_OPEN = 0xF0	      // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
+		IEC_GLOBAL = 0x00,	   // 0x00 + cmd (global command)
+		IEC_LISTEN = 0x20,	   // 0x20 + device_id (LISTEN) (0-30)
+		IEC_UNLISTEN = 0x3F,   // 0x3F (UNLISTEN)
+		IEC_TALK = 0x40,	   // 0x40 + device_id (TALK) (0-30)
+		IEC_UNTALK = 0x5F,	   // 0x5F (UNTALK)
+		IEC_SECOND = 0x60,     // 0x60 + channel (OPEN CHANNEL) (0-15)
+		IEC_CLOSE = 0xE0,	   // 0xE0 + channel (CLOSE NAMED CHANNEL) (0-15)
+		IEC_OPEN = 0xF0	       // 0xF0 + channel (OPEN NAMED CHANNEL) (0-15)
 	};
 
 	typedef struct _tagIECCMD
@@ -110,12 +110,12 @@ public:
 private:
 	// IEC Bus Commands
 	BusState deviceListen(Data &iec_data);	  // 0x20 + device_id   Listen, device (0–30)
-	//void deviceUnListen(void);                // 0x3F               Unlisten, all devices
-	BusState deviceTalk(Data &iec_data);	  // 0x40 + device_id 	Talk, device
-	//void deviceUnTalk(void);                  // 0x5F               Untalk, all devices
-	//BusState deviceReopen(Data &iec_data);  // 0x60 + channel     Reopen, channel (0–15)
-	BusState deviceClose(Data &iec_data);     // 0xE0 + channel     Close, channel
-	//BusState deviceOpen(Data &iec_data);    // 0xF0 + channel     Open, channel
+	void deviceUnListen(void);                // 0x3F               Unlisten, all devices
+	BusState deviceTalk(Data &iec_data);	  // 0x40 + device_id 	Talk, device (0–30)
+	void deviceUnTalk(void);                  // 0x5F               Untalk, all devices
+	BusState deviceSecond(Data &iec_data);    // 0x60 + channel     Reopen, channel (0–15)
+	BusState deviceClose(Data &iec_data);     // 0xE0 + channel     Close, channel (0–15)
+	BusState deviceOpen(Data &iec_data);      // 0xF0 + channel     Open, channel (0–15)
 
 	bool turnAround(void);
 	bool undoTurnAround(void);

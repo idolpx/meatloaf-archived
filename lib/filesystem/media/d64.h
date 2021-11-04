@@ -144,6 +144,7 @@ private:
     uint8_t sectorsPerTrack[4] = { 17, 18, 19, 21 };
     uint8_t sector_buffer[256] = { 0 };
 
+    enum open_modes { OPEN_READ, OPEN_WRITE, OPEN_APPEND, OPEN_MODIFY };
     std::string file_type_label[8] = { "del", "seq", "prg", "usr", "rel", "cbm", "dir", "???" };
 
     uint8_t track;

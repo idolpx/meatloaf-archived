@@ -27,19 +27,15 @@ using namespace CBM;
 using namespace Protocol;
 
 
-deviceDrive::deviceDrive(IEC &iec) : 
+devDrive::devDrive(IEC &iec) : 
     iecDevice(iec),
 	m_mfile(MFSOwner::File(""))
 {
 	reset();
 } // ctor
 
-bool deviceDrive::begin()
-{
-	return true;
-}
 
-void deviceDrive::reset(void)
+void devDrive::reset(void)
 {
 	m_openState = O_NOTHING;
 	setDeviceStatus(73);
@@ -47,13 +43,13 @@ void deviceDrive::reset(void)
 } // reset
 
 
-void deviceDrive::sendFileNotFound(void)
+void devDrive::sendFileNotFound(void)
 {
 	setDeviceStatus(62);
 	m_iec.sendFNF();
 }
 
-void deviceDrive::sendStatus(void)
+void devDrive::sendStatus(void)
 {
 	std::string status = m_device_status;
 	if (status.size() == 0)
@@ -73,7 +69,7 @@ void deviceDrive::sendStatus(void)
 	m_device_status.clear();
 } // sendStatus
 
-void deviceDrive::setDeviceStatus(int number, int track, int sector)
+void devDrive::setDeviceStatus(int number, int track, int sector)
 {
 	switch(number)
 	{
@@ -166,221 +162,8 @@ void deviceDrive::setDeviceStatus(int number, int track, int sector)
 }
 
 
-void deviceDrive::sendMeatloafSystemInformation()
-{
-	Debug_printf("\r\nsendDeviceInfo:\r\n");
 
-	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
-
-	// #if defined(USE_LITTLEFS)
-	// FSInfo64 fs_info;
-	// m_fileSystem->info64(fs_info);
-	// #endif
-	char floatBuffer[10]; // buffer
-	dtostrf(getFragmentation(), 3, 2, floatBuffer);
-
-	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-	Debug_println("");
-
-	// Send List HEADER
-	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
-
-	// CPU
-	sendLine(basicPtr, 0, CBM_DEL_DEL "SYSTEM ---");
-	String sdk = String(ESP.getSdkVersion());
-	sdk.toUpperCase();
-	sendLine(basicPtr, 0, CBM_DEL_DEL "SDK VER    : %s", sdk.c_str());
-	//sendLine(basicPtr, 0, "BOOT VER   : %08X", ESP.getBootVersion());
-	//sendLine(basicPtr, 0, "BOOT MODE  : %08X", ESP.getBootMode());
-	//sendLine(basicPtr, 0, "CHIP ID    : %08X", ESP.getChipId());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "CYCLES     : %u", ESP.getCycleCount());
-
-	// POWER
-	sendLine(basicPtr, 0, CBM_DEL_DEL "POWER ---");
-	//sendLine(basicPtr, 0, "VOLTAGE    : %d.%d V", ( ESP.getVcc() / 1000 ), ( ESP.getVcc() % 1000 ));
-
-	// RAM
-	sendLine(basicPtr, 0, CBM_DEL_DEL "MEMORY ---");
-	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM SIZE   : %5d B", getTotalMemory());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM FREE   : %5d B", getTotalAvailableMemory());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM >BLK   : %5d B", getLargestAvailableBlock());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM FRAG   : %s %%", floatBuffer);
-
-	// ROM
-	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM USED   : %5d B", ESP.getSketchSize());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
-
-	// FLASH
-	sendLine(basicPtr, 0, CBM_DEL_DEL "STORAGE ---");
-	sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
-
-	// // FILE SYSTEM
-	// sendLine(basicPtr, 0, CBM_DEL_DEL "FILE SYSTEM ---");
-	// sendLine(basicPtr, 0, CBM_DEL_DEL "TYPE       : %s", FS_TYPE);
-	// sendLine(basicPtr, 0, CBM_DEL_DEL "SIZE       : %5d B", fs_info.totalBytes);
-	// sendLine(basicPtr, 0, CBM_DEL_DEL "USED       : %5d B", fs_info.usedBytes);
-	// sendLine(basicPtr, 0, CBM_DEL_DEL "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
-
-	// NETWORK
-	sendLine(basicPtr, 0, CBM_DEL_DEL "NETWORK ---");
-	char ip[16];
-	sprintf(ip, "%s", ipToString(WiFi.softAPIP()).c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "AP IP      : %s", ip);
-	sprintf(ip, "%s", ipToString(WiFi.localIP()).c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "STA MAC    : %s", WiFi.macAddress().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "STA IP     : %s", ip);
-
-	// End program with two zeros after last line. Last zero goes out as EOI.
-	m_iec.send(0);
-	m_iec.sendEOI(0);
-
-	ledON();
-} // sendMeatloafSystemInformation
-
-void deviceDrive::sendMeatloafVirtualDeviceStatus()
-{
-	Debug_printf("\r\nsendDeviceStatus:\r\n");
-
-	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
-
-	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
-	Debug_println("");
-
-	// Send List HEADER
-	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
-
-	// Current Config
-	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE ID : %d", m_device.id());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "MEDIA     : %d", m_device.media());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "PARTITION : %d", m_device.partition());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_device.url().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_device.path().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
-	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_mfile->name.c_str());
-
-	// End program with two zeros after last line. Last zero goes out as EOI.
-	m_iec.send(0);
-	m_iec.sendEOI(0);
-
-	ledON();
-} // sendMeatloafVirtualDeviceStatus
-
-uint8_t deviceDrive::service(void)
-{
-	deviceDrive::DeviceState r = DEVICE_IDLE;
-
-	//#ifdef HAS_RESET_LINE
-	//	if(m_iec.checkRESET()) {
-	//		// IEC reset line is in reset device state
-	//		reset();
-	//
-	//
-	//		return IEC::BUS_RESET;
-	//	}
-	//#endif
-	// Wait for it to get out of reset.
-	//while (m_iec.checkRESET())
-	//{
-	//	Debug_println("BUS_RESET");
-	//}
-
-	//	noInterrupts();
-	IEC::BusState bus_state = m_iec.service(m_iec_data);
-	//	interrupts();
-
-
-	if (bus_state == IEC::BUS_ERROR)
-	{
-		reset();
-		bus_state = IEC::BUS_IDLE;
-	}
-
-	// Did anything happen from the controller side?
-	else if (bus_state not_eq IEC::BUS_IDLE)
-	{
-		Debug_printf("DEVICE: [%d] ", m_iec_data.device);
-
-		if (m_iec_data.command == IEC::IEC_OPEN)
-		{
-			Debug_printf("OPEN CHANNEL %d\r\n", m_iec_data.channel);
-			if (m_iec_data.channel == 0)
-				Debug_printf("LOAD \"%s\",%d\r\n", m_iec_data.content.c_str(), m_iec_data.device);
-			else if (m_iec_data.channel == 1)
-				Debug_printf("SAVE \"%s\",%d\r\n", m_iec_data.content.c_str(), m_iec_data.device);
-			else {
-				Debug_printf("OPEN #,%d,%d,\"%s\"\r\n", m_iec_data.device, m_iec_data.channel, m_iec_data.content.c_str());
-			}
-
-			// Open Named Channel
-			handleOpen(m_iec_data);
-
-			// Open either file or prg for reading, writing or single line command on the command channel.
-			if (bus_state == IEC::BUS_COMMAND)
-			{
-				// Process a command
-				Debug_printv("[Process a command]");
-				handleListenCommand(m_iec_data);
-			}
-			else if (bus_state == IEC::BUS_LISTEN)
-			{
-				// Receive data
-				Debug_printv("[Receive data]");
-				handleListenData();	
-			}
-		}
-		else if (m_iec_data.command == IEC::IEC_DATA) // data channel opened
-		{
-			Debug_printf("DATA CHANNEL %d\r\n", m_iec_data.channel);
-			if (bus_state == IEC::BUS_COMMAND)
-			{
-				// Process a command
-				Debug_printv("[Process a command]");
-				handleListenCommand(m_iec_data);
-			}
-			else if (bus_state == IEC::BUS_LISTEN)
-			{
-				// Receive data
-				Debug_printv("[Receive data]");
-				handleListenData();	
-			}
-			else if (bus_state == IEC::BUS_TALK)
-			{
-				// Send data
-				Debug_printv("[Send data]");
-				if (m_iec_data.channel == CMD_CHANNEL)
-				{
-					handleListenCommand(m_iec_data);		 // This is typically an empty command,
-				}
-
-				handleTalk(m_iec_data.channel);
-			}
-		}
-		else if (m_iec_data.command == IEC::IEC_CLOSE)
-		{
-			Debug_printf("CLOSE CHANNEL %d\r\n", m_iec_data.channel);
-			if(m_iec_data.channel > 0)
-			{
-				handleClose(m_iec_data);
-			}			
-		}
-	}
-	//Debug_printv("mode[%d] command[%.2X] channel[%.2X] state[%d]", mode, m_iec_data.command, m_iec_data.channel, m_openState);
-
-	return bus_state;
-} // service
-
-MFile* deviceDrive::getPointed(MFile* urlFile) {
+MFile* devDrive::getPointed(MFile* urlFile) {
 	Debug_printv("getPointed [%s]", urlFile->url.c_str());
 	auto istream = Meat::ifstream(urlFile);
 
@@ -399,7 +182,7 @@ MFile* deviceDrive::getPointed(MFile* urlFile) {
 	}
 };
 
-CommandPathTuple deviceDrive::parseLine(std::string command, size_t channel)
+CommandPathTuple devDrive::parseLine(std::string command, size_t channel)
 {
 
 	Debug_printv("* PARSE INCOMING LINE *******************************");
@@ -485,7 +268,26 @@ CommandPathTuple deviceDrive::parseLine(std::string command, size_t channel)
 	return tuple;
 }
 
-void deviceDrive::handleListenCommand(IEC::Data &iec_data)
+void devDrive::changeDir(std::string url)
+{
+	m_device.url(url);
+	m_mfile.reset(MFSOwner::File(url));
+	m_openState = O_DIR;
+	Debug_printv("!!!! CD into [%s]", url.c_str());
+	Debug_printv("new current url: [%s]", m_mfile->url.c_str());
+	Debug_printv("LOAD $");		
+}
+
+void devDrive::prepareFileStream(std::string url)
+{
+	m_filename = url;
+	m_openState = O_FILE;
+	Debug_printv("LOAD [%s]", url.c_str());
+}
+
+
+
+void devDrive::handleListenCommand(IEC::Data &iec_data)
 {
 	if (m_device.select(iec_data.device))
 	{
@@ -599,7 +401,7 @@ void deviceDrive::handleListenCommand(IEC::Data &iec_data)
 } // handleListenCommand
 
 
-void deviceDrive::handleListenData()
+void devDrive::handleListenData()
 {
 	Debug_printv("[%s]", m_device.url().c_str());
 
@@ -607,24 +409,7 @@ void deviceDrive::handleListenData()
 } // handleListenData
 
 
-void deviceDrive::changeDir(std::string url)
-{
-	m_device.url(url);
-	m_mfile.reset(MFSOwner::File(url));
-	m_openState = O_DIR;
-	Debug_printv("!!!! CD into [%s]", url.c_str());
-	Debug_printv("new current url: [%s]", m_mfile->url.c_str());
-	Debug_printv("LOAD $");		
-}
-
-void deviceDrive::prepareFileStream(std::string url)
-{
-	m_filename = url;
-	m_openState = O_FILE;
-	Debug_printv("LOAD [%s]", url.c_str());
-}
-
-void deviceDrive::handleTalk(byte chan)
+void devDrive::handleTalk(byte chan)
 {
 	Debug_printv("channel[%d] openState[%d]", chan, m_openState);
 
@@ -663,7 +448,7 @@ void deviceDrive::handleTalk(byte chan)
 } // handleTalk
 
 
-void deviceDrive::handleOpen(IEC::Data &iec_data)
+void devDrive::handleOpen(IEC::Data &iec_data)
 {
 	Debug_printv("OPEN Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
 	auto channel = channels[iec_data.command];
@@ -675,7 +460,7 @@ void deviceDrive::handleOpen(IEC::Data &iec_data)
 } // handleOpen
 
 
-void deviceDrive::handleClose(IEC::Data &iec_data)
+void devDrive::handleClose(IEC::Data &iec_data)
 {
 	Debug_printv("CLOSE Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
 	auto channel = channels[iec_data.command];
@@ -687,8 +472,122 @@ void deviceDrive::handleClose(IEC::Data &iec_data)
 } // handleClose
 
 
+
+
+void devDrive::sendMeatloafSystemInformation()
+{
+	Debug_printf("\r\nsendDeviceInfo:\r\n");
+
+	// Reset basic memory pointer:
+	uint16_t basicPtr = C64_BASIC_START;
+
+	// #if defined(USE_LITTLEFS)
+	// FSInfo64 fs_info;
+	// m_fileSystem->info64(fs_info);
+	// #endif
+	char floatBuffer[10]; // buffer
+	dtostrf(getFragmentation(), 3, 2, floatBuffer);
+
+	// Send load address
+	m_iec.send(C64_BASIC_START bitand 0xff);
+	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	Debug_println("");
+
+	// Send List HEADER
+	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
+
+	// CPU
+	sendLine(basicPtr, 0, CBM_DEL_DEL "SYSTEM ---");
+	String sdk = String(ESP.getSdkVersion());
+	sdk.toUpperCase();
+	sendLine(basicPtr, 0, CBM_DEL_DEL "SDK VER    : %s", sdk.c_str());
+	//sendLine(basicPtr, 0, "BOOT VER   : %08X", ESP.getBootVersion());
+	//sendLine(basicPtr, 0, "BOOT MODE  : %08X", ESP.getBootMode());
+	//sendLine(basicPtr, 0, "CHIP ID    : %08X", ESP.getChipId());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "CPU MHZ    : %d MHZ", ESP.getCpuFreqMHz());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "CYCLES     : %u", ESP.getCycleCount());
+
+	// POWER
+	sendLine(basicPtr, 0, CBM_DEL_DEL "POWER ---");
+	//sendLine(basicPtr, 0, "VOLTAGE    : %d.%d V", ( ESP.getVcc() / 1000 ), ( ESP.getVcc() % 1000 ));
+
+	// RAM
+	sendLine(basicPtr, 0, CBM_DEL_DEL "MEMORY ---");
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM SIZE   : %5d B", getTotalMemory());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM FREE   : %5d B", getTotalAvailableMemory());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM >BLK   : %5d B", getLargestAvailableBlock());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "RAM FRAG   : %s %%", floatBuffer);
+
+	// ROM
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM SIZE   : %5d B", ESP.getSketchSize() + ESP.getFreeSketchSpace());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM USED   : %5d B", ESP.getSketchSize());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ROM FREE   : %5d B", ESP.getFreeSketchSpace());
+
+	// FLASH
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STORAGE ---");
+	sendLine(basicPtr, 0, "FLASH SIZE : %5d B", ESP.getFlashChipRealSize());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FLASH SPEED: %d MHZ", (ESP.getFlashChipSpeed() / 1000000));
+
+	// // FILE SYSTEM
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "FILE SYSTEM ---");
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "TYPE       : %s", FS_TYPE);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "SIZE       : %5d B", fs_info.totalBytes);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "USED       : %5d B", fs_info.usedBytes);
+	// sendLine(basicPtr, 0, CBM_DEL_DEL "FREE       : %5d B", fs_info.totalBytes - fs_info.usedBytes);
+
+	// NETWORK
+	sendLine(basicPtr, 0, CBM_DEL_DEL "NETWORK ---");
+	char ip[16];
+	sprintf(ip, "%s", ipToString(WiFi.softAPIP()).c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "AP MAC     : %s", WiFi.softAPmacAddress().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "AP IP      : %s", ip);
+	sprintf(ip, "%s", ipToString(WiFi.localIP()).c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STA MAC    : %s", WiFi.macAddress().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "STA IP     : %s", ip);
+
+	// End program with two zeros after last line. Last zero goes out as EOI.
+	m_iec.send(0);
+	m_iec.sendEOI(0);
+
+	ledON();
+} // sendMeatloafSystemInformation
+
+void devDrive::sendMeatloafVirtualDeviceStatus()
+{
+	Debug_printf("\r\nsendDeviceStatus:\r\n");
+
+	// Reset basic memory pointer:
+	uint16_t basicPtr = C64_BASIC_START;
+
+	// Send load address
+	m_iec.send(C64_BASIC_START bitand 0xff);
+	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	Debug_println("");
+
+	// Send List HEADER
+	sendLine(basicPtr, 0, CBM_DEL_DEL CBM_REVERSE_ON " %s V%s ", PRODUCT_ID, FW_VERSION);
+
+	// Current Config
+	sendLine(basicPtr, 0, CBM_DEL_DEL "DEVICE ID : %d", m_device.id());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "MEDIA     : %d", m_device.media());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "PARTITION : %d", m_device.partition());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "URL       : %s", m_device.url().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "PATH      : %s", m_device.path().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "ARCHIVE   : %s", m_device.archive().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "IMAGE     : %s", m_device.image().c_str());
+	sendLine(basicPtr, 0, CBM_DEL_DEL "FILENAME  : %s", m_mfile->name.c_str());
+
+	// End program with two zeros after last line. Last zero goes out as EOI.
+	m_iec.send(0);
+	m_iec.sendEOI(0);
+
+	ledON();
+} // sendMeatloafVirtualDeviceStatus
+
+
+
 // send single basic line, including heading basic pointer and terminating zero.
-uint16_t deviceDrive::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...)
+uint16_t devDrive::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...)
 {
 	// Format our string
 	va_list args;
@@ -700,7 +599,7 @@ uint16_t deviceDrive::sendLine(uint16_t &basicPtr, uint16_t blocks, const char *
 	return sendLine(basicPtr, blocks, text);
 }
 
-uint16_t deviceDrive::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
+uint16_t devDrive::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 {
 	byte i;
 	uint16_t b_cnt = 0;
@@ -735,7 +634,7 @@ uint16_t deviceDrive::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 	return b_cnt;
 } // sendLine
 
-// uint16_t deviceDrive::sendHeader(uint16_t &basicPtr, const char *format, ...)
+// uint16_t devDrive::sendHeader(uint16_t &basicPtr, const char *format, ...)
 // {
 // 	Debug_printv("formatting header");
 
@@ -751,7 +650,7 @@ uint16_t deviceDrive::sendLine(uint16_t &basicPtr, uint16_t blocks, char *text)
 // 	return sendHeader(basicPtr, std::string(text));
 // }
 
-uint16_t deviceDrive::sendHeader(uint16_t &basicPtr, std::string header, std::string id)
+uint16_t devDrive::sendHeader(uint16_t &basicPtr, std::string header, std::string id)
 {
 	uint16_t byte_count = 0;
 	bool sent_info = false;
@@ -812,7 +711,7 @@ uint16_t deviceDrive::sendHeader(uint16_t &basicPtr, std::string header, std::st
 	return byte_count;
 }
 
-void deviceDrive::sendListing()
+void devDrive::sendListing()
 {
 	Debug_printf("sendListing: [%s]\r\n=================================\r\n", m_mfile->url.c_str());
 
@@ -913,7 +812,7 @@ void deviceDrive::sendListing()
 } // sendListing
 
 
-uint16_t deviceDrive::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size)
+uint16_t devDrive::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size)
 {
 	// Send List FOOTER
 	// #if defined(USE_LITTLEFS)
@@ -942,7 +841,7 @@ uint16_t deviceDrive::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint1
 }
 
 
-void deviceDrive::sendFile()
+void devDrive::sendFile()
 {
 	size_t i = 0;
 	bool success = true;
@@ -1130,7 +1029,7 @@ void deviceDrive::sendFile()
 } // sendFile
 
 
-void deviceDrive::saveFile()
+void devDrive::saveFile()
 {
 	uint16_t i = 0;
 	bool done = false;
@@ -1227,3 +1126,24 @@ void deviceDrive::saveFile()
 
 	// TODO: Handle errorFlag
 } // saveFile
+
+
+void devDrive::dumpState() 
+{
+	Debug_println("");
+	Debug_printv("-------------------------------");
+	Debug_printv("URL: [%s]", m_mfile->url.c_str());
+    Debug_printv("streamPath: [%s]", m_mfile->streamFile->url.c_str());
+    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
+	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
+	Debug_printv("Username: [%s]", m_mfile->user.c_str());
+	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	Debug_printv("Host: [%s]", m_mfile->host.c_str());
+	Debug_printv("Port: [%s]", m_mfile->port.c_str());
+	Debug_printv("Path: [%s]", m_mfile->path.c_str());
+	Debug_printv("File: [%s]", m_mfile->name.c_str());
+	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
+	Debug_printv("");
+	Debug_printv("m_filename: [%s]", m_filename.c_str());
+    Debug_printv("-------------------------------");
+} // dumpState

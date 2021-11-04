@@ -100,7 +100,6 @@ void setup()
         iec.init();
         Serial.println("IEC Bus Initialized");
 
-        drive.begin();
         Serial.print("Virtual Device(s) Started: [ ");
         for (byte i = 0; i < 31; i++)
         {

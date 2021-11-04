@@ -86,10 +86,11 @@ public:
 	iecDevice(IEC &iec);
 	~iecDevice() {};
 
-	bool begin();
 	uint8_t service(void);
-
-	virtual uint8_t process_command(void) = 0;
+	
+	virtual uint8_t command(IEC::Data &iec_data) = 0;
+	virtual uint8_t execute(IEC::Data &iec_data) = 0;
+	virtual uint8_t status(void) = 0;
 
 	uint8_t device_id;
 
@@ -98,11 +99,11 @@ protected:
 	void reset(void);
 
 	// handler helpers.
-	void handleListenCommand(IEC::Data &iec_data);
-	void handleListenData(void);
-	void handleTalk(byte chan);
-	void handleOpen(IEC::Data &iec_data);
-	void handleClose(IEC::Data &iec_data);
+	virtual void handleListenCommand(IEC::Data &iec_data) = 0;
+	virtual void handleListenData(void) = 0;
+	virtual void handleTalk(byte chan) = 0;
+	virtual void handleOpen(IEC::Data &iec_data) = 0;
+	virtual void handleClose(IEC::Data &iec_data) = 0;
 
 	// our iec low level driver:
 	IEC &m_iec;
@@ -113,8 +114,6 @@ protected:
 	
 	DeviceDB m_device;
 
-	// Debug functions
-	void dumpState();
 };
 
 

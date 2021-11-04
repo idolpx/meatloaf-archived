@@ -40,16 +40,11 @@ iecDevice::iecDevice(IEC &iec)
 	reset();
 } // ctor
 
-bool iecDevice::begin()
-{
-	return true;
-}
 
 void iecDevice::reset(void)
 {
 	//m_device.reset();
 } // reset
-
 
 
 uint8_t iecDevice::service(void)
@@ -115,7 +110,7 @@ uint8_t iecDevice::service(void)
 				handleListenData();	
 			}
 		}
-		else if (m_iec_data.command == IEC::IEC_DATA) // data channel opened
+		else if (m_iec_data.command == IEC::IEC_SECOND) // data channel opened
 		{
 			Debug_printf("DATA CHANNEL %d\r\n", m_iec_data.channel);
 			if (bus_state == IEC::BUS_COMMAND)
@@ -157,206 +152,3 @@ uint8_t iecDevice::service(void)
 } // service
 
 
-void iecDevice::handleListenCommand(IEC::Data &iec_data)
-{
-	if (m_device.select(iec_data.device))
-	{
-		Debug_printv("!!!! device changed: unit:%d current url: [%s]", m_device.id(), m_device.url().c_str());
-		m_mfile.reset(MFSOwner::File(m_device.url()));
-		Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
-	}
-
-	size_t channel = iec_data.channel;
-	m_openState = O_NOTHING;
-
-	if (iec_data.content.size() == 0 )
-	{
-		Debug_printv("No command to process");
-
-		if ( iec_data.channel == CMD_CHANNEL )
-			m_openState = O_STATUS;
-		return;
-	}
-
-	// 1. obtain command and fullPath
-	auto commandAndPath = parseLine(iec_data.content, channel);
-	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
-
-	Debug_printv("command[%s]", commandAndPath.command.c_str());
-	if (mstr::startsWith(commandAndPath.command, "$"))
-	{
-		m_openState = O_DIR;
-		Debug_printv("LOAD $");
-	}	
-	else if (mstr::endsWith(commandAndPath.command, "*"))
-	{
-		// Find first program in listing
-		if (m_device.path().empty())
-		{
-			// If in LittleFS root then set it to FB64
-			// TODO: Load configured autoload program
-			m_filename = "/.sys/fb64";
-		}
-		else if (m_filename.size() == 0)
-		{	
-			// Find first PRG file in current directory
-			std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
-
-			while (entry != nullptr && entry->isDirectory())
-			{
-				Debug_printv("extension: [%s]", entry->extension.c_str());
-				entry.reset(m_mfile->getNextFileInDir());
-			}
-			m_filename = entry->name;
-		}
-		m_openState = O_FILE;
-		Debug_printv("LOAD * [%s]", m_filename.c_str());
-	}
-	else if (mstr::equals(commandAndPath.command, "@info", false))
-	{
-		m_openState = O_ML_INFO;
-	}
-	else if (mstr::equals(commandAndPath.command, "@stat", false))
-	{
-		m_openState = O_ML_STATUS;
-	}
-	else if (commandAndPath.command == "mfav") {
-		// create a urlfile named like the argument, containing current m_mfile path
-		// here we don't want the full path provided by commandAndPath, though
-		// the full syntax should be: heart:urlfilename,[filename] - optional name of the file that should be pointed to
-
-		auto favStream = Meat::ofstream(commandAndPath.rawPath+".url"); // put the name from argument here!
-		favStream.open();
-		if(favStream.is_open()) {
-			favStream << m_mfile->url;
-		}
-		favStream.close();
-	}
-	else if(!commandAndPath.rawPath.empty())
-	{
-		// 2. fullPath.extension == "URL" - change dir or load file
-		if (mstr::equals(referencedPath->extension, "url", false)) 
-		{
-			// CD to the path inside the .url file
-			referencedPath.reset(getPointed(referencedPath.get()));
-
-			if ( referencedPath->isDirectory() )
-			{
-				Debug_printv("change dir called for urlfile");
-				changeDir(referencedPath->url);
-			}
-			else if ( referencedPath->exists() )
-			{
-				prepareFileStream(referencedPath->url);
-			}
-		}
-		// 2. OR if command == "CD" OR fullPath.isDirectory - change directory
-		if (mstr::equals(commandAndPath.command, "cd", false) || referencedPath->isDirectory())
-		{
-			Debug_printv("change dir called by CD command or because of isDirectory");
-			changeDir(referencedPath->url);
-		}
-		// 3. else - stream file
-		else if ( referencedPath->exists() )
-		{
-			// Set File
-			prepareFileStream(referencedPath->url);
-		}
-	}
-
-	dumpState();
-
-	// Clear command string
-	m_iec_data.content.clear();
-} // handleListenCommand
-
-
-void iecDevice::handleListenData()
-{
-	Debug_printv("[%s]", m_device.url().c_str());
-
-	saveFile();
-} // handleListenData
-
-
-void iecDevice::handleTalk(byte chan)
-{
-	Debug_printv("channel[%d] openState[%d]", chan, m_openState);
-
-	switch (m_openState)
-	{
-		case O_NOTHING:
-			break;
-
-		case O_STATUS:
-			// Send status
-			sendStatus();
-			break;
-
-		case O_FILE:
-			// Send file
-			sendFile();
-			break;
-
-		case O_DIR:
-			// Send listing
-			sendListing();
-			break;
-
-		case O_ML_INFO:
-			// Send system information
-			sendMeatloafSystemInformation();
-			break;
-
-		case O_ML_STATUS:
-			// Send virtual device status
-			sendMeatloafVirtualDeviceStatus();
-			break;
-	}
-
-	m_openState = O_NOTHING;
-} // handleTalk
-
-
-void iecDevice::handleOpen(IEC::Data &iec_data)
-{
-	Debug_printv("OPEN Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
-	auto channel = channels[iec_data.command];
-
-	// Are we writing?  Appending?
-	channels[iec_data.command].name = iec_data.content;
-	channels[iec_data.command].cursor = 0;
-	channels[iec_data.command].writing = 0;
-} // handleOpen
-
-
-void iecDevice::handleClose(IEC::Data &iec_data)
-{
-	Debug_printv("CLOSE Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
-	auto channel = channels[iec_data.command];
-
-	// If writing update BAM & Directory
-	
-	// Remove channel from map
-
-} // handleClose
-
-void iecDevice::dumpState() 
-{
-	Debug_println("");
-	Debug_printv("-------------------------------");
-	Debug_printv("URL: [%s]", m_mfile->url.c_str());
-    Debug_printv("streamPath: [%s]", m_mfile->streamFile->url.c_str());
-    Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
-	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
-	Debug_printv("Username: [%s]", m_mfile->user.c_str());
-	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
-	Debug_printv("Host: [%s]", m_mfile->host.c_str());
-	Debug_printv("Port: [%s]", m_mfile->port.c_str());
-	Debug_printv("Path: [%s]", m_mfile->path.c_str());
-	Debug_printv("File: [%s]", m_mfile->name.c_str());
-	Debug_printv("Extension: [%s]", m_mfile->extension.c_str());
-	Debug_printv("");
-	Debug_printv("m_filename: [%s]", m_filename.c_str());
-    Debug_printv("-------------------------------");
-} // dumpState
