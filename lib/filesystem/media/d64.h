@@ -57,21 +57,6 @@ public:
     bool isOpen();
 
 protected:
-
-    bool seekCalled = false;
-    std::shared_ptr<MIStream> containerStream;
-
-    bool m_isOpen;
-    int m_length;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
-
-    // D64Image methods
-    CBMImageStream* decodedStream;
-
-    size_t entry_index = 0;
-
-    uint8_t dos_version;
     struct Header {
         char disk_name[16];
         char unused[2];
@@ -114,13 +99,34 @@ protected:
     };
 
 
-    virtual void seekHeader() {
-        seekSector(directory_header_offset, 0x90);
+    // D64 Offsets
+    std::vector<uint8_t> directory_header_offset = {18, 0, 0x90};
+    std::vector<uint8_t> directory_list_offset = {18, 1, 0x00};
+    std::vector<BAMInfo> block_allocation_map = { {18, 0, 0x04, 1, 35, 4} };
+    std::vector<uint8_t> sectorsPerTrack = { 17, 18, 19, 21 };
+    uint8_t sector_buffer[256] = { 0 };    
+    uint16_t block_size = 256;
+
+    bool seekCalled = false;
+    std::shared_ptr<MIStream> containerStream;
+
+    bool m_isOpen;
+    int m_length;
+    int m_bytesAvailable = 0;
+    int m_position = 0;
+
+    // D64Image methods
+    CBMImageStream* decodedStream;
+
+    size_t entry_index = 0;
+
+    uint8_t dos_version;
+
+    void seekHeader() {
+        seekSector(directory_header_offset);
+        containerStream->read((uint8_t*)&header, sizeof(header));
     }
 
-    void fillHeader() {
-        containerStream->read((uint8_t*)&header, sizeof(header));
-    }    
 
     bool seekNextImageEntry() {
         return seekEntry(entry_index + 1);
@@ -132,7 +138,8 @@ protected:
 
     std::string decodeEntry();
     bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
-    bool seekSector( std::vector<uint8_t> trackSector, size_t offset = 0 );
+    bool seekSector( std::vector<uint8_t> trackSectorOffset = { 0 } );
+
 
     virtual uint16_t blocksFree();
 
@@ -141,15 +148,9 @@ protected:
 		return (track < 30) + (track < 24) + (track < 17);
 	};
 
-    Header header;
-    Entry entry;        // Directory entry data
 
-    std::vector<uint8_t> directory_header_offset = {18, 0};
-    std::vector<uint8_t> directory_list_offset = {18, 1};
-    std::vector<BAMInfo> block_allocation_map = { {18, 0, 0x04, 1, 35, 4} };
-    std::vector<uint8_t> sectorsPerTrack = { 17, 18, 19, 21 };
-    uint8_t sector_buffer[256] = { 0 };    
-    uint16_t block_size = 256;
+    Header header;      // Directory header data
+    Entry entry;        // Directory entry data
 
     enum open_modes { OPEN_READ, OPEN_WRITE, OPEN_APPEND, OPEN_MODIFY };
     std::string file_type_label[8] = { "del", "seq", "prg", "usr", "rel", "cbm", "dir", "???" };
@@ -212,15 +213,13 @@ private:
     //     return D64_TYPE_UNKNOWN;
     // }
     friend class D64File;
+    friend class D81File;
 };
 
-class D64Istream : public MIStream {
+class D64IStream : public CBMImageStream {
 
 };
 
-class D81Istream : public MIStream {
-    // override everything that requires overriding here
-};
 
 
 /********************************************************
@@ -317,20 +316,19 @@ public:
 //    MIStream* inputStream() override { Debug_printv("here"); return nullptr; }; // has to return OPENED stream
 //    MOStream* outputStream() override { Debug_printv("here"); return nullptr; }; // has to return OPENED stream
 
-    time_t getLastWrite() override;
-    time_t getCreationTime() override;
-    bool rewindDirectory() override;
-    MFile* getNextFileInDir() override;
-    bool mkDir() override { return false; };
-    bool exists() override;
-    size_t size() override;
-    bool remove() override { return false; };
-    bool rename(std::string dest) { return false; };
+    virtual time_t getLastWrite() override;
+    virtual time_t getCreationTime() override;
+    virtual bool rewindDirectory() override;
+    virtual MFile* getNextFileInDir() override;
+    virtual bool mkDir() override { return false; };
+    virtual bool exists() override;
+    virtual size_t size() override;
+    virtual bool remove() override { return false; };
+    virtual bool rename(std::string dest) { return false; };
 
     virtual MIStream* createIStream(std::shared_ptr<MIStream> containerIstream);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 
-private:
     bool isDir = true;
     bool dirIsOpen = false;
 };

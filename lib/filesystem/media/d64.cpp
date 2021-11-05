@@ -22,11 +22,10 @@ bool CBMImageStream::seekSector( uint8_t track, uint8_t sector, size_t offset )
     return containerStream->seek( (sectorOffset * block_size) + offset );
 }
 
-bool CBMImageStream::seekSector( std::vector<uint8_t> trackSector, size_t offset )
+bool CBMImageStream::seekSector( std::vector<uint8_t> trackSectorOffset )
 {
-    return seekSector(trackSector[0], trackSector[1], offset);
+    return seekSector(trackSectorOffset[0], trackSectorOffset[1], trackSectorOffset[2]);
 }
-
 
 
 std::string CBMImageStream::readBlock(uint8_t track, uint8_t sector)
@@ -113,7 +112,7 @@ bool CBMImageStream::seekEntry( size_t index )
             if ( next_track )
             {
                 Debug_printv("next_track[%d] next_sector[%d]", entry.next_track, entry.next_sector);
-                r = seekSector( entry.next_track, entry.next_sector );
+                r = seekSector( entry.next_track, entry.next_sector, 0x00 );
             }
 
             containerStream->read((uint8_t *)&entry, sizeof(entry));
@@ -248,7 +247,7 @@ bool D64File::isDirectory() {
 bool D64File::rewindDirectory() {
     dirIsOpen = true;
     Debug_printv("streamFile->url[%s]", streamFile->url.c_str());
-    auto image = ImageBroker::obtain(streamFile->url);
+    auto image = ImageBroker::obtain<D64IStream>(streamFile->url);
     if ( image == nullptr )
         Debug_printv("image pointer is null");
 
@@ -256,7 +255,6 @@ bool D64File::rewindDirectory() {
 
     // Read Header
     image->seekHeader();
-    image->fillHeader();
 
     // Set Media Info Fields
     media_header = mstr::format("%.16s", image->header.disk_name);
@@ -276,7 +274,7 @@ MFile* D64File::getNextFileInDir() {
         rewindDirectory();
 
     // Get entry pointed to by containerStream
-    auto image = ImageBroker::obtain(streamFile->url);
+    auto image = ImageBroker::obtain<D64IStream>(streamFile->url);
 
     if ( image->seekNextImageEntry() )
     {
@@ -307,7 +305,7 @@ time_t D64File::getLastWrite() {
 
 time_t D64File::getCreationTime() {
     tm *entry_time = 0;
-    auto entry = ImageBroker::obtain(streamFile->url)->entry;
+    auto entry = ImageBroker::obtain<D64IStream>(streamFile->url)->entry;
     entry_time->tm_year = entry.year + 1900;
     entry_time->tm_mon = entry.month;
     entry_time->tm_mday = entry.day;
@@ -326,7 +324,7 @@ bool D64File::exists() {
 size_t D64File::size() {
     // Debug_printv("[%s]", streamFile->url.c_str());
     // use D64 to get size of the file in image
-    auto entry = ImageBroker::obtain(streamFile->url)->entry;
+    auto entry = ImageBroker::obtain<D64IStream>(streamFile->url)->entry;
     // (_ui16 << 8 | _ui16 >> 8)
     //uint16_t blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
     uint16_t blocks = entry.blocks[0] * 256 + entry.blocks[1];

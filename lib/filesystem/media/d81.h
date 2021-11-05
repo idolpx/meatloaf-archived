@@ -19,24 +19,22 @@
  * Streams
  ********************************************************/
 
-class D81IStream: public CBMImageStream {
+class D81IStream : public CBMImageStream {
+    // override everything that requires overriding here
 
 public:
     D81IStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) 
     {
-        directory_header_offset = {40, 0};
-        directory_list_offset = {40, 3};
+        // D81 Offsets
+        directory_header_offset = {40, 0, 0x04};
+        directory_list_offset = {40, 3, 0x00};
         block_allocation_map = { {40, 1, 0x10, 1, 40, 6}, {40, 2, 0x00, 41, 80, 6} };
         sectorsPerTrack = { 40 };
     };
 
-    virtual void seekHeader() override {
-        Debug_printv("here");
-        seekSector(directory_header_offset, 0x04);
-    }
-
     //virtual uint16_t blocksFree() override;
 	virtual uint8_t speedZone( uint8_t track) override { return 1; };
+
 
 protected:
     // struct BAMEntry {
@@ -61,7 +59,14 @@ class D81File: public D64File {
 public:
     D81File(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
 
-    virtual MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+    time_t getCreationTime() override;
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool exists() override;
+    size_t size() override;
+
+    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+
 };
 
 
