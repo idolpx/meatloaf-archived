@@ -35,17 +35,18 @@ public:
         seekSector(directory_header_offset, 0x04);
     }
 
+    //virtual uint16_t blocksFree() override;
 	virtual uint8_t speedZone( uint8_t track) override { return 1; };
 
 protected:
-    struct BAMEntry {
-        uint8_t free_sectors;
-        uint8_t sectors_00_07;
-        uint8_t sectors_08_15;
-        uint8_t sectors_16_23;
-        uint8_t sectors_24_31;
-        uint8_t sectors_32_39;
-    };
+    // struct BAMEntry {
+    //     uint8_t free_sectors;
+    //     uint8_t sectors_00_07;
+    //     uint8_t sectors_08_15;
+    //     uint8_t sectors_16_23;
+    //     uint8_t sectors_24_31;
+    //     uint8_t sectors_32_39;
+    // };
 
 private:
     friend class D81File;

@@ -87,12 +87,12 @@ protected:
         uint8_t byte_count;
     };
 
-    struct BAMEntry {
-        uint8_t free_sectors;
-        uint8_t sectors_00_07;
-        uint8_t sectors_08_15;
-        uint8_t sectors_16_20;
-    };
+    // struct BAMEntry {
+    //     uint8_t free_sectors;
+    //     uint8_t sectors_00_07;
+    //     uint8_t sectors_08_15;
+    //     uint8_t sectors_16_20;
+    // };
 
     struct Entry {
         uint8_t next_track;
@@ -113,13 +113,14 @@ protected:
         uint8_t blocks[2];
     };
 
-    void fillHeader() {
-        containerStream->read((uint8_t*)&header, sizeof(header));
-    }
 
     virtual void seekHeader() {
         seekSector(directory_header_offset, 0x90);
     }
+
+    void fillHeader() {
+        containerStream->read((uint8_t*)&header, sizeof(header));
+    }    
 
     bool seekNextImageEntry() {
         return seekEntry(entry_index + 1);
@@ -133,7 +134,7 @@ protected:
     bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
     bool seekSector( std::vector<uint8_t> trackSector, size_t offset = 0 );
 
-    uint16_t blocksFree();
+    virtual uint16_t blocksFree();
 
 	virtual uint8_t speedZone( uint8_t track)
 	{
