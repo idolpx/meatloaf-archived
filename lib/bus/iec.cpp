@@ -210,10 +210,10 @@ IEC::BusState IEC::service(Data& iec_data)
 		releaseLines(false);
 		return BUS_IDLE;
 	} 
-	else if((c bitand 0xF0) == IEC_DATA)
+	else if((c bitand 0xF0) == IEC_SECOND)
 	{
-		iec_data.command = IEC_DATA;
-		iec_data.channel = c xor IEC_DATA;
+		iec_data.command = IEC_SECOND;
+		iec_data.channel = c xor IEC_SECOND;
 		Debug_printf(BACKSPACE "] (60 DATA) (%.2d CHANNEL)\r\n", iec_data.channel);
 	}
 	else if((c bitand 0xF0) == IEC_CLOSE)
@@ -288,7 +288,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 
 	// If the command is SECONDARY and it is not to expect just a small command on the command channel, then
 	// we're into something more heavy. Otherwise read it all out right here until UNLISTEN is received.
-	if(iec_data.command == IEC_DATA && iec_data.channel not_eq CMD_CHANNEL) 
+	if(iec_data.command == IEC_SECOND && iec_data.channel not_eq CMD_CHANNEL) 
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
 		Debug_printf(BACKSPACE "] (%.2X SECONDARY) (%.2X CHANNEL)\r\n", iec_data.command, iec_data.channel);
@@ -296,7 +296,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 	}
 
 	// OPEN
-	else if(iec_data.command == IEC_DATA || iec_data.command == IEC_OPEN) 
+	else if(iec_data.command == IEC_SECOND || iec_data.command == IEC_OPEN) 
 	{
 		Debug_printf(BACKSPACE "] (%.2X OPEN) (%.2X CHANNEL) [", iec_data.command, iec_data.channel);
 
@@ -459,7 +459,7 @@ bool IEC::send(uint8_t data)
 
 bool IEC::send(std::string data)
 {
-	for (int i = 0; i < data.length(); ++i)
+	for (size_t i = 0; i < data.length(); ++i)
 		send(data[i]);
 
 	return true;

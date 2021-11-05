@@ -88,7 +88,7 @@ String statusMessage;
 bool initFailed = false;
 
 static IEC iec;
-static deviceDrive drive ( iec );
+static devDrive drive ( iec );
 
 
 //Zimodem modem;
@@ -138,7 +138,7 @@ ESPModem modem;
     void handleGetEdit();
     void setupWWW ( void );
     void notFound ();
-#else if defined(WEBDAV)
+#elif defined(WEBDAV)
     #include "ESPWebDAV.h"
 
     WiFiServer tcp ( SERVER_PORT );

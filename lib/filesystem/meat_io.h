@@ -266,7 +266,7 @@ namespace Meat {
          *  @note  Base class version does nothing, returns eof().
          */
 
-// // https://newbedev.com/how-to-write-custom-input-stream-in-c
+        // https://newbedev.com/how-to-write-custom-input-stream-in-c
 
 
         int underflow() override {

@@ -21,9 +21,6 @@
 
 class CBMImageStream: public MIStream {
 
-    bool seekCalled = false;
-    std::shared_ptr<MIStream> containerStream;
-
 public:
     CBMImageStream(std::shared_ptr<MIStream> is) {
         containerStream = is;  
@@ -61,6 +58,9 @@ public:
 
 protected:
 
+    bool seekCalled = false;
+    std::shared_ptr<MIStream> containerStream;
+
     bool m_isOpen;
     int m_length;
     int m_bytesAvailable = 0;
@@ -69,7 +69,7 @@ protected:
     // D64Image methods
     CBMImageStream* decodedStream;
 
-    size_t entryIndex = 0;
+    size_t entry_index = 0;
 
     uint8_t dos_version;
     struct Header {
@@ -87,12 +87,12 @@ protected:
         uint8_t byte_count;
     };
 
-    struct BAMEntry {
-        uint8_t free_sectors;
-        uint8_t sectors_00_07;
-        uint8_t sectors_08_15;
-        uint8_t sectors_16_20;
-    };
+    // struct BAMEntry {
+    //     uint8_t free_sectors;
+    //     uint8_t sectors_00_07;
+    //     uint8_t sectors_08_15;
+    //     uint8_t sectors_16_20;
+    // };
 
     struct Entry {
         uint8_t next_track;
@@ -113,70 +113,77 @@ protected:
         uint8_t blocks[2];
     };
 
-    void fillHeader() {
-        containerStream->read((uint8_t*)&header, sizeof(header));
-    }
 
-    void seekHeader() {
+    virtual void seekHeader() {
         seekSector(directory_header_offset, 0x90);
     }
 
+    void fillHeader() {
+        containerStream->read((uint8_t*)&header, sizeof(header));
+    }    
+
     bool seekNextImageEntry() {
-        return seekEntry(entryIndex + 1);
+        return seekEntry(entry_index + 1);
     }
 
     void resetEntryCounter() {
-        entryIndex = 0;
+        entry_index = 0;
     }
 
     std::string decodeEntry();
+    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
+    bool seekSector( std::vector<uint8_t> trackSector, size_t offset = 0 );
+
+    virtual uint16_t blocksFree();
+
+	virtual uint8_t speedZone( uint8_t track)
+	{
+		return (track < 30) + (track < 24) + (track < 17);
+	};
 
     Header header;
-    uint16_t blocksFree();
-    uint16_t block_size = 256;
     Entry entry;        // Directory entry data
 
+    std::vector<uint8_t> directory_header_offset = {18, 0};
+    std::vector<uint8_t> directory_list_offset = {18, 1};
+    std::vector<BAMInfo> block_allocation_map = { {18, 0, 0x04, 1, 35, 4} };
+    std::vector<uint8_t> sectorsPerTrack = { 17, 18, 19, 21 };
+    uint8_t sector_buffer[256] = { 0 };    
+    uint16_t block_size = 256;
 
-private:
-    uint8_t directory_header_offset[2] = {18, 0};
-    uint8_t directory_list_offset[2] = {18, 1};
-    BAMInfo block_allocation_map[1] = {18, 0, 0x04, 1, 35, 4};
-    uint8_t sectorsPerTrack[4] = { 17, 18, 19, 21 };
-    uint8_t sector_buffer[256] = { 0 };
-
+    enum open_modes { OPEN_READ, OPEN_WRITE, OPEN_APPEND, OPEN_MODIFY };
     std::string file_type_label[8] = { "del", "seq", "prg", "usr", "rel", "cbm", "dir", "???" };
 
-    uint8_t track;
-    uint8_t sector;
-    uint16_t offset;
-    uint64_t blocks_free;
+    uint8_t track = 0;
+    uint8_t sector = 0;
+    uint16_t offset = 0;
+    uint64_t blocks_free = 0;
+
+    uint8_t next_track = 0;
+    uint8_t next_sector = 0;
+    uint8_t sector_offset = 0;
 
     uint8_t index = 0;  // Currently selected directory entry
     uint8_t length = 0; // Directory list entry count
 
-
     bool show_hidden = false;
+
+
+private:
 
     size_t readFile(uint8_t* buf, size_t size);
 
     void sendListing();
 
-    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
-    bool seekSector( uint8_t* trackSector, size_t offset = 0 );
     bool seekEntry( std::string filename );
     bool seekEntry( size_t index = 0 );
 
-    std::vector<Entry> getEntries(uint8_t track, uint8_t sector);
 
     std::string readBlock( uint8_t track, uint8_t sector );
     bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
     bool allocateBlock( uint8_t track, uint8_t sector );
     bool deallocateBlock( uint8_t track, uint8_t sector );
 
-	uint8_t speedZone( uint8_t track)
-	{
-		return (track < 30) + (track < 24) + (track < 17);
-	};
 
     // uint8_t d64_get_type(uint16_t imgsize)
     // {
@@ -290,7 +297,8 @@ public:
     size_t size() override;
     bool remove() override { return false; };
     bool rename(std::string dest) { return false; };
-    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream);
+
+    virtual MIStream* createIStream(std::shared_ptr<MIStream> containerIstream);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 
 private:

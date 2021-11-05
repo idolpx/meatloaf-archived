@@ -46,7 +46,7 @@
 
 #include "iec.h"
 #include "iec_device.h"
-#include "device_db.h"
+
 #include "meat_io.h"
 #include "MemoryInfo.h"
 #include "helpers.h"
@@ -65,33 +65,23 @@ enum OpenState
 	O_ML_STATUS		// Meatloaf Virtual Device Status
 };
 
-class deviceDrive: public iecDevice
+class devDrive: public iecDevice
 {
 public:
-	// Return values for service:
-	enum DeviceState
-	{
-		DEVICE_IDLE = 0,       // Ready and waiting
-		DEVICE_OPEN,           // Command received and channel opened
-		DEVICE_DATA,           // Data sent or received
-	};
+	devDrive(IEC &iec);
+	virtual ~devDrive() {};
 
-	struct Channel
-	{
-		std::string name;
-		uint32_t cursor;
-		bool writing;
-	};
-	std::unordered_map<uint8_t, Channel> channels;
+ 	virtual uint8_t command(IEC::Data &iec_data) { return 0; };
+	virtual uint8_t execute(IEC::Data &iec_data) { return 0; };
+	virtual uint8_t status(void) { return 0; };
 
-	deviceDrive(IEC &iec);
-	virtual ~deviceDrive() {};
-
-	bool begin();
-
-	// The handler returns the current IEC state, see the iec.h for possible states.
-	uint8_t service(void);
-    virtual uint8_t process_command(void) override;
+protected:
+	// handler helpers.
+	virtual void handleListenCommand(IEC::Data &iec_data) override;
+	virtual void handleListenData(void) override;
+	virtual void handleTalk(byte chan) override;
+	virtual void handleOpen(IEC::Data &iec_data) override;
+	virtual void handleClose(IEC::Data &iec_data) override;
 
 private:
 	void reset(void);
@@ -132,6 +122,9 @@ private:
 	
 	std::unique_ptr<MFile> m_mfile; // Always points to current directory
 	std::string m_filename; // Always points to current or last loaded file
+
+	// Debug functions
+	void dumpState();
 };
 
 
