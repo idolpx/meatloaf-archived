@@ -89,7 +89,7 @@ MFile* MFSOwner::File(std::string path) {
 
     std::vector<std::string> paths = mstr::split(path,'/');
 
-    Debug_printv("Trying to factory path [%s]", path.c_str());
+    //Debug_printv("Trying to factory path [%s]", path.c_str());
 
     auto pathIterator = paths.end();
     auto begin = paths.begin();

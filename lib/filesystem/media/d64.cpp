@@ -90,8 +90,6 @@ bool D64IStream::seekEntry( std::string filename )
 bool D64IStream::seekEntry( size_t index )
 {
     bool r = false;
-    static uint8_t next_track = 0;
-    static uint8_t next_sector = 0;
 
     // Calculate Sector offset & Entry offset
     // 8 Entries Per Sector, 32 bytes Per Entry
@@ -99,15 +97,17 @@ bool D64IStream::seekEntry( size_t index )
     uint8_t sectorOffset = index / 8;
     uint8_t entryOffset = (index % 8) * 32;
 
-    Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d] entryIndex[%d]", index, sectorOffset, entryOffset, entryIndex);
+    Debug_printv("----------");
+    Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d] entry_index[%d]", index, sectorOffset, entryOffset, entry_index);
 
 
-    if (index == 0 || index != entryIndex)
+    if (index == 0 || index != entry_index)
     {
         // Start at first sector of directory
         next_track = 0;
         r = seekSector( directory_list_offset );
         
+        // Find sector with requested entry
         do
         {
             if ( next_track )
@@ -130,21 +130,22 @@ bool D64IStream::seekEntry( size_t index )
         {
             Debug_printv("Follow link track[%d] sector[%d] entryOffset[%d]", next_track, next_sector, entryOffset);
             r = seekSector( next_track, next_sector, entryOffset );
-        }
-
-        containerStream->read((uint8_t *)&entry, sizeof(entry));        
+        }        
     }
 
+    containerStream->read((uint8_t *)&entry, sizeof(entry));      
+
+    // If we are at the first entry in the sector then get next_trac/next_sector
     if ( entryOffset == 0 )
     {
         next_track = entry.next_track;
-        next_sector = entry.next_sector;
+        next_sector = entry.next_sector;        
     }
 
     //Debug_printv("r[%d] file_type[%02X] file_name[%.16s]", r, entry.file_type, entry.filename);
 
     //if ( next_track == 0 && next_sector == 0xFF )
-    entryIndex = index + 1;    
+    entry_index = index + 1;    
     if ( entry.file_type == 0x00 )
         return false;
     else
@@ -195,9 +196,6 @@ uint16_t D64IStream::blocksFree()
 
 size_t D64IStream::readFile(uint8_t* buf, size_t size) {
     size_t bytesRead = 0;
-    static uint8_t next_track = 0;
-    static uint8_t next_sector = 0;
-    static uint8_t sector_offset = 0;
 
     if ( sector_offset % block_size == 0 )
     {
@@ -235,7 +233,7 @@ size_t D64IStream::readFile(uint8_t* buf, size_t size) {
  ********************************************************/
 
 bool D64File::isDirectory() {
-    Debug_printv("pathInStream[%s]", pathInStream.c_str());
+    //Debug_printv("pathInStream[%s]", pathInStream.c_str());
     if ( pathInStream == "" )
         return true;
     else
@@ -264,7 +262,7 @@ bool D64File::rewindDirectory() {
     media_block_size = image->block_size;
     media_image = name;
 
-    return getNextFileInDir();
+    return true;
 }
 
 MFile* D64File::getNextFileInDir() {
@@ -321,7 +319,7 @@ bool D64File::exists() {
 } 
 
 size_t D64File::size() {
-    Debug_printv("[%s]", streamFile->url.c_str());
+    // Debug_printv("[%s]", streamFile->url.c_str());
     // use D64 to get size of the file in image
     auto entry = ImageBroker::obtain(streamFile->url)->entry;
     // (_ui16 << 8 | _ui16 >> 8)
@@ -339,6 +337,12 @@ bool D64IStream::seekPath(std::string path) {
     // Implement this to skip a queue of file streams to start of file by name
     // this will cause the next read to return bytes of 'path'
     seekCalled = true;
+
+    next_track = 0;
+    next_sector = 0;
+    sector_offset = 0;
+
+    entry_index = 0;
 
     // call D54Image method to obtain file bytes here, return true on success:
     // return D64Image.seekFile(containerIStream, path);
@@ -358,7 +362,7 @@ bool D64IStream::seekPath(std::string path) {
         size_t blocks = 0; 
         do
         {
-            Debug_printv("t[%d] s[%d]", t, s);
+            //Debug_printv("t[%d] s[%d]", t, s);
 
             containerStream->read(&t, 1);
             containerStream->read(&s, 1);
@@ -372,7 +376,7 @@ bool D64IStream::seekPath(std::string path) {
         // Set position to beginning of file
         seekSector( entry.start_track, entry.start_sector );
 
-        Debug_printv("t[%d] s[%d] blocks[%d] size[%d] available[%d]", t, s, blocks, m_length, m_bytesAvailable);
+        Debug_printv("File Size: blocks[%d] size[%d] available[%d]", (blocks + 1), m_length, m_bytesAvailable);
         
         return true;
     }
@@ -434,27 +438,15 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
     if(seekCalled) {
         // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
         // or set the stream to EOF-like state, if whle file is completely read.
-        //auto bytesRead= 0; // m_file.readBytes((char *) buf, size);
-        //m_bytesAvailable = 0; //m_file.available();
-        //bytesRead = image().get()->readFile(buf, size);
-
-        //Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
-
         bytesRead = readFile(buf, size);
-        //buf[0] = 8;
-        //bytesRead = 1;
 
-        //bytesRead = D64Image.readFileBytes(containerIStream, path, fromWhere, buffer[], bufferSize);
     }
     else {
         // seekXXX not called - just pipe image bytes, so it can be i.e. copied verbatim
-        //Debug_printv("containerIStream.isOpen[%d]", containerIStream->isOpen());
-
-        bytesRead = readFile(buf, size);
+        bytesRead = containerStream->read(buf, size);
     }
 
     m_position += bytesRead;
-    //m_bytesAvailable = m_length - m_position;
     return bytesRead;
 };
 

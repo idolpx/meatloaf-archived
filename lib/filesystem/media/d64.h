@@ -69,7 +69,7 @@ protected:
     // D64Image methods
     D64IStream* decodedStream;
 
-    size_t entryIndex = 0;
+    size_t entry_index = 0;
 
     uint8_t dos_version;
     struct Header {
@@ -122,11 +122,11 @@ protected:
     }
 
     bool seekNextImageEntry() {
-        return seekEntry(entryIndex + 1);
+        return seekEntry(entry_index + 1);
     }
 
     void resetEntryCounter() {
-        entryIndex = 0;
+        entry_index = 0;
     }
 
     std::string decodeEntry();
@@ -147,10 +147,14 @@ private:
     enum open_modes { OPEN_READ, OPEN_WRITE, OPEN_APPEND, OPEN_MODIFY };
     std::string file_type_label[8] = { "del", "seq", "prg", "usr", "rel", "cbm", "dir", "???" };
 
-    uint8_t track;
-    uint8_t sector;
-    uint16_t offset;
-    uint64_t blocks_free;
+    uint8_t track = 0;
+    uint8_t sector = 0;
+    uint16_t offset = 0;
+    uint64_t blocks_free = 0;
+
+    uint8_t next_track = 0;
+    uint8_t next_sector = 0;
+    uint8_t sector_offset = 0;
 
     uint8_t index = 0;  // Currently selected directory entry
     uint8_t length = 0; // Directory list entry count
