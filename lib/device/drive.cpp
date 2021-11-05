@@ -718,9 +718,7 @@ void devDrive::sendListing()
 	uint16_t byte_count = 0;
 	std::string extension = "dir";
 
-	Debug_printv("before m_file");
 	std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
-	Debug_printv("after m_file");
 
 	if(entry == nullptr) {
 		sendFileNotFound();
@@ -737,7 +735,6 @@ void devDrive::sendListing()
 	Debug_println("");
 
 	// Send Listing Header
-	Debug_printv("before header");
 	if (m_mfile->media_header.size() == 0)
 	{
 		// Set device default Listing Header
@@ -749,7 +746,6 @@ void devDrive::sendListing()
 	{
 		byte_count += sendHeader(basicPtr, m_mfile->media_header.c_str(), m_mfile->media_id.c_str());
 	}
-	Debug_printv("after header");
 	
 	// Send Directory Items
 	while(entry != nullptr)

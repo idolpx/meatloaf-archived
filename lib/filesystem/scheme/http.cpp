@@ -153,7 +153,7 @@ void HttpIStream::close() {
 };
 
 bool HttpIStream::open() {
-    mstr::replaceAll(url, "HTTP:", "http:");
+    //mstr::replaceAll(url, "HTTP:", "http:");
     bool initOk = m_http.begin(m_file, url.c_str());
     Debug_printv("input %s: someRc=%d", url.c_str(), initOk);
     if(!initOk)
@@ -182,6 +182,7 @@ bool HttpIStream::open() {
 
     // Is this text?
     std::string ct = m_http.header("content-type").c_str();
+    Debug_printv("content_type[%s]", ct.c_str());
     isText = mstr::isText(ct);
 
     return true;

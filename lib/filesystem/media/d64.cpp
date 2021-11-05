@@ -22,7 +22,7 @@ bool D64IStream::seekSector( uint8_t track, uint8_t sector, size_t offset )
     return containerStream->seek( (sectorOffset * block_size) + offset );
 }
 
-bool D64IStream::seekSector( uint8_t* trackSector, size_t offset )
+bool D64IStream::seekSector( std::vector<uint8_t> trackSector, size_t offset )
 {
     return seekSector(trackSector[0], trackSector[1], offset);
 }
@@ -180,15 +180,18 @@ uint16_t D64IStream::blocksFree()
 {
     uint16_t free_count = 0;
     BAMEntry bam = { 0 };
-    seekSector(block_allocation_map->track, block_allocation_map->sector, block_allocation_map->offset);
-    for(uint8_t i = block_allocation_map->start_track; i <= block_allocation_map->end_track; i++)
+    for(uint8_t x = 0; x < sizeof(block_allocation_map); x++)
     {
-        containerStream->read((uint8_t *)&bam, sizeof(bam));
-        if ( i != block_allocation_map->track )
+        seekSector(block_allocation_map[x].track, block_allocation_map[x].sector, block_allocation_map[x].offset);
+        for(uint8_t i = block_allocation_map[x].start_track; i <= block_allocation_map[x].end_track; i++)
         {
-            //Debug_printv("track[%d] count[%d]", i, bam.free_sectors);
-            free_count += bam.free_sectors;            
-        }
+            containerStream->read((uint8_t *)&bam, sizeof(bam));
+            if ( i != block_allocation_map[x].track )
+            {
+                //Debug_printv("track[%d] count[%d]", i, bam.free_sectors);
+                free_count += bam.free_sectors;            
+            }
+        }        
     }
 
     return free_count;
