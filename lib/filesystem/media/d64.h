@@ -19,13 +19,13 @@
  * Streams
  ********************************************************/
 
-class D64IStream: public MIStream {
+class CBMImageStream: public MIStream {
 
     bool seekCalled = false;
     std::shared_ptr<MIStream> containerStream;
 
 public:
-    D64IStream(std::shared_ptr<MIStream> is) {
+    CBMImageStream(std::shared_ptr<MIStream> is) {
         containerStream = is;  
     }
 
@@ -33,7 +33,7 @@ public:
     size_t position() override;
     void close() override;
     bool open() override;
-    ~D64IStream() {
+    ~CBMImageStream() {
         Debug_printv("close");
         close();
     }
@@ -67,7 +67,7 @@ protected:
     int m_position = 0;
 
     // D64Image methods
-    D64IStream* decodedStream;
+    CBMImageStream* decodedStream;
 
     size_t entryIndex = 0;
 
@@ -207,13 +207,22 @@ private:
     friend class D64File;
 };
 
+class D64Istream : public MIStream {
+
+};
+
+class D81Istream : public MIStream {
+    // override everything that requires overriding here
+};
+
+
 /********************************************************
  * Utility implementations
  ********************************************************/
 class ImageBroker {
-    static std::unordered_map<std::string, D64IStream*> repo;
+    static std::unordered_map<std::string, CBMImageStream*> repo;
 public:
-    static D64IStream* obtain(std::string url) {
+    static CBMImageStream* obtain(std::string url) {
         // obviously you have to supply STREAMFILE.url to this function!
         if(repo.find(url)!=repo.end()) {
             return repo.at(url);
@@ -221,7 +230,7 @@ public:
 
         // create and add stream to broker if not found
         auto newFile = MFSOwner::File(url);
-        D64IStream* newStream = (D64IStream*)newFile->inputStream();
+        CBMImageStream* newStream = (CBMImageStream*)newFile->inputStream();
 
         // Are we at the root of the pathInStream?
         if ( newFile->pathInStream == "")

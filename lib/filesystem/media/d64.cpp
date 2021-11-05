@@ -2,7 +2,7 @@
 
 // D64 Utility Functions
 
-bool D64IStream::seekSector( uint8_t track, uint8_t sector, size_t offset )
+bool CBMImageStream::seekSector( uint8_t track, uint8_t sector, size_t offset )
 {
 	uint16_t sectorOffset = 0;
 
@@ -22,34 +22,34 @@ bool D64IStream::seekSector( uint8_t track, uint8_t sector, size_t offset )
     return containerStream->seek( (sectorOffset * block_size) + offset );
 }
 
-bool D64IStream::seekSector( uint8_t* trackSector, size_t offset )
+bool CBMImageStream::seekSector( uint8_t* trackSector, size_t offset )
 {
     return seekSector(trackSector[0], trackSector[1], offset);
 }
 
 
 
-std::string D64IStream::readBlock(uint8_t track, uint8_t sector)
+std::string CBMImageStream::readBlock(uint8_t track, uint8_t sector)
 {
     return "";
 }
 
-bool D64IStream::writeBlock(uint8_t track, uint8_t sector, std::string data)
+bool CBMImageStream::writeBlock(uint8_t track, uint8_t sector, std::string data)
 {
     return true;
 }
 
-bool D64IStream::allocateBlock( uint8_t track, uint8_t sector)
+bool CBMImageStream::allocateBlock( uint8_t track, uint8_t sector)
 {
     return true;
 }
 
-bool D64IStream::deallocateBlock( uint8_t track, uint8_t sector)
+bool CBMImageStream::deallocateBlock( uint8_t track, uint8_t sector)
 {
     return true;
 }
 
-bool D64IStream::seekEntry( std::string filename )
+bool CBMImageStream::seekEntry( std::string filename )
 {
     uint8_t index = 1;
     mstr::rtrimA0(filename);
@@ -87,7 +87,7 @@ bool D64IStream::seekEntry( std::string filename )
     return false;
 }
 
-bool D64IStream::seekEntry( size_t index )
+bool CBMImageStream::seekEntry( size_t index )
 {
     bool r = false;
     static uint8_t next_track = 0;
@@ -151,7 +151,7 @@ bool D64IStream::seekEntry( size_t index )
         return true;
 }
 
-std::string D64IStream::decodeEntry() 
+std::string CBMImageStream::decodeEntry() 
 {
     bool hide = false;
     uint8_t file_type = entry.file_type & 0b00000111;
@@ -175,7 +175,7 @@ std::string D64IStream::decodeEntry()
     return type;
 }
 
-uint16_t D64IStream::blocksFree()
+uint16_t CBMImageStream::blocksFree()
 {
     uint16_t free_count = 0;
     BAMEntry bam = { 0 };
@@ -193,7 +193,7 @@ uint16_t D64IStream::blocksFree()
     return free_count;
 }
 
-size_t D64IStream::readFile(uint8_t* buf, size_t size) {
+size_t CBMImageStream::readFile(uint8_t* buf, size_t size) {
     size_t bytesRead = 0;
     static uint8_t next_track = 0;
     static uint8_t next_sector = 0;
@@ -295,7 +295,7 @@ MFile* D64File::getNextFileInDir() {
 MIStream* D64File::createIStream(std::shared_ptr<MIStream> containerIstream) {
     Debug_printv("[%s]", url.c_str());
 
-    return new D64IStream(containerIstream);
+    return new CBMImageStream(containerIstream);
 }
 
 time_t D64File::getLastWrite() {
@@ -335,7 +335,7 @@ size_t D64File::size() {
  ********************************************************/
 
 
-bool D64IStream::seekPath(std::string path) {
+bool CBMImageStream::seekPath(std::string path) {
     // Implement this to skip a queue of file streams to start of file by name
     // this will cause the next read to return bytes of 'path'
     seekCalled = true;
@@ -384,7 +384,7 @@ bool D64IStream::seekPath(std::string path) {
     return false;
 };
 
-// std::string D64IStream::seekNextEntry() {
+// std::string CBMImageStream::seekNextEntry() {
 //     // Implement this to skip a queue of file streams to start of next file and return its name
 //     // this will cause the next read to return bytes of "next" file in D64 image
 //     // might not have sense in this case, as D64 is kinda random access, not a stream.
@@ -392,7 +392,7 @@ bool D64IStream::seekPath(std::string path) {
 // };
 
 
-bool D64IStream::open() {
+bool CBMImageStream::open() {
     // return true if we were able to read the image and confirmed it is valid.
     // it's up to you in what state the stream will be after open. Could be either:
     // 1. EOF-like state (0 available) and the state will be cleared only after succesful seekNextEntry or seekPath
@@ -401,11 +401,11 @@ bool D64IStream::open() {
     return false;
 };
 
-void D64IStream::close() {
+void CBMImageStream::close() {
 
 };
 
-// bool D64IStream::seek(uint32_t pos) {
+// bool CBMImageStream::seek(uint32_t pos) {
 //     // seek only within current "active" ("seeked") file within the image (see above)
 //     if(pos==m_position)
 //         return true;
@@ -413,22 +413,22 @@ void D64IStream::close() {
 //     return false;
 // };
 
-size_t D64IStream::position() {
+size_t CBMImageStream::position() {
     return m_position; // return position within "seeked" file, not the D64 image!
 };
 
 
-int D64IStream::available() {
+int CBMImageStream::available() {
     // return bytes available in currently "seeked" file
     return m_bytesAvailable;
 };
 
-size_t D64IStream::size() {
+size_t CBMImageStream::size() {
     // size of the "seeked" file, not the image.
     return m_length;
 };
 
-size_t D64IStream::read(uint8_t* buf, size_t size) {
+size_t CBMImageStream::read(uint8_t* buf, size_t size) {
     size_t bytesRead = 0;
 
     if(seekCalled) {
@@ -458,10 +458,10 @@ size_t D64IStream::read(uint8_t* buf, size_t size) {
     return bytesRead;
 };
 
-bool D64IStream::isOpen() {
+bool CBMImageStream::isOpen() {
     Debug_printv("here");
     return m_isOpen;
 };
 
 
-std::unordered_map<std::string, D64IStream*> ImageBroker::repo;
+std::unordered_map<std::string, CBMImageStream*> ImageBroker::repo;
