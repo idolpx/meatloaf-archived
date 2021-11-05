@@ -1018,7 +1018,7 @@ void devDrive::sendFile()
 		istream->close();
 		Debug_printf("=================================\r\n%d of %d bytes sent [SYS%d]\r\n", i, len, sys_address);
 
-		Debug_printv("len[%d] avail[%d] success[%d]", len, avail, success);		
+		//Debug_printv("len[%d] avail[%d] success[%d]", len, avail, success);		
 	}
 
 

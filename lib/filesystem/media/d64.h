@@ -34,7 +34,7 @@ public:
     void close() override;
     bool open() override;
     ~D64IStream() {
-        Debug_printv("close");
+        //Debug_printv("close");
         close();
     }
 
