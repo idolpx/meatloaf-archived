@@ -213,6 +213,7 @@ private:
     //     return D64_TYPE_UNKNOWN;
     // }
     friend class D64File;
+    friend class D71File;
     friend class D81File;
 };
 

@@ -10,6 +10,7 @@
 #include "scheme/ws.h"
 
 #include "media/d64.h"
+#include "media/d71.h"
 #include "media/d81.h"
 #include "media/dnp.h"
 
@@ -28,6 +29,7 @@
 LittleFileSystem littleFS(FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5);
 HttpFileSystem httpFS;
 D64FileSystem d64FS;
+D71FileSystem d71FS;
 D81FileSystem d81FS;
 DNPFileSystem dnpFS;
 MLFileSystem mlFS;
@@ -36,7 +38,7 @@ WSFileSystem wsFS;
 
 // put all available filesystems in this array - first matching system gets the file!
 // fist in list is default
-std::vector<MFileSystem*> MFSOwner::availableFS{ &littleFS, &d64FS, &d81FS, &dnpFS, &mlFS, &httpFS, &wsFS };
+std::vector<MFileSystem*> MFSOwner::availableFS{ &littleFS, &d64FS, &d71FS, &d81FS, &dnpFS, &mlFS, &httpFS, &wsFS };
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");
