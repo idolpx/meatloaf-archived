@@ -229,7 +229,7 @@ class D81Istream : public MIStream {
 class ImageBroker {
     static std::unordered_map<std::string, CBMImageStream*> repo;
 public:
-    static CBMImageStream* obtain(std::string url) {
+    template<class T> static T* obtain(std::string url) {
         // obviously you have to supply STREAMFILE.url to this function!
         if(repo.find(url)!=repo.end()) {
             return repo.at(url);
@@ -237,7 +237,7 @@ public:
 
         // create and add stream to broker if not found
         auto newFile = MFSOwner::File(url);
-        CBMImageStream* newStream = (CBMImageStream*)newFile->inputStream();
+        T* newStream = (T*)newFile->inputStream();
 
         // Are we at the root of the pathInStream?
         if ( newFile->pathInStream == "")
@@ -253,6 +253,35 @@ public:
         delete newFile;
         return newStream;
     }
+
+    static CBMImageStream* obtain(std::string url) {
+        return obtain<CBMImageStream>(url);
+    }
+    // static CBMImageStream* obtain(std::string url) {
+    //     // obviously you have to supply STREAMFILE.url to this function!
+    //     if(repo.find(url)!=repo.end()) {
+    //         return repo.at(url);
+    //     }
+
+    //     // create and add stream to broker if not found
+    //     auto newFile = MFSOwner::File(url);
+    //     CBMImageStream* newStream = (CBMImageStream*)newFile->inputStream();
+
+    //     // Are we at the root of the pathInStream?
+    //     if ( newFile->pathInStream == "")
+    //     {
+    //         Debug_printv("DIRECTORY [%s]", url.c_str());
+    //     }
+    //     else
+    //     {
+    //         Debug_printv("SINGLE FILE [%s]", url.c_str());
+    //     } 
+
+    //     repo.insert(std::make_pair(url, newStream));
+    //     delete newFile;
+    //     return newStream;
+    // }
+
 
     static void dispose(std::string url) {
         if(repo.find(url)!=repo.end()) {
