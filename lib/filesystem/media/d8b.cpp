@@ -1,18 +1,17 @@
+#include "d8b.h"
 
-#include "dnp.h"
+// D8B Utility Functions
 
-// DNP Utility Functions
-
-MIStream* DNPFile::createIStream(std::shared_ptr<MIStream> containerIstream) {
+MIStream* D8BFile::createIStream(std::shared_ptr<MIStream> containerIstream) {
     Debug_printv("[%s]", url.c_str());
 
-    return new DNPIStream(containerIstream);
+    return new D8BIStream(containerIstream);
 }
 
-bool DNPFile::rewindDirectory() {
+bool D8BFile::rewindDirectory() {
     dirIsOpen = true;
     Debug_printv("streamFile->url[%s]", streamFile->url.c_str());
-    auto image = ImageBroker::obtain<DNPIStream>(streamFile->url);
+    auto image = ImageBroker::obtain<D8BIStream>(streamFile->url);
     if ( image == nullptr )
         Debug_printv("image pointer is null");
 
@@ -33,13 +32,13 @@ bool DNPFile::rewindDirectory() {
     return true;
 }
 
-MFile* DNPFile::getNextFileInDir() {
+MFile* D8BFile::getNextFileInDir() {
 
     if(!dirIsOpen)
         rewindDirectory();
 
     // Get entry pointed to by containerStream
-    auto image = ImageBroker::obtain<DNPIStream>(streamFile->url);
+    auto image = ImageBroker::obtain<D8BIStream>(streamFile->url);
 
     if ( image->seekNextImageEntry() )
     {
@@ -58,9 +57,9 @@ MFile* DNPFile::getNextFileInDir() {
     }
 }
 
-time_t DNPFile::getCreationTime() {
+time_t D8BFile::getCreationTime() {
     tm *entry_time = 0;
-    auto entry = ImageBroker::obtain<DNPIStream>(streamFile->url)->entry;
+    auto entry = ImageBroker::obtain<D8BIStream>(streamFile->url)->entry;
     entry_time->tm_year = entry.year + 1900;
     entry_time->tm_mon = entry.month;
     entry_time->tm_mday = entry.day;
@@ -70,16 +69,16 @@ time_t DNPFile::getCreationTime() {
     return mktime(entry_time);
 }
 
-bool DNPFile::exists() {
+bool D8BFile::exists() {
     // here I'd rather use D64 logic to see if such file name exists in the image!
     Debug_printv("here");
     return true;
 } 
 
-size_t DNPFile::size() {
+size_t D8BFile::size() {
     // Debug_printv("[%s]", streamFile->url.c_str());
     // use D64 to get size of the file in image
-    auto entry = ImageBroker::obtain<DNPIStream>(streamFile->url)->entry;
+    auto entry = ImageBroker::obtain<D8BIStream>(streamFile->url)->entry;
     // (_ui16 << 8 | _ui16 >> 8)
     //uint16_t blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
     uint16_t blocks = entry.blocks[0] * 256 + entry.blocks[1];

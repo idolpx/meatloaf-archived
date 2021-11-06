@@ -12,6 +12,7 @@
 // #include "MemoryInfo.h"
 #include "string_utils.h"
 #include <map>
+#include <bitset>
 
 #include "../../include/global_defines.h"
 
@@ -71,13 +72,6 @@ protected:
         uint8_t end_track;
         uint8_t byte_count;
     };
-
-    // struct BAMEntry {
-    //     uint8_t free_sectors;
-    //     uint8_t sectors_00_07;
-    //     uint8_t sectors_08_15;
-    //     uint8_t sectors_16_20;
-    // };
 
     struct Entry {
         uint8_t next_track;
@@ -215,6 +209,8 @@ private:
     friend class D64File;
     friend class D71File;
     friend class D81File;
+    friend class D8BFile;
+    friend class DNPFile;
 };
 
 class D64IStream : public CBMImageStream {
@@ -232,7 +228,7 @@ public:
     template<class T> static T* obtain(std::string url) {
         // obviously you have to supply STREAMFILE.url to this function!
         if(repo.find(url)!=repo.end()) {
-            return repo.at(url);
+            return dynamic_cast<CBMImageStream*>(repo.at(url));
         }
 
         // create and add stream to broker if not found

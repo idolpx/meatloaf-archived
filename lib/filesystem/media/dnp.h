@@ -2,97 +2,81 @@
 // https://ist.uwaterloo.ca/~schepers/formats/D2M-DNP.TXT
 //
 
-#ifndef MEATFILE_DEFINES_DNP_H
-#define MEATFILE_DEFINES_DNP_H
+#ifndef MEATFILESYSTEM_MEDIA_DNP
+#define MEATFILESYSTEM_MEDIA_DNP
 
 #include "meat_io.h"
-#include <string>
+#include "d64.h"
+
+#include "string_utils.h"
+#include <map>
 
 #include "../../include/global_defines.h"
 
-
 /********************************************************
- * Files implementations
+ * Streams
  ********************************************************/
 
-class DNPFile: public MFile {
+class DNPIStream : public CBMImageStream {
+    // override everything that requires overriding here
+
 public:
-    DNPFile(std::string path);
-    MIStream* createIStream(std::shared_ptr<MIStream> src) override { return 0; };
+    DNPIStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) 
+    {
+        // DNP Offsets
+        directory_header_offset = {1, 0, 0x04};
+        directory_list_offset = {1, 0, 0x20}; // Read this offset to get t/s link to start of directory
+        block_allocation_map = { {1, 2, 0x10, 1, 255, 8} };
+        sectorsPerTrack = { 255 };
+    };
 
-    MFile* cd(std::string newDir) override;
-    bool isDirectory() override { return true; };
-    MIStream* inputStream() override { return 0; }; // has to return OPENED stream
-    MOStream* outputStream() override { return 0; }; // has to return OPENED stream
-    time_t getLastWrite() override { return 0; };
-    time_t getCreationTime() override { return 0; };
-    bool rewindDirectory() { return true; } ;
-    MFile* getNextFileInDir() override { return 0; };
-    bool mkDir() override { return false; };
-    bool exists() override { return true; };
-    size_t size() override { return 0; };
-    bool remove() override { return false; };
-    bool rename(std::string dest) { return false; };
-
-};
-
-
-/********************************************************
- * Streams implementations
- ********************************************************/
-class DNPIStream: public MIStream {
-public:
-    DNPIStream(MIStream* srcStream): srcStr(srcStream) {
-        // this stream must be able to return a stream of
-        // raw file contents from DNP partition
-        // additionaly it has to implement getNextEntry()
-        // which skips data in the stream to next file in zip
-    }
-    // MStream methods
-    size_t position() override;
-    void close() override;
-    bool open() override;
-    ~DNPIStream() {
-        close();
-    }
-
-    // MIStream methods
-    int available() override;
-    //uint8_t read() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    bool isOpen();
-    bool isBrowsable() override {
-        return true;
-    }
+    //virtual uint16_t blocksFree() override;
+	virtual uint8_t speedZone( uint8_t track) override { return 1; };
 
 protected:
-    MStream* srcStr;
 
+private:
+    friend class DNPFile;
 };
 
 
 /********************************************************
- * FS implementations
+ * File implementations
  ********************************************************/
 
-class DNPFileSystem: public MFileSystem 
-{
-    MFile* getFile(std::string path) override {
-        return new DNPFile(path); // causes  undefined reference to `vtable for DNPFile' WTF?!
-    }
-
-
+class DNPFile: public D64File {
 public:
-    DNPFileSystem(): MFileSystem("dnp"){}
+    DNPFile(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
 
+    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+
+    time_t getCreationTime() override;
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool exists() override;
+    size_t size() override;
+};
+
+
+
+/********************************************************
+ * FS
+ ********************************************************/
+
+class DNPFileSystem: public MFileSystem
+{
+public:
+    MFile* getFile(std::string path) override {
+        return new DNPFile(path);
+    }
 
     bool handles(std::string fileName) {
         //Serial.printf("handles w dnp %s %d\n", fileName.rfind(".dnp"), fileName.length()-4);
         return byExtension(".dnp", fileName);
     }
 
-
-private:
+    DNPFileSystem(): MFileSystem("dnp") {};
 };
 
-#endif
+
+#endif /* MEATFILESYSTEM_MEDIA_DNP */
