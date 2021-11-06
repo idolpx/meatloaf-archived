@@ -12,7 +12,7 @@ MIStream* DNPFile::createIStream(std::shared_ptr<MIStream> containerIstream) {
 bool DNPFile::rewindDirectory() {
     dirIsOpen = true;
     Debug_printv("streamFile->url[%s]", streamFile->url.c_str());
-    auto image = ImageBroker::obtain<DNPIStream>(streamFile->url);
+    auto image = ImageBroker::obtain(streamFile->url);
     if ( image == nullptr )
         Debug_printv("image pointer is null");
 
@@ -39,7 +39,7 @@ MFile* DNPFile::getNextFileInDir() {
         rewindDirectory();
 
     // Get entry pointed to by containerStream
-    auto image = ImageBroker::obtain<DNPIStream>(streamFile->url);
+    auto image = ImageBroker::obtain(streamFile->url);
 
     if ( image->seekNextImageEntry() )
     {
@@ -60,7 +60,7 @@ MFile* DNPFile::getNextFileInDir() {
 
 time_t DNPFile::getCreationTime() {
     tm *entry_time = 0;
-    auto entry = ImageBroker::obtain<DNPIStream>(streamFile->url)->entry;
+    auto entry = ImageBroker::obtain(streamFile->url)->entry;
     entry_time->tm_year = entry.year + 1900;
     entry_time->tm_mon = entry.month;
     entry_time->tm_mday = entry.day;
@@ -79,7 +79,7 @@ bool DNPFile::exists() {
 size_t DNPFile::size() {
     // Debug_printv("[%s]", streamFile->url.c_str());
     // use D64 to get size of the file in image
-    auto entry = ImageBroker::obtain<DNPIStream>(streamFile->url)->entry;
+    auto entry = ImageBroker::obtain(streamFile->url)->entry;
     // (_ui16 << 8 | _ui16 >> 8)
     //uint16_t blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
     uint16_t blocks = entry.blocks[0] * 256 + entry.blocks[1];
