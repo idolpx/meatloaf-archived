@@ -5,7 +5,7 @@
 #include <vector>
 #include <cstring>
 
-#include "../../include/global_defines.h"
+//#include "../../include/global_defines.h"
 
 namespace mstr {
     std::string drop(std::string str, size_t count);

@@ -1,9 +1,7 @@
 #ifndef MEATFILE_STREAMS_H
 #define MEATFILE_STREAMS_H
 
-#include <Arduino.h>
-//#include "FS.h"
-#include "../../include/global_defines.h"
+//#include "../../include/global_defines.h"
 
 /********************************************************
  * Universal streams

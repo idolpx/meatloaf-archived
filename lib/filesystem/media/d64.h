@@ -139,6 +139,7 @@ protected:
 
 	virtual uint8_t speedZone( uint8_t track)
 	{
+        Debug_printv("here");
 		return (track < 30) + (track < 24) + (track < 17);
 	};
 

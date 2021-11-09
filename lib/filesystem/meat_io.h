@@ -2,18 +2,18 @@
 #define MEATLIB_FILESYSTEM_MEAT_IO
 
 #include <memory>
-#include <Arduino.h>
 #include <string>
 #include <vector>
 #include <fstream>
 
+#include <Arduino.h>
 #include <FS.h>
 #include <LittleFS.h>
+#include "wrappers/iec_buffer.h"
 
 #include "meat_stream.h"
 #include "peoples_url_parser.h"
 #include "string_utils.h"
-#include "wrappers/iec_buffer.h"
 #include "U8Char.h"
 
 /********************************************************
@@ -294,11 +294,11 @@ namespace Meat {
         };
 
       std::streampos seekpos(std::streampos __pos, std::ios_base::openmode __mode = std::ios_base::in | std::ios_base::out) override {
-        Debug_printv("Seek called on mistream: %d", __pos);
+        Debug_printv("Seek called on mistream: %d", (int)__pos);
         std::streampos __ret = std::streampos(off_type(-1));
 
         if(mistream->seek(__pos)) {
-    	    __ret.state(_M_state_cur);
+    	    //__ret.state(_M_state_cur);
             __ret = std::streampos(off_type(__pos));
             // probably requires resetting setg!
         }
@@ -433,7 +433,7 @@ namespace Meat {
          * uflow will only be called if there is a buffer, and it will never be called 
          * if the buffer is empty. sync will be called if the client code flushes the stream.)
          */
-        int sync() { 
+        int sync() override { 
             //Debug_printv("in wrapper sync");
             
             if(pptr() == pbase()) {

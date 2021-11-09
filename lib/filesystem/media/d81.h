@@ -33,7 +33,7 @@ public:
     };
 
     //virtual uint16_t blocksFree() override;
-	virtual uint8_t speedZone( uint8_t track) override { return 1; };
+	virtual uint8_t speedZone( uint8_t track) override { return 0; };
 
 protected:
 
@@ -51,12 +51,6 @@ public:
     D81File(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
 
     MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
-
-    time_t getCreationTime() override;
-    bool rewindDirectory() override;
-    MFile* getNextFileInDir() override;
-    bool exists() override;
-    size_t size() override;
 };
 
 
