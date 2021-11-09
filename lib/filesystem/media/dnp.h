@@ -8,10 +8,6 @@
 #include "meat_io.h"
 #include "d64.h"
 
-#include "string_utils.h"
-#include <map>
-
-#include "../../include/global_defines.h"
 
 /********************************************************
  * Streams
@@ -65,7 +61,6 @@ public:
     }
 
     bool handles(std::string fileName) {
-        //Serial.printf("handles w dnp %s %d\n", fileName.rfind(".dnp"), fileName.length()-4);
         return byExtension(".dnp", fileName);
     }
 

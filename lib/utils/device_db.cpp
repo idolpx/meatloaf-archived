@@ -60,14 +60,14 @@ bool DeviceDB::select(uint8_t new_device_id)
         Meat::ifstream istream(config_file);
         istream.open();        
         deserializeJson(m_device, istream);
-        Debug_printv("loaded id[%d]", m_device["id"]);
+        Debug_printv("loaded id[%d]", (uint8_t)m_device["id"]);
     }
     else
     {
         // Create New Settings
         deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
         m_device["id"] = new_device_id;
-        Debug_printv("created id[%d]", m_device["id"]);
+        Debug_printv("created id[%d]", (uint8_t)m_device["id"]);
     }
 
     return true;
