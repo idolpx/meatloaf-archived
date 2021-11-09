@@ -68,7 +68,7 @@ bool CBMImageStream::seekEntry( std::string filename )
                 filename == entryFilename;
             }
             
-            if ( filename == entryFilename.substr(0, filename.size()) )
+            if ( mstr::startsWith(entryFilename, filename.c_str()) )
             {
                 // Move stream pointer to start track/sector
                 return true;
@@ -300,7 +300,8 @@ MFile* D64File::getNextFileInDir() {
     {
         std::string fileName = image->entry.filename;
         mstr::replaceAll(fileName, "/", "\\");
-        Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
+        mstr::rtrimA0(fileName);
+        //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
         auto d64_file = MFSOwner::File(streamFile->url + "/" + fileName);
         d64_file->extension = image->decodeEntry();
         return d64_file;
@@ -337,7 +338,7 @@ time_t D64File::getCreationTime() {
 
 bool D64File::exists() {
     // here I'd rather use D64 logic to see if such file name exists in the image!
-    Debug_printv("here");
+    //Debug_printv("here");
     return true;
 } 
 

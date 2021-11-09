@@ -245,6 +245,7 @@ IEC::BusState IEC::service(Data& iec_data)
 		
 		iec_data.command = c bitand 0xF0; // upper nibble, command
 		iec_data.channel = c bitand 0x0F; // lower nibble, channel
+		//iec_data.content = { 0 };
 
 		if ( cc == IEC_LISTEN )
 		{
@@ -254,7 +255,7 @@ IEC::BusState IEC::service(Data& iec_data)
 		{
 			r = deviceTalk(iec_data);
 		}
-		mstr::rtrimA0(iec_data.content);
+
 		if(protocol.flags bitand ERROR)
 		{
 			Debug_printv("Listen/Talk ERROR");
@@ -317,9 +318,9 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 				return BUS_ERROR;
 			}
 				
-			//if((flags bitand atnFlag) and (IEC_UNLISTEN == c))
 			if(c == IEC_UNLISTEN)
 			{
+				mstr::rtrimA0(iec_data.content);
 				Debug_printf(BACKSPACE "] [%s] (%.2X UNLISTEN)\r\n", iec_data.content.c_str(), c);
 				break;
 			}

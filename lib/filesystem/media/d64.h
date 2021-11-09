@@ -32,7 +32,7 @@ public:
     void close() override;
     bool open() override;
     ~CBMImageStream() {
-        Debug_printv("close");
+        //Debug_printv("close");
         close();
     }
 
