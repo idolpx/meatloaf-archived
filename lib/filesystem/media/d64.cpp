@@ -52,6 +52,7 @@ bool CBMImageStream::seekEntry( std::string filename )
 {
     uint8_t index = 1;
     mstr::rtrimA0(filename);
+    mstr::replaceAll(filename, "\\", "/");
 
     // Read Directory Entries
     if ( filename.size() )
@@ -59,7 +60,7 @@ bool CBMImageStream::seekEntry( std::string filename )
         while ( seekEntry( index ) )
         {
             std::string entryFilename = entry.filename;
-            mstr::rtrimA0(entryFilename);        
+            mstr::rtrimA0(entryFilename);
             Debug_printv("track[%d] sector[%d] filename[%s] entry.filename[%.16s]", track, sector, filename.c_str(), entryFilename.c_str());
 
             // Read Entry From Stream
@@ -299,8 +300,8 @@ MFile* D64File::getNextFileInDir() {
     if ( image->seekNextImageEntry() )
     {
         std::string fileName = image->entry.filename;
-        mstr::replaceAll(fileName, "/", "\\");
         mstr::rtrimA0(fileName);
+        mstr::replaceAll(fileName, "/", "\\");
         //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
         auto d64_file = MFSOwner::File(streamFile->url + "/" + fileName);
         d64_file->extension = image->decodeEntry();

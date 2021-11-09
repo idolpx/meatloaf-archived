@@ -203,12 +203,18 @@ CommandPathTuple devDrive::parseLine(std::string command, size_t channel)
 		{	
 			// Find first PRG file in current directory
 			std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
-			std::string match = mstr::drop(command, 1);
-			Debug_printv("match[%s]", match.c_str());
-			while (entry != nullptr && entry->isDirectory() && !mstr::startsWith(entry->name, match.c_str()))
+			std::string match = mstr::dropLast(command, 1);
+			while ( entry != nullptr )
 			{
-				Debug_printv("extension: [%s]", entry->extension.c_str());
-				entry.reset(m_mfile->getNextFileInDir());
+				Debug_printv("match[%s] extension[%s]", match.c_str(), entry->extension.c_str());
+				if ( !mstr::startsWith(entry->extension, "prg") || (match.size() > 0 && !mstr::startsWith( entry->name, match.c_str() ))  )
+				{
+					entry.reset(m_mfile->getNextFileInDir());	
+				}
+				else
+				{
+					break;
+				}
 			}
 			command = entry->name;
 		}
@@ -344,30 +350,6 @@ void devDrive::handleListenCommand(IEC::Data &iec_data)
 		m_openState = O_DIR;
 		Debug_printv("LOAD $");
 	}	
-	// else if (mstr::endsWith(commandAndPath.command, "*"))
-	// {
-	// 	// Find first program in listing
-	// 	if (m_device.path().empty())
-	// 	{
-	// 		// If in LittleFS root then set it to FB64
-	// 		// TODO: Load configured autoload program
-	// 		m_filename = "/.sys/fb64";
-	// 	}
-	// 	else if (m_filename.size() == 0)
-	// 	{	
-	// 		// Find first PRG file in current directory
-	// 		std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
-
-	// 		while (entry != nullptr && entry->isDirectory())
-	// 		{
-	// 			Debug_printv("extension: [%s]", entry->extension.c_str());
-	// 			entry.reset(m_mfile->getNextFileInDir());
-	// 		}
-	// 		m_filename = entry->name;
-	// 	}
-	// 	m_openState = O_FILE;
-	// 	Debug_printv("LOAD * [%s]", m_filename.c_str());
-	// }
 	else if (mstr::equals(commandAndPath.command, "@info", false))
 	{
 		m_openState = O_ML_INFO;
