@@ -28,7 +28,7 @@ public:
         // D81 Offsets
         directory_header_offset = {40, 0, 0x04};
         directory_list_offset = {40, 3, 0x00};
-        block_allocation_map = { {40, 1, 0x10, 1, 40, 6}, {40, 2, 0x00, 41, 80, 6} };
+        block_allocation_map = { {40, 1, 0x10, 1, 40, 6}, {40, 2, 0x10, 41, 80, 6} };
         sectorsPerTrack = { 40 };
     };
 

@@ -277,7 +277,7 @@ CommandPathTuple devDrive::parseLine(std::string command, size_t channel)
 
 
 	// and to get a REAL FULL PATH that the user wanted to refer to, we CD into it, using supplied stripped path:
-	mstr::trim(guessedPath);
+	mstr::rtrim(guessedPath);
 	tuple.rawPath = guessedPath;
 
 	Debug_printv("found command     [%s]", tuple.command.c_str());
