@@ -671,6 +671,7 @@ uint16_t devDrive::sendHeader(uint16_t &basicPtr, std::string header, std::strin
 
 	url = p.root();
 	std::string path = p.pathToFile();
+	std::string archive = "";
 	std::string image = p.name;
 
 	
@@ -700,11 +701,11 @@ uint16_t devDrive::sendHeader(uint16_t &basicPtr, std::string header, std::strin
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, path.c_str());
 		sent_info = true;
 	}
-	// if (m_device.archive().length() > 1)
-	// {
-	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[ARCHIVE]");
-	// 	byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.archive().c_str());
-	// }
+	if (archive.size() > 1)
+	{
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[ARCHIVE]");
+		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, m_device.archive().c_str());
+	}
 	if (image.size())
 	{
 		byte_count += sendLine(basicPtr, 0, "%*s\"%-*s\" NFO", 0, "", 19, "[IMAGE]");

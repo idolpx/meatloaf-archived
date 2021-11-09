@@ -6,13 +6,13 @@ bool CBMImageStream::seekSector( uint8_t track, uint8_t sector, size_t offset )
 {
 	uint16_t sectorOffset = 0;
 
-    Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
+    //Debug_printv("track[%d] sector[%d] offset[%d]", track, sector, offset);
 
     track--;
 	for (uint8_t index = 0; index < track; ++index)
 	{
 		sectorOffset += sectorsPerTrack[speedZone(index)];
-        //Debug_printv("track[%d] speedZone[%d] secotorsPerTrack[%d] sectorOffset[%d]", index, speedZone(index), sectorsPerTrack[speedZone(index)], sectorOffset);
+        //Debug_printv("track[%d] speedZone[%d] secotorsPerTrack[%d] sectorOffset[%d]", (index + 1), speedZone(index), sectorsPerTrack[speedZone(index)], sectorOffset);
 	}
 	sectorOffset += sector;
 
@@ -184,8 +184,8 @@ uint16_t CBMImageStream::blocksFree()
 
     for(uint8_t x = 0; x < block_allocation_map.size(); x++)
     {
-        uint8_t bam[block_allocation_map[0].byte_count] = { 0 };
-        Debug_printv("start_track[%d] end_track[%d]", block_allocation_map[x].start_track, block_allocation_map[x].end_track);
+        uint8_t bam[block_allocation_map[x].byte_count] = { 0 };
+        //Debug_printv("start_track[%d] end_track[%d]", block_allocation_map[x].start_track, block_allocation_map[x].end_track);
 
         seekSector(block_allocation_map[x].track, block_allocation_map[x].sector, block_allocation_map[x].offset);
         for(uint8_t i = block_allocation_map[x].start_track; i <= block_allocation_map[x].end_track; i++)
@@ -195,25 +195,23 @@ uint16_t CBMImageStream::blocksFree()
             {               
                 if ( i != block_allocation_map[x].track )
                 {
-                    Debug_printv("x[%d] track[%d] count[%d] size[%d]", x, i, bam[0], sizeof(bam));
+                    //Debug_printv("x[%d] track[%d] count[%d] size[%d]", x, i, bam[0], sizeof(bam));
                     free_count += bam[0];            
                 }
             }
             else
             {
-                // D71 tracks 36 - 70 you have to count the 0 bits (0 is allocated)
+                // D71 tracks 36 - 70 you have to count the 1 bits (0 is allocated)
                 uint8_t bit_count = 0;
-                bit_count += 8 - std::bitset<8>(bam[0]).count();
-                bit_count += 8 - std::bitset<8>(bam[1]).count();
-                bit_count += 8 - std::bitset<8>(bam[2]).count();
+                bit_count += std::bitset<8>(bam[0]).count();
+                bit_count += std::bitset<8>(bam[1]).count();
+                bit_count += std::bitset<8>(bam[2]).count();
 
-                Debug_printv("x[%d] track[%d] count[%d] size[%d] (counting 0 bits)", x, i, bit_count, sizeof(bam));
+                //Debug_printv("x[%d] track[%d] count[%d] size[%d] bam0[%d] bam1[%d] bam2[%d] (counting 1 bits)", x, i, bit_count, sizeof(bam), bam[0], bam[1], bam[2]);
                 free_count += bit_count;
             }                    
         }
     }
-
-
 
     return free_count;
 }

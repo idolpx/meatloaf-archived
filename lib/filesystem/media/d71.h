@@ -22,19 +22,19 @@ public:
     D71IStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) 
     {
         // D71 Offsets
-        directory_header_offset = {18, 0, 0x90};
-        directory_list_offset = {18, 1, 0x00};
+        //directory_header_offset = {18, 0, 0x90};
+        //directory_list_offset = {18, 1, 0x00};
         block_allocation_map = { {18, 0, 0x04, 1, 35, 4}, {53, 0, 0x00, 36, 70, 3} };
-        sectorsPerTrack = { 17, 18, 19, 21 };
+        //sectorsPerTrack = { 17, 18, 19, 21 };
     };
 
     //virtual uint16_t blocksFree() override;
-	virtual uint8_t speedZone( uint8_t track)
+	virtual uint8_t speedZone( uint8_t track) override
 	{
-        if ( track < 36 )
-		    return (track < 30) + (track < 24) + (track < 17);
+        if ( track < 35 )
+		    return (track < 17) + (track < 24) + (track < 30);
         else
-            return (track < 65) + (track < 59) + (track < 52);
+            return (track < 52) + (track < 59) + (track < 65);
 	};
 
 protected:

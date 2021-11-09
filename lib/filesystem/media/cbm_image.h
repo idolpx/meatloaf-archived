@@ -135,7 +135,7 @@ protected:
 
 	virtual uint8_t speedZone( uint8_t track)
 	{
-		return (track < 30) + (track < 24) + (track < 17);
+		return (track < 17) + (track < 24) + (track < 30);
 	};
 
 
