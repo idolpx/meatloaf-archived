@@ -91,7 +91,7 @@ void exampleStreamFn(std::shared_ptr<MFile> container) {
     dirbuffer.open(container);
     std::istream dirStream(&dirbuffer);
 
-    // now you can just read characters from dirStream
+    // now you can just read BASIC V2 characters from dirStream
 }
 
 
