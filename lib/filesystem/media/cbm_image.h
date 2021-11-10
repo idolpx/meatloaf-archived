@@ -202,11 +202,22 @@ private:
 
     //     return D64_TYPE_UNKNOWN;
     // }
+
+    // File
+
+    // Disk
     friend class D64File;
     friend class D71File;
     friend class D81File;
     friend class D8BFile;
     friend class DNPFile;
+
+    // Tape
+    friend class T64File;
+    friend class TCRTFile;
+
+    // Cartridge
+
 };
 
 #endif

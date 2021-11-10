@@ -32,6 +32,20 @@ public:
 	virtual uint8_t speedZone( uint8_t track) override { return 0; };
 
 protected:
+    struct TCRTHeader {
+        char disk_name[24];
+    };
+
+    struct TCRTEntry {
+        uint8_t entry_type;
+        uint8_t file_type;
+        uint16_t start_address;
+        uint16_t end_address;
+        uint16_t free_1;
+        uint32_t data_offset;
+        uint32_t free_2;
+        char filename[16];
+    };
 
 private:
     friend class TCRTFile;
