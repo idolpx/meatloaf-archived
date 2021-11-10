@@ -22,6 +22,7 @@
 #include "iec.h"
 #include "iec_device.h"
 #include "wrappers/iec_buffer.h"
+#include "wrappers/directory_stream.h"
 
 using namespace CBM;
 using namespace Protocol;
