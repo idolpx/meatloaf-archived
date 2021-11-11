@@ -13,11 +13,11 @@
  * Streams
  ********************************************************/
 
-class DNPIStream : public CBMImageStream {
+class DNPIStream : public D64IStream {
     // override everything that requires overriding here
 
 public:
-    DNPIStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) 
+    DNPIStream(std::shared_ptr<MIStream> is) : D64IStream(is) 
     {
         // DNP Offsets
         directory_header_offset = {1, 0, 0x04};

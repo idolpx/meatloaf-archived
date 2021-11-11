@@ -15,11 +15,11 @@
  * Streams
  ********************************************************/
 
-class D71IStream : public CBMImageStream {
+class D71IStream : public D64IStream {
     // override everything that requires overriding here
 
 public:
-    D71IStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) 
+    D71IStream(std::shared_ptr<MIStream> is) : D64IStream(is) 
     {
         // D71 Offsets
         //directory_header_offset = {18, 0, 0x90};

@@ -22,53 +22,137 @@
 
 class D64IStream : public CBMImageStream {
 
-};
-
-
-
-/********************************************************
- * Utility implementations
- ********************************************************/
-class ImageBroker {
-    static std::unordered_map<std::string, CBMImageStream*> repo;
 public:
-    static CBMImageStream* obtain(std::string url) {
-        // obviously you have to supply STREAMFILE.url to this function!
-        if(repo.find(url)!=repo.end()) {
-            return repo.at(url);
-        }
+    D64IStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) {};
 
-        // create and add stream to broker if not found
-        auto newFile = MFSOwner::File(url);
-        CBMImageStream* newStream = (CBMImageStream*)newFile->inputStream();
+protected:
 
-        // Are we at the root of the pathInStream?
-        if ( newFile->pathInStream == "")
-        {
-            Debug_printv("DIRECTORY [%s]", url.c_str());
-        }
-        else
-        {
-            Debug_printv("SINGLE FILE [%s]", url.c_str());
-        } 
+    struct Header {
+        char disk_name[16];
+        char unused[2];
+        char id_dos[5];
+    };
 
-        repo.insert(std::make_pair(url, newStream));
-        delete newFile;
-        return newStream;
+    struct BAMInfo {
+        uint8_t track;
+        uint8_t sector;
+        uint8_t offset;
+        uint8_t start_track;
+        uint8_t end_track;
+        uint8_t byte_count;
+    };
+
+    struct Entry {
+        uint8_t next_track;
+        uint8_t next_sector;
+        uint8_t file_type;
+        uint8_t start_track;
+        uint8_t start_sector;
+        char filename[16];
+        uint8_t rel_start_track;   // Or GOES info block start track
+        uint8_t rel_start_sector;  // Or GEOS info block start sector
+        uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
+        uint8_t geos_type;         // $00 - Non-GEOS (normal C64 file)
+        uint8_t year;
+        uint8_t month;
+        uint8_t day;
+        uint8_t hour;
+        uint8_t minute;
+        uint16_t blocks;
+    };
+
+
+    // D64 Offsets
+    std::vector<uint8_t> directory_header_offset = {18, 0, 0x90};
+    std::vector<uint8_t> directory_list_offset = {18, 1, 0x00};
+    std::vector<BAMInfo> block_allocation_map = { {18, 0, 0x04, 1, 35, 4} };
+    std::vector<uint8_t> sectorsPerTrack = { 17, 18, 19, 21 };
+    //uint8_t sector_buffer[256] = { 0 };
+
+    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
+    bool seekSector( std::vector<uint8_t> trackSectorOffset = { 0 } );
+
+    void seekHeader() override {
+        seekSector(directory_header_offset);
+        containerStream->read((uint8_t*)&header, sizeof(header));
     }
 
-    // static CBMImageStream* obtain(std::string url) {
-    //     return obtain<CBMImageStream>(url);
+    bool seekNextImageEntry() override {
+        return seekEntry(entry_index + 1);
+    }
+
+    virtual uint16_t blocksFree();
+
+	virtual uint8_t speedZone( uint8_t track)
+	{
+		return (track < 17) + (track < 24) + (track < 30);
+	};
+
+    virtual bool seekPath(std::string path) override;
+    size_t readFile(uint8_t* buf, size_t size) override;
+
+    Header header;      // Directory header data
+    Entry entry;        // Directory entry data
+
+    uint8_t dos_version;
+
+    uint8_t track = 0;
+    uint8_t sector = 0;
+    uint16_t offset = 0;
+    uint64_t blocks_free = 0;
+
+    uint8_t next_track = 0;
+    uint8_t next_sector = 0;
+    uint8_t sector_offset = 0;
+
+private:
+    void sendListing();
+
+    bool seekEntry( std::string filename );
+    bool seekEntry( size_t index = 0 );
+
+
+    std::string readBlock( uint8_t track, uint8_t sector );
+    bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
+    bool allocateBlock( uint8_t track, uint8_t sector );
+    bool deallocateBlock( uint8_t track, uint8_t sector );
+
+
+    // uint8_t d64_get_type(uint16_t imgsize)
+    // {
+    //     switch (imgsize)
+    //     {
+    //         // D64
+    //         case 174848:  // 35 tracks no errors
+    //         case 175531:  // 35 w/ errors
+    //         case 196608:  // 40 tracks no errors
+    //         case 197376:  // 40 w/ errors
+    //         case 205312:  // 42 tracks no errors
+    //         case 206114:  // 42 w/ errors
+    //             return D64_TYPE_D64;
+
+    //         // D71
+    //         case 349696:  // 70 tracks no errors
+    //         case 351062:  // 70 w/ errors
+    //             return D64_TYPE_D71;
+
+    //         // D81
+    //         case 819200:  // 80 tracks no errors
+    //         case 822400:  // 80 w/ errors
+    //             return D64_TYPE_D81;
+    //     }
+
+    //     return D64_TYPE_UNKNOWN;
     // }
 
-    static void dispose(std::string url) {
-        if(repo.find(url)!=repo.end()) {
-            auto toDelete = repo.at(url);
-            repo.erase(url);
-            delete toDelete;
-        }
-    }
+    // Disk
+    friend class D64File;
+    friend class D71File;
+    friend class D81File;
+    friend class D8BFile;
+    friend class DNPFile;    
 };
+
 
 /********************************************************
  * File implementations
@@ -85,28 +169,25 @@ public:
         // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    virtual std::string petsciiName() {
+    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+
+    std::string petsciiName() override {
         // It's already in PETSCII
         mstr::replaceAll(name, "\\", "/");
         return name;
     }
 
     bool isDirectory() override;
-//    MIStream* inputStream() override { Debug_printv("here"); return nullptr; }; // has to return OPENED stream
-//    MOStream* outputStream() override { Debug_printv("here"); return nullptr; }; // has to return OPENED stream
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool mkDir() override { return false; };
 
-    virtual time_t getLastWrite() override;
-    virtual time_t getCreationTime() override;
-    virtual bool rewindDirectory() override;
-    virtual MFile* getNextFileInDir() override;
-    virtual bool mkDir() override { return false; };
-    virtual bool exists() override;
-    virtual size_t size() override;
-    virtual bool remove() override { return false; };
-    virtual bool rename(std::string dest) { return false; };
-
-    virtual MIStream* createIStream(std::shared_ptr<MIStream> containerIstream);
-    //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
+    bool exists() override;
+    bool remove() override { return false; };
+    bool rename(std::string dest) { return false; };
+    time_t getLastWrite() override;
+    time_t getCreationTime() override;
+    size_t size() override;     
 
     bool isDir = true;
     bool dirIsOpen = false;

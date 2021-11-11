@@ -12,6 +12,7 @@
 #include "string_utils.h"
 
 
+
 /********************************************************
  * Streams
  ********************************************************/
@@ -45,8 +46,8 @@ public:
         return true; 
     };
 
-    bool seekPath(std::string path) override;
-
+    bool seekPath(std::string path) override { return false; };
+    std::string seekNextEntry() override { return ""; };
 
     int available() override;
     size_t size() override;
@@ -54,48 +55,33 @@ public:
     bool isOpen();
 
 protected:
-    struct Header {
-        char disk_name[16];
-        char unused[2];
-        char id_dos[5];
-    };
 
-    struct BAMInfo {
-        uint8_t track;
-        uint8_t sector;
-        uint8_t offset;
-        uint8_t start_track;
-        uint8_t end_track;
-        uint8_t byte_count;
-    };
+    // struct Header {
+    //     char disk_name[16];
+    //     char id_dos[5];
+    // };
 
-    struct Entry {
-        uint8_t next_track;
-        uint8_t next_sector;
-        uint8_t file_type;
-        uint8_t start_track;
-        uint8_t start_sector;
-        char filename[16];
-        uint8_t rel_start_track;   // Or GOES info block start track
-        uint8_t rel_start_sector;  // Or GEOS info block start sector
-        uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
-        uint8_t geos_type;         // $00 - Non-GEOS (normal C64 file)
-        uint8_t year;
-        uint8_t month;
-        uint8_t day;
-        uint8_t hour;
-        uint8_t minute;
-        uint16_t blocks;
-    };
+    // struct Entry {
+    //     uint8_t next_track;
+    //     uint8_t next_sector;
+    //     uint8_t file_type;
+    //     uint8_t start_track;
+    //     uint8_t start_sector;
+    //     char filename[16];
+    //     uint8_t rel_start_track;   // Or GOES info block start track
+    //     uint8_t rel_start_sector;  // Or GEOS info block start sector
+    //     uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
+    //     uint8_t geos_type;         // $00 - Non-GEOS (normal C64 file)
+    //     uint8_t year;
+    //     uint8_t month;
+    //     uint8_t day;
+    //     uint8_t hour;
+    //     uint8_t minute;
+    //     uint16_t blocks;
+    // };
 
-
-    // D64 Offsets
-    std::vector<uint8_t> directory_header_offset = {18, 0, 0x90};
-    std::vector<uint8_t> directory_list_offset = {18, 1, 0x00};
-    std::vector<BAMInfo> block_allocation_map = { {18, 0, 0x04, 1, 35, 4} };
-    std::vector<uint8_t> sectorsPerTrack = { 17, 18, 19, 21 };
-    uint8_t sector_buffer[256] = { 0 };    
-    uint16_t block_size = 256;
+    // Header header;
+    // Entry entry;
 
     bool seekCalled = false;
     std::shared_ptr<MIStream> containerStream;
@@ -108,100 +94,32 @@ protected:
     // D64Image methods
     CBMImageStream* decodedStream;
 
+    bool show_hidden = false;
+
+    size_t block_size = 256;
     size_t entry_index = 0;
-
-    uint8_t dos_version;
-
-    void seekHeader() {
-        seekSector(directory_header_offset);
-        containerStream->read((uint8_t*)&header, sizeof(header));
-    }
-
-
-    bool seekNextImageEntry() {
-        return seekEntry(entry_index + 1);
-    }
-
-    void resetEntryCounter() {
-        entry_index = 0;
-    }
-
-    std::string decodeEntry();
-    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
-    bool seekSector( std::vector<uint8_t> trackSectorOffset = { 0 } );
-
-
-    virtual uint16_t blocksFree();
-
-	virtual uint8_t speedZone( uint8_t track)
-	{
-		return (track < 17) + (track < 24) + (track < 30);
-	};
-
-
-    Header header;      // Directory header data
-    Entry entry;        // Directory entry data
+    uint8_t index = 0;  // Currently selected directory entry
+    uint8_t length = 0; // Directory list entry count
 
     enum open_modes { OPEN_READ, OPEN_WRITE, OPEN_APPEND, OPEN_MODIFY };
     std::string file_type_label[8] = { "del", "seq", "prg", "usr", "rel", "cbm", "dir", "???" };
 
-    uint8_t track = 0;
-    uint8_t sector = 0;
-    uint16_t offset = 0;
-    uint64_t blocks_free = 0;
+    virtual void seekHeader() = 0;
+    virtual bool seekNextImageEntry() = 0;
+    void resetEntryCounter() {
+        entry_index = 0;
+    }
 
-    uint8_t next_track = 0;
-    uint8_t next_sector = 0;
-    uint8_t sector_offset = 0;
+    // Disks
+    virtual uint16_t blocksFree() { return 0; };
+	virtual uint8_t speedZone( uint8_t track) { return 0; };
 
-    uint8_t index = 0;  // Currently selected directory entry
-    uint8_t length = 0; // Directory list entry count
-
-    bool show_hidden = false;
-
+    virtual bool seekEntry( size_t index ) { return false; };
+    virtual size_t readFile(uint8_t* buf, size_t size) = 0;
+    std::string decodeType(uint8_t file_type, bool show_hidden = false);    
 
 private:
 
-    size_t readFile(uint8_t* buf, size_t size);
-
-    void sendListing();
-
-    bool seekEntry( std::string filename );
-    bool seekEntry( size_t index = 0 );
-
-
-    std::string readBlock( uint8_t track, uint8_t sector );
-    bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
-    bool allocateBlock( uint8_t track, uint8_t sector );
-    bool deallocateBlock( uint8_t track, uint8_t sector );
-
-
-    // uint8_t d64_get_type(uint16_t imgsize)
-    // {
-    //     switch (imgsize)
-    //     {
-    //         // D64
-    //         case 174848:  // 35 tracks no errors
-    //         case 175531:  // 35 w/ errors
-    //         case 196608:  // 40 tracks no errors
-    //         case 197376:  // 40 w/ errors
-    //         case 205312:  // 42 tracks no errors
-    //         case 206114:  // 42 w/ errors
-    //             return D64_TYPE_D64;
-
-    //         // D71
-    //         case 349696:  // 70 tracks no errors
-    //         case 351062:  // 70 w/ errors
-    //             return D64_TYPE_D71;
-
-    //         // D81
-    //         case 819200:  // 80 tracks no errors
-    //         case 822400:  // 80 w/ errors
-    //             return D64_TYPE_D81;
-    //     }
-
-    //     return D64_TYPE_UNKNOWN;
-    // }
 
     // File
 
@@ -210,7 +128,7 @@ private:
     friend class D71File;
     friend class D81File;
     friend class D8BFile;
-    friend class DNPFile;
+    friend class DNPFile; 
 
     // Tape
     friend class T64File;
@@ -218,6 +136,52 @@ private:
 
     // Cartridge
 
+};
+
+
+
+/********************************************************
+ * Utility implementations
+ ********************************************************/
+class ImageBroker {
+    static std::unordered_map<std::string, CBMImageStream*> repo;
+public:
+    template<class T> static T* obtain(std::string url) {
+        // obviously you have to supply STREAMFILE.url to this function!
+        if(repo.find(url)!=repo.end()) {
+            return (T*)repo.at(url);
+        }
+
+        // create and add stream to broker if not found
+        auto newFile = MFSOwner::File(url);
+        T* newStream = (T*)newFile->inputStream();
+
+        // Are we at the root of the pathInStream?
+        if ( newFile->pathInStream == "")
+        {
+            Debug_printv("DIRECTORY [%s]", url.c_str());
+        }
+        else
+        {
+            Debug_printv("SINGLE FILE [%s]", url.c_str());
+        } 
+
+        repo.insert(std::make_pair(url, newStream));
+        delete newFile;
+        return newStream;
+    }
+
+    static CBMImageStream* obtain(std::string url) {
+        return obtain<CBMImageStream>(url);
+    }
+
+    static void dispose(std::string url) {
+        if(repo.find(url)!=repo.end()) {
+            auto toDelete = repo.at(url);
+            repo.erase(url);
+            delete toDelete;
+        }
+    }
 };
 
 #endif

@@ -1,6 +1,8 @@
 #include "d71.h"
 
-// D71 Utility Functions
+/********************************************************
+ * File implementations
+ ********************************************************/
 
 MIStream* D71File::createIStream(std::shared_ptr<MIStream> containerIstream) {
     Debug_printv("[%s]", url.c_str());

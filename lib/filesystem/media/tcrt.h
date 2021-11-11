@@ -19,24 +19,14 @@ class TCRTIStream : public CBMImageStream {
     // override everything that requires overriding here
 
 public:
-    TCRTIStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) 
-    {
-        // TCRT Offsets
-        directory_header_offset = {0, 0, 24};  // Offset: 24x16
-        directory_list_offset = {40, 3, 0x00};
-        block_allocation_map = { {40, 1, 0x10, 1, 40, 6}, {40, 2, 0x10, 41, 80, 6} };
-        sectorsPerTrack = { 40 };
-    };
-
-    //virtual uint16_t blocksFree() override;
-	virtual uint8_t speedZone( uint8_t track) override { return 0; };
+    TCRTIStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) {};
 
 protected:
-    struct TCRTHeader {
+    struct Header {
         char disk_name[24];
     };
 
-    struct TCRTEntry {
+    struct Entry {
         uint8_t entry_type;
         uint8_t file_type;
         uint16_t start_address;
@@ -47,6 +37,22 @@ protected:
         char filename[16];
     };
 
+    void seekHeader() override {
+        containerStream->seek(0x18);
+        containerStream->read((uint8_t*)&header, sizeof(header));
+    }
+
+    bool seekNextImageEntry() override {
+        return containerStream->seek(0x40 + (entry_index + 1 * 32));
+    }
+
+    bool seekEntry( size_t index ) override;
+    size_t readFile(uint8_t* buf, size_t size) override;
+    bool seekPath(std::string path) override;
+
+    Header header;
+    Entry entry;
+
 private:
     friend class TCRTFile;
 };
@@ -56,11 +62,39 @@ private:
  * File implementations
  ********************************************************/
 
-class TCRTFile: public D64File {
+class TCRTFile: public MFile {
 public:
-    TCRTFile(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
+
+    TCRTFile(std::string path, bool is_dir = true): MFile(path) {
+        isDir = is_dir;
+    };
+    
+    ~TCRTFile() {
+        // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
+    }
 
     MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+
+    std::string petsciiName() override {
+        // It's already in PETSCII
+        mstr::replaceAll(name, "\\", "/");
+        return name;
+    }
+
+    bool isDirectory() override;
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool mkDir() override { return false; };
+
+    bool exists() override { return true; };
+    bool remove() override { return false; };
+    bool rename(std::string dest) { return false; };
+    time_t getLastWrite() override { return 0; };
+    time_t getCreationTime() override { return 0; };
+    size_t size() override;
+
+    bool isDir = true;
+    bool dirIsOpen = false;
 };
 
 
@@ -77,10 +111,10 @@ public:
     }
 
     bool handles(std::string fileName) {
-        return byExtension(".d81", fileName);
+        return byExtension(".tcrt", fileName);
     }
 
-    TCRTFileSystem(): MFileSystem("d81") {};
+    TCRTFileSystem(): MFileSystem("tcrt") {};
 };
 
 

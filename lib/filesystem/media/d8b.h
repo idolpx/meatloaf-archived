@@ -14,11 +14,11 @@
  * Streams
  ********************************************************/
 
-class D8BIStream : public CBMImageStream {
+class D8BIStream : public D64IStream {
     // override everything that requires overriding here
 
 public:
-    D8BIStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) 
+    D8BIStream(std::shared_ptr<MIStream> is) : D64IStream(is) 
     {
         // D8B Offsets
         directory_header_offset = {1, 0, 0x04};

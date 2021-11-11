@@ -27,45 +27,6 @@ public:
     MFile(std::string path);
     MFile(std::string path, std::string name);
     MFile(MFile* path, std::string name);
-    MFile* parent(std::string = "");
-    MFile* localParent(std::string);
-    MFile* root(std::string);
-    MFile* localRoot(std::string);
-    //std::string name();
-    //std::string extension();
-
-    std::string media_header;
-    std::string media_id;
-    std::string media_image;
-    uint16_t media_blocks_free = 0;
-    uint16_t media_block_size = 256;
-
-    bool operator!=(nullptr_t ptr);
-
-    bool copyTo(MFile* dst);
-
-    virtual MFile* cd(std::string newDir);
-    virtual std::string petsciiName() {
-        std::string pname = name;
-        mstr::toPETSCII(pname);
-        return pname;
-    }
-
-    // has to return OPENED stream
-    virtual MIStream* inputStream();
-    virtual MOStream* outputStream() { Debug_printv("here"); return nullptr; };
-
-    virtual bool isDirectory() = 0;
-    virtual time_t getLastWrite() = 0 ;
-    virtual time_t getCreationTime() = 0 ;
-    virtual bool rewindDirectory() = 0 ;
-    virtual MFile* getNextFileInDir() = 0 ;
-    virtual bool mkDir() = 0 ;
-    virtual bool exists() = 0;
-    virtual size_t size() = 0;
-    virtual bool remove() = 0;
-    virtual bool rename(std::string dest) = 0;
-
 
     virtual ~MFile() {
         if(streamFile != nullptr) {
@@ -77,14 +38,50 @@ public:
         }
     };
 
+    MFile* parent(std::string = "");
+    MFile* localParent(std::string);
+    MFile* root(std::string);
+    MFile* localRoot(std::string);
+
+    std::string media_header;
+    std::string media_id;
+    std::string media_image;
+    uint16_t media_blocks_free = 0;
+    uint16_t media_block_size = 256;
+
+    bool operator!=(nullptr_t ptr);
+
+    bool copyTo(MFile* dst);
+
+    virtual std::string petsciiName() {
+        std::string pname = name;
+        mstr::toPETSCII(pname);
+        return pname;
+    }
+
+    // has to return OPENED stream
+    virtual MIStream* inputStream();
+    virtual MOStream* outputStream() { return nullptr; };
+
+    virtual MFile* cd(std::string newDir);
+    virtual bool isDirectory() = 0;
+    virtual bool rewindDirectory() = 0 ;
+    virtual MFile* getNextFileInDir() = 0 ;
+    virtual bool mkDir() = 0 ;    
+
+    virtual bool exists() = 0;
+    virtual bool remove() = 0;
+    virtual bool rename(std::string dest) = 0;    
+    virtual time_t getLastWrite() = 0 ;
+    virtual time_t getCreationTime() = 0 ;
+    virtual size_t size() = 0;
+
     MFile* streamFile = nullptr;
     std::string pathInStream;
 
 protected:
     virtual MIStream* createIStream(std::shared_ptr<MIStream> src) = 0;
     bool m_isNull;
-
-
 
 friend class MFSOwner;
 };

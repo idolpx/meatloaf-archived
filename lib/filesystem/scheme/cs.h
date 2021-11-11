@@ -210,33 +210,33 @@ public:
         // Debug_printv("path[%s] size[%d]", path.c_str(), size);
     };
 
-    bool isDirectory() override;
-    MIStream* inputStream() override ; // has to return OPENED stream
-    MOStream* outputStream() override ; // has to return OPENED stream
-    bool rewindDirectory() override;
-    MFile* getNextFileInDir() override;
-    bool exists() override ;
-    size_t size() override ;
-    bool mkDir() override ;
-    bool remove() override ;
-    MFile* cd(std::string newDir);
-
-    time_t getLastWrite() override { return 0; };
-    time_t getCreationTime() override  { return 0; };
-    bool rename(std::string dest) { return false; };
     MIStream* createIStream(std::shared_ptr<MIStream> src) { return src.get(); };
+    MIStream* inputStream() override ; // has to return OPENED stream
+    MOStream* outputStream() override ; // has to return OPENED stream    
 
     std::string petsciiName() override {
         return name;
     }
 
+    MFile* cd(std::string newDir);
+    bool isDirectory() override;
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool mkDir() override ;
+
+    bool exists() override;
+    bool remove() override;
+    bool rename(std::string dest) { return false; };
+    time_t getLastWrite() override { return 0; };
+    time_t getCreationTime() override { return 0; };
+    size_t size() override;     
+
+    bool isDir = true;
+    bool dirIsOpen = false;
 
 private:
-    bool dirIsOpen = false;
     bool dirIsImage = false;
-    bool m_isDir;
     size_t m_size;
-
 };
 
 /********************************************************
