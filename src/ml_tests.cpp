@@ -13,6 +13,7 @@
 #include "iec_host.h"
 #include "../../include/global_defines.h"
 #include "../../include/make_unique.h"
+#include "basic_config.h"
 
 std::unique_ptr<MFile> m_mfile(MFSOwner::File(""));
 
@@ -445,6 +446,16 @@ void testSmartMFile() {
 	Serial.printf("Extension of second one: [%s]\n", test2->extension.c_str());
 }
 
+void testBasicConfig() {
+    testHeader("TEST BASIC V2 config file");
+
+    BasicConfigReader bcr;
+    bcr.read("/config.prg");
+    if(bcr.entries->size()>0) {
+        Serial.printf("config Wifi SSID: [%s]\n", bcr.get("ssid"));
+    }
+
+}
 
 void runTestsSuite() {
     // working, uncomment if you want
@@ -477,6 +488,8 @@ void runTestsSuite() {
     // D64 Test
     // Debug_printv("D64 Test");
     // testDirectory(MFSOwner::File("/games/arcade7.d64"), true);
+    testBasicConfig();
+
     Serial.println("*** All tests finished ***");
 
 }
