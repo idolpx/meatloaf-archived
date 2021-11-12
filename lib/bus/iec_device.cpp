@@ -37,6 +37,7 @@ iecDevice::iecDevice(IEC &iec)
 	m_iec_data(*reinterpret_cast<IEC::Data *>(&serCmdIOBuf[sizeof(serCmdIOBuf) / 2])),
 	m_device(0)
 {
+	m_iec_data.content += '\0';
 	reset();
 } // ctor
 

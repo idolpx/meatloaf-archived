@@ -4,6 +4,41 @@
  * Streams
  ********************************************************/
 
+bool T64IStream::seekEntry( std::string filename )
+{
+    uint8_t index = 1;
+    mstr::rtrimA0(filename);
+    mstr::replaceAll(filename, "\\", "/");
+
+    // Read Directory Entries
+    if ( filename.size() )
+    {
+        while ( seekEntry( index ) )
+        {
+            std::string entryFilename = entry.filename;
+            mstr::rtrimA0(entryFilename);
+            Debug_printv("filename[%s] entry.filename[%.16s]", filename.c_str(), entryFilename.c_str());
+
+            // Read Entry From Stream
+            if (filename == "*")
+            {
+                filename == entryFilename;
+            }
+            
+            if ( mstr::startsWith(entryFilename, filename.c_str()) )
+            {
+                // Move stream pointer to start track/sector
+                return true;
+            }
+            index++;
+        }
+    }
+
+    entry.filename[0] = '\0';
+
+    return false;
+}
+
 bool T64IStream::seekEntry( size_t index )
 {
     // Calculate Sector offset & Entry offset
@@ -26,36 +61,15 @@ bool T64IStream::seekEntry( size_t index )
         return true;
 }
 
+
 size_t T64IStream::readFile(uint8_t* buf, size_t size) {
     size_t bytesRead = 0;
 
-    // if ( sector_offset % block_size == 0 )
-    // {
-    //     // We are at the beginning of the block
-    //     // Read track/sector link
-    //     containerStream->read((uint8_t *)&next_track, 1);
-    //     containerStream->read((uint8_t *)&next_sector, 1);
-    //     sector_offset += 2;
-    //     //Debug_printv("next_track[%d] next_sector[%d] sector_offset[%d]", next_track, next_sector, sector_offset);
-    // }
-
-    // bytesRead += containerStream->read(buf, size);
-    // sector_offset += bytesRead;
-    // m_bytesAvailable -= bytesRead;
-
-    // if ( sector_offset % block_size == 0 )
-    // {
-    //     // We are at the end of the block
-    //     // Follow track/sector link to move to next block
-    //     seekSector( next_track, next_sector );
-    //     //Debug_printv("track[%d] sector[%d] sector_offset[%d]", track, sector, sector_offset);
-    // }
-
+    bytesRead += containerStream->read(buf, size);
+    m_bytesAvailable -= bytesRead;
 
     return bytesRead;
 }
-
-
 
 bool T64IStream::seekPath(std::string path) {
     // Implement this to skip a queue of file streams to start of file by name
@@ -65,42 +79,28 @@ bool T64IStream::seekPath(std::string path) {
     entry_index = 0;
 
     // call D54Image method to obtain file bytes here, return true on success:
-    // return D64Image.seekFile(containerIStream, path);
     mstr::toPETSCII(path);
-    //if ( seekEntry(path) )
+    if ( seekEntry(path) )
     {
         //auto entry = containerImage->entry;
         auto type = decodeType(entry.file_type).c_str();
-        //auto blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
-        //auto blocks = (entry.blocks[0] * 256) + entry.blocks[1];
-        //Debug_printv("filename [%.16s] type[%s] start_track[%d] start_sector[%d]", entry.filename, type, entry.start_track, entry.start_sector);
-        //seekSector(entry.start_track, entry.start_sector);
+        size_t start_address = UINT16_FROM_LE_UINT16(entry.start_address);
+        size_t end_address = UINT16_FROM_LE_UINT16(entry.end_address);
+        size_t data_offset = UINT32_FROM_LE_UINT32(entry.data_offset);
+        Debug_printv("filename [%.16s] type[%s] start_address[%d] end_address[%d] data_offset[%d]", entry.filename, type, start_address, end_address, data_offset);
 
         // Calculate file size
-        uint8_t t = 0;
-        uint8_t s = 0;
-        size_t blocks = 0; 
-        do
-        {
-            //Debug_printv("t[%d] s[%d]", t, s);
-
-            containerStream->read(&t, 1);
-            containerStream->read(&s, 1);
-            blocks++;
-            //seekSector( t, s );
-        } while ( t > 0 );
-        blocks--;
-        m_length = (blocks * 254) + s - 2;
+        m_length = ( end_address - start_address );
         m_bytesAvailable = m_length;
-        
-        // Set position to beginning of file
-        //seekSector( entry.start_track, entry.start_sector );
 
-        Debug_printv("File Size: blocks[%d] size[%d] available[%d]", (blocks + 1), m_length, m_bytesAvailable);
+        // Set position to beginning of file
+        containerStream->seek(entry.data_offset);
+
+        Debug_printv("File Size: size[%d] available[%d]", m_length, m_bytesAvailable);
         
         return true;
     }
-    //else
+    else
     {
         Debug_printv( "Not found! [%s]", path.c_str());
     }
@@ -146,6 +146,8 @@ bool T64File::rewindDirectory() {
     media_block_size = image->block_size;
     media_image = name;
 
+    Debug_printv("media_header[%s] media_id[%s] media_blocks_free[%d] media_block_size[%d] media_image[%s]", media_header.c_str(), media_id.c_str(), media_blocks_free, media_block_size, media_image.c_str());
+
     return true;
 }
 
@@ -159,13 +161,12 @@ MFile* T64File::getNextFileInDir() {
 
     if ( image->seekNextImageEntry() )
     {
-        std::string fileName = image->entry.filename;
-        mstr::rtrimA0(fileName);
+        std::string fileName = mstr::format("%.16s", image->entry.filename);
         mstr::replaceAll(fileName, "/", "\\");
         //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
-        auto d64_file = MFSOwner::File(streamFile->url + "/" + fileName);
-        d64_file->extension = image->decodeType(image->entry.file_type);
-        return d64_file;
+        auto file = MFSOwner::File(streamFile->url + "/" + fileName);
+        file->extension = image->decodeType(image->entry.file_type);
+        return file;
     }
     else
     {
@@ -180,9 +181,8 @@ size_t T64File::size() {
     // Debug_printv("[%s]", streamFile->url.c_str());
     // use T64 to get size of the file in image
     auto image = ImageBroker::obtain<T64IStream>(streamFile->url);
-    // (_ui16 << 8 | _ui16 >> 8)
-    //size_t blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
-    size_t blocks = (image->entry.end_address - image->entry.start_address) / image->block_size;
-    //uint16_t blocks = entry.blocks[0] * 256 + entry.blocks[1];
+
+    size_t blocks = (UINT16_FROM_LE_UINT16(image->entry.end_address) - UINT16_FROM_LE_UINT16(image->entry.start_address)) / image->block_size;
+
     return blocks;
 }

@@ -1,7 +1,7 @@
 // .TCRT - Tapecart File System
 // https://github.com/ikorb/tapecart
 // https://github.com/ikorb/tapecart/blob/master/doc/TCRT%20Format.md
-//
+// https://github.com/alexkazik/tapecart-browser/blob/master/doc/Tapecart-FileSystem.md
 
 
 #ifndef MEATFILESYSTEM_MEDIA_TCRT
@@ -23,30 +23,34 @@ public:
 
 protected:
     struct Header {
-        char disk_name[24];
+        char disk_name[16];
     };
 
     struct Entry {
-        uint8_t entry_type;
-        uint8_t file_type;
-        uint16_t start_address;
-        uint16_t end_address;
-        uint16_t free_1;
-        uint32_t data_offset;
-        uint32_t free_2;
         char filename[16];
+        uint8_t file_type;
+        uint16_t data_offset;
+        uint8_t file_size[3];
+        uint16_t load_address;
+        uint16_t bundle_compatibility;
+        uint16_t bundle_main_start;
+        uint16_t bundle_main_length;
+        uint16_t bundle_main_call_address;
     };
 
     void seekHeader() override {
+        Debug_printv("here");
         containerStream->seek(0x18);
         containerStream->read((uint8_t*)&header, sizeof(header));
     }
 
     bool seekNextImageEntry() override {
-        return containerStream->seek(0x40 + (entry_index + 1 * 32));
+        return seekEntry(entry_index + 1);
     }
 
+    bool seekEntry( std::string filename ) override;
     bool seekEntry( size_t index ) override;
+
     size_t readFile(uint8_t* buf, size_t size) override;
     bool seekPath(std::string path) override;
 

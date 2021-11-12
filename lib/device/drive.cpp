@@ -406,7 +406,7 @@ void devDrive::handleListenCommand(IEC::Data &iec_data)
 	dumpState();
 
 	// Clear command string
-	m_iec_data.content.clear();
+	//m_iec_data.content.clear();
 } // handleListenCommand
 
 

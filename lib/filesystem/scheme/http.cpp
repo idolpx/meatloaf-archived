@@ -105,7 +105,7 @@ bool HttpOStream::isOpen() {
  * Istream impls
  ********************************************************/
 
-bool HttpIStream::seek(int32_t pos) {
+bool HttpIStream::seek(size_t pos) {
     if(pos==m_position)
         return true;
 
@@ -188,7 +188,7 @@ bool HttpIStream::open() {
     return true;
 };
 
-int HttpIStream::available() {
+size_t HttpIStream::available() {
     return m_bytesAvailable;
 };
 

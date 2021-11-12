@@ -259,20 +259,20 @@ public:
     bool open() override;
 
     // MIStream methods
-    int available() override;
+    size_t available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen() override;
-    virtual bool seek(int32_t pos) {
+    virtual bool seek(size_t pos) {
         return false;
     };
 
 protected:
     std::string url;
     bool m_isOpen;
-    int m_length;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
+    size_t m_length;
+    size_t m_bytesAvailable = 0;
+    size_t m_position = 0;
 };
 
 

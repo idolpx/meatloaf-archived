@@ -203,13 +203,13 @@ public:
     }
 
     // MIStream methods
-    int available() override;
+    size_t available() override;
     size_t size() override;
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
-    virtual bool seek(int32_t pos) override;
-    virtual bool seek(int32_t pos, SeekMode mode) override;
+    virtual bool seek(size_t pos) override;
+    virtual bool seek(size_t pos, SeekMode mode) override;
 
 protected:
     std::string localPath;
