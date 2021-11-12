@@ -62,7 +62,7 @@ size_t CBMImageStream::position() {
 };
 
 
-int CBMImageStream::available() {
+size_t CBMImageStream::available() {
     // return bytes available in currently "seeked" file
     return m_bytesAvailable;
 };

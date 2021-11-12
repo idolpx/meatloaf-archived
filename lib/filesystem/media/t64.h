@@ -38,15 +38,18 @@ protected:
     };
 
     void seekHeader() override {
+        Debug_printv("here");
         containerStream->seek(0x28);
         containerStream->read((uint8_t*)&header, sizeof(header));
     }
 
     bool seekNextImageEntry() override {
-        return containerStream->seek(0x40 + (entry_index + 1 * 32));
+        return seekEntry(entry_index + 1);
     }
 
+    bool seekEntry( std::string filename ) override;
     bool seekEntry( size_t index ) override;
+
     size_t readFile(uint8_t* buf, size_t size) override;
     bool seekPath(std::string path) override;
 

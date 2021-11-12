@@ -342,9 +342,9 @@ MFile* D64File::getNextFileInDir() {
         mstr::rtrimA0(fileName);
         mstr::replaceAll(fileName, "/", "\\");
         //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
-        auto d64_file = MFSOwner::File(streamFile->url + "/" + fileName);
-        d64_file->extension = image->decodeType(image->entry.file_type);
-        return d64_file;
+        auto file = MFSOwner::File(streamFile->url + "/" + fileName);
+        file->extension = image->decodeType(image->entry.file_type);
+        return file;
     }
     else
     {

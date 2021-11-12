@@ -58,7 +58,7 @@ public:
 
     // MStream methods
     size_t position() override;
-    int available() override;
+    size_t available() override;
     size_t read(uint8_t* buf, size_t size) override;
     size_t write(const uint8_t *buf, size_t size) override;
     bool isOpen();
@@ -66,11 +66,12 @@ public:
 protected:
     std::string url;
     bool m_isOpen;
-    int m_length;
+    size_t m_length;
+    size_t m_bytesAvailable = 0;
+    size_t m_position = 0;
+       
     WiFiClient m_file;
 	HTTPClient m_http;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
 };
 
 
@@ -94,8 +95,8 @@ public:
 
     // MIStream methods
 
-    virtual bool seek(int32_t pos);
-    int available() override;
+    virtual bool seek(size_t pos);
+    size_t available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
@@ -103,12 +104,13 @@ public:
 protected:
     std::string url;
     bool m_isOpen;
+    size_t m_bytesAvailable = 0;
+    size_t m_length = 0;
+    size_t m_position = 0;
+    bool isFriendlySkipper = false;
+
     WiFiClient m_file;
 	HTTPClient m_http;
-    int m_bytesAvailable = 0;
-    int m_length = 0;
-    uint32_t m_position = 0;
-    bool isFriendlySkipper = false;
 };
 
 

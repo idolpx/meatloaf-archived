@@ -12,7 +12,6 @@
 #include "string_utils.h"
 
 
-
 /********************************************************
  * Streams
  ********************************************************/
@@ -37,11 +36,11 @@ public:
     bool isBrowsable() override { return false; };
     bool isRandomAccess() override { return true; };
 
-    bool seek(int32_t pos, SeekMode mode) override { 
+    bool seek(size_t pos, SeekMode mode) override { 
         Debug_printv("here");
         return true; 
     }; 
-    bool seek(int32_t pos) override { 
+    bool seek(size_t pos) override { 
         Debug_printv("here");
         return true; 
     };
@@ -49,57 +48,28 @@ public:
     bool seekPath(std::string path) override { return false; };
     std::string seekNextEntry() override { return ""; };
 
-    int available() override;
+    size_t available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
 
 protected:
 
-    // struct Header {
-    //     char disk_name[16];
-    //     char id_dos[5];
-    // };
-
-    // struct Entry {
-    //     uint8_t next_track;
-    //     uint8_t next_sector;
-    //     uint8_t file_type;
-    //     uint8_t start_track;
-    //     uint8_t start_sector;
-    //     char filename[16];
-    //     uint8_t rel_start_track;   // Or GOES info block start track
-    //     uint8_t rel_start_sector;  // Or GEOS info block start sector
-    //     uint8_t rel_record_length; // Or GEOS file structure (Sequential / VLIR file)
-    //     uint8_t geos_type;         // $00 - Non-GEOS (normal C64 file)
-    //     uint8_t year;
-    //     uint8_t month;
-    //     uint8_t day;
-    //     uint8_t hour;
-    //     uint8_t minute;
-    //     uint16_t blocks;
-    // };
-
-    // Header header;
-    // Entry entry;
-
     bool seekCalled = false;
     std::shared_ptr<MIStream> containerStream;
 
     bool m_isOpen;
-    int m_length;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
+    size_t m_length;
+    size_t m_bytesAvailable = 0;
+    size_t m_position = 0;
 
-    // D64Image methods
     CBMImageStream* decodedStream;
 
     bool show_hidden = false;
 
     size_t block_size = 256;
-    size_t entry_index = 0;
-    uint8_t index = 0;  // Currently selected directory entry
-    uint8_t length = 0; // Directory list entry count
+    size_t entry_index = 0;  // Currently selected directory entry
+    size_t entry_count = -1; // Directory list entry count (-1 unknown)
 
     enum open_modes { OPEN_READ, OPEN_WRITE, OPEN_APPEND, OPEN_MODIFY };
     std::string file_type_label[8] = { "del", "seq", "prg", "usr", "rel", "cbm", "dir", "???" };
@@ -114,7 +84,9 @@ protected:
     virtual uint16_t blocksFree() { return 0; };
 	virtual uint8_t speedZone( uint8_t track) { return 0; };
 
+    virtual bool seekEntry( std::string filename ) { return false; };
     virtual bool seekEntry( size_t index ) { return false; };
+
     virtual size_t readFile(uint8_t* buf, size_t size) = 0;
     std::string decodeType(uint8_t file_type, bool show_hidden = false);    
 

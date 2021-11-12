@@ -247,6 +247,9 @@ IEC::BusState IEC::service(Data& iec_data)
 		iec_data.channel = c bitand 0x0F; // lower nibble, channel
 		//iec_data.content = { 0 };
 
+		// Clear command string
+		iec_data.content.clear();
+
 		if ( cc == IEC_LISTEN )
 		{
 			r = deviceListen(iec_data);

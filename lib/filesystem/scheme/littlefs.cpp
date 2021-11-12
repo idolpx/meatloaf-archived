@@ -450,7 +450,7 @@ bool LittleIStream::open() {
 };
 
 // MIStream methods
-int LittleIStream::available() {
+size_t LittleIStream::available() {
     if(!isOpen()) return 0;
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
 };
@@ -478,12 +478,12 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
     return result;
 };
 
-bool LittleIStream::seek(int32_t pos) {
+bool LittleIStream::seek(size_t pos) {
     // Debug_printv("pos[%d]", pos);
     return seek(pos, SeekMode::SeekSet);
 };
 
-bool LittleIStream::seek(int32_t pos, SeekMode mode) {
+bool LittleIStream::seek(size_t pos, SeekMode mode) {
     // Debug_printv("pos[%d] mode[%d]", pos, mode);
     if (!isOpen()) {
         Debug_printv("Not open");

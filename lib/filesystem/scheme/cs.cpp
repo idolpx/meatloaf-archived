@@ -167,7 +167,7 @@ bool CServerIStream::open() {
 };
 
 // MIStream methods
-int CServerIStream::available() {
+size_t CServerIStream::available() {
     return m_bytesAvailable;
 };
 

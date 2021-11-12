@@ -32,7 +32,7 @@ public:
 
 class MIStream: public MStream {
 public:
-    virtual bool seek(int32_t pos, SeekMode mode) {
+    virtual bool seek(size_t pos, SeekMode mode) {
         if(mode == SeekSet) {
             return seek(pos);
         }
@@ -43,9 +43,9 @@ public:
             return seek(size() - pos);
         }
     }
-    virtual bool seek(int32_t pos) = 0;
+    virtual bool seek(size_t pos) = 0;
 
-    virtual int available() = 0;
+    virtual size_t available() = 0;
     virtual size_t size() = 0;
     virtual size_t read(uint8_t* buf, size_t size) = 0;
 
