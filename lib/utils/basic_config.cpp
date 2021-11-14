@@ -29,8 +29,12 @@ void BasicConfigReader::read(std::string name) {
                 mstr::toASCII(line);
                 auto split = mstr::split(line, ':', 2);
                 if(split.size()>1) {
-                    entries->insert(std::make_pair(split[0], split[1]));
-                    //Serial.printf("konfig: %s=%s\n", split[0].c_str(), split[1].c_str());
+                    auto setting = mstr::drop(split[0],1); // drop opening quote
+                    auto value = split[1];
+                    mstr::trim(setting); // drop whitespace
+                    mstr::trim(value);
+
+                    entries->insert(setting, value);
                 }
             }
         }
