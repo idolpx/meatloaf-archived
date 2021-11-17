@@ -98,7 +98,9 @@ private:
     // Disk
     friend class D64File;
     friend class D71File;
+    friend class D80File;
     friend class D81File;
+    friend class D82File;
     friend class D8BFile;
     friend class DNPFile; 
 

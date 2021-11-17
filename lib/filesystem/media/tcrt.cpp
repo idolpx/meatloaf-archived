@@ -76,7 +76,7 @@ bool TCRTIStream::seekPath(std::string path) {
 
     entry_index = 0;
 
-    // call D54Image method to obtain file bytes here, return true on success:
+    // call image method to obtain file bytes here, return true on success:
     mstr::toPETSCII(path);
     if ( seekEntry(path) )
     {

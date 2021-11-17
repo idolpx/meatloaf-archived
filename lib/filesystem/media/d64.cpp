@@ -63,7 +63,7 @@ bool D64IStream::seekEntry( std::string filename )
         {
             std::string entryFilename = entry.filename;
             mstr::rtrimA0(entryFilename);
-            Debug_printv("track[%d] sector[%d] filename[%s] entry.filename[%.16s]", track, sector, filename.c_str(), entryFilename.c_str());
+            //Debug_printv("track[%d] sector[%d] filename[%s] entry.filename[%.16s]", track, sector, filename.c_str(), entryFilename.c_str());
 
             // Read Entry From Stream
             if (entry.file_type & 0b00000111 && filename == "*")
@@ -164,7 +164,7 @@ uint16_t D64IStream::blocksFree()
     for(uint8_t x = 0; x < block_allocation_map.size(); x++)
     {
         uint8_t bam[block_allocation_map[x].byte_count] = { 0 };
-        //Debug_printv("start_track[%d] end_track[%d]", block_allocation_map[x].start_track, block_allocation_map[x].end_track);
+        Debug_printv("start_track[%d] end_track[%d]", block_allocation_map[x].start_track, block_allocation_map[x].end_track);
 
         seekSector(block_allocation_map[x].track, block_allocation_map[x].sector, block_allocation_map[x].offset);
         for(uint8_t i = block_allocation_map[x].start_track; i <= block_allocation_map[x].end_track; i++)
@@ -174,7 +174,7 @@ uint16_t D64IStream::blocksFree()
             {               
                 if ( i != block_allocation_map[x].track )
                 {
-                    //Debug_printv("x[%d] track[%d] count[%d] size[%d]", x, i, bam[0], sizeof(bam));
+                    Debug_printv("x[%d] track[%d] count[%d] size[%d]", x, i, bam[0], sizeof(bam));
                     free_count += bam[0];            
                 }
             }
@@ -241,7 +241,7 @@ bool D64IStream::seekPath(std::string path) {
 
     entry_index = 0;
 
-    // call D54Image method to obtain file bytes here, return true on success:
+    // call image method to obtain file bytes here, return true on success:
     // return D64Image.seekFile(containerIStream, path);
     mstr::toPETSCII(path);
     if ( seekEntry(path) )
@@ -341,14 +341,14 @@ MFile* D64File::getNextFileInDir() {
         std::string fileName = image->entry.filename;
         mstr::rtrimA0(fileName);
         mstr::replaceAll(fileName, "/", "\\");
-        //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
+        Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
         auto file = MFSOwner::File(streamFile->url + "/" + fileName);
         file->extension = image->decodeType(image->entry.file_type);
         return file;
     }
     else
     {
-        //Debug_printv( "END OF DIRECTORY");
+        Debug_printv( "END OF DIRECTORY");
         dirIsOpen = false;
         return nullptr;
     }

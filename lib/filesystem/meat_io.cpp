@@ -13,7 +13,9 @@
 // Disk
 #include "media/d64.h"
 #include "media/d71.h"
+#include "media/d80.h"
 #include "media/d81.h"
+#include "media/d82.h"
 #include "media/d8b.h"
 #include "media/dnp.h"
 
@@ -44,7 +46,9 @@ WSFileSystem wsFS;
 // Disk
 D64FileSystem d64FS;
 D71FileSystem d71FS;
+D80FileSystem d80FS;
 D81FileSystem d81FS;
+D82FileSystem d82FS;
 D8BFileSystem d8bFS;
 DNPFileSystem dnpFS;
 
@@ -58,7 +62,7 @@ TCRTFileSystem tcrtFS;
 
 // put all available filesystems in this array - first matching system gets the file!
 // fist in list is default
-std::vector<MFileSystem*> MFSOwner::availableFS{ &defaultFS, &d64FS, &d71FS, &d81FS, &d8bFS, &dnpFS, &t64FS, &tcrtFS, &mlFS, &httpFS, &wsFS };
+std::vector<MFileSystem*> MFSOwner::availableFS{ &defaultFS, &d64FS, &d71FS, &d80FS, &d81FS, &d82FS, &d8bFS, &dnpFS, &t64FS, &tcrtFS, &mlFS, &httpFS, &wsFS };
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");

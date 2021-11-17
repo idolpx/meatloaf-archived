@@ -1,10 +1,10 @@
-#include "t64.h"
+#include "tap.h"
 
 /********************************************************
  * Streams
  ********************************************************/
 
-bool T64IStream::seekEntry( std::string filename )
+bool TAPIStream::seekEntry( std::string filename )
 {
     uint8_t index = 1;
     mstr::rtrimA0(filename);
@@ -39,7 +39,7 @@ bool T64IStream::seekEntry( std::string filename )
     return false;
 }
 
-bool T64IStream::seekEntry( size_t index )
+bool TAPIStream::seekEntry( size_t index )
 {
     // Calculate Sector offset & Entry offset
     index--;
@@ -62,28 +62,16 @@ bool T64IStream::seekEntry( size_t index )
 }
 
 
-size_t T64IStream::readFile(uint8_t* buf, size_t size) {
+size_t TAPIStream::readFile(uint8_t* buf, size_t size) {
     size_t bytesRead = 0;
 
-    if (m_position < 2)
-    {
-        //Debug_printv("position[%d]", m_position);
-
-        // Send Starting Address
-        buf[0] = entry.start_address[m_position];
-        bytesRead++;
-    }
-    else
-    {
-        bytesRead += containerStream->read(buf, size);        
-    }
-
+    bytesRead += containerStream->read(buf, size);
     m_bytesAvailable -= bytesRead;
 
     return bytesRead;
 }
 
-bool T64IStream::seekPath(std::string path) {
+bool TAPIStream::seekPath(std::string path) {
     // Implement this to skip a queue of file streams to start of file by name
     // this will cause the next read to return bytes of 'path'
     seekCalled = true;
@@ -96,20 +84,19 @@ bool T64IStream::seekPath(std::string path) {
     {
         //auto entry = containerImage->entry;
         auto type = decodeType(entry.file_type).c_str();
-        size_t start_address = UINT16_FROM_HILOBYTES(entry.start_address[0], entry.start_address[1]);
-        size_t end_address = UINT16_FROM_HILOBYTES(entry.end_address[0], entry.end_address[1]);
+        size_t start_address = UINT16_FROM_LE_UINT16(entry.start_address);
+        size_t end_address = UINT16_FROM_LE_UINT16(entry.end_address);
         size_t data_offset = UINT32_FROM_LE_UINT32(entry.data_offset);
         Debug_printv("filename [%.16s] type[%s] start_address[%d] end_address[%d] data_offset[%d]", entry.filename, type, start_address, end_address, data_offset);
 
         // Calculate file size
-        m_length = ( end_address - start_address ) + 2;
+        m_length = ( end_address - start_address );
         m_bytesAvailable = m_length;
-        m_position = 0;
 
         // Set position to beginning of file
         containerStream->seek(entry.data_offset);
 
-        Debug_printv("File Size: size[%d] available[%d] position[%d]", m_length, m_bytesAvailable, m_position);
+        Debug_printv("File Size: size[%d] available[%d]", m_length, m_bytesAvailable);
         
         return true;
     }
@@ -125,14 +112,14 @@ bool T64IStream::seekPath(std::string path) {
  * File implementations
  ********************************************************/
 
-MIStream* T64File::createIStream(std::shared_ptr<MIStream> containerIstream) {
+MIStream* TAPFile::createIStream(std::shared_ptr<MIStream> containerIstream) {
     Debug_printv("[%s]", url.c_str());
 
-    return new T64IStream(containerIstream);
+    return new TAPIStream(containerIstream);
 }
 
 
-bool T64File::isDirectory() {
+bool TAPFile::isDirectory() {
     //Debug_printv("pathInStream[%s]", pathInStream.c_str());
     if ( pathInStream == "" )
         return true;
@@ -140,10 +127,10 @@ bool T64File::isDirectory() {
         return false;
 };
 
-bool T64File::rewindDirectory() {
+bool TAPFile::rewindDirectory() {
     dirIsOpen = true;
     Debug_printv("streamFile->url[%s]", streamFile->url.c_str());
-    auto image = ImageBroker::obtain<T64IStream>(streamFile->url);
+    auto image = ImageBroker::obtain<TAPIStream>(streamFile->url);
     if ( image == nullptr )
         Debug_printv("image pointer is null");
 
@@ -153,8 +140,8 @@ bool T64File::rewindDirectory() {
     image->seekHeader();
 
     // Set Media Info Fields
-    media_header = mstr::format("%.16s", image->header.disk_name);
-    media_id = " T64 ";
+    media_header = mstr::format("%.24", image->header.disk_name);
+    media_id = "TAP";
     media_blocks_free = 0;
     media_block_size = image->block_size;
     media_image = name;
@@ -164,19 +151,18 @@ bool T64File::rewindDirectory() {
     return true;
 }
 
-MFile* T64File::getNextFileInDir() {
+MFile* TAPFile::getNextFileInDir() {
 
     if(!dirIsOpen)
         rewindDirectory();
 
     // Get entry pointed to by containerStream
-    auto image = ImageBroker::obtain<T64IStream>(streamFile->url);
+    auto image = ImageBroker::obtain<TAPIStream>(streamFile->url);
 
     if ( image->seekNextImageEntry() )
     {
         std::string fileName = mstr::format("%.16s", image->entry.filename);
         mstr::replaceAll(fileName, "/", "\\");
-        mstr::rtrimA0(fileName);
         //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
         auto file = MFSOwner::File(streamFile->url + "/" + fileName);
         file->extension = image->decodeType(image->entry.file_type);
@@ -191,12 +177,12 @@ MFile* T64File::getNextFileInDir() {
 }
 
 
-size_t T64File::size() {
+size_t TAPFile::size() {
     // Debug_printv("[%s]", streamFile->url.c_str());
-    // use T64 to get size of the file in image
-    auto entry = ImageBroker::obtain<T64IStream>(streamFile->url)->entry;
+    // use TAP to get size of the file in image
+    auto image = ImageBroker::obtain<TAPIStream>(streamFile->url);
 
-    size_t bytes = (UINT16_FROM_HILOBYTES(entry.end_address[0], entry.end_address[1]) - UINT16_FROM_HILOBYTES(entry.start_address[0], entry.start_address[1]));
+    size_t blocks = (UINT16_FROM_LE_UINT16(image->entry.end_address) - UINT16_FROM_LE_UINT16(image->entry.start_address)) / image->block_size;
 
-    return bytes;
+    return blocks;
 }
