@@ -96,8 +96,8 @@ bool T64IStream::seekPath(std::string path) {
     {
         //auto entry = containerImage->entry;
         auto type = decodeType(entry.file_type).c_str();
-        size_t start_address = UINT16_FROM_HILOBYTES(entry.start_address[0], entry.start_address[1]);
-        size_t end_address = UINT16_FROM_HILOBYTES(entry.end_address[0], entry.end_address[1]);
+        size_t start_address = UINT16_FROM_HILOBYTES(entry.start_address[1], entry.start_address[0]);
+        size_t end_address = UINT16_FROM_HILOBYTES(entry.end_address[1], entry.end_address[0]);
         size_t data_offset = UINT32_FROM_LE_UINT32(entry.data_offset);
         Debug_printv("filename [%.16s] type[%s] start_address[%d] end_address[%d] data_offset[%d]", entry.filename, type, start_address, end_address, data_offset);
 
@@ -196,7 +196,12 @@ size_t T64File::size() {
     // use T64 to get size of the file in image
     auto entry = ImageBroker::obtain<T64IStream>(streamFile->url)->entry;
 
-    size_t bytes = (UINT16_FROM_HILOBYTES(entry.end_address[0], entry.end_address[1]) - UINT16_FROM_HILOBYTES(entry.start_address[0], entry.start_address[1]));
+    //Debug_printv("end0[%d] end1[%d] start0[%d] start1[%d]", entry.end_address[0], entry.end_address[1], entry.start_address[0], entry.start_address[1]);
+    size_t end_address = UINT16_FROM_HILOBYTES(entry.end_address[1], entry.end_address[0]);
+    size_t start_address = UINT16_FROM_HILOBYTES(entry.start_address[1], entry.start_address[0]);
+
+    size_t bytes = ( end_address - start_address );
+    //Debug_printv("start_address[%d] end_address[%d] bytes[%d]", start_address, end_address, bytes);
 
     return bytes;
 }

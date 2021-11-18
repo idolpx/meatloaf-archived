@@ -172,7 +172,7 @@ uint16_t D64IStream::blocksFree()
             containerStream->read((uint8_t *)&bam, sizeof(bam));
             if ( sizeof(bam) > 3 )
             {               
-                if ( i != block_allocation_map[x].track )
+                if ( i != directory_list_offset[0] )
                 {
                     Debug_printv("x[%d] track[%d] count[%d] size[%d]", x, i, bam[0], sizeof(bam));
                     free_count += bam[0];            
@@ -267,7 +267,7 @@ bool D64IStream::seekPath(std::string path) {
             seekSector( t, s );
         } while ( t > 0 );
         blocks--;
-        m_length = (blocks * 254) + s - 2;
+        m_length = (blocks * 254) + s;
         m_bytesAvailable = m_length;
         
         // Set position to beginning of file
@@ -341,14 +341,14 @@ MFile* D64File::getNextFileInDir() {
         std::string fileName = image->entry.filename;
         mstr::rtrimA0(fileName);
         mstr::replaceAll(fileName, "/", "\\");
-        Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
+        //Debug_printv( "entry[%s]", (streamFile->url + "/" + fileName).c_str() );
         auto file = MFSOwner::File(streamFile->url + "/" + fileName);
         file->extension = image->decodeType(image->entry.file_type);
         return file;
     }
     else
     {
-        Debug_printv( "END OF DIRECTORY");
+        //Debug_printv( "END OF DIRECTORY");
         dirIsOpen = false;
         return nullptr;
     }
@@ -380,9 +380,7 @@ size_t D64File::size() {
     // Debug_printv("[%s]", streamFile->url.c_str());
     // use D64 to get size of the file in image
     auto entry = ImageBroker::obtain<D64IStream>(streamFile->url)->entry;
-    // (_ui16 << 8 | _ui16 >> 8)
-    //size_t blocks = (entry.blocks[0] << 8 | entry.blocks[1] >> 8);
-    size_t blocks = UINT16_FROM_LE_UINT16(entry.blocks);
-    //uint16_t blocks = entry.blocks[0] * 256 + entry.blocks[1];
-    return blocks;
+    size_t bytes = UINT16_FROM_LE_UINT16(entry.blocks);
+    
+    return bytes;
 }
