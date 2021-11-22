@@ -1,7 +1,8 @@
 // .G64 - The G64 GCR-encoded disk image format
 // https://vice-emu.sourceforge.io/vice_17.html#SEC335
 // https://ist.uwaterloo.ca/~schepers/formats/G64.TXT
-//
+// https://www.linusakesson.net/programming/gcr-decoding/index.php
+// 
 
 
 #ifndef MEATFILESYSTEM_MEDIA_G64
@@ -36,8 +37,15 @@ public:
         else
             return (track < 52) + (track < 59) + (track < 65);
 	};
+    uint8_t decode(uint16_t in);
 
 protected:
+
+    bool ConvertSector(uint8_t track, uint8_t sector, uint8_t* data);
+    void DecodeBlock(uint8_t track, size_t bitIndex, uint8_t* buf, uint8_t num);
+    size_t FindSync(uint8_t track, size_t bitIndex, size_t maxBits, uint8_t* syncStartIndex);
+    size_t FindSectorHeader(uint8_t track, uint8_t sector, uint8_t* id);
+
 
 private:
     friend class G64File;
