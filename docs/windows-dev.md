@@ -64,15 +64,15 @@
 2. Click the "View Git Graph (git log)" button to the right of "SOURCE CONTROL".
 	 When viewing the graph you can switch see all commits to all branches of the code.
 	 You can right click on a branch label to checkout that branch.<br/>
-	 ![vsc-showgitgraph](vsc-showgitgraph.png)
+	 ![vsc-showgitgraph](vsc-showgitgraph.png)<br/>
 	 <br/>
 	 You can also switch branches by activating the menu dropdown list by clicking the 
 	 current branch label at the far left of the status bar.<br/>
-	 ![vsc-changebranch](vsc-changebranch.png)
+	 ![vsc-changebranch](vsc-changebranch.png)<br/>
 	 <br/>
 	 To switch to a specific commit, right click on a the commit in the graph.
-	 Then select "Reset current branch to this Commit..." from the menu.
-	 ![vsc-resettocommit](vsc-resettocommit.png)
+	 Then select "Reset current branch to this Commit..." from the menu.<br/>
+	 ![vsc-resettocommit](vsc-resettocommit.png)<br/>
 	 <br/>
 
 
