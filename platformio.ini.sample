@@ -25,6 +25,7 @@ monitor_speed = 921600
 ;monitor_port = /dev/ttyUSB0 ; Linux
 monitor_port = /dev/tty.SLAB_USBtoUART ; Mac
 monitor_filters = default, esp8266_exception_decoder
+;monitor_filters = default, esp32_exception_decoder
 
 lib_deps = 
     ArduinoJson
@@ -64,4 +65,3 @@ platform = espressif32
 board = esp32doit-devkit-v1
 board_build.filesystem = littlefs
 ;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
-monitor_filters = default, esp32_exception_decoder
