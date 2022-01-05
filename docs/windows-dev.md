@@ -43,6 +43,7 @@
 	
 6. Compile the firmware.<br/>
 	 The easiest way to do this is to hit the "check" icon in the status bar.<br/>
+	 *(The first time you build it will take a long time. It has to install the platform tools and all dependancies required for the build process.)*<br/>
 	 ![pio-build-1](pio-build-1.png)
 	 <br/>
 	 You can also use the build option under Project Tasks in the PlatformIO icon from the side menu.
