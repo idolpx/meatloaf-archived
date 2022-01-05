@@ -1,8 +1,10 @@
 # Windows Dev Environment Setup
 
 1. Install "git" for windows<br/>
-	 https://git-scm.com/download/win<br/>
-	 It's fine to take all default settings
+	 *It's fine to take all default settings.*<br/>
+	 
+	 > https://git-scm.com/download/win
+	 
 	
 2. Open a command prompt and change directory to the folder 
 	 where you want to download the Meatloaf firmware.<br/>
@@ -20,11 +22,12 @@
 	![git-meatloaf](git-meatloaf.png)
 	
 3. Install Visual Studio Code<br/>
-	 https://code.visualstudio.com/Download<br/>
 	 Take default options during setup.<br/>
-	 (I also check off the extra options for adding the 
-	 "Open with Code" context menu option for files and folders.)<br/>
-	<br/>
+	 *(I also check off the extra options for adding the 
+	 "Open with Code" context menu option for files and folders.)*<br/>
+	 
+	 > https://code.visualstudio.com/Download
+	 
 	 Launch VS Code and click on the "Extensions" icon in the side menu.<br/>
 	 Search for "Git Graph" and select it and install it.<br/>
 	 ![vsc-gitgraph](vsc-gitgraph.png)
