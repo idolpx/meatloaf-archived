@@ -13,7 +13,7 @@
 	 The firmware source code will be downloaded and put into a sub directory named "meatloaf".
 	 Change into the directory and copy the platformio.ini.sample file to platformio.ini.
 	
-	 > cd meatloaf
+	 > cd meatloaf<br/><br/>
 	 > copy platformio.ini.sample platformio.ini
 	
 	![git-meatloaf](git-meatloaf.png)
