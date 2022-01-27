@@ -59,6 +59,14 @@ public:
 	std::string rawPath;
 };
 
+class Channel
+{
+public:
+	std::string url;
+	uint32_t cursor;
+	bool writing;
+};
+
 class iecDevice
 {
 public:
@@ -70,13 +78,7 @@ public:
 		DEVICE_DATA,           // Data sent or received
 	};
 
-	struct Channel
-	{
-		std::string name;
-		uint32_t cursor;
-		bool writing;
-	};
-	std::unordered_map<uint8_t, Channel> channels;
+	std::unordered_map<uint16_t, Channel> channels;
 
 	iecDevice(IEC &iec);
 	~iecDevice() {};
@@ -108,6 +110,10 @@ protected:
 	byte m_openState;
 	
 	DeviceDB m_device;
+
+private:
+	Channel channelSelect(IEC::Data &iec_data);
+	bool channelClose(IEC::Data &iec_data, bool close_all = false);
 
 };
 

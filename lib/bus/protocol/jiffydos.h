@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
+// https://github.com/MEGA65/open-roms/blob/master/doc/Protocol-JiffyDOS.md
+
 #ifndef PROTOCOL_JIFFYDOS_H
 #define PROTOCOL_JIFFYDOS_H
 

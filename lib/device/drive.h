@@ -15,6 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
+// https://ilesj.wordpress.com/2014/05/14/1541-why-so-complicated/
+// https://en.wikipedia.org/wiki/Fast_loader
+
 #ifndef DEVICE_DRIVE_H
 #define DEVICE_DRIVE_H
 

@@ -118,10 +118,10 @@ public:
     }
 
     bool handles(std::string fileName) {
-        return byExtension(".t64", fileName);
+        return byExtension(".tap", fileName);
     }
 
-    TAPFileSystem(): MFileSystem("t64") {};
+    TAPFileSystem(): MFileSystem("tap") {};
 };
 
 

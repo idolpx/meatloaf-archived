@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef MEATINCLUDE_PETSCII
-#define MEATINCLUDE_PETSCII
+#ifndef PETSCII_H
+#define PETSCII_H
 
 static inline uint8_t ascii2petscii(uint8_t ch)
 {
@@ -51,4 +51,4 @@ static inline uint8_t screen2petscii(uint8_t ch)
 	else if ((ch >= 0xa0 && ch <= 0xbF) || (ch >= 0xd0 && ch <= 0xdf)) ch -= 0x40;
 	return ch;
 }
-#endif /* MEATINCLUDE_PETSCII */
+#endif // PETSCII_H

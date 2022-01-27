@@ -351,11 +351,11 @@ void devDrive::handleListenCommand(IEC::Data &iec_data)
 		m_openState = O_DIR;
 		Debug_printv("LOAD $");
 	}	
-	else if (mstr::equals(commandAndPath.command, "@info", false))
+	else if (mstr::equals(commandAndPath.command, (char*)"@info", false))
 	{
 		m_openState = O_ML_INFO;
 	}
-	else if (mstr::equals(commandAndPath.command, "@stat", false))
+	else if (mstr::equals(commandAndPath.command, (char*)"@stat", false))
 	{
 		m_openState = O_ML_STATUS;
 	}
@@ -374,7 +374,7 @@ void devDrive::handleListenCommand(IEC::Data &iec_data)
 	else if(!commandAndPath.rawPath.empty())
 	{
 		// 2. fullPath.extension == "URL" - change dir or load file
-		if (mstr::equals(referencedPath->extension, "url", false)) 
+		if (mstr::equals(referencedPath->extension, (char*)"url", false)) 
 		{
 			// CD to the path inside the .url file
 			referencedPath.reset(getPointed(referencedPath.get()));
@@ -390,7 +390,7 @@ void devDrive::handleListenCommand(IEC::Data &iec_data)
 			}
 		}
 		// 2. OR if command == "CD" OR fullPath.isDirectory - change directory
-		if (mstr::equals(commandAndPath.command, "cd", false) || referencedPath->isDirectory())
+		if (mstr::equals(commandAndPath.command, (char*)"cd", false) || referencedPath->isDirectory())
 		{
 			Debug_printv("change dir called by CD command or because of isDirectory");
 			changeDir(referencedPath->url);
@@ -463,7 +463,7 @@ void devDrive::handleOpen(IEC::Data &iec_data)
 	auto channel = channels[iec_data.command];
 
 	// Are we writing?  Appending?
-	channels[iec_data.command].name = iec_data.content;
+	channels[iec_data.command].url = iec_data.content;
 	channels[iec_data.command].cursor = 0;
 	channels[iec_data.command].writing = 0;
 } // handleOpen
@@ -748,7 +748,7 @@ void devDrive::sendListing()
 	if (m_mfile->media_header.size() == 0)
 	{
 		// Set device default Listing Header
-		char buf[6] = { '\0' };
+		char buf[7] = { '\0' };
 		sprintf(buf, "%.02d 2A", m_device.id());
 		byte_count += sendHeader(basicPtr, PRODUCT_ID, buf);
 	}
@@ -885,9 +885,9 @@ void devDrive::sendFile()
 	
 	if 
 	(
-		mstr::equals(file->extension, "txt", false) ||
-		mstr::equals(file->extension, "htm", false) ||
-		mstr::equals(file->extension, "html", false)
+		mstr::equals(file->extension, (char*)"txt", false) ||
+		mstr::equals(file->extension, (char*)"htm", false) ||
+		mstr::equals(file->extension, (char*)"html", false)
 	) 
 	{
 		// convert UTF8 files on the fly

@@ -15,6 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
+// https://www.pagetable.com/?p=1135
+// https://codebase64.org/doku.php?id=base:how_the_vic_64_serial_bus_works
+// http://www.zimmers.net/anonftp/pub/cbm/programming/serial-bus.pdf
+// https://github.com/0cjs/sedoc/blob/master/8bit/cbm/serial-bus.md
+
+
 #ifndef PROTOCOL_CBMSTANDARDSERIAL_H
 #define PROTOCOL_CBMSTANDARDSERIAL_H
 

@@ -34,7 +34,7 @@ void BasicConfigReader::read(std::string name) {
                     mstr::trim(setting); // drop whitespace
                     mstr::trim(value);
 
-                    entries->insert(setting, value);
+                    (*entries)[setting] = value;
                 }
             }
         }

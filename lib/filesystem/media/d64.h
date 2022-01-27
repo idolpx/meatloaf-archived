@@ -2,6 +2,10 @@
 // https://vice-emu.sourceforge.io/vice_17.html#SEC345
 // https://ist.uwaterloo.ca/~schepers/formats/D64.TXT
 // https://ist.uwaterloo.ca/~schepers/formats/GEOS.TXT
+// https://www.lemon64.com/forum/viewtopic.php?t=70024&start=0 (File formats = Why is D64 not called D40/D41)
+//  - disucssion of disk id in sector missing from d64 file format is interesting
+// https://www.c64-wiki.com/wiki/Disk_Image
+// http://unusedino.de/ec64/technical3.html
 //
 
 #ifndef MEATFILESYSTEM_MEDIA_D64

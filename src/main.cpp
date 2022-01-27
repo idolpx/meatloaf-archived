@@ -64,10 +64,10 @@ void setup()
         Serial.println ( "Flash File System started" );
 
         // Start the Web Server with WebDAV
-        #if defined(WEB_SERVER)
+        #if defined(ML_WEB_SERVER)
             setupWWW();
         #endif 
-        #if defined(WEBDAV)
+        #if defined(ML_WEBDAV)
             // WebDAV Server Setup
             dav.begin ( &tcp, fileSystem );
             dav.setTransferStatusCallback ( [] ( const char *name, int percent, bool receive )
@@ -79,7 +79,7 @@ void setup()
 
 
         // mDNS INIT
-        #if defined(MDNS)
+        #if defined(ML_MDNS)
             if ( MDNS.begin ( HOSTNAME ) )
             {
                 MDNS.addService ( "http", "tcp", SERVER_PORT );
@@ -129,13 +129,13 @@ void setup()
 // ------------------------
 void loop()
 {
-#if defined(MDNS)
+#if defined(ML_MDNS)
     MDNS.update();
 #endif
 
-#if defined(WEB_SERVER)
+#if defined(ML_WEB_SERVER)
     www.handleClient();
-#elif defined(WEBDAV)
+#elif defined(ML_WEBDAV)
     dav.handleClient();
 #endif
 
@@ -162,7 +162,7 @@ void onAttention()
 }
 
 
-#if defined(WEB_SERVER)
+#if defined(ML_WEB_SERVER)
 ////////////////////////////////
 // Utils to return HTTP codes, and determine content-type
 

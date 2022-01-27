@@ -19,7 +19,7 @@
 
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
-#if defined(MDNS)
+#if defined(ML_MDNS)
 #include <ESP8266mDNS.h>
 #endif
 #if defined(WWW_SERVER)
@@ -28,7 +28,7 @@
 #endif
 #elif defined(ESP32)
 #include <WiFi.h>
-#if defined(MDNS)
+#if defined(ML_MDNS)
 #include <ESPmDNS.h>
 #endif
 #if defined(WWW_SERVER)
@@ -102,7 +102,7 @@ ESPModem modem;
 //
 // Web Server & WebDAV
 //
-#if defined(WEB_SERVER)
+#if defined(ML_WEB_SERVER)
     #include "WebDav4WebServer.h"
 
     #if !WEBSERVER_HAS_HOOK
@@ -138,7 +138,7 @@ ESPModem modem;
     void handleGetEdit();
     void setupWWW ( void );
     void notFound ();
-#elif defined(WEBDAV)
+#elif defined(ML_WEBDAV)
     #include "ESPWebDAV.h"
 
     WiFiServer tcp ( SERVER_PORT );
