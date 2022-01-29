@@ -77,6 +77,7 @@ bool HttpOStream::open() {
     // we'll ad a lambda that will allow adding headers
     // m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
     mstr::replaceAll(url, "HTTP:", "http:");
+    m_http.setReuse(true);
     bool initOk = m_http.begin(m_file, url.c_str());
     Debug_printv("[%s] initOk[%d]", url.c_str(), initOk);
     if(!initOk)
@@ -112,7 +113,7 @@ bool HttpIStream::seek(size_t pos) {
     if(isFriendlySkipper) {
         char str[40];
         // Range: bytes=666-
-        snprintf(str, sizeof str, "bytes=%lu-", (unsigned long)pos);
+        snprintf(str, sizeof str, "bytes=%lu-%lu", (unsigned long)pos, ((unsigned long)pos + 256 - 1));
         m_http.addHeader("range",str);
         int httpCode = m_http.GET(); //Send the request
         Debug_printv("httpCode[%d] str[%s]", httpCode, str);

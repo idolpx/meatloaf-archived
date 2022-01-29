@@ -181,6 +181,7 @@ bool MLIStream::open() {
     std::string ml_url = "http://" + urlParser.host + "/api";
     std::string post_data = "p=" + urlParser.path;
 
+    m_http.setReuse(true);
     bool initOk = m_http.begin(m_file, ml_url.c_str());
     Debug_printv("input %s: someRc=%d, post[%s]", ml_url.c_str(), initOk, post_data.c_str());
     if(!initOk)
