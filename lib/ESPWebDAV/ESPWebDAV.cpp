@@ -810,7 +810,7 @@ void ESPWebDAVCore::sendPropResponse(bool isDir, const String& fullResPathFS, si
 {
     String fullResPath = fullResPathFS;
     replaceFront(fullResPath, _fsRoot, _davRoot);
-    fullResPath = c2enc(fullResPathFS);
+    fullResPath = c2enc(fullResPath);
 
     String blah;
     blah.reserve(100);
@@ -832,7 +832,7 @@ void ESPWebDAVCore::sendPropResponse(bool isDir, const String& fullResPathFS, si
     else
     {
         sendContentProp(F("getcontentlength"), String(size));
-        sendContentProp(F("getcontenttype"), contentTypeFn(fullResPath));
+        sendContentProp(F("getcontenttype"), contentTypeFn(fullResPathFS));
 
         sendContent("<resourcetype/>");
 

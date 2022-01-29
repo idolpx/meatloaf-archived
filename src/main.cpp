@@ -69,6 +69,7 @@ void setup()
         #endif 
         #if defined(ML_WEBDAV)
             // WebDAV Server Setup
+            tcp.begin();
             dav.begin ( &tcp, fileSystem );
             dav.setTransferStatusCallback ( [] ( const char *name, int percent, bool receive )
             {
