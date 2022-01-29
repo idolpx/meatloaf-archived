@@ -56,36 +56,6 @@ String ESPWebDAV::getMimeType(const String& path)
 }
 
 
-
-
-String ESPWebDAV::urlDecode(const String& text)
-{
-    String decoded = "";
-    char temp[] = "0x00";
-    unsigned int len = text.length();
-    unsigned int i = 0;
-    while (i < len)
-    {
-        char decodedChar;
-        char encodedChar = text.charAt(i++);
-        if ((encodedChar == '%') && (i + 1 < len))
-        {
-            temp[2] = text.charAt(i++);
-            temp[3] = text.charAt(i++);
-            decodedChar = strtol(temp, NULL, 16);
-        }
-        else
-        {
-            if (encodedChar == '+')
-                decodedChar = ' ';
-            else
-                decodedChar = encodedChar;  // normal ascii char
-        }
-        decoded += decodedChar;
-    }
-    return decoded;
-}
-
 void ESPWebDAV::handleClient()
 {
     if (!server)
@@ -131,6 +101,6 @@ bool ESPWebDAV::parseRequest()
     }
 
     method = req.substring(0, addr_start);
-    uri = urlDecode(req.substring(addr_start + 1, addr_end));
+    uri = enc2c(req.substring(addr_start + 1, addr_end));
     return ESPWebDAVCore::parseRequest(method, uri, &locClient, getMimeType);
 }
