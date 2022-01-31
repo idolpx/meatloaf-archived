@@ -112,12 +112,12 @@ bool HttpIStream::seek(size_t pos) {
 
     if(isFriendlySkipper) {
         char str[40];
-        // Range: bytes=666-
-        snprintf(str, sizeof str, "bytes=%lu-%lu", (unsigned long)pos, ((unsigned long)pos + 256 - 1));
+        // Range: bytes=91536-(91536+255)
+        snprintf(str, sizeof str, "bytes=%lu-%lu", (unsigned long)pos, ((unsigned long)pos + 255));
         m_http.addHeader("range",str);
         int httpCode = m_http.GET(); //Send the request
         Debug_printv("httpCode[%d] str[%s]", httpCode, str);
-        if(httpCode != 200)
+        if(httpCode != 200 || httpCode != 206)
             return false;
 
         Debug_printv("stream opened[%s]", url.c_str());
@@ -198,7 +198,7 @@ size_t HttpIStream::size() {
 };
 
 size_t HttpIStream::read(uint8_t* buf, size_t size) {
-    auto bytesRead= m_file.readBytes((char *) buf, size);
+    auto bytesRead= m_file.read((char *) buf, size);
     m_bytesAvailable = m_file.available();
     m_position+=bytesRead;
     return bytesRead;
