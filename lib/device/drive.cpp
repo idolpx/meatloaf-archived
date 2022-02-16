@@ -971,13 +971,13 @@ void devDrive::sendFile()
 			// Debug_printv("b[%02X] success[%d]", b, success);
 			if (success)
 			{
-	#ifdef DATA_STREAM
+#ifdef DATA_STREAM
 				if (bi == 0)
 				{
 					Debug_printf(":%.4X ", load_address);
 					load_address += 8;
 				}
-	#endif
+#endif
 				if ( ++i == len )
 				{
 					success = m_iec.sendEOI(b); // indicate end of file.
@@ -987,7 +987,7 @@ void devDrive::sendFile()
 					success = m_iec.send(b);
 				}
 
-	#ifdef DATA_STREAM
+#ifdef DATA_STREAM
 				// Show ASCII Data
 				if (b < 32 || b >= 127)
 				b = 46;
@@ -1000,7 +1000,10 @@ void devDrive::sendFile()
 					Debug_printf(" %s (%d %d%%) [%d]\r\n", ba, i, t, avail - 1);
 					bi = 0;
 				}
-	#endif
+#else
+				size_t t = (i * 100) / len;
+				Debug_printf("Transferring %d%% [%d, %d]      \r", t, i, avail -1);
+#endif
 			}
 
 			// // Exit if ATN is PULLED while sending
