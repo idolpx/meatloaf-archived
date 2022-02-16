@@ -3,152 +3,121 @@
 // https://ist.uwaterloo.ca/~schepers/formats/T64.TXT
 //
 
-#ifndef MEATFILE_DEFINES_FST64_H
-#define MEATFILE_DEFINES_FST64_H
+
+#ifndef MEATFILESYSTEM_MEDIA_T64
+#define MEATFILESYSTEM_MEDIA_T64
 
 #include "meat_io.h"
-#include "../../include/global_defines.h"
-
-
-/********************************************************
- * File implementations
- ********************************************************/
-
-
-class T64File: public MFile {
-
-public:
-    T64File(std::string path): MFile(path) {};
-
-    bool isDirectory() override;
-    MIStream* inputStream() override ; // has to return OPENED stream
-    MOStream* outputStream() override ; // has to return OPENED stream
-    time_t getLastWrite() override ;
-    time_t getCreationTime() override ;
-    bool rewindDirectory() override { return false; };
-    MFile* getNextFileInDir() override { return nullptr; };
-    bool mkDir() override { return false; };
-    bool exists() override ;
-    size_t size() override ;
-    bool remove() override { return false; };
-    bool rename(std::string dest) { return false; };
-    MIStream* createIStream(MIStream* src);
-    //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
-
-protected:
-    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
-};
+#include "cbm_image.h"
 
 
 /********************************************************
  * Streams
  ********************************************************/
 
-class T64IOStream: public MIStream, MOStream {
+class T64IStream : public CBMImageStream {
+    // override everything that requires overriding here
+
 public:
-    T64IOStream(std::string& path) {
-        url = path;
-    }
-    ~T64IOStream() {
-        close();
-    }
-
-    void close() override;
-    bool open() override;
-
-    // MStream methods
-    size_t position() override;
-    int available() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
+    T64IStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) { };
 
 protected:
-    std::string url;
-    bool m_isOpen;
-    int m_length;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
+    struct Header {
+        char disk_name[24];
+    };
+
+    struct Entry {
+        uint8_t entry_type;
+        uint8_t file_type;
+        uint8_t start_address[2];
+        uint8_t end_address[2];
+        uint16_t free_1;
+        uint32_t data_offset;
+        uint32_t free_2;
+        char filename[16];
+    };
+
+    void seekHeader() override {
+        containerStream->seek(0x28);
+        containerStream->read((uint8_t*)&header, 24);
+    }
+
+    bool seekNextImageEntry() override {
+        return seekEntry(entry_index + 1);
+    }
+
+    bool seekEntry( std::string filename ) override;
+    bool seekEntry( size_t index ) override;
+
+    size_t readFile(uint8_t* buf, size_t size) override;
+    bool seekPath(std::string path) override;
+
+    Header header;
+    Entry entry;
+
+private:
+    friend class T64File;
 };
 
 
-class T64IStream: public MIStream {
+/********************************************************
+ * File implementations
+ ********************************************************/
 
+class T64File: public MFile {
 public:
-    T64IStream(std::string path) {
-        m_http.setUserAgent(USER_AGENT);
-        m_http.setTimeout(10000);
-        m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-        m_http.setRedirectLimit(10);
-        url = path;
-    }
-    // MStream methods
-    size_t position() override;
-    void close() override;
-    bool open() override;
-    ~T64IStream() {
-        close();
+
+    T64File(std::string path, bool is_dir = true): MFile(path) {
+        isDir = is_dir;
+    };
+    
+    ~T64File() {
+        // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    // MIStream methods
+    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
 
-    virtual bool seek(uint32_t pos);
-    int available() override;
+    std::string petsciiName() override {
+        // It's already in PETSCII
+        mstr::replaceAll(name, "\\", "/");
+        return name;
+    }
+
+    bool isDirectory() override;
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool mkDir() override { return false; };
+
+    bool exists() override { return true; };
+    bool remove() override { return false; };
+    bool rename(std::string dest) { return false; };
+    time_t getLastWrite() override { return 0; };
+    time_t getCreationTime() override { return 0; };
     size_t size() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    bool isOpen();
 
-protected:
-    std::string url;
-    bool m_isOpen;
-    int m_bytesAvailable = 0;
-    int m_length = 0;
-    uint32_t m_position = 0;
-    bool isFriendlySkipper = false;
+    bool isDir = true;
+    bool dirIsOpen = false;
 };
 
-
-class T64OStream: public MOStream {
-
-public:
-    // MStream methods
-    T64OStream(std::string path) {
-        url = path;
-    }
-    size_t position() override;
-    void close() override;
-    bool open() override;
-    ~T64OStream() {
-        close();
-    }
-
-    // MOStream methods
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
-
-protected:
-    std::string url;
-    bool m_isOpen;
-};
 
 
 /********************************************************
  * FS
  ********************************************************/
 
-class T64FileSystem: public MFileSystem 
+class T64FileSystem: public MFileSystem
 {
+public:
     MFile* getFile(std::string path) override {
         return new T64File(path);
     }
 
-    bool handles(std::string extension) {
-        std::string pattern = "T64";
-        return mstr::equals(extension, pattern, false);
+    bool handles(std::string fileName) {
+        return byExtension(".t64", fileName);
     }
-public:
+
     T64FileSystem(): MFileSystem("t64") {};
 };
 
 
-#endif
+#endif /* MEATFILESYSTEM_MEDIA_T64 */

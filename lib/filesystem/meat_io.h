@@ -2,18 +2,18 @@
 #define MEATLIB_FILESYSTEM_MEAT_IO
 
 #include <memory>
-#include <Arduino.h>
 #include <string>
 #include <vector>
 #include <fstream>
 
+#include <Arduino.h>
 #include <FS.h>
 #include <LittleFS.h>
+#include "wrappers/iec_buffer.h"
 
 #include "meat_stream.h"
 #include "peoples_url_parser.h"
 #include "string_utils.h"
-#include "wrappers/iec_buffer.h"
 #include "U8Char.h"
 
 /********************************************************
@@ -27,12 +27,21 @@ public:
     MFile(std::string path);
     MFile(std::string path, std::string name);
     MFile(MFile* path, std::string name);
+
+    virtual ~MFile() {
+        if(streamFile != nullptr) {
+        //     Debug_printv("WARNING: streamFile null in '%s' destructor. This MFile was obviously not initialized properly!", url.c_str());
+        // }
+        // else {
+            //Debug_printv("Deleting: [%s]", this->url.c_str());
+            delete streamFile;
+        }
+    };
+
     MFile* parent(std::string = "");
     MFile* localParent(std::string);
     MFile* root(std::string);
     MFile* localRoot(std::string);
-    //std::string name();
-    //std::string extension();
 
     std::string media_header;
     std::string media_id;
@@ -44,40 +53,35 @@ public:
 
     bool copyTo(MFile* dst);
 
-    virtual MFile* cd(std::string newDir);
     virtual std::string petsciiName() {
         std::string pname = name;
         mstr::toPETSCII(pname);
         return pname;
     }
 
- 
+    // has to return OPENED stream
+    virtual MIStream* inputStream();
+    virtual MOStream* outputStream() { return nullptr; };
+
+    virtual MFile* cd(std::string newDir);
     virtual bool isDirectory() = 0;
-    virtual MIStream* inputStream() = 0;
-    virtual MOStream* outputStream() = 0;    // has to return OPENED stream
-    virtual time_t getLastWrite() = 0 ;
-    virtual time_t getCreationTime() = 0 ;
     virtual bool rewindDirectory() = 0 ;
     virtual MFile* getNextFileInDir() = 0 ;
-    virtual bool mkDir() = 0 ;
+    virtual bool mkDir() = 0 ;    
+
     virtual bool exists() = 0;
-    virtual bool pathExists() = 0;
-    virtual size_t size() = 0;
     virtual bool remove() = 0;
-    virtual bool rename(std::string dest) = 0;
+    virtual bool rename(std::string dest) = 0;    
+    virtual time_t getLastWrite() = 0 ;
+    virtual time_t getCreationTime() = 0 ;
+    virtual size_t size() = 0;
 
-    virtual ~MFile() {
-        //Debug_printv("Deleting: [%s]", this->url.c_str());
-
-    };
-
-    std::string streamPath;
+    MFile* streamFile = nullptr;
     std::string pathInStream;
 
 protected:
-    virtual MIStream* createIStream(MIStream* src) = 0;
+    virtual MIStream* createIStream(std::shared_ptr<MIStream> src) = 0;
     bool m_isNull;
-    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
 
 friend class MFSOwner;
 };
@@ -116,12 +120,17 @@ protected:
  ********************************************************/
 
 class MFSOwner {
+public:
     static std::vector<MFileSystem*> availableFS;
 
-public:
     static MFile* File(std::string name);
     static MFile* File(std::shared_ptr<MFile> file);
     static MFile* File(MFile* file);
+
+    static MFileSystem* scanPathLeft(std::vector<std::string> paths, std::vector<std::string>::iterator &pathIterator);
+
+    static MFileSystem* testScan(std::vector<std::string>::iterator &begin, std::vector<std::string>::iterator &end, std::vector<std::string>::iterator &pathIterator);
+
 
     static bool mount(std::string name);
     static bool umount(std::string name);
@@ -254,7 +263,7 @@ namespace Meat {
          *  @note  Base class version does nothing, returns eof().
          */
 
-// // https://newbedev.com/how-to-write-custom-input-stream-in-c
+        // https://newbedev.com/how-to-write-custom-input-stream-in-c
 
 
         int underflow() override {
@@ -282,11 +291,11 @@ namespace Meat {
         };
 
       std::streampos seekpos(std::streampos __pos, std::ios_base::openmode __mode = std::ios_base::in | std::ios_base::out) override {
-        Debug_printv("Seek called on mistream: %d", __pos);
+        Debug_printv("Seek called on mistream: %d", (int)__pos);
         std::streampos __ret = std::streampos(off_type(-1));
 
         if(mistream->seek(__pos)) {
-    	    __ret.state(_M_state_cur);
+    	    //__ret.state(_M_state_cur);
             __ret = std::streampos(off_type(__pos));
             // probably requires resetting setg!
         }
@@ -301,13 +310,14 @@ namespace Meat {
  ********************************************************/
 
     class omfilebuf : public std::filebuf {
+        static const size_t obufsize = 256;
         std::unique_ptr<MOStream> mostream;
         std::unique_ptr<MFile> mfile;
         char* data;
 
     public:
         omfilebuf() {
-            data = new char[1024];
+            data = new char[obufsize];
         };
 
         ~omfilebuf() {
@@ -321,7 +331,7 @@ namespace Meat {
             mfile.reset(MFSOwner::File(filename));
             mostream.reset(mfile->outputStream());
             if(mostream->isOpen()) {
-                setp(data, data+1024);
+                setp(data, data+obufsize);
                 return this;
             }
             else
@@ -420,7 +430,7 @@ namespace Meat {
          * uflow will only be called if there is a buffer, and it will never be called 
          * if the buffer is empty. sync will be called if the client code flushes the stream.)
          */
-        int sync() { 
+        int sync() override { 
             //Debug_printv("in wrapper sync");
             
             if(pptr() == pbase()) {

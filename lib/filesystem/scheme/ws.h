@@ -50,9 +50,9 @@ public:
 
     // MStream methods
     size_t position() override { return 0; };
-    int available() override { return INT_MAX; };
+    size_t available() override { return INT_MAX; };
     bool isOpen() { return m_isOpen; };
-    bool seek(uint32_t pos) { return false; };
+    bool seek(size_t pos) { return false; };
     size_t size() { return INT_MAX; };
 
     size_t read(uint8_t* buf, size_t size) override {
@@ -146,16 +146,13 @@ public:
     MFile* getNextFileInDir() override { return nullptr; };
     bool mkDir() override { return false; };
     bool exists() override { return false; };
-    bool pathExists() override { return true; }
     size_t size() override { return 0; };
     bool remove() override { return false; };
     bool rename(std::string dest) { return false; };
-    MIStream* createIStream(MIStream* src) {
+    MIStream* createIStream(std::shared_ptr<MIStream> src) {
         return nullptr;
     };
 
-protected:
-    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {};
 };
 
 

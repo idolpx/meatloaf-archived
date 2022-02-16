@@ -6,12 +6,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Meatloaf is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
@@ -51,7 +51,7 @@ bool iecHost::deviceExists(uint8_t deviceID)
         // Send Listen Command & Device ID
         Debug_printf( "%.2X", (IEC_LISTEN & deviceID));
         send( IEC_LISTEN & deviceID );
-        delayMicroseconds(TIMING_BIT);
+        delayMicroseconds(TIMING_Tv);
 
         if ( protocol.status( IEC_PIN_DATA ) )
         {
@@ -63,17 +63,17 @@ bool iecHost::deviceExists(uint8_t deviceID)
             device_status = false;
             Debug_println("inactive");
         }
-        delayMicroseconds(TIMING_BIT);
-            
+        delayMicroseconds(TIMING_Tv);
+
         // Send UnListen
         send( IEC_UNLISTEN );
-        delayMicroseconds(TIMING_BIT);        
+        delayMicroseconds(TIMING_Tv);
     }
 
     // Release ATN and Clock
     protocol.release(IEC_PIN_ATN);
     protocol.release(IEC_PIN_CLK);
-    delayMicroseconds(TIMING_BIT);
+    delayMicroseconds(TIMING_Tv);
 
     return device_status;
 }

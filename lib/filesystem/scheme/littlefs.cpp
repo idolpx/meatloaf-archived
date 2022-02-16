@@ -1,4 +1,4 @@
-#include "fs_littlefs.h"
+#include "littlefs.h"
 #include "flash_hal.h"
 #include "MIOException.h"
 /********************************************************
@@ -153,10 +153,6 @@ int LittleFileSystem::lfs_flash_sync(const struct lfs_config *c) {
 //         return MFile::cd(newDir);
 // };
 
-void LittleFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
-    streamPath = url;
-    pathInStream = "";
-}
 
 bool LittleFile::pathValid(std::string path) 
 {
@@ -189,8 +185,8 @@ bool LittleFile::isDirectory()
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
 }
 
-MIStream* LittleFile::createIStream(MIStream* is) {
-    return is; // we don't have to process this stream in any way, just return the original stream
+MIStream* LittleFile::createIStream(std::shared_ptr<MIStream> is) {
+    return is.get(); // we don't have to process this stream in any way, just return the original stream
 }
 
 MIStream* LittleFile::inputStream()
@@ -226,7 +222,7 @@ bool LittleFile::mkDir()
     if (m_isNull) {
         return false;
     }
-    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, pathToFile().c_str());
+    int rc = lfs_mkdir(&LittleFileSystem::lfsStruct, path.c_str());
     return (rc==0);
 }
 
@@ -240,19 +236,6 @@ bool LittleFile::exists()
     }
     lfs_info info;
     int rc = lfs_stat(&LittleFileSystem::lfsStruct, path.c_str(), &info);
-    return rc == 0;
-}
-
-bool LittleFile::pathExists()
-{
-    if (m_isNull) {
-        return false;
-    }
-    if (path=="/" || path=="") {
-        return true;
-    }
-    lfs_info info;
-    int rc = lfs_stat(&LittleFileSystem::lfsStruct, pathToFile().c_str(), &info);
     return rc == 0;
 }
 
@@ -427,8 +410,6 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     // ponizszy fs jest inicjalizowany jako drugi arg LittleFSDirImpl
     //  i jest typu lfs_t
 
-    ledToggle(true);
-
     //Serial.println("before lfs_file_write");
 
     int result = lfs_file_write(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
@@ -437,7 +418,6 @@ size_t LittleOStream::write(const uint8_t *buf, size_t size) {
     //Serial.println("after lfs_file_write");
 
     if (result < 0) {
-        ledOFF();
         DEBUGV("lfs_write rc=%d\n", result);
     }
     return result;
@@ -470,7 +450,7 @@ bool LittleIStream::open() {
 };
 
 // MIStream methods
-int LittleIStream::available() {
+size_t LittleIStream::available() {
     if(!isOpen()) return 0;
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
 };
@@ -485,13 +465,12 @@ size_t LittleIStream::size() {
 
 size_t LittleIStream::read(uint8_t* buf, size_t size) {
     if (!isOpen() || !buf) {
+        Debug_printv("Not open");
         return 0;
     }
     
-    ledToggle(true);
     int result = lfs_file_read(&LittleFileSystem::lfsStruct, &handle->lfsFile, (void*) buf, size);
     if (result < 0) {
-        ledOFF();
         DEBUGV("lfs_read rc=%d\n", result);
         return 0;
     }
@@ -499,16 +478,18 @@ size_t LittleIStream::read(uint8_t* buf, size_t size) {
     return result;
 };
 
-bool LittleIStream::seek(uint32_t pos) {
+bool LittleIStream::seek(size_t pos) {
+    // Debug_printv("pos[%d]", pos);
     return seek(pos, SeekMode::SeekSet);
 };
 
-bool LittleIStream::seek(uint32_t pos, SeekMode mode) {
+bool LittleIStream::seek(size_t pos, SeekMode mode) {
+    // Debug_printv("pos[%d] mode[%d]", pos, mode);
     if (!isOpen()) {
+        Debug_printv("Not open");
         return false;
     }
-    lfs_file_seek(&LittleFileSystem::lfsStruct, &handle->lfsFile, pos, mode);
-    return false;
+    return (lfs_file_seek(&LittleFileSystem::lfsStruct, &handle->lfsFile, pos, mode))? true: false;
 }
 
 
@@ -557,7 +538,6 @@ void LittleHandle::dispose() {
         //         DEBUGV("Unable to set last write time on '%s' to %d\n", _name.get(), now);
         //     }
         // }
-        ledOFF();
         rc = -255;
     }
 }

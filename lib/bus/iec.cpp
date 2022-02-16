@@ -6,25 +6,25 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Meatloaf is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
 #include "iec.h"
 
-using namespace CBM; 
+using namespace CBM;
 using namespace Protocol;
 
 
-// IEC::IEC() :
-// 	flags(noFlags)
-// {
-// } // ctor
+IEC::IEC()
+{
+	init();
+} // ctor
 
 // Set all IEC_signal lines in the correct mode
 //
@@ -39,8 +39,8 @@ bool IEC::init()
 	// initial pin modes in GPIO
 	pinMode(IEC_PIN_ATN, INPUT);
 	pinMode(IEC_PIN_CLK, INPUT);
-	pinMode(IEC_PIN_DATA, INPUT);	
-	pinMode(IEC_PIN_SRQ, INPUT);
+	pinMode(IEC_PIN_DATA, INPUT);
+	pinMode(IEC_PIN_SRQ, OUTPUT);
 	pinMode(IEC_PIN_RESET, INPUT);
 
 #ifdef SPLIT_LINES
@@ -61,8 +61,8 @@ bool IEC::turnAround(void)
 	An unusual sequence takes place following ATN if the computer wishes the remote device to
 	become a talker. This will usually take place only after a Talk command has been sent.
 	Immediately after ATN is RELEASED, the selected device will be behaving like a listener. After all, it's
-	been listening during the ATN cycle, and the computer has been a talker. At this instant, we 
-	have "wrong way" logic; the device is holding down the Data	line, and the computer is holding the 
+	been listening during the ATN cycle, and the computer has been a talker. At this instant, we
+	have "wrong way" logic; the device is holding down the Data	line, and the computer is holding the
 	Clock line. We must turn this around. Here's the sequence:
 	the computer quickly realizes what's going on, and pulls the Data line to true (it's already there), as
 	well as releasing the Clock line to false. The device waits for this: when it sees the Clock line go
@@ -73,18 +73,17 @@ bool IEC::turnAround(void)
 	to receive data. And data will be signalled, of course, with the usual sequence: the talker releases
 	the Clock line to signal that it's ready to send.
 	*/
-	Debug_printf("IEC turnAround: ");
+	// Debug_printf("IEC turnAround: ");
 
 	// Wait until clock is RELEASED
 	while(protocol.status(IEC_PIN_CLK) != RELEASED);
-		
 
 	protocol.release(IEC_PIN_DATA);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 	protocol.pull(IEC_PIN_CLK);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 
-	Debug_println("complete");
+	// Debug_println("complete");
 	return true;
 } // turnAround
 
@@ -94,16 +93,16 @@ bool IEC::turnAround(void)
 bool IEC::undoTurnAround(void)
 {
 	protocol.pull(IEC_PIN_DATA);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 	protocol.release(IEC_PIN_CLK);
-	delayMicroseconds(TIMING_BIT);
+	delayMicroseconds(TIMING_Tv);
 
-	Debug_printf("IEC undoTurnAround: ");
+	// Debug_printf("IEC undoTurnAround: ");
 
 	// wait until the computer protocol.releases the clock line
 	while(protocol.status(IEC_PIN_CLK) != RELEASED);
 
-	Debug_println("complete");
+	// Debug_println("complete");
 	return true;
 } // undoTurnAround
 
@@ -143,14 +142,14 @@ IEC::BusState IEC::service(Data& iec_data)
 
 	// Checks if CBM is sending a reset (setting the RESET line high). This is typically
 	// when the CBM is reset itself. In this case, we are supposed to reset all states to initial.
-	// if(status(IEC_PIN_RESET) == PULLED) 
+	// if(status(IEC_PIN_RESET) == PULLED)
 	// {
 	// 	if (status(IEC_PIN_ATN) == PULLED)
 	// 	{
 	// 		// If RESET & ATN are both PULLED then CBM is off
 	// 		return BUS_IDLE;
 	// 	}
-		
+
 	// 	return BUS_RESET;
 	// }
 
@@ -159,7 +158,7 @@ IEC::BusState IEC::service(Data& iec_data)
 	// Being fast with the next two lines here is CRITICAL!
 	protocol.release(IEC_PIN_CLK);
 	protocol.pull(IEC_PIN_DATA);
-	delayMicroseconds(TIMING_ATN_PREDELAY);
+	delayMicroseconds(TIMING_Tne);
 
 	// Get command
 	Debug_printf("   IEC: [");
@@ -183,20 +182,20 @@ IEC::BusState IEC::service(Data& iec_data)
 		iec_data.device = c xor IEC_GLOBAL;
 		iec_data.channel = 0;
 		Debug_printf(BACKSPACE "] (00 GLOBAL) (%.2d COMMAND)\r\n", iec_data.device);
-	} 
+	}
 	else if((c bitand 0xF0) == IEC_LISTEN)
 	{
 		iec_data.command = IEC_LISTEN;
 		iec_data.device = c xor IEC_LISTEN;
 		iec_data.channel = 0;
 		Debug_printf(BACKSPACE "] (20 LISTEN) (%.2d DEVICE) [", iec_data.device);
-	} 
+	}
 	else if(c == IEC_UNLISTEN)
 	{
 		Debug_printf(BACKSPACE "] (3F UNLISTEN)\r\n");
 		releaseLines(false);
 		return BUS_IDLE;
-	} 
+	}
 	else if((c bitand 0xF0) == IEC_TALK)
 	{
 		iec_data.command = IEC_TALK;
@@ -209,11 +208,11 @@ IEC::BusState IEC::service(Data& iec_data)
 		Debug_printf(BACKSPACE "] (5F UNTALK)\r\n");
 		releaseLines(false);
 		return BUS_IDLE;
-	} 
-	else if((c bitand 0xF0) == IEC_DATA)
+	}
+	else if((c bitand 0xF0) == IEC_SECOND)
 	{
-		iec_data.command = IEC_DATA;
-		iec_data.channel = c xor IEC_DATA;
+		iec_data.command = IEC_SECOND;
+		iec_data.channel = c xor IEC_SECOND;
 		Debug_printf(BACKSPACE "] (60 DATA) (%.2d CHANNEL)\r\n", iec_data.channel);
 	}
 	else if((c bitand 0xF0) == IEC_CLOSE)
@@ -242,9 +241,13 @@ IEC::BusState IEC::service(Data& iec_data)
 			Debug_printv("Get the first cmd byte");
 			return BUS_ERROR;
 		}
-		
+
 		iec_data.command = c bitand 0xF0; // upper nibble, command
 		iec_data.channel = c bitand 0x0F; // lower nibble, channel
+		//iec_data.content = { 0 };
+
+		// Clear command string
+		iec_data.content.clear();
 
 		if ( cc == IEC_LISTEN )
 		{
@@ -254,6 +257,7 @@ IEC::BusState IEC::service(Data& iec_data)
 		{
 			r = deviceTalk(iec_data);
 		}
+
 		if(protocol.flags bitand ERROR)
 		{
 			Debug_printv("Listen/Talk ERROR");
@@ -266,7 +270,7 @@ IEC::BusState IEC::service(Data& iec_data)
 		releaseLines(false);
 		return BUS_IDLE;
 	}
-			
+
 	// Was there an error?
 	if(r == BUS_IDLE || r == BUS_ERROR)
 	{
@@ -287,7 +291,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 
 	// If the command is SECONDARY and it is not to expect just a small command on the command channel, then
 	// we're into something more heavy. Otherwise read it all out right here until UNLISTEN is received.
-	if(iec_data.command == IEC_DATA && iec_data.channel not_eq CMD_CHANNEL) 
+	if(iec_data.command == IEC_SECOND && iec_data.channel not_eq CMD_CHANNEL)
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
 		Debug_printf(BACKSPACE "] (%.2X SECONDARY) (%.2X CHANNEL)\r\n", iec_data.command, iec_data.channel);
@@ -295,30 +299,35 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 	}
 
 	// OPEN
-	else if(iec_data.command == IEC_DATA || iec_data.command == IEC_OPEN) 
+	else if(iec_data.command == IEC_SECOND || iec_data.command == IEC_OPEN)
 	{
 		Debug_printf(BACKSPACE "] (%.2X OPEN) (%.2X CHANNEL) [", iec_data.command, iec_data.channel);
 
-
 		// Some other command. Record the cmd string until UNLISTEN is sent
-		for(;;) 
+		delayMicroseconds(200);
+		while (1)
 		{
+			if(protocol.status(IEC_PIN_ATN) == PULLED)
+			{
+				Debug_printf(BACKSPACE BACKSPACE "\r\n");
+				return BUS_IDLE;
+			}
+
 			int16_t c = receive();
 			if(protocol.flags bitand ERROR)
 			{
 				Debug_printv("Some other command [%.2X]", c);
 				return BUS_ERROR;
 			}
-				
 
-			//if((flags bitand atnFlag) and (IEC_UNLISTEN == c))
 			if(c == IEC_UNLISTEN)
 			{
+				mstr::rtrimA0(iec_data.content);
 				Debug_printf(BACKSPACE "] [%s] (%.2X UNLISTEN)\r\n", iec_data.content.c_str(), c);
 				break;
 			}
 
-			if(i >= IEC_CMD_MAX_LENGTH) 
+			if(i >= IEC_CMD_MAX_LENGTH)
 			{
 				// Buffer is going to overflow, this is an error condition
 				// FIXME: here we should propagate the error type being overflow so that reading error channel can give right code out.
@@ -329,11 +338,11 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 			{
 				iec_data.content += (uint8_t)c;
 			}
-		}		
+		}
 	}
 
 	// CLOSE Named Channel
-	else if(iec_data.command == IEC_CLOSE) 
+	else if(iec_data.command == IEC_CLOSE)
 	{
 		Debug_printf(BACKSPACE "] (%.2X CLOSE) (%.2X CHANNEL)\r\n", iec_data.command, iec_data.channel);
 		return BUS_COMMAND;
@@ -413,7 +422,7 @@ void IEC::releaseLines(bool wait)
 		while(protocol.status(IEC_PIN_ATN) == PULLED)
 		{
 			ESP.wdtFeed();
-		}		
+		}
 	}
 }
 
@@ -447,13 +456,13 @@ bool IEC::send(uint8_t data)
 {
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
-#endif	
+#endif
 	return protocol.sendByte(data, false); // Standard CBM Timing
 } // send
 
 bool IEC::send(std::string data)
 {
-	for (int i = 0; i < data.length(); ++i)
+	for (size_t i = 0; i < data.length(); ++i)
 		send(data[i]);
 
 	return true;
@@ -466,9 +475,9 @@ bool IEC::sendEOI(uint8_t data)
 {
 #ifdef DATA_STREAM
 	Debug_printf("%.2X ", data);
-#endif	
+#endif
 	Debug_println("\r\nEOI Sent!");
-	if(protocol.sendByte(data, true)) 
+	if(protocol.sendByte(data, true))
 	{
 		// As we have just send last byte, turn bus back around
 		if(undoTurnAround())
@@ -489,8 +498,8 @@ bool IEC::sendFNF()
 	protocol.release(IEC_PIN_DATA);
 	protocol.release(IEC_PIN_CLK);
 
-	// Hold back a little...
-	delayMicroseconds(TIMING_FNF_DELAY);
+	// BETWEEN BYTES TIME
+	delayMicroseconds(TIMING_Tbb);
 
 	Debug_println("\r\nFNF Sent!");
 	return true;

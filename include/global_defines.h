@@ -6,12 +6,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Meatloaf is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
@@ -21,7 +21,7 @@
 #include <Arduino.h>
 
 #define PRODUCT_ID "MEATLOAF CBM"
-#define FW_VERSION "20200923.01" // Dynamically set at compile time in "platformio.ini"
+#define FW_VERSION "20211026.1" // Dynamically set at compile time in "platformio.ini"
 #define USER_AGENT PRODUCT_ID " [" FW_VERSION "]"
 //#define UPDATE_URL      "http://meatloaf.cc/fw/?p=meatloaf&d={{DEVICE_ID}}&a="
 #define UPDATE_URL "http://meatloaf.cc/fw/meatloaf.4MB.bin"
@@ -33,13 +33,19 @@
 #define LISTEN_PORT 6400 // Listen to this if not connected. Set to zero to disable.
 
 //#define DEVICE_MASK 0b01111111111111111111111111110000 //  Devices 4-30 are enabled by default
-//#define DEVICE_MASK   0b00000000000000000000111100000000 //  Devices 8-11
-#define DEVICE_MASK   0b00000000000000000000111000000000 //  Devices 9-11
+#define DEVICE_MASK   0b00000000000000000000111100000000 //  Devices 8-11
+//#define DEVICE_MASK   0b00000000000000000000111000000000 //  Devices 9-11
 //#define IMAGE_TYPES   "D64|D71|D80|D81|D82|D8B|G64|X64|Z64|TAP|T64|TCRT|CRT|D1M|D2M|D4M|DHD|HDD|DNP|DFI|M2I|NIB"
 //#define FILE_TYPES    "C64|PRG|P00|SEQ|S00|USR|U00|REL|R00"
 //#define ARCHIVE_TYPES "7Z|GZ|ZIP|RAR"
 
 //#define SWITCH_PIN  D4  // IO2              // Long press to reset to 300KBPS Mode
+
+/*
+ * Virtual Modem
+ */
+
+#define VIRTUAL_MODEM
 
 #if defined(ESP8266)
     // ESP8266 GPIO to C64 User Port
@@ -48,7 +54,7 @@
 
     #define CTS_PIN          D1  // IO5 IN  //64-D      // CTS Clear to Send, connect to host's RTS pin
     #define RTS_PIN          D2  // IO4 OUT //64-K      // RTS Request to Send, connect to host's CTS pin
-    #define DCD_PIN          D3  // IO0 OUT //64-H      // DCD Carrier Status, GPIO0 (programming mode pin)
+    #define DCD_PIN          D4  // IO2 OUT //64-H      // DCD Carrier Status, GPIO0 (programming mode pin)
 #elif defined(ESP32)
     // ESP32 GPIO to C64 User Port
     #define TX_PIN           21  // SIO3  DATA IN    //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
@@ -64,11 +70,16 @@
 #define TX_BUF_SIZE          256   // Buffer where to read from serial before writing to TCP
 
 
+
+/*
+ * Virtual Floppy Drive
+ */
+
 // CLK & DATA lines in/out are split between two pins
 //#define SPLIT_LINES
 
 // CLK_OUT & DATA_OUT are inverted
-#define INVERTED_LINES      false
+//#define INVERTED_LINES
 
 #if defined(ESP8266)
     // ESP8266 GPIO to C64 IEC Serial Port
@@ -76,9 +87,7 @@
     #define IEC_PIN_CLK          D6    // IO12  INPUT/OUTPUT
     #define IEC_PIN_DATA         D7    // IO13  INPUT/OUTPUT
     #define IEC_PIN_SRQ          D1    // IO5   INPUT/OUTPUT
-    #define IEC_PIN_RESET        D2    // IO4   INPUT/OUTPUT
-
-    #define LED_PIN              LED_BUILTIN // IO2
+    #define IEC_PIN_RESET        D0 //D2    // IO4   INPUT/OUTPUT
 #elif defined(ESP32)
     // ESP32 GPIO to C64 IEC Serial Port
     #define IEC_PIN_ATN          26    // SIO13 INTERRUPT
@@ -87,7 +96,15 @@
     #define IEC_PIN_SRQ          22    // SIO9  PROCEED
     #define IEC_PIN_RESET        36    // SIO7  MOTOR
                                        // SIO4  GND
+#endif
 
+
+/*
+ * LED Functions
+ */
+#if defined(ESP8266)
+    #define LED_PIN              D4    // LED_BUILTIN // IO2
+#elif defined(ESP32)
     #define LED_PIN              4     // SIO LED
 #endif
 
@@ -116,11 +133,20 @@ inline static void ledOFF()
     digitalWrite(LED_PIN, LED_OFF);
 }
 
+
+/*
+ * Hardware Timer
+ */
+
 static bool m_timedout;
-inline static void IRAM_ATTR onTimer() 
+inline static void IRAM_ATTR onTimer()
 {
     m_timedout = true;
 }
+
+/*
+ * DEBUG SETTINGS
+ */
 
 // Enable this for verbose logging of IEC interface
 #define DEBUG
@@ -149,7 +175,7 @@ inline static void IRAM_ATTR onTimer()
 
 // Enable this to show the data stream while loading
 // Make sure device baud rate and monitor_speed = 921600
-#define DATA_STREAM
+//#define DATA_STREAM
 
 // Enable this to show the data stream for other devices
 // Listens to all commands and data to all devices
@@ -160,6 +186,10 @@ inline static void IRAM_ATTR onTimer()
 //#define USE_LITTLEFS
 //#define USE_SDFS
 
+// Enable WEB SERVER or WEBDAV
+//#define ML_WEB_SERVER
+#define ML_WEBDAV
+#define ML_MDNS
 
 // Format storage if a valid file system is not found
 #define AUTO_FORMAT true

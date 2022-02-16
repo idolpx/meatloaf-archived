@@ -17,8 +17,8 @@ MIStream* HttpFile::inputStream() {
     return istream;
 } ; 
 
-MIStream* HttpFile::createIStream(MIStream* is) {
-    return is; // we've overriden istreamfunction, so this one won't be used
+MIStream* HttpFile::createIStream(std::shared_ptr<MIStream> is) {
+    return is.get(); // we've overriden istreamfunction, so this one won't be used
 }
 
 MOStream* HttpFile::outputStream() {
@@ -58,20 +58,7 @@ size_t HttpFile::size() {
     return size;
 };
 
-void HttpFile::fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last) {
-    //Serial.println("w fillpaths");   
 
-    (*matchedElement)++;
-
-    //Serial.println("w fillpaths stream pths");
-    //streamPath = mstr::joinToString(fromStart, matchedElement, "/");
-    streamPath = url;
-    //Serial.println("w fillpaths path in stream");   
-    //pathInStream = mstr::joinToString(matchedElement, last, "/");
-    pathInStream = "";
-
-    //Serial.printf("streamSrc='%s'\npathInStream='%s'\n", streamPath.c_str(), pathInStream.c_str());
-}
 
 // void HttpFile::addHeader(const String& name, const String& value, bool first, bool replace) {
 //     //m_http.addHeader
@@ -90,6 +77,7 @@ bool HttpOStream::open() {
     // we'll ad a lambda that will allow adding headers
     // m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
     mstr::replaceAll(url, "HTTP:", "http:");
+    m_http.setReuse(true);
     bool initOk = m_http.begin(m_file, url.c_str());
     Debug_printv("[%s] initOk[%d]", url.c_str(), initOk);
     if(!initOk)
@@ -118,18 +106,18 @@ bool HttpOStream::isOpen() {
  * Istream impls
  ********************************************************/
 
-bool HttpIStream::seek(uint32_t pos) {
+bool HttpIStream::seek(size_t pos) {
     if(pos==m_position)
         return true;
 
     if(isFriendlySkipper) {
         char str[40];
-        // Range: bytes=666-
-        snprintf(str, sizeof str, "bytes=%lu-", (unsigned long)pos);
+        // Range: bytes=91536-(91536+255)
+        snprintf(str, sizeof str, "bytes=%lu-%lu", (unsigned long)pos, ((unsigned long)pos + 255));
         m_http.addHeader("range",str);
         int httpCode = m_http.GET(); //Send the request
-        Debug_printv("httpCode[%d]", httpCode);
-        if(httpCode != 200)
+        Debug_printv("httpCode[%d] str[%s]", httpCode, str);
+        if(httpCode != 200 || httpCode != 206)
             return false;
 
         Debug_printv("stream opened[%s]", url.c_str());
@@ -162,12 +150,11 @@ size_t HttpIStream::position() {
 };
 
 void HttpIStream::close() {
-    ledOFF();
     m_http.end();
 };
 
 bool HttpIStream::open() {
-    mstr::replaceAll(url, "HTTP:", "http:");
+    //mstr::replaceAll(url, "HTTP:", "http:");
     bool initOk = m_http.begin(m_file, url.c_str());
     Debug_printv("input %s: someRc=%d", url.c_str(), initOk);
     if(!initOk)
@@ -186,6 +173,7 @@ bool HttpIStream::open() {
 
     // Accept-Ranges: bytes - if we get such header from any request, good!
     isFriendlySkipper = m_http.header("accept-ranges") == "bytes";
+    Debug_printv("isFriendlySkipper[%d]", isFriendlySkipper);
     m_isOpen = true;
     Debug_printv("[%s]", url.c_str());
     //m_file = m_http.getStream();  //Get the response payload as Stream
@@ -195,12 +183,13 @@ bool HttpIStream::open() {
 
     // Is this text?
     std::string ct = m_http.header("content-type").c_str();
+    Debug_printv("content_type[%s]", ct.c_str());
     isText = mstr::isText(ct);
 
     return true;
 };
 
-int HttpIStream::available() {
+size_t HttpIStream::available() {
     return m_bytesAvailable;
 };
 
@@ -209,10 +198,9 @@ size_t HttpIStream::size() {
 };
 
 size_t HttpIStream::read(uint8_t* buf, size_t size) {
-    auto bytesRead= m_file.readBytes((char *) buf, size);
+    auto bytesRead= m_file.read((char *) buf, size);
     m_bytesAvailable = m_file.available();
     m_position+=bytesRead;
-    ledToggle(true);
     return bytesRead;
 };
 

@@ -19,13 +19,21 @@
 
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
+#if defined(ML_MDNS)
 #include <ESP8266mDNS.h>
+#endif
+#if defined(WWW_SERVER)
 #include <ESP8266WebServer.h>
 #define WebServer ESP8266WebServer
+#endif
 #elif defined(ESP32)
 #include <WiFi.h>
+#if defined(ML_MDNS)
 #include <ESPmDNS.h>
+#endif
+#if defined(WWW_SERVER)
 #include <WebServer.h>
+#endif
 #endif
 
 // Setup FileSystem Object
@@ -63,6 +71,7 @@ SDFSConfig fileSystemConfig = SDFSConfig();
 
 #include "iec.h"
 #include "iec_device.h"
+#include "drive.h"
 #include "ESPModem.h"
 #include "ml_tests.h"
 
@@ -79,7 +88,7 @@ String statusMessage;
 bool initFailed = false;
 
 static IEC iec;
-static iecDevice drive ( iec );
+static devDrive drive ( iec );
 
 
 //Zimodem modem;
@@ -93,45 +102,52 @@ ESPModem modem;
 //
 // Web Server & WebDAV
 //
-#include <WebDav4WebServer.h>
+#if defined(ML_WEB_SERVER)
+    #include "WebDav4WebServer.h"
 
-#if !WEBSERVER_HAS_HOOK
-#error This sketch needs ESP8266WebServer::HookFunction and ESP8266WebServer::addHook
+    #if !WEBSERVER_HAS_HOOK
+    #error This sketch needs ESP8266WebServer::HookFunction and ESP8266WebServer::addHook
+    #endif
+
+    WebServer www ( SERVER_PORT );
+    ESPWebDAVCore dav;
+
+    bool fsOK;
+    String unsupportedFiles;
+    File uploadFile;
+
+    static const char TEXT_PLAIN[] PROGMEM = "text/plain";
+    static const char FS_INIT_ERROR[] PROGMEM = "FS INIT ERROR";
+    static const char FILE_NOT_FOUND[] PROGMEM = "FileNotFound";
+
+    void replyOK();
+    void replyOKWithMsg ( String msg );
+    void replyNotFound ( String msg );
+    void replyBadRequest ( String msg );
+    void replyServerError ( String msg );
+
+    void handleStatus();
+    void handleFileList();
+    bool handleFileRead ( String path );
+    String lastExistingParent ( String path );
+    void handleFileCreate();
+    void deleteRecursive ( String path );
+    void handleFileDelete();
+    void handleFileUpload();
+    void handleNotFound();
+    void handleGetEdit();
+    void setupWWW ( void );
+    void notFound ();
+#elif defined(ML_WEBDAV)
+    #include "ESPWebDAV.h"
+
+    WiFiServer tcp ( SERVER_PORT );
+    ESPWebDAV dav;
 #endif
-
-WebServer www ( SERVER_PORT );
-ESPWebDAVCore dav;
-
-bool fsOK;
-String unsupportedFiles;
-File uploadFile;
-
-static const char TEXT_PLAIN[] PROGMEM = "text/plain";
-static const char FS_INIT_ERROR[] PROGMEM = "FS INIT ERROR";
-static const char FILE_NOT_FOUND[] PROGMEM = "FileNotFound";
-
-void replyOK();
-void replyOKWithMsg ( String msg );
-void replyNotFound ( String msg );
-void replyBadRequest ( String msg );
-void replyServerError ( String msg );
 
 #ifdef USE_SPIFFS
 String checkForUnsupportedPath ( String filename );
 #endif
-
-void handleStatus();
-void handleFileList();
-bool handleFileRead ( String path );
-String lastExistingParent ( String path );
-void handleFileCreate();
-void deleteRecursive ( String path );
-void handleFileDelete();
-void handleFileUpload();
-void handleNotFound();
-void handleGetEdit();
-void setupWWW ( void );
-void notFound ();
 
 
 // Main Functions

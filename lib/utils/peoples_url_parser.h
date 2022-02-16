@@ -7,7 +7,7 @@
 #include <sstream>
 #include "utils.h"
 #include "string_utils.h"
-#include "../../include/global_defines.h"
+//#include "../../include/global_defines.h"
 
 class PeoplesUrlParser {
 public:

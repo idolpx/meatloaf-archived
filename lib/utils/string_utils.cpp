@@ -165,6 +165,13 @@ namespace mstr {
                     [](unsigned char c) { return ascii2petscii(c); });
     }
 
+    // convert to A0 space to 20 space (in place)
+    void A02Space(std::string &s)
+    {
+        std::transform(s.begin(), s.end(), s.begin(),
+                    [](unsigned char c) { return (c == '\xA0') ? '\x20': c; });
+    }
+
     bool isText(std::string &s) 
     {
         // extensions
@@ -240,6 +247,7 @@ namespace mstr {
 
             //Debug_printv("a %d res [%s]", i, res.c_str());
         }
+        //Debug_printv("res[%s] length[%d] size[%d]", res.c_str(), res.length(), res.size());
 
         return res.erase(res.length()-1,1);
     }
@@ -298,4 +306,15 @@ namespace mstr {
         return ret;
     }
 
+    std::string format(const char *format, ...)
+    {
+        // Format our string
+        va_list args;
+        va_start(args, format);
+        char text[vsnprintf(NULL, 0, format, args) + 1];
+        vsnprintf(text, sizeof text, format, args);
+        va_end(args);
+
+        return text;
+    }
 }

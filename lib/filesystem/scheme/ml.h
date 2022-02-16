@@ -32,15 +32,12 @@ public:
     MLFile(std::string path, size_t size = 0, bool isDir = false): 
     HttpFile(path), m_size(size), m_isDir(isDir)  
     {
-        //if(path.back() == '/' || path.find_last_of("/") < 6)
-        //    m_isDir = true;
-
         parseUrl(path);
         //Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
     };
     ~MLFile();
 
-    bool isDirectory() override { return m_isDir; };
+    bool isDirectory() override;
     //void openDir(const char *path) override;
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
@@ -54,7 +51,7 @@ public:
     size_t size() override { return m_size; };
     //bool remove() override { return false; }; // we can't write to ML server, can we?
     //bool rename(std::string dest) { return false; }; // we can't write to ML server, can we?
-    //MIStream* createIStream(MIStream* src); // not used anyway
+    //MIStream* createIStream(std::shared_ptr<MIStream> src); // not used anyway
 
     //std::string mediaRoot();
 

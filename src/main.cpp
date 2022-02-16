@@ -64,22 +64,36 @@ void setup()
         Serial.println ( "Flash File System started" );
 
         // Start the Web Server with WebDAV
-        setupWWW();
+        #if defined(ML_WEB_SERVER)
+            setupWWW();
+        #endif
+        #if defined(ML_WEBDAV)
+            // WebDAV Server Setup
+            tcp.begin();
+            dav.begin ( &tcp, fileSystem );
+            dav.setTransferStatusCallback ( [] ( const char *name, int percent, bool receive )
+            {
+                Serial.printf ( "WebDAV %s: '%s': %d%%\n", receive ? "recv" : "send", name, percent );
+            } );
+            Serial.println("WebDAV server started");
+        #endif
 
 
         // mDNS INIT
-        if ( MDNS.begin ( HOSTNAME ) )
-        {
-            MDNS.addService ( "http", "tcp", SERVER_PORT );
-            Serial.println ( "mDNS service started" );
-            Serial.println ( ">>> http://" HOSTNAME ".local" );
-        }
-        else
-        {
-            Serial.println ( "mDNS service failed to start" );
-            Serial.print ( ">>> http://" );
-            Serial.println ( WiFi.localIP() );
-        }
+        #if defined(ML_MDNS)
+            if ( MDNS.begin ( HOSTNAME ) )
+            {
+                MDNS.addService ( "http", "tcp", SERVER_PORT );
+                Serial.println ( "mDNS service started" );
+                Serial.println ( ">>> http://" HOSTNAME ".local" );
+            }
+            else
+            {
+                Serial.println ( "mDNS service failed to start" );
+                Serial.print ( ">>> http://" );
+                Serial.println ( WiFi.localIP() );
+            }
+        #endif
 
         // Setup IEC Bus
         iec.enabledDevices = DEVICE_MASK;
@@ -87,7 +101,6 @@ void setup()
         iec.init();
         Serial.println("IEC Bus Initialized");
 
-        drive.begin();
         Serial.print("Virtual Device(s) Started: [ ");
         for (byte i = 0; i < 31; i++)
         {
@@ -100,8 +113,8 @@ void setup()
 
         // Setup interrupt for ATN
         attachInterrupt(
-            digitalPinToInterrupt(IEC_PIN_ATN), 
-            onAttention, 
+            digitalPinToInterrupt(IEC_PIN_ATN),
+            onAttention,
             FALLING
         );
     }
@@ -111,17 +124,22 @@ void setup()
     ledON();
     Serial.println ( "READY." );
 
-    runTestsSuite();
+    //runTestsSuite();
 }
 
 // ------------------------
 void loop()
 {
-#if defined(ESP8266)
+#if defined(ML_MDNS)
     MDNS.update();
 #endif
 
+#if defined(ML_WEB_SERVER)
     www.handleClient();
+#elif defined(ML_WEBDAV)
+    dav.handleClient();
+#endif
+
     modem.service();
     //cli.readSerial();
     if ( bus_state != statemachine::idle )
@@ -142,10 +160,10 @@ void onAttention()
 {
     bus_state = statemachine::select;
     iec.protocol.flags or_eq ATN_PULLED;
-    // iec.init();
-    //Debug_printv("hi");
 }
 
+
+#if defined(ML_WEB_SERVER)
 ////////////////////////////////
 // Utils to return HTTP codes, and determine content-type
 
@@ -827,7 +845,7 @@ void setupWWW ( void )
 
     // Default handler for all URIs not defined above
     // Use it to read files from filesystem
-    www.onNotFound ( handleNotFound );   
+    www.onNotFound ( handleNotFound );
 
     // Start Server
     www.begin();
@@ -837,4 +855,4 @@ void setupWWW ( void )
 
 }
 
-
+#endif

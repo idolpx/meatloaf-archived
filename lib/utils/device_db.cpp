@@ -14,12 +14,21 @@
 // 
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
+
 #include "device_db.h"
 
 DeviceDB::DeviceDB(uint8_t device)
 {
     select(device);
     m_dirty = false;
+
+    // Create .sys folder if it doesn't exist
+    std::unique_ptr<MFile> file(MFSOwner::File(SYSTEM_DIR));
+    if ( !file->exists() )
+    {
+        Debug_printv("Create '" SYSTEM_DIR "' folder!");
+        file->mkDir();
+    }
 } // constructor
 
 DeviceDB::~DeviceDB()
@@ -51,14 +60,14 @@ bool DeviceDB::select(uint8_t new_device_id)
         Meat::ifstream istream(config_file);
         istream.open();        
         deserializeJson(m_device, istream);
-        Debug_printv("loaded");
+        Debug_printv("loaded id[%d]", (uint8_t)m_device["id"]);
     }
     else
     {
         // Create New Settings
         deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
         m_device["id"] = new_device_id;
-        Debug_printv("created");
+        Debug_printv("created id[%d]", (uint8_t)m_device["id"]);
     }
 
     return true;
@@ -71,10 +80,6 @@ bool DeviceDB::save()
     {
         Debug_printv("saved [%s]", config_file.c_str());
         std::unique_ptr<MFile> file(MFSOwner::File(config_file));
-
-        if ( !file->pathExists() )
-            return false;
-
         if ( file->exists() )
             file->remove();
 

@@ -1,8 +1,7 @@
 #ifndef MEATFILE_STREAMS_H
 #define MEATFILE_STREAMS_H
 
-#include <Arduino.h>
-//#include "FS.h"
+//#include "../../include/global_defines.h"
 
 /********************************************************
  * Universal streams
@@ -33,7 +32,7 @@ public:
 
 class MIStream: public MStream {
 public:
-    virtual bool seek(uint32_t pos, SeekMode mode) {
+    virtual bool seek(size_t pos, SeekMode mode) {
         if(mode == SeekSet) {
             return seek(pos);
         }
@@ -44,18 +43,23 @@ public:
             return seek(size() - pos);
         }
     }
-    virtual bool seek(uint32_t pos) = 0;
+    virtual bool seek(size_t pos) = 0;
 
-    virtual int available() = 0;
+    virtual size_t available() = 0;
     virtual size_t size() = 0;
     virtual size_t read(uint8_t* buf, size_t size) = 0;
-    std::string seekNextEntry() {
-        return "";
-    };
-    bool seekPath(std::string path) {
+
+    // For files with a browsable random access directory structure
+    // d64, d74, d81, dnp, etc.
+    virtual bool seekPath(std::string path) {
         return false;
     };
 
+    // For files with no directory structure
+    // tap, crt, tar
+    virtual std::string seekNextEntry() {
+        return "";
+    };
 
     virtual bool isBrowsable() { return false; };
     virtual bool isRandomAccess() { return false; };

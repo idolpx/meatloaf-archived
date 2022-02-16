@@ -1780,7 +1780,7 @@ String ESPWebDAVCore::enc2c(const String& encoded)
 String ESPWebDAVCore::c2enc(const String& decoded)
 {
     size_t l = decoded.length();
-    for (size_t i = 0; i < decoded.length() - 2; i++)
+    for (size_t i = 0; i < decoded.length(); i++)
         if (!isalnum(decoded[i]))
             l += 2;
     String ret;

@@ -167,7 +167,7 @@ bool CServerIStream::open() {
 };
 
 // MIStream methods
-int CServerIStream::available() {
+size_t CServerIStream::available() {
     return m_bytesAvailable;
 };
 
@@ -260,7 +260,7 @@ MFile* CServerFile::cd(std::string newDir) {
             // user entered: CD:/ or CD/
             // means: change to container root
             // *** might require a fix for flash fs!
-            return MFSOwner::File(streamPath);
+            return MFSOwner::File(streamFile->path);
         }
         else {
             Debug_printv("[/]");

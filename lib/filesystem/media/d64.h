@@ -2,36 +2,38 @@
 // https://vice-emu.sourceforge.io/vice_17.html#SEC345
 // https://ist.uwaterloo.ca/~schepers/formats/D64.TXT
 // https://ist.uwaterloo.ca/~schepers/formats/GEOS.TXT
+// https://www.lemon64.com/forum/viewtopic.php?t=70024&start=0 (File formats = Why is D64 not called D40/D41)
+//  - disucssion of disk id in sector missing from d64 file format is interesting
+// https://www.c64-wiki.com/wiki/Disk_Image
+// http://unusedino.de/ec64/technical3.html
 //
 
-#ifndef MEATFILE_DEFINES_D64_H
-#define MEATFILE_DEFINES_D64_H
+#ifndef MEATFILESYSTEM_MEDIA_D64
+#define MEATFILESYSTEM_MEDIA_D64
 
 #include "meat_io.h"
 
-#include "../../include/global_defines.h"
+#include <map>
+#include <bitset>
+
+#include "string_utils.h"
+#include "cbm_image.h"
 
 
 /********************************************************
- * File implementations
+ * Streams
  ********************************************************/
 
-class D64File: public MFile {
+class D64IStream : public CBMImageStream {
+
+public:
+    D64IStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) {};
 
 protected:
 
-    uint8_t directory_header_offset[2] = {18, 0};
-    uint8_t directory_list_offset[2] = {18, 1};
-    uint8_t block_allocation_map[6] = {18, 0, 0x04, 1, 35, 4};
-    uint16_t block_size = 256;
-
-    MIStream* containerStream;
-
-public:
-
     struct Header {
-        uint8_t dos_version;
         char disk_name[16];
+        char unused[2];
         char id_dos[5];
     };
 
@@ -63,75 +65,62 @@ public:
         uint16_t blocks;
     };
 
-    std::string file_type_label[8] = { "DEL", "SEQ", "PRG", "USR", "REL", "CBM", "DIR", "???" };
 
-    D64File(std::string path): MFile(path) {
+    // D64 Offsets
+    std::vector<uint8_t> directory_header_offset = {18, 0, 0x90};
+    std::vector<uint8_t> directory_list_offset = {18, 1, 0x00};
+    std::vector<BAMInfo> block_allocation_map = { {18, 0, 0x04, 1, 35, 4} };
+    std::vector<uint8_t> sectorsPerTrack = { 17, 18, 19, 21 };
+    //uint8_t sector_buffer[256] = { 0 };
 
-        std::unique_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container
-        containerStream = containerFile->inputStream();
+    bool seekSector( uint8_t track, uint8_t sector, size_t offset = 0 );
+    bool seekSector( std::vector<uint8_t> trackSectorOffset = { 0 } );
 
-        Debug_printv( "path: [%s]", path);
-        Debug_printv( "streamPath: [%s]", streamPath);
-        Debug_printv( "pathInStream: [%s]", pathInStream);
-
-        // Are we at the root of the pathInStream?
-        if ( pathInStream == "/")
-        {
-            // Read Header
-            //Header diskHeader;
-            //containerStream->read(diskHeader, sizeof(diskHeader));
-            // Count Directory Entries
-            // Calculate Blocks Free
-
-            // Set Media Info Fields
-            // media_header;
-            // media_id;
-            // media_blocks_free = 0;
-            // media_block_size = 256;
-            // media_image;             
-        }
-        else
-        {
-            // Single file
-            seekFile(pathInStream);
-            // _size = entry.blocks * (media_block_size - 2);
-
-        }
-       
-
-    };
-    
-    ~D64File() {
-
-        containerStream->close();
+    void seekHeader() override {
+        seekSector(directory_header_offset);
+        containerStream->read((uint8_t*)&header, sizeof(header));
     }
 
-    uint8_t track;
-    uint8_t sector;
-    uint16_t offset;
-    uint64_t blocks_free;
+    bool seekNextImageEntry() override {
+        return seekEntry(entry_index + 1);
+    }
 
-    uint8_t index = 0;  // Currently selected directory entry
-    uint8_t length = 0; // Directory list entry count
+    virtual uint16_t blocksFree();
+
+	virtual uint8_t speedZone( uint8_t track)
+	{
+		return (track < 17) + (track < 24) + (track < 30);
+	};
+
+    virtual bool seekPath(std::string path) override;
+    size_t readFile(uint8_t* buf, size_t size) override;
+
+    Header header;      // Directory header data
     Entry entry;        // Directory entry data
 
-    bool show_hidden = false;
+    uint8_t dos_version;
 
+    uint8_t track = 0;
+    uint8_t sector = 0;
+    uint16_t offset = 0;
+    uint64_t blocks_free = 0;
+
+    uint8_t next_track = 0;
+    uint8_t next_sector = 0;
+    uint8_t sector_offset = 0;
+
+private:
     void sendListing();
-    void sendFile( std::string filename = "" );
 
-    bool seekSector( uint8_t track, uint8_t sector, uint16_t offset = 0 );
-    bool seekSector( uint8_t trackSector[], uint16_t offset = 0 );
-    Entry seekFile( std::string filename );    
+    bool seekEntry( std::string filename );
+    bool seekEntry( size_t index = 0 );
+
 
     std::string readBlock( uint8_t track, uint8_t sector );
     bool writeBlock( uint8_t track, uint8_t sector, std::string data );    
     bool allocateBlock( uint8_t track, uint8_t sector );
     bool deallocateBlock( uint8_t track, uint8_t sector );
-	uint8_t speedZone( uint8_t track)
-	{
-		return (track < 30) + (track < 24) + (track < 17);
-	};
+
 
     // uint8_t d64_get_type(uint16_t imgsize)
     // {
@@ -160,67 +149,57 @@ public:
     //     return D64_TYPE_UNKNOWN;
     // }
 
-    bool isDirectory() override;
-    MIStream* inputStream() override { return nullptr; }; // has to return OPENED stream
-    MOStream* outputStream() override { return nullptr; }; // has to return OPENED stream
-
-    time_t getLastWrite() override;
-    time_t getCreationTime() override;
-    bool rewindDirectory() override;
-    MFile* getNextFileInDir() override;
-    bool mkDir() override { return false; };
-    bool exists() override;
-    bool pathExists() override { return true; }
-    size_t size() override;
-    bool remove() override { return false; };
-    bool rename(std::string dest) { return false; };
-    MIStream* createIStream(MIStream* src);
-    //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
-
-protected:
-    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
+    // Disk
+    friend class D64File;
+    friend class D71File;
+    friend class D80File;
+    friend class D81File;
+    friend class D82File;
+    friend class D8BFile;
+    friend class DNPFile;    
 };
 
 
 /********************************************************
- * Streams
+ * File implementations
  ********************************************************/
 
-class D64IStream: public MIStream {
-
+class D64File: public MFile {
 public:
-    D64IStream(std::string path) {
-        url = path;
-    }
-    // MStream methods
-    size_t position() override;
-    void close() override;
-    bool open() override;
-    ~D64IStream() {
-        close();
+
+    D64File(std::string path, bool is_dir = true): MFile(path) {
+        isDir = is_dir;
+    };
+    
+    ~D64File() {
+        // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    // MIStream methods
-    bool isBrowsable() override { return false; };
-    bool isRandomAccess() override { return true; };
+    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
 
-    bool seek(uint32_t pos, SeekMode mode) override { return true; }; 
-    bool seek(uint32_t pos) override { return true; };
-    int available() override;
-    size_t size() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    bool isOpen();
-    bool seekPath(std::string path);
+    std::string petsciiName() override {
+        // It's already in PETSCII
+        mstr::replaceAll(name, "\\", "/");
+        return name;
+    }
 
-protected:
-    std::string url;
-    std::unique_ptr<MFile> m_mfile;
+    bool isDirectory() override;
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool mkDir() override { return false; };
 
-    bool m_isOpen;
-    int m_length;
-    int m_bytesAvailable = 0;
-    int m_position = 0;
+    bool exists() override;
+    bool remove() override { return false; };
+    bool rename(std::string dest) { return false; };
+    time_t getLastWrite() override;
+    time_t getCreationTime() override;
+    size_t size() override;     
+
+    bool isDir = true;
+    bool dirIsOpen = false;
 };
+
+
 
 /********************************************************
  * FS
@@ -230,12 +209,11 @@ class D64FileSystem: public MFileSystem
 {
 public:
     MFile* getFile(std::string path) override {
-        Debug_printv("%s", path.c_str());
         return new D64File(path);
     }
 
     bool handles(std::string fileName) {
-        //Debug_printv("handles d64 %s %d\n", fileName.rfind(".d64"), fileName.length()-4);
+        //Serial.printf("handles w dnp %s %d\n", fileName.rfind(".dnp"), fileName.length()-4);
         return byExtension(".d64", fileName);
     }
 
@@ -243,4 +221,4 @@ public:
 };
 
 
-#endif
+#endif /* MEATFILESYSTEM_MEDIA_D64 */

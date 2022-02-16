@@ -7,7 +7,6 @@ MLFile::~MLFile() {
 }
 
 
-
 MFile* MLFile::getNextFileInDir() {
 
     if(!dirIsOpen) // might be first call, so let's try opening the dir
@@ -47,7 +46,6 @@ MFile* MLFile::getNextFileInDir() {
 
             */
             dirIsOpen = true;
-            ledToggle(true);
 
             std::string fname ="ml://" + host + "/" + urldecode(m_jsonHTTP["name"]).c_str();
             size_t size = m_jsonHTTP["size"];
@@ -65,6 +63,39 @@ MFile* MLFile::getNextFileInDir() {
         dirIsOpen = false;
         return nullptr;
     }
+};
+
+bool MLFile::isDirectory() {
+    //String url("http://c64.meatloaf.cc/api/");
+    //String ml_url = std::string("http://" + host + "/api/").c_str();
+    std::string ml_url = "http://" + host + "/api/";
+    std::string post_data = "a=checkp=" + mstr::urlEncode(path);
+
+	// Connect to HTTP server
+	Serial.printf("\r\nConnecting!\r\n--------------------\r\n%s\r\n%s\r\n", ml_url.c_str(), post_data.c_str());
+	if (!m_http.begin(m_file, ml_url.c_str()))
+	{
+		Serial.printf("\r\nConnection failed");
+        return false;
+	}
+	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    // Setup response headers we want to collect
+    const char * headerKeys[] = {"ml_media_dir"} ;
+    const size_t numberOfHeaders = 1;
+    m_http.collectHeaders(headerKeys, numberOfHeaders);
+
+    // Send the request
+	uint8_t httpCode = m_http.POST(post_data.c_str());
+
+	Serial.printf("HTTP Status: %d\r\n", httpCode); //Print HTTP return code
+
+	if (httpCode == 200) {
+        if (m_http.header("ml_media_dir") == "1")
+            return true;
+    }
+
+    return false;
 };
 
 
@@ -89,7 +120,6 @@ bool MLFile::rewindDirectory() {
 	{
 		Serial.printf("\r\nConnection failed");
 		dirIsOpen = false;
-        m_isDir = false;
         return false;
 	}
 	m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -107,7 +137,6 @@ bool MLFile::rewindDirectory() {
 	if (httpCode != 200) {
         Serial.println(m_http.errorToString(httpCode));
 		dirIsOpen = false;
-        m_isDir = false;
 
         // // Show HTTP Headers
         // Serial.println("HEADERS--------------");
@@ -124,7 +153,6 @@ bool MLFile::rewindDirectory() {
     else
     {
         dirIsOpen = true;
-        m_isDir = true;
         media_header = m_http.header("ml_media_header").c_str();
         media_id = m_http.header("ml_media_id").c_str();
         media_block_size = m_http.header("ml_media_block_size").toInt();
@@ -153,6 +181,7 @@ bool MLIStream::open() {
     std::string ml_url = "http://" + urlParser.host + "/api";
     std::string post_data = "p=" + urlParser.path;
 
+    m_http.setReuse(true);
     bool initOk = m_http.begin(m_file, ml_url.c_str());
     Debug_printv("input %s: someRc=%d, post[%s]", ml_url.c_str(), initOk, post_data.c_str());
     if(!initOk)

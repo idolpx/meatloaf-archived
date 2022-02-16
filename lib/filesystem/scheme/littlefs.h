@@ -103,8 +103,7 @@ public:
         closeDir();
     }
 
-    // MFile* cd(std::string newDir);
-    void fillPaths(std::vector<std::string>::iterator* matchedElement, std::vector<std::string>::iterator* fromStart, std::vector<std::string>::iterator* last);
+    //MFile* cd(std::string newDir);
     bool isDirectory() override;
     MIStream* inputStream() override ; // has to return OPENED stream
     MOStream* outputStream() override ; // has to return OPENED stream
@@ -114,11 +113,10 @@ public:
     MFile* getNextFileInDir() override ;
     bool mkDir() override ;
     bool exists() override ;
-    bool pathExists() override ;
     size_t size() override ;
     bool remove() override ;
     bool rename(std::string dest);
-    MIStream* createIStream(MIStream* src);
+    MIStream* createIStream(std::shared_ptr<MIStream> src);
 
 private:
     void openDir(std::string path);
@@ -205,15 +203,13 @@ public:
     }
 
     // MIStream methods
-    int available() override;
+    size_t available() override;
     size_t size() override;
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
-    virtual bool seek(uint32_t pos) override;
-    virtual bool seek(uint32_t pos, SeekMode mode) override;
-
-
+    virtual bool seek(size_t pos) override;
+    virtual bool seek(size_t pos, SeekMode mode) override;
 
 protected:
     std::string localPath;

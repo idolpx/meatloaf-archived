@@ -512,7 +512,7 @@ void ESPModem::setup()
 
   readSettings();
   // Fetch baud rate from EEPROM
-  //serialspeed = 11; 
+  //serialspeed = 11;
   serialspeed = EEPROM.read(BAUD_ADDRESS);
   // Check if it's out of bounds-- we have to be able to talk
   if (serialspeed < 0 || serialspeed > sizeof(bauds)) {
@@ -523,7 +523,7 @@ void ESPModem::setup()
   Serial.begin(bauds[serialspeed]);
 }
 
-void ESPModem::start() 
+void ESPModem::start()
 {
 	Serial.print(F("Starting Virtual Modem @ "));
   Serial.print(bauds[serialspeed]);
@@ -1100,7 +1100,7 @@ void ESPModem::command()
     Serial.println("Please press WPS button on your router.\r\n");
     waitForSpace();
     if(!startWPSConnect()) {
-       Serial.println("Failed to connect with WPS :-(");  
+       Serial.println("Failed to connect with WPS :-(");
     }
   }
 
@@ -1187,7 +1187,7 @@ void ESPModem::handleFlowControl() {
     else txPaused = false;
   }
   if (flowControl == F_SOFTWARE) {
-    
+
   }
 }
 
@@ -1198,7 +1198,7 @@ void ESPModem::service()
 {
   // Check flow control
   handleFlowControl();
-    
+
   // Service the Web server
 //  webServer.handleClient();
 
@@ -1222,12 +1222,12 @@ void ESPModem::service()
       if (petTranslate == true)
       {
         // Fix PET MCTerm 1.26C Pet->ASCII encoding to actual ASCII
-        if (chr > 127) chr-= 128;        
+        if (chr > 127) chr-= 128;
       }
       else
       {
         // Convert uppercase PETSCII to lowercase ASCII (C64) in command mode only
-        if ((chr >= 193) && (chr <= 218)) chr-= 96;        
+        if ((chr >= 193) && (chr <= 218)) chr-= 96;
       }
 
       // Return, enter, new line, carriage return.. anything goes to end the command
@@ -1409,13 +1409,13 @@ bool ESPModem::startWPSConnect() {
       // Well this means not always success :-/ in case of a timeout we have an empty ssid
       String newSSID = WiFi.SSID();
       if(newSSID.length() > 0) {
-        // WPSConfig has already connected in STA mode successfully to the new station. 
+        // WPSConfig has already connected in STA mode successfully to the new station.
         Serial.printf("WPS finished. Connected successfull to SSID '%s'\n", newSSID.c_str());
       } else {
         wpsSuccess = false;
       }
   }
-  return wpsSuccess; 
+  return wpsSuccess;
 }
 #endif
 

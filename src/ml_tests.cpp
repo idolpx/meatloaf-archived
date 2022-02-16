@@ -13,6 +13,7 @@
 #include "iec_host.h"
 #include "../../include/global_defines.h"
 #include "../../include/make_unique.h"
+#include "basic_config.h"
 
 std::unique_ptr<MFile> m_mfile(MFSOwner::File(""));
 
@@ -67,7 +68,7 @@ void dumpFileProperties(MFile* testMFile) {
     Serial.printf("Host: [%s]\n", testMFile->host.c_str());
     Serial.printf("Port: [%s]\n", testMFile->port.c_str());    
     Serial.printf("Path: [%s]\n", testMFile->path.c_str());
-    Serial.printf("stream src: [%s]\n", testMFile->streamPath.c_str());
+    Serial.printf("stream src: [%s]\n", testMFile->streamFile->url.c_str());
     Serial.printf("path in stream: [%s]\n", testMFile->pathInStream.c_str());
     Serial.printf("File: [%s]\n", testMFile->name.c_str());
     Serial.printf("Extension: [%s]\n", testMFile->extension.c_str());
@@ -142,21 +143,21 @@ void testPaths(MFile* testFile, std::string subDir) {
 
     Serial.printf("We are in: %s\n",testFile->url.c_str());
 
-    std::shared_ptr<MFile> inDnp(testFile->cd("/"+subDir));
+    std::unique_ptr<MFile> inDnp(testFile->cd("/"+subDir));
     Serial.printf("- cd /%s = '%s'\n", subDir.c_str(), inDnp->url.c_str());
 
-    std::shared_ptr<MFile> inFlash(testFile->cd("//"+subDir));
+    std::unique_ptr<MFile> inFlash(testFile->cd("//"+subDir));
     Serial.printf("- cd //%s = '%s'\n", subDir.c_str(), inFlash->url.c_str());
 
-    std::shared_ptr<MFile> parallel(testFile->cd("../"+subDir));
+    std::unique_ptr<MFile> parallel(testFile->cd("../"+subDir));
     Serial.printf("- cd ../%s = '%s'\n", subDir.c_str(), parallel->url.c_str());
 
-    std::shared_ptr<MFile> inCie(testFile->cd(subDir));
+    std::unique_ptr<MFile> inCie(testFile->cd(subDir));
     Serial.printf("- cd %s = '%s'\n", subDir.c_str(), inCie->url.c_str());
 }
 
 void testIsDirectory() {
-    std::shared_ptr<MFile> testDir(MFSOwner::File("/NOTADIR/"));
+    std::unique_ptr<MFile> testDir(MFSOwner::File("/NOTADIR/"));
     Serial.printf("dir [%s] exists [%d]\n",testDir->url.c_str(), testDir->isDirectory());
     testDir.reset(MFSOwner::File("/.sys"));
     Serial.printf("dir [%s] exists [%d]\n",testDir->url.c_str(), testDir->isDirectory());
@@ -184,7 +185,7 @@ void testUrlParser() {
 }
 
 void testCD() {
-    std::shared_ptr<MFile> testDir(MFSOwner::File(""));
+    std::unique_ptr<MFile> testDir(MFSOwner::File(""));
 
     Serial.println("A chain of CDs");
     // make a folder called GAMES on root of flash
@@ -220,14 +221,14 @@ void httpStream(char *url)
     size_t b_len = 1;
 	uint8_t b[b_len];
     Debug_printv("Opening '%s'\r\n", url);
-    std::shared_ptr<MFile> file(MFSOwner::File(url));
+    std::unique_ptr<MFile> file(MFSOwner::File(url));
 
     if (file->exists())
     {
         size_t len = file->size();
         Debug_printv("File exists! size [%d]\r\n", len);
 
-        std::shared_ptr<MIStream> stream(file->inputStream());
+        std::unique_ptr<MIStream> stream(file->inputStream());
 
 		for(i=0;i < len; i++)
 		{
@@ -376,9 +377,11 @@ void testNewCppStreams(std::string name) {
         istream.close();
     }
 
-    Serial.println(" * Write test\n");
+    Serial.println("\n * Write test\n");
 
     Meat::ofstream ostream("/intern.txt");
+
+    Serial.println(" * Write test - after declaration\n");
 
     ostream.open();
     if(ostream.is_open()) {
@@ -443,11 +446,21 @@ void testSmartMFile() {
 	Serial.printf("Extension of second one: [%s]\n", test2->extension.c_str());
 }
 
+void testBasicConfig() {
+    testHeader("TEST BASIC V2 config file");
+
+    BasicConfigReader bcr;
+    bcr.read("/config.prg");
+    if(bcr.entries->size()>0) {
+        Serial.printf("config Wifi SSID: [%s]\n", bcr.get("ssid"));
+    }
+
+}
 
 void runTestsSuite() {
     // working, uncomment if you want
-    //runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
-    //runFSTest("","http://jigsaw.w3.org/HTTP/connection.html");
+    // runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    // runFSTest("http://google.com/we/love/commodore/disk.d64/somefile","http://jigsaw.w3.org/HTTP/connection.html");
     //runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
     
     // not working yet, DO NOT UNCOMMENT!!!
@@ -471,4 +484,12 @@ void runTestsSuite() {
     // testCDMFile("CD_", 0);
     // testCDMFile("CDGAMES", 15);
     // testCDMFile("CD_", 0);
+
+    // D64 Test
+    // Debug_printv("D64 Test");
+    // testDirectory(MFSOwner::File("/games/arcade7.d64"), true);
+    testBasicConfig();
+
+    Serial.println("*** All tests finished ***");
+
 }

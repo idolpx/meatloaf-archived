@@ -6,17 +6,20 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Meatloaf is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef IECDEVICE_H
-#define IECDEVICE_H
+// https://ilesj.wordpress.com/2014/05/14/1541-why-so-complicated/
+// https://en.wikipedia.org/wiki/Fast_loader
+
+#ifndef DEVICE_DRIVE_H
+#define DEVICE_DRIVE_H
 
 
 #if defined(ESP8266)
@@ -45,7 +48,8 @@
 #include "../../include/petscii.h"
 
 #include "iec.h"
-#include "device_db.h"
+#include "iec_device.h"
+
 #include "meat_io.h"
 #include "MemoryInfo.h"
 #include "helpers.h"
@@ -64,50 +68,23 @@ enum OpenState
 	O_ML_STATUS		// Meatloaf Virtual Device Status
 };
 
-
-class CommandPathTuple {
-public:
-	std::string command;
-	std::string fullPath;
-	std::string rawPath;
-};
-
-
-
-
-class iecDevice
+class devDrive: public iecDevice
 {
 public:
-	// Return values for service:
-	enum DeviceState
-	{
-		DEVICE_IDLE = 0,       // Ready and waiting
-		DEVICE_OPEN,           // Command received and channel opened
-		DEVICE_DATA,           // Data sent or received
-	};
+	devDrive(IEC &iec);
+	virtual ~devDrive() {};
 
-	struct Channel
-	{
-		std::string command;
+ 	virtual uint8_t command(IEC::Data &iec_data) { return 0; };
+	virtual uint8_t execute(IEC::Data &iec_data) { return 0; };
+	virtual uint8_t status(void) { return 0; };
 
-		uint8_t device;
-		uint32_t cursor;
-		uint32_t bytesSent;
-		uint32_t open : 1;
-		uint32_t writing : 1;
-		uint32_t fileSize;
-	};
-	std::vector<Channel> channels;
-
-
-	iecDevice(IEC &iec);
-	virtual ~iecDevice() {}
-
-	bool begin();
-
-	// The handler returns the current IEC state, see the iec.h for possible states.
-	uint8_t service(void);
-
+protected:
+	// handler helpers.
+	virtual void handleListenCommand(IEC::Data &iec_data) override;
+	virtual void handleListenData(void) override;
+	virtual void handleTalk(byte chan) override;
+	virtual void handleOpen(IEC::Data &iec_data) override;
+	virtual void handleClose(IEC::Data &iec_data) override;
 
 private:
 	void reset(void);
@@ -122,7 +99,8 @@ private:
 	bool m_show_date = false;
 	bool m_show_load_address = false;
 	void changeDir(std::string url);
-	uint16_t sendHeader(uint16_t &basicPtr, std::string header);
+	uint16_t sendHeader(uint16_t &basicPtr, std::string header, std::string id);
+	//uint16_t sendHeader(uint16_t &basicPtr, const char *format, ...);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, char *text);
 	uint16_t sendLine(uint16_t &basicPtr, uint16_t blocks, const char *format, ...);
 	uint16_t sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t block_size);
@@ -140,30 +118,13 @@ private:
 	void sendFileNotFound(void);
 	void setDeviceStatus(int number, int track=0, int sector=0);
 
-	// handler helpers.
-	void handleListenCommand(IEC::Data &iec_data);
-	void handleListenData(void);
-	void handleTalk(byte chan);
-	void handleOpen(IEC::Data &iec_data);
-	void handleClose(IEC::Data &iec_data);
-
-	// void handleDeviceCommand(IEC::Data &cmd);
-	// void handleMeatloafCommand(IEC::Data &cmd);
-
-	// our iec low level driver:
-	IEC &m_iec;
-	IEC::Data &m_iec_data;	// IEC command buffer struct
+	CommandPathTuple parseLine(std::string commandLne, size_t channel);
 
 	// This is set after an open command and determines what to send next
 	byte m_openState;
-	
 
-	DeviceDB m_device;
 	std::unique_ptr<MFile> m_mfile; // Always points to current directory
 	std::string m_filename; // Always points to current or last loaded file
-	StaticJsonDocument<512> m_channelBuffer;
-
-	CommandPathTuple parseLine(std::string commandLne, size_t channel);
 
 	// Debug functions
 	void dumpState();
