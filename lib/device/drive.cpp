@@ -6,12 +6,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // Meatloaf is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
@@ -28,7 +28,7 @@ using namespace CBM;
 using namespace Protocol;
 
 
-devDrive::devDrive(IEC &iec) : 
+devDrive::devDrive(IEC &iec) :
     iecDevice(iec),
 	m_mfile(MFSOwner::File(""))
 {
@@ -58,7 +58,7 @@ void devDrive::sendStatus(void)
 
 	Debug_printv("status: %s", status.c_str());
 	Debug_print("[");
-	
+
 	m_iec.send(status);
 
 	Debug_println(BACKSPACE "]");
@@ -76,11 +76,11 @@ void devDrive::setDeviceStatus(int number, int track, int sector)
 	{
 		// 1 - FILES SCRATCHED - number scratched in track variable
 		case 1:
-			m_device_status = "01,FILES SCRATCHED,00,00";		
+			m_device_status = "01,FILES SCRATCHED,00,00";
 			break;
 		// 20 READ ERROR
 		case 20:
-			m_device_status = "20,FILE NOT OPEN,00,00";		
+			m_device_status = "20,FILE NOT OPEN,00,00";
 			break;
 		// 26 WRITE PROTECT ON
 		case 26:
@@ -201,7 +201,7 @@ CommandPathTuple devDrive::parseLine(std::string command, size_t channel)
 			command = SYSTEM_DIR "fb64";
 		}
 		else
-		{	
+		{
 			// Find first PRG file in current directory
 			std::unique_ptr<MFile> entry(m_mfile->getNextFileInDir());
 			std::string match = mstr::dropLast(command, 1);
@@ -210,7 +210,7 @@ CommandPathTuple devDrive::parseLine(std::string command, size_t channel)
 				Debug_printv("match[%s] extension[%s]", match.c_str(), entry->extension.c_str());
 				if ( !mstr::startsWith(entry->extension, "prg") || (match.size() > 0 && !mstr::startsWith( entry->name, match.c_str() ))  )
 				{
-					entry.reset(m_mfile->getNextFileInDir());	
+					entry.reset(m_mfile->getNextFileInDir());
 				}
 				else
 				{
@@ -283,11 +283,11 @@ CommandPathTuple devDrive::parseLine(std::string command, size_t channel)
 
 	Debug_printv("found command     [%s]", tuple.command.c_str());
 
-	if(guessedPath == "$") 
+	if(guessedPath == "$")
 	{
 		Debug_printv("get directory of [%s]", m_mfile->url.c_str());
 	}
-	else if(!guessedPath.empty()) 
+	else if(!guessedPath.empty())
 	{
 		auto fullPath = Meat::Wrap(m_mfile->cd(guessedPath));
 
@@ -308,7 +308,7 @@ void devDrive::changeDir(std::string url)
 	m_openState = O_DIR;
 	Debug_printv("!!!! CD into [%s]", url.c_str());
 	Debug_printv("new current url: [%s]", m_mfile->url.c_str());
-	Debug_printv("LOAD $");		
+	Debug_printv("LOAD $");
 }
 
 void devDrive::prepareFileStream(std::string url)
@@ -350,7 +350,7 @@ void devDrive::handleListenCommand(IEC::Data &iec_data)
 	{
 		m_openState = O_DIR;
 		Debug_printv("LOAD $");
-	}	
+	}
 	else if (mstr::equals(commandAndPath.command, (char*)"@info", false))
 	{
 		m_openState = O_ML_INFO;
@@ -374,7 +374,7 @@ void devDrive::handleListenCommand(IEC::Data &iec_data)
 	else if(!commandAndPath.rawPath.empty())
 	{
 		// 2. fullPath.extension == "URL" - change dir or load file
-		if (mstr::equals(referencedPath->extension, (char*)"url", false)) 
+		if (mstr::equals(referencedPath->extension, (char*)"url", false))
 		{
 			// CD to the path inside the .url file
 			referencedPath.reset(getPointed(referencedPath.get()));
@@ -403,7 +403,7 @@ void devDrive::handleListenCommand(IEC::Data &iec_data)
 		}
 	}
 
-	dumpState();
+	//dumpState();
 
 	// Clear command string
 	//m_iec_data.content.clear();
@@ -475,7 +475,7 @@ void devDrive::handleClose(IEC::Data &iec_data)
 	auto channel = channels[iec_data.command];
 
 	// If writing update BAM & Directory
-	
+
 	// Remove channel from map
 
 } // handleClose
@@ -675,7 +675,7 @@ uint16_t devDrive::sendHeader(uint16_t &basicPtr, std::string header, std::strin
 	std::string archive = "";
 	std::string image = p.name;
 
-	
+
 
 	// Send List HEADER
 	uint8_t space_cnt = 0;
@@ -756,7 +756,7 @@ void devDrive::sendListing()
 	{
 		byte_count += sendHeader(basicPtr, m_mfile->media_header.c_str(), m_mfile->media_id.c_str());
 	}
-	
+
 	// Send Directory Items
 	while(entry != nullptr)
 	{
@@ -803,7 +803,7 @@ void devDrive::sendListing()
 		{
 			byte_count += sendLine(basicPtr, block_cnt, "%*s\"%s\"%*s %s", block_spc, "", name.c_str(), space_cnt, "", extension.c_str());
 		}
-		
+
 		entry.reset(m_mfile->getNextFileInDir());
 
 		ledToggle(true);
@@ -835,14 +835,14 @@ uint16_t devDrive::sendFooter(uint16_t &basicPtr, uint16_t blocks_free, uint16_t
 	{
 		byte_count = sendLine(basicPtr, blocks_free, "BLOCKS FREE.");
 	}
-	
+
 	// if (m_device.url().length() == 0)
 	// {
 	// 	FSInfo64 fs_info;
 	// 	m_fileSystem->info64(fs_info);
 	// 	blocks_free = fs_info.totalBytes - fs_info.usedBytes;
 	// }
-	
+
 	return byte_count;
 	// #elif defined(USE_SPIFFS)
 	// 	return sendLine(basicPtr, 00, "UNKNOWN BLOCKS FREE.");
@@ -882,13 +882,13 @@ void devDrive::sendFile()
 
 	// TODO!!!! you should check istream for nullptr here and return error immediately if null
 
-	
-	if 
+
+	if
 	(
 		mstr::equals(file->extension, (char*)"txt", false) ||
 		mstr::equals(file->extension, (char*)"htm", false) ||
 		mstr::equals(file->extension, (char*)"html", false)
-	) 
+	)
 	{
 		// convert UTF8 files on the fly
 
@@ -938,7 +938,7 @@ void devDrive::sendFile()
 	{
 		std::unique_ptr<MIStream> istream(file->inputStream());
 
-		if( istream == nullptr ) 
+		if( istream == nullptr )
 		{
 			sendFileNotFound();
 			return;
@@ -989,7 +989,7 @@ void devDrive::sendFile()
 
 	#ifdef DATA_STREAM
 				// Show ASCII Data
-				if (b < 32 || b >= 127) 
+				if (b < 32 || b >= 127)
 				b = 46;
 
 				ba[bi++] = b;
@@ -1061,7 +1061,7 @@ void devDrive::saveFile()
 	Debug_printv("[%s]", file->url.c_str());
 
 	std::unique_ptr<MOStream> ostream(file->outputStream());
-	
+
 
     if(!ostream->isOpen()) {
         Debug_printv("couldn't open a stream for writing");
@@ -1069,7 +1069,7 @@ void devDrive::saveFile()
 		sendFileNotFound();
         return;
     }
-    else 
+    else
 	{
 	 	// Stream is open!  Let's save this!
 
@@ -1111,7 +1111,7 @@ void devDrive::saveFile()
 
 #ifdef DATA_STREAM
 			// Show ASCII Data
-			if (b[0] < 32 || b[0] >= 127) 
+			if (b[0] < 32 || b[0] >= 127)
 			b[0] = 46;
 
 			ba[bi++] = b[0];
@@ -1138,7 +1138,7 @@ void devDrive::saveFile()
 } // saveFile
 
 
-void devDrive::dumpState() 
+void devDrive::dumpState()
 {
 	Debug_println("");
 	Debug_printv("-------------------------------");

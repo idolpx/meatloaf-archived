@@ -41,7 +41,7 @@
 // > 1: supported with a std::map<>
 #define WEBDAV_LOCK_SUPPORT 2
 
-#define DBG_WEBDAV 1
+//#define DBG_WEBDAV 1
 //#define DEBUG_ESP_PORT Serial
 
 #if CORE_MOCK && !defined(DBG_WEBDAV)

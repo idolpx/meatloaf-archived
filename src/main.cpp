@@ -66,7 +66,7 @@ void setup()
         // Start the Web Server with WebDAV
         #if defined(ML_WEB_SERVER)
             setupWWW();
-        #endif 
+        #endif
         #if defined(ML_WEBDAV)
             // WebDAV Server Setup
             tcp.begin();
@@ -113,8 +113,8 @@ void setup()
 
         // Setup interrupt for ATN
         attachInterrupt(
-            digitalPinToInterrupt(IEC_PIN_ATN), 
-            onAttention, 
+            digitalPinToInterrupt(IEC_PIN_ATN),
+            onAttention,
             FALLING
         );
     }
@@ -124,7 +124,7 @@ void setup()
     ledON();
     Serial.println ( "READY." );
 
-    runTestsSuite();
+    //runTestsSuite();
 }
 
 // ------------------------

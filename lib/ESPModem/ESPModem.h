@@ -67,7 +67,7 @@
 #define DONT 0xfe
 
 void updateProgress(int cur, int total);
-void updateEnd();    
+void updateEnd();
 bool updateFirmware();
 
 class ESPModem {
@@ -76,27 +76,27 @@ public:
     const int speedDialAddresses[10] = { DIAL0_ADDRESS, DIAL1_ADDRESS, DIAL2_ADDRESS, DIAL3_ADDRESS, DIAL4_ADDRESS, DIAL5_ADDRESS, DIAL6_ADDRESS, DIAL7_ADDRESS, DIAL8_ADDRESS, DIAL9_ADDRESS };
     String resultCodes[9] = { "OK", "CONNECT", "RING", "NO CARRIER", "ERROR", "", "NO DIALTONE", "BUSY", "NO ANSWER" };
 
-    enum resultCodes_t { 
-        Result_OK, 
-        Result_CONNECT, 
-        Result_RING, 
-        Result_NOCARRIER, 
-        Result_ERROR, 
-        Result_NONE, 
-        Result_NODIALTONE, 
-        Result_BUSY, 
-        Result_NOANSWER 
+    enum resultCodes_t {
+        Result_OK,
+        Result_CONNECT,
+        Result_RING,
+        Result_NOCARRIER,
+        Result_ERROR,
+        Result_NONE,
+        Result_NODIALTONE,
+        Result_BUSY,
+        Result_NOANSWER
     };
 
-    enum flowControl_t { 
-        F_NONE, 
-        F_HARDWARE, 
+    enum flowControl_t {
+        F_NONE,
+        F_HARDWARE,
         F_SOFTWARE
     };
 
     enum pinPolarity_t {  // Is LOW (0) or HIGH (1) active?
-        P_INVERTED, 
-        P_NORMAL 
+        P_INVERTED,
+        P_NORMAL
     };
 
 
@@ -115,7 +115,7 @@ public:
     unsigned long plusTime = 0;         // When did we last receive a "+++" sequence
     unsigned long ledTime = 0;
     byte ringCount = 0;
-    unsigned long connectTime = 0;    
+    unsigned long connectTime = 0;
     bool petTranslate = false;          // Fix PET MCTerm 1.26C Pet->ASCII encoding to actual ASCII
     bool hex = false;
     byte flowControl = F_NONE;          // Use flow control

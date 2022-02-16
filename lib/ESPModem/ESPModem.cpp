@@ -94,7 +94,7 @@ void ESPModem::writeSettings() {
 void ESPModem::readSettings() {
   echo = EEPROM.read(ECHO_ADDRESS);
   autoAnswer = EEPROM.read(AUTO_ANSWEResult_ADDRESS);
-  // serialspeed = EEPROM.read(BAUD_ADDRESS);
+  serialspeed = EEPROM.read(BAUD_ADDRESS);
 
   ssid = getEEPROM(SSID_ADDRESS, SSID_LEN).c_str();
   password = getEEPROM(PASS_ADDRESS, PASS_LEN).c_str();
@@ -391,7 +391,7 @@ void ESPModem::displayCurrentSettings() {
   Serial.print("BAUD: "); Serial.println(bauds[serialspeed]); yield();
   Serial.print("SSID: "); Serial.println(ssid); yield();
   Serial.print("PASS: "); Serial.println(password); yield();
-  //Serial.print("SERVER TCP PORT: "); Serial.println(tcpServerPort); yield();
+  Serial.print("SERVER TCP PORT: "); Serial.println(tcpServerPort); yield();
   Serial.print("BUSY MSG: "); Serial.println(busyMsg); yield();
   Serial.print("E"); Serial.print(echo); Serial.print(" "); yield();
   Serial.print("V"); Serial.print(verboseResults); Serial.print(" "); yield();
@@ -415,7 +415,7 @@ void ESPModem::displayStoredSettings() {
   Serial.print("BAUD: "); Serial.println(bauds[EEPROM.read(BAUD_ADDRESS)]); yield();
   Serial.print("SSID: "); Serial.println(getEEPROM(SSID_ADDRESS, SSID_LEN)); yield();
   Serial.print("PASS: "); Serial.println(getEEPROM(PASS_ADDRESS, PASS_LEN)); yield();
-  //Serial.print("SERVER TCP PORT: "); Serial.println(word(EEPROM.read(SERVEResult_PORT_ADDRESS), EEPROM.read(SERVEResult_PORT_ADDRESS+1))); yield();
+  Serial.print("SERVER TCP PORT: "); Serial.println(word(EEPROM.read(SERVEResult_PORT_ADDRESS), EEPROM.read(SERVEResult_PORT_ADDRESS+1))); yield();
   Serial.print("BUSY MSG: "); Serial.println(getEEPROM(BUSY_MSG_ADDRESS, BUSY_MSG_LEN)); yield();
   Serial.print("E"); Serial.print(EEPROM.read(ECHO_ADDRESS)); Serial.print(" "); yield();
   Serial.print("V"); Serial.print(EEPROM.read(VERBOSE_ADDRESS)); Serial.print(" "); yield();
@@ -458,7 +458,7 @@ void ESPModem::displayHelp() {
   Serial.println("PET MCTERM TR.: ATPETN (N=0,1)"); yield();
   Serial.println("NETWORK INFO..: ATI"); yield();
   Serial.println("HTTP GET......: ATGET<URL>"); yield();
-  //Serial.println("SERVER PORT...: AT$SP=N (N=1-65535)"); yield();
+  Serial.println("SERVER PORT...: AT$SP=N (N=1-65535)"); yield();
   Serial.println("AUTO ANSWER...: ATS0=N (N=0,1)"); yield();
   Serial.println("SET BUSY MSG..: AT$BM=YOUR BUSY MESSAGE"); yield();
   Serial.println("LOAD NVRAM....: ATZ"); yield();
@@ -512,7 +512,7 @@ void ESPModem::setup()
 
   readSettings();
   // Fetch baud rate from EEPROM
-  //serialspeed = 11; 
+  //serialspeed = 11;
   serialspeed = EEPROM.read(BAUD_ADDRESS);
   // Check if it's out of bounds-- we have to be able to talk
   if (serialspeed < 0 || serialspeed > sizeof(bauds)) {
@@ -523,7 +523,7 @@ void ESPModem::setup()
   Serial.begin(bauds[serialspeed]);
 }
 
-void ESPModem::start() 
+void ESPModem::start()
 {
 	Serial.print(F("Starting Virtual Modem @ "));
   Serial.print(bauds[serialspeed]);
@@ -748,7 +748,7 @@ void ESPModem::dialOut(String upCmd) {
     Serial.flush();
     callConnected = true;
     setCarrier(callConnected);
-    //if (tcpServerPort > 0) tcpServer.stop();
+    if (tcpServerPort > 0) tcpServer.stop();
   }
   else
   {
@@ -1100,7 +1100,7 @@ void ESPModem::command()
     Serial.println("Please press WPS button on your router.\r\n");
     waitForSpace();
     if(!startWPSConnect()) {
-       Serial.println("Failed to connect with WPS :-(");  
+       Serial.println("Failed to connect with WPS :-(");
     }
   }
 
@@ -1187,7 +1187,7 @@ void ESPModem::handleFlowControl() {
     else txPaused = false;
   }
   if (flowControl == F_SOFTWARE) {
-    
+
   }
 }
 
@@ -1198,7 +1198,7 @@ void ESPModem::service()
 {
   // Check flow control
   handleFlowControl();
-    
+
   // Service the Web server
 //  webServer.handleClient();
 
@@ -1222,12 +1222,12 @@ void ESPModem::service()
       if (petTranslate == true)
       {
         // Fix PET MCTerm 1.26C Pet->ASCII encoding to actual ASCII
-        if (chr > 127) chr-= 128;        
+        if (chr > 127) chr-= 128;
       }
       else
       {
         // Convert uppercase PETSCII to lowercase ASCII (C64) in command mode only
-        if ((chr >= 193) && (chr <= 218)) chr-= 96;        
+        if ((chr >= 193) && (chr <= 218)) chr-= 96;
       }
 
       // Return, enter, new line, carriage return.. anything goes to end the command
@@ -1394,7 +1394,7 @@ void ESPModem::service()
     connectTime = 0;
     callConnected = false;
     setCarrier(callConnected);
-    //if (tcpServerPort > 0) tcpServer.begin();
+    if (tcpServerPort > 0) tcpServer.begin();
   }
 
   // Turn off tx/rx led if it has been lit long enough to be visible
@@ -1415,7 +1415,7 @@ bool ESPModem::startWPSConnect() {
         wpsSuccess = false;
       }
   }
-  return wpsSuccess; 
+  return wpsSuccess;
 }
 #endif
 
