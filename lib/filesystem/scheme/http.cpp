@@ -7,15 +7,15 @@
 bool HttpFile::isDirectory() {
     // hey, why not?
     return false;
-};
+}
 
 MIStream* HttpFile::inputStream() {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
     MIStream* istream = new HttpIStream(url);
-    istream->open();   
+    istream->open();
     return istream;
-} ; 
+}
 
 MIStream* HttpFile::createIStream(std::shared_ptr<MIStream> is) {
     return is.get(); // we've overriden istreamfunction, so this one won't be used
@@ -24,17 +24,17 @@ MIStream* HttpFile::createIStream(std::shared_ptr<MIStream> is) {
 MOStream* HttpFile::outputStream() {
     // has to return OPENED stream
     MOStream* ostream = new HttpOStream(url);
-    ostream->open();   
+    ostream->open();
     return ostream;
-} ; 
+}
 
 time_t HttpFile::getLastWrite() {
     return 0; // might be taken from Last-Modified, probably not worth it
-} ;
+}
 
 time_t HttpFile::getCreationTime() {
     return 0; // might be taken from Last-Modified, probably not worth it
-} ;
+}
 
 bool HttpFile::exists() {
     Debug_printv("[%s]", url.c_str());
@@ -42,7 +42,7 @@ bool HttpFile::exists() {
     std::unique_ptr<MIStream> test(inputStream());
     // remember that MIStream destuctor should close the stream!
     return test->isOpen();
-} ; 
+}
 
 size_t HttpFile::size() {
     // we may take content-lenght from header if exists
@@ -56,7 +56,7 @@ size_t HttpFile::size() {
     test->close();
 
     return size;
-};
+}
 
 
 
@@ -72,7 +72,8 @@ size_t HttpFile::size() {
 size_t HttpOStream::position() { return 0; };
 void HttpOStream::close() {
     m_http.end();
-};
+}
+
 bool HttpOStream::open() {
     // we'll ad a lambda that will allow adding headers
     // m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -82,7 +83,7 @@ bool HttpOStream::open() {
     Debug_printv("[%s] initOk[%d]", url.c_str(), initOk);
     if(!initOk)
         return false;
-    
+
     //int httpCode = m_http.PUT(); //Send the request
 //Serial.printf("URLSTR: httpCode=%d\n", httpCode);
     // if(httpCode != 200)
@@ -91,15 +92,16 @@ bool HttpOStream::open() {
     m_isOpen = true;
     //m_file = m_http.getStream();  //Get the response payload as Stream
     return true;
-};
+}
+
 //size_t HttpOStream::write(uint8_t) {};
 size_t HttpOStream::write(const uint8_t *buf, size_t size) {
     return m_file.write(buf, size);
-};
+}
 
 bool HttpOStream::isOpen() {
     return m_isOpen;
-};
+}
 
 
 /********************************************************
@@ -125,6 +127,7 @@ bool HttpIStream::seek(size_t pos) {
         m_position = pos;
         m_bytesAvailable = m_length-pos;
         return true;
+
     } else {
         if(pos<m_position) {
             // skipping backward and range not supported, let's simply reopen the stream...
@@ -143,15 +146,15 @@ bool HttpIStream::seek(size_t pos) {
 
         return true;
     }
-};
+}
 
 size_t HttpIStream::position() {
     return m_position;
-};
+}
 
 void HttpIStream::close() {
     m_http.end();
-};
+}
 
 bool HttpIStream::open() {
     //mstr::replaceAll(url, "HTTP:", "http:");

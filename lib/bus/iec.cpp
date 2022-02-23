@@ -161,8 +161,9 @@ IEC::BusState IEC::service(Data& iec_data)
 	delayMicroseconds(TIMING_Tne);
 
 	// Get command
-	Debug_printf("   IEC: [");
 	int16_t c = (Command)receive(iec_data.device);
+
+	Debug_printf("   IEC: [%.2X] ", c);
 	if(protocol.flags bitand ERROR)
 	{
 		Debug_printv("Get first ATN byte");
@@ -170,7 +171,7 @@ IEC::BusState IEC::service(Data& iec_data)
 	}
 	if(protocol.flags bitand JIFFY_ACTIVE)
 	{
-		Debug_printf("JIFFY ");
+		Debug_printf("[JIFFY] ");
 	}
 
 	iec_data.command = c; // bitand 0xFF; // Clear flags in high byte
@@ -181,18 +182,18 @@ IEC::BusState IEC::service(Data& iec_data)
 		iec_data.command = IEC_GLOBAL;
 		iec_data.device = c xor IEC_GLOBAL;
 		iec_data.channel = 0;
-		Debug_printf(BACKSPACE "] (00 GLOBAL) (%.2d COMMAND)\r\n", iec_data.device);
+		Debug_printf(" (00 GLOBAL) (%.2d COMMAND)\r\n", iec_data.device);
 	}
 	else if((c bitand 0xF0) == IEC_LISTEN)
 	{
 		iec_data.command = IEC_LISTEN;
 		iec_data.device = c xor IEC_LISTEN;
 		iec_data.channel = 0;
-		Debug_printf(BACKSPACE "] (20 LISTEN) (%.2d DEVICE) [", iec_data.device);
+		Debug_printf(" (20 LISTEN %.2d DEVICE) ", iec_data.device);
 	}
 	else if(c == IEC_UNLISTEN)
 	{
-		Debug_printf(BACKSPACE "] (3F UNLISTEN)\r\n");
+		Debug_printf(" (3F UNLISTEN)\r\n");
 		releaseLines(false);
 		return BUS_IDLE;
 	}
@@ -201,11 +202,11 @@ IEC::BusState IEC::service(Data& iec_data)
 		iec_data.command = IEC_TALK;
 		iec_data.device = c xor IEC_TALK;
 		iec_data.channel = 0;
-		Debug_printf(BACKSPACE "] (40 TALK) (%.2d DEVICE) [", iec_data.device);
+		Debug_printf(" (40 TALK %.2d DEVICE) ", iec_data.device);
 	}
 	else if(c == IEC_UNTALK)
 	{
-		Debug_printf(BACKSPACE "] (5F UNTALK)\r\n");
+		Debug_printf(" (5F UNTALK)\r\n");
 		releaseLines(false);
 		return BUS_IDLE;
 	}
@@ -213,19 +214,19 @@ IEC::BusState IEC::service(Data& iec_data)
 	{
 		iec_data.command = IEC_SECOND;
 		iec_data.channel = c xor IEC_SECOND;
-		Debug_printf(BACKSPACE "] (60 DATA) (%.2d CHANNEL)\r\n", iec_data.channel);
+		Debug_printf(" (60 DATA %.2d CHANNEL)\r\n", iec_data.channel);
 	}
 	else if((c bitand 0xF0) == IEC_CLOSE)
 	{
 		iec_data.command = IEC_CLOSE;
 		iec_data.channel = c xor IEC_CLOSE;
-		Debug_printf(BACKSPACE "] (EO CLOSE) (%.2d CHANNEL)\r\n", iec_data.channel);
+		Debug_printf(" (EO CLOSE %.2d CHANNEL)\r\n", iec_data.channel);
 	}
 	else if((c bitand 0xF0) == IEC_OPEN)
 	{
 		iec_data.command = IEC_OPEN;
 		iec_data.channel = c xor IEC_OPEN;
-		Debug_printf(BACKSPACE "] (FO OPEN) (%.2d CHANNEL)\r\n", iec_data.channel);
+		Debug_printf(" (FO OPEN %.2d CHANNEL)\r\n", iec_data.channel);
 	}
 
 	//Debug_printv("command[%.2X] device[%.2d] secondary[%.2d] channel[%.2d]", iec_data.command, iec_data.device, iec_data.secondary, iec_data.channel);
@@ -266,7 +267,7 @@ IEC::BusState IEC::service(Data& iec_data)
 	}
 	else
 	{
-		Debug_println("]");
+		Debug_println("");
 		releaseLines(false);
 		return BUS_IDLE;
 	}
@@ -294,14 +295,14 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 	if(iec_data.command == IEC_SECOND && iec_data.channel not_eq CMD_CHANNEL)
 	{
 		// A heapload of data might come now, too big for this context to handle so the caller handles this, we're done here.
-		Debug_printf(BACKSPACE "] (%.2X SECONDARY) (%.2X CHANNEL)\r\n", iec_data.command, iec_data.channel);
+		Debug_printf(" (%.2X SECONDARY) (%.2X CHANNEL)\r\n", iec_data.command, iec_data.channel);
 		return BUS_LISTEN;
 	}
 
 	// OPEN
 	else if(iec_data.command == IEC_SECOND || iec_data.command == IEC_OPEN)
 	{
-		Debug_printf(BACKSPACE "] (%.2X OPEN) (%.2X CHANNEL) [", iec_data.command, iec_data.channel);
+		Debug_printf(" (%.2X OPEN) (%.2X CHANNEL) [", iec_data.command, iec_data.channel);
 
 		// Some other command. Record the cmd string until UNLISTEN is sent
 		delayMicroseconds(200);
@@ -323,7 +324,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 			if(c == IEC_UNLISTEN)
 			{
 				mstr::rtrimA0(iec_data.content);
-				Debug_printf(BACKSPACE "] [%s] (%.2X UNLISTEN)\r\n", iec_data.content.c_str(), c);
+				Debug_printf(" [%s] (3F UNLISTEN)\r\n", iec_data.content.c_str());
 				break;
 			}
 
@@ -344,14 +345,14 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 	// CLOSE Named Channel
 	else if(iec_data.command == IEC_CLOSE)
 	{
-		Debug_printf(BACKSPACE "] (%.2X CLOSE) (%.2X CHANNEL)\r\n", iec_data.command, iec_data.channel);
+		Debug_printf(" (E0 CLOSE) (%.2X CHANNEL)\r\n", iec_data.channel);
 		return BUS_COMMAND;
 	}
 
 	// Unknown
 	else
 	{
-		Debug_printv(BACKSPACE "] OTHER (%.2X COMMAND) (%.2X CHANNEL) ", iec_data.command, iec_data.channel);
+		Debug_printv(" OTHER (%.2X COMMAND) (%.2X CHANNEL) ", iec_data.command, iec_data.channel);
 	}
 
 	if( iec_data.content.size() )
@@ -378,7 +379,7 @@ IEC::BusState IEC::deviceListen(Data& iec_data)
 IEC::BusState IEC::deviceTalk(Data& iec_data)
 {
 	// Okay, we will talk soon
-	Debug_printf(BACKSPACE "] (%.2X SECONDARY) (%d CHANNEL)\r\n", iec_data.command, iec_data.channel);
+	Debug_printf(" (%.2X SECONDARY) (%d CHANNEL)\r\n", iec_data.command, iec_data.channel);
 
 	// Delay after ATN is RELEASED
 	//delayMicroseconds(TIMING_BIT);

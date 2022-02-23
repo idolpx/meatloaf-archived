@@ -70,7 +70,7 @@ bool D64IStream::seekEntry( std::string filename )
             {
                 filename == entryFilename;
             }
-            
+
             if ( mstr::startsWith(entryFilename, filename.c_str()) )
             {
                 // Move stream pointer to start track/sector
@@ -107,7 +107,7 @@ bool D64IStream::seekEntry( size_t index )
         // Start at first sector of directory
         next_track = 0;
         r = seekSector( directory_list_offset );
-        
+
         // Find sector with requested entry
         do
         {
@@ -134,22 +134,22 @@ bool D64IStream::seekEntry( size_t index )
 
             //Debug_printv("Follow link track[%d] sector[%d] entryOffset[%d]", next_track, next_sector, entryOffset);
             r = seekSector( next_track, next_sector, entryOffset );
-        }        
+        }
     }
 
-    containerStream->read((uint8_t *)&entry, sizeof(entry));      
+    containerStream->read((uint8_t *)&entry, sizeof(entry));
 
     // If we are at the first entry in the sector then get next_track/next_sector
     if ( entryOffset == 0 )
     {
         next_track = entry.next_track;
-        next_sector = entry.next_sector;        
+        next_sector = entry.next_sector;
     }
 
     //Debug_printv("r[%d] file_type[%02X] file_name[%.16s]", r, entry.file_type, entry.filename);
 
     //if ( next_track == 0 && next_sector == 0xFF )
-    entry_index = index + 1;    
+    entry_index = index + 1;
     if ( entry.file_type == 0x00 )
         return false;
     else
@@ -171,11 +171,11 @@ uint16_t D64IStream::blocksFree()
         {
             containerStream->read((uint8_t *)&bam, sizeof(bam));
             if ( sizeof(bam) > 3 )
-            {               
+            {
                 if ( i != directory_list_offset[0] )
                 {
                     Debug_printv("x[%d] track[%d] count[%d] size[%d]", x, i, bam[0], sizeof(bam));
-                    free_count += bam[0];            
+                    free_count += bam[0];
                 }
             }
             else
@@ -188,7 +188,7 @@ uint16_t D64IStream::blocksFree()
 
                 //Debug_printv("x[%d] track[%d] count[%d] size[%d] bam0[%d] bam1[%d] bam2[%d] (counting 1 bits)", x, i, bit_count, sizeof(bam), bam[0], bam[1], bam[2]);
                 free_count += bit_count;
-            }                    
+            }
         }
     }
 

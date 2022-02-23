@@ -29,8 +29,8 @@
 class MLFile: public HttpFile {
 
 public:
-    MLFile(std::string path, size_t size = 0, bool isDir = false): 
-    HttpFile(path), m_size(size), m_isDir(isDir)  
+    MLFile(std::string path, size_t size = 0, bool isDir = false):
+    HttpFile(path), m_size(size), m_isDir(isDir)
     {
         parseUrl(path);
         //Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
@@ -42,7 +42,7 @@ public:
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
     MIStream* inputStream() override ; // file on ML server = standard HTTP file available via GET
-    
+
     //MOStream* outputStream() override ; // we can't write to ML server, can we?
     //time_t getLastWrite() override ; // you can implement it if you want
     //time_t getCreationTime() override ; // you can implement it if you want
@@ -61,7 +61,7 @@ protected:
     WiFiClient m_file;
     HTTPClient m_http;
     StaticJsonDocument<256> m_jsonHTTP;
-    size_t m_size = 0;    
+    size_t m_size = 0;
     bool m_isDir = false;
 };
 
@@ -90,7 +90,7 @@ public:
     // size_t position() override;
     // void close() override;
     bool open() override;
-    
+
 
     // MIStream methods
     // int available() override;
@@ -113,7 +113,7 @@ public:
  * FS
  ********************************************************/
 
-class MLFileSystem: public MFileSystem 
+class MLFileSystem: public MFileSystem
 {
     MFile* getFile(std::string path) override {
         // Debug_printv("MLFileSystem::getFile(%s)", path.c_str());

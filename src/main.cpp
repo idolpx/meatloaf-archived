@@ -149,7 +149,7 @@ void loop()
             bus_state = statemachine::idle;
         //Debug_printv("after[%d]", bus_state);
     }
-        
+
 
 #ifdef DEBUG_TIMING
     iec.debugTiming();

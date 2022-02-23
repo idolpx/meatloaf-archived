@@ -24,7 +24,7 @@ bool T64IStream::seekEntry( std::string filename )
             {
                 filename == entryFilename;
             }
-            
+
             if ( mstr::startsWith(entryFilename, filename.c_str()) )
             {
                 // Move stream pointer to start track/sector
@@ -75,7 +75,7 @@ size_t T64IStream::readFile(uint8_t* buf, size_t size) {
     }
     else
     {
-        bytesRead += containerStream->read(buf, size);        
+        bytesRead += containerStream->read(buf, size);
     }
 
     m_bytesAvailable -= bytesRead;
@@ -110,7 +110,7 @@ bool T64IStream::seekPath(std::string path) {
         containerStream->seek(entry.data_offset);
 
         Debug_printv("File Size: size[%d] available[%d] position[%d]", m_length, m_bytesAvailable, m_position);
-        
+
         return true;
     }
     else

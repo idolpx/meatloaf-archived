@@ -1,6 +1,6 @@
 // .DFI - DreamLoad File Archive
 // https://www.lemon64.com/forum/viewtopic.php?t=37415#458552
-// 
+//
 
 //
 // The image starts with track 1. The maximum possible tracknumber is $ff. Every
@@ -87,3 +87,5 @@
 // sources "cbmconvert-2.1.2_dfi.tar.gz" from the retrohackers forum:
 // http://retrohackers.org/forum/viewtopic.php?p=434#434
 //
+
+// https://cbm8bit.com/8bit/commodore/server/Unrenamed%20Achives/browse/c64/dfi

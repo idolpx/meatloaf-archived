@@ -1,11 +1,11 @@
-// .D82 - This is a sector-for-sector copy of an 8250 floppy disk
-// https://vice-emu.sourceforge.io/vice_17.html#SEC363
-// https://ist.uwaterloo.ca/~schepers/formats/D80-D82.TXT
+// .D90 - The D90 image is bit-for-bit copy of the hard drives in the D9090 and D9060
+// https://vice-emu.sourceforge.io/vice_17.html#SEC388
+// http://www.baltissen.org/newhtm/diskimag.htm
 //
 
 
-#ifndef MEATFILESYSTEM_MEDIA_D82
-#define MEATFILESYSTEM_MEDIA_D82
+#ifndef MEATFILESYSTEM_MEDIA_D90
+#define MEATFILESYSTEM_MEDIA_D90
 
 #include "meat_io.h"
 #include "d64.h"
@@ -15,13 +15,13 @@
  * Streams
  ********************************************************/
 
-class D82IStream : public D64IStream {
+class D90IStream : public D64IStream {
     // override everything that requires overriding here
 
 public:
-    D82IStream(std::shared_ptr<MIStream> is) : D64IStream(is) 
+    D90IStream(std::shared_ptr<MIStream> is) : D64IStream(is)
     {
-        // D82 Offsets
+        // D90 Offsets
         directory_header_offset = {39, 0, 0x06};
         directory_list_offset = {39, 1, 0x00};
         block_allocation_map = { {38, 0, 0x06, 1, 50, 5}, {38, 3, 0x06, 51, 100, 5}, {38, 3, 0x06, 101, 150, 5}, {38, 3, 0x06, 151, 154, 5} };
@@ -40,7 +40,7 @@ public:
 protected:
 
 private:
-    friend class D82File;
+    friend class D90File;
 };
 
 
@@ -48,9 +48,9 @@ private:
  * File implementations
  ********************************************************/
 
-class D82File: public D64File {
+class D90File: public D64File {
 public:
-    D82File(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
+    D90File(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
 
     MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
 };
@@ -61,19 +61,19 @@ public:
  * FS
  ********************************************************/
 
-class D82FileSystem: public MFileSystem
+class D90FileSystem: public MFileSystem
 {
 public:
     MFile* getFile(std::string path) override {
-        return new D82File(path);
+        return new D90File(path);
     }
 
     bool handles(std::string fileName) {
-        return byExtension(".d82", fileName);
+        return byExtension(".D90", fileName);
     }
 
-    D82FileSystem(): MFileSystem("d82") {};
+    D90FileSystem(): MFileSystem("D90") {};
 };
 
 
-#endif /* MEATFILESYSTEM_MEDIA_D82 */
+#endif /* MEATFILESYSTEM_MEDIA_D90 */

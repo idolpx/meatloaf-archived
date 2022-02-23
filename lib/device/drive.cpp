@@ -313,6 +313,7 @@ void devDrive::changeDir(std::string url)
 
 void devDrive::prepareFileStream(std::string url)
 {
+	m_device.url(url);
 	m_filename = url;
 	m_openState = O_FILE;
 	Debug_printv("LOAD [%s]", url.c_str());

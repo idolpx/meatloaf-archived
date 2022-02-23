@@ -21,6 +21,7 @@
 #include "../../include/global_defines.h"
 #include "meat_io.h"
 
+#define ARDUINOJSON_ENABLE_STD_STRING 1
 #include <ArduinoJson.h>
 
 #define RECORD_SIZE 512

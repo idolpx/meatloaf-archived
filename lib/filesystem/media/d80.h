@@ -1,4 +1,4 @@
-// .D80 - The D80 disk image format
+// .D80 - This is a sector-for-sector copy of an 8050 floppy disk
 // https://vice-emu.sourceforge.io/vice_17.html#SEC360
 // https://ist.uwaterloo.ca/~schepers/formats/D80-D82.TXT
 //
@@ -19,7 +19,7 @@ class D80IStream : public D64IStream {
     // override everything that requires overriding here
 
 public:
-    D80IStream(std::shared_ptr<MIStream> is) : D64IStream(is) 
+    D80IStream(std::shared_ptr<MIStream> is) : D64IStream(is)
     {
         // D80 Offsets
         directory_header_offset = {39, 0, 0x06};

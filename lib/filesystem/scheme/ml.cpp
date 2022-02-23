@@ -37,12 +37,12 @@ MFile* MLFile::getNextFileInDir() {
             /*
             Right now you're returning this:
 
-            {"blocks":0,"line":"%12%22MEATLOAF+64+ARCHIVE%22+ID+99","type":"NFO"} 
-            {"blocks":0,"line":"%22%5BURL%5D++++++++++++++%22+NFO","type":"NFO"} 
+            {"blocks":0,"line":"%12%22MEATLOAF+64+ARCHIVE%22+ID+99","type":"NFO"}
+            {"blocks":0,"line":"%22%5BURL%5D++++++++++++++%22+NFO","type":"NFO"}
 
             So let's say now you return instead this:
 
-            {"path":"ml://servername.com/full/file/path/demos","isDir":true,"size":0} 
+            {"path":"ml://servername.com/full/file/path/demos","isDir":true,"size":0}
 
             */
             dirIsOpen = true;
@@ -55,7 +55,7 @@ MFile* MLFile::getNextFileInDir() {
             //return new MLFile("ml://c64.meatloaf.cc/dummy/file.prg", 123, false);
         }
 
-	} 
+	}
     else {
         // no more entries, let's close the stream
         //Serial.println("no more entries");
@@ -100,11 +100,11 @@ bool MLFile::isDirectory() {
 
 
 bool MLFile::rewindDirectory() {
-    if (!isDirectory()) { 
+    if (!isDirectory()) {
         dirIsOpen = false;
         return false;
     }
-    
+
     Debug_printv("Requesting JSON dir from PHP: ");
 
 	//String url("http://c64.meatloaf.cc/api/");

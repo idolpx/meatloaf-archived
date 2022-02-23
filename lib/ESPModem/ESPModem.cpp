@@ -28,6 +28,8 @@
 
 #include "ESPModem.h"
 
+#include "helpers.h"
+
 uint16_t tcpServerPort = LISTEN_PORT;
 WiFiClient tcpClient;
 WiFiServer tcpServer(tcpServerPort);
@@ -233,7 +235,7 @@ bool ESPModem::connectWiFi() {
 #elif defined(ESP8266)
   WiFi.begin(ssid, password);
 #endif
-  Serial.print("\nCONNECTING TO SSID "); Serial.print(ssid);
+  Serial.print("\nCONNECTING TO SSID "); Serial.print(urlencode(ssid));
   uint8_t i = 0;
   while (WiFi.status() != WL_CONNECTED && i++ < 20) {
     digitalWrite(LED_PIN, LOW);
@@ -244,12 +246,12 @@ bool ESPModem::connectWiFi() {
   }
   Serial.println();
   if (i == 21) {
-    Serial.print("COULD NOT CONNECT TO "); Serial.println(ssid);
+    Serial.print("COULD NOT CONNECT TO "); Serial.println(urlencode(ssid));
     WiFi.disconnect();
     updateLed();
     return false;
   } else {
-    Serial.print("CONNECTED TO "); Serial.println(WiFi.SSID());
+    Serial.print("CONNECTED TO "); Serial.println(urlencode(WiFi.SSID()));
     Serial.print("IP ADDRESS: "); Serial.println(WiFi.localIP());
     updateLed();
     return true;
@@ -332,7 +334,7 @@ void ESPModem::displayNetworkStatus() {
   }
   yield();
 
-  Serial.print("SSID.......: "); Serial.println(WiFi.SSID());
+  Serial.print("SSID.......: "); Serial.println(urlencode(WiFi.SSID()));
 
   //  Serial.print("ENCRYPTION: ");
   //  switch(WiFi.encryptionType()) {
@@ -389,8 +391,8 @@ void ESPModem::displayNetworkStatus() {
 void ESPModem::displayCurrentSettings() {
   Serial.println("ACTIVE PROFILE:"); yield();
   Serial.print("BAUD: "); Serial.println(bauds[serialspeed]); yield();
-  Serial.print("SSID: "); Serial.println(ssid); yield();
-  Serial.print("PASS: "); Serial.println(password); yield();
+  Serial.print("SSID: "); Serial.println(urlencode(ssid)); yield();
+  Serial.print("PASS: "); Serial.println(urlencode(password)); yield();
   //Serial.print("SERVER TCP PORT: "); Serial.println(tcpServerPort); yield();
   Serial.print("BUSY MSG: "); Serial.println(busyMsg); yield();
   Serial.print("E"); Serial.print(echo); Serial.print(" "); yield();
@@ -413,8 +415,8 @@ void ESPModem::displayCurrentSettings() {
 void ESPModem::displayStoredSettings() {
   Serial.println("STORED PROFILE:"); yield();
   Serial.print("BAUD: "); Serial.println(bauds[EEPROM.read(BAUD_ADDRESS)]); yield();
-  Serial.print("SSID: "); Serial.println(getEEPROM(SSID_ADDRESS, SSID_LEN)); yield();
-  Serial.print("PASS: "); Serial.println(getEEPROM(PASS_ADDRESS, PASS_LEN)); yield();
+  Serial.print("SSID: "); Serial.println(urlencode(getEEPROM(SSID_ADDRESS, SSID_LEN))); yield();
+  Serial.print("PASS: "); Serial.println(urlencode(getEEPROM(PASS_ADDRESS, PASS_LEN))); yield();
   //Serial.print("SERVER TCP PORT: "); Serial.println(word(EEPROM.read(SERVEResult_PORT_ADDRESS), EEPROM.read(SERVEResult_PORT_ADDRESS+1))); yield();
   Serial.print("BUSY MSG: "); Serial.println(getEEPROM(BUSY_MSG_ADDRESS, BUSY_MSG_LEN)); yield();
   Serial.print("E"); Serial.print(EEPROM.read(ECHO_ADDRESS)); Serial.print(" "); yield();
@@ -490,7 +492,7 @@ void ESPModem::storeSpeedDial(byte num, String location) {
 /**
    Arduino main init function
 */
-void ESPModem::setup() 
+void ESPModem::setup()
 {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH); // off
@@ -969,25 +971,25 @@ void ESPModem::command()
 
   /**** Set WiFi SSID ****/
   else if (upCmd.indexOf("AT$SSID=") == 0) {
-    ssid = cmd.substring(8);
+    ssid = urldecode(cmd.substring(8));
     sendResult(Result_OK);
   }
 
   /**** Display WiFi SSID ****/
   else if (upCmd == "AT$SSID?") {
-    sendString(ssid);
+    sendString(urlencode(ssid));
     sendResult(Result_OK);
   }
 
   /**** Set WiFi Password ****/
   else if (upCmd.indexOf("AT$PASS=") == 0) {
-    password = cmd.substring(8);
+    password = urldecode(cmd.substring(8));
     sendResult(Result_OK);
   }
 
   /**** Display WiFi Password ****/
   else if (upCmd == "AT$PASS?") {
-    sendString(password);
+    sendString(urlencode(password));
     sendResult(Result_OK);
   }
 
@@ -1410,7 +1412,7 @@ bool ESPModem::startWPSConnect() {
       String newSSID = WiFi.SSID();
       if(newSSID.length() > 0) {
         // WPSConfig has already connected in STA mode successfully to the new station.
-        Serial.printf("WPS finished. Connected successfull to SSID '%s'\n", newSSID.c_str());
+        Serial.printf("WPS finished. Connected successfull to SSID '%s'\n", urlencode(newSSID.c_str()));
       } else {
         wpsSuccess = false;
       }
@@ -1424,7 +1426,7 @@ bool ESPModem::startWPSConnect() {
 bool updateFirmware() {
   WiFiClient wifiClient;
 
-  Serial.println("Attempting to bake Meat Loaf 64!\r\n");
+  Serial.println("Attempting to bake Meatloaf!\r\n");
   ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
 
   ESPhttpUpdate.onEnd(updateEnd);

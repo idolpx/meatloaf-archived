@@ -58,7 +58,7 @@ bool DeviceDB::select(uint8_t new_device_id)
     {
         // Load Device Settings
         Meat::ifstream istream(config_file);
-        istream.open();        
+        istream.open();
         deserializeJson(m_device, istream);
         Debug_printv("loaded id[%d]", (uint8_t)m_device["id"]);
     }
@@ -85,12 +85,12 @@ bool DeviceDB::save()
 
         Meat::ofstream ostream(file.get()->url);
         ostream.open();
-        if(ostream.is_open()) 
+        if(ostream.is_open())
         {
             serializeJson(m_device, ostream);
             return true;
         }
-        else 
+        else
         {
             return false;
         }
@@ -130,8 +130,11 @@ std::string DeviceDB::url()
 }
 void DeviceDB::url(std::string url)
 {
-    m_device["url"] = url;
-    m_dirty = true;
+    if (url != m_device["url"])
+    {
+        m_device["url"] = url;
+        m_dirty = true;
+    }
 }
 std::string DeviceDB::path()
 {
@@ -139,8 +142,11 @@ std::string DeviceDB::path()
 }
 void DeviceDB::path(std::string path)
 {
-    m_device["path"] = path;
-    m_dirty = true;
+    if (path != m_device["path"])
+    {
+        m_device["path"] = path;
+        m_dirty = true;
+    }
 }
 std::string DeviceDB::archive()
 {
@@ -148,8 +154,11 @@ std::string DeviceDB::archive()
 }
 void DeviceDB::archive(std::string archive)
 {
-    m_device["archive"] = archive;
-    m_dirty = true;
+    if (archive != m_device["archive"])
+    {
+        m_device["archive"] = archive;
+        m_dirty = true;
+    }
 }
 std::string DeviceDB::image()
 {
@@ -157,7 +166,10 @@ std::string DeviceDB::image()
 }
 void DeviceDB::image(std::string image)
 {
-    m_device["image"] = image;
-    m_dirty = true;
+    if (image != m_device["image"])
+    {
+        m_device["image"] = image;
+        m_dirty = true;
+    }
 }
 

@@ -54,7 +54,7 @@
 
     #define CTS_PIN          D1  // IO5 IN  //64-D      // CTS Clear to Send, connect to host's RTS pin
     #define RTS_PIN          D2  // IO4 OUT //64-K      // RTS Request to Send, connect to host's CTS pin
-    #define DCD_PIN          D4  // IO2 OUT //64-H      // DCD Carrier Status, GPIO0 (programming mode pin)
+    #define DCD_PIN          D4  // IO2 OUT //64-H      // DCD Carrier Status
 #elif defined(ESP32)
     // ESP32 GPIO to C64 User Port
     #define TX_PIN           21  // SIO3  DATA IN    //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
@@ -175,7 +175,7 @@ inline static void IRAM_ATTR onTimer()
 
 // Enable this to show the data stream while loading
 // Make sure device baud rate and monitor_speed = 921600
-//#define DATA_STREAM
+#define DATA_STREAM
 
 // Enable this to show the data stream for other devices
 // Listens to all commands and data to all devices
