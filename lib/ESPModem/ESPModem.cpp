@@ -235,7 +235,7 @@ bool ESPModem::connectWiFi() {
 #elif defined(ESP8266)
   WiFi.begin(ssid, password);
 #endif
-  Serial.print("\nCONNECTING TO SSID "); Serial.print(urlencode(ssid));
+  Serial.print("\nCONNECTING TO SSID "); Serial.print(ssid);
   uint8_t i = 0;
   while (WiFi.status() != WL_CONNECTED && i++ < 20) {
     digitalWrite(LED_PIN, LOW);
@@ -246,12 +246,12 @@ bool ESPModem::connectWiFi() {
   }
   Serial.println();
   if (i == 21) {
-    Serial.print("COULD NOT CONNECT TO "); Serial.println(urlencode(ssid));
+    Serial.print("COULD NOT CONNECT TO "); Serial.println(ssid);
     WiFi.disconnect();
     updateLed();
     return false;
   } else {
-    Serial.print("CONNECTED TO "); Serial.println(urlencode(WiFi.SSID()));
+    Serial.print("CONNECTED TO "); Serial.println(WiFi.SSID());
     Serial.print("IP ADDRESS: "); Serial.println(WiFi.localIP());
     updateLed();
     return true;
@@ -1412,7 +1412,7 @@ bool ESPModem::startWPSConnect() {
       String newSSID = WiFi.SSID();
       if(newSSID.length() > 0) {
         // WPSConfig has already connected in STA mode successfully to the new station.
-        Serial.printf("WPS finished. Connected successfull to SSID '%s'\n", urlencode(newSSID.c_str()));
+        Serial.printf("WPS finished. Connected successfull to SSID '%s'\n", newSSID.c_str());
       } else {
         wpsSuccess = false;
       }
