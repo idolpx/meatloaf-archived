@@ -591,6 +591,6 @@ void LittleHandle::obtain(int fl, std::string m_path) {
         lfs_file_sync(&LittleFileSystem::lfsStruct, &lfsFile);
     } else {
         DEBUGV("LittleFile::open: unknown return code rc=%d fd=%p path=`%s` openMode=%d accessMode=%d err=%d\n",
-               rc, fd, loclaPath, openMode, accessMode, rc);
+               rc, fd, localPath, openMode, accessMode, rc);
     }    
 }

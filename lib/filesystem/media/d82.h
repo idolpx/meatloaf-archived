@@ -24,7 +24,7 @@ public:
         // D82 Offsets
         directory_header_offset = {39, 0, 0x06};
         directory_list_offset = {39, 1, 0x00};
-        block_allocation_map = { {38, 0, 0x06, 1, 50, 5}, {38, 3, 0x06, 51, 100, 5}, {38, 3, 0x06, 101, 150, 5}, {38, 3, 0x06, 151, 154, 5} };
+        block_allocation_map = { {38, 0, 0x06, 1, 50, 5}, {38, 3, 0x06, 51, 100, 5}, {38, 6, 0x06, 101, 150, 5}, {38, 9, 0x06, 151, 154, 5} };
         sectorsPerTrack = { 23, 25, 27, 29 };
     };
 

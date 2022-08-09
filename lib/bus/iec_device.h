@@ -40,6 +40,9 @@
 #endif
 #endif
 
+#define ARDUINOJSON_ENABLE_STD_STRING 1
+#include <ArduinoJson.h>
+
 #include "../../include/global_defines.h"
 #include "../../include/cbmdefines.h"
 #include "../../include/petscii.h"
