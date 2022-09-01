@@ -1,4 +1,4 @@
-# Meatloaf (C64/C128/VIC20/+4)
+[![Meatloaf (C64/C128/VIC20/+4)](docs/meatloaf.logo.png)](https://meatloaf.cc)
 
 [![discord chat](docs/discord.sm.png)](https://discord.gg/FwJUe8kQpS)
 
