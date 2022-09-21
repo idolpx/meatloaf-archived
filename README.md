@@ -4,6 +4,10 @@
 
 A Commodore IEC Serial Floppy Drive and WiFi Modem multi-device emulator
 
+
+*** NOTE: ESP32 Firmware can be found in the following repo: ![https://github.com/idolpx/meatloaf-specialty](https://github.com/idolpx/meatloaf-specialty)
+
+
 [![meatloaf64-device](docs/meatloaf64-device.jpg)](https://www.youtube.com/embed/videoseries?list=PL6SShX9qqBKwBDr20KsASGOqcyGjA9XR5)
 
 It's easy to wire up too. No need for the level shifter as shown in the circuit above.<br/>
