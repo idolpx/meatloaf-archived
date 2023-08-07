@@ -21,7 +21,7 @@ Microcontroller
 * 1 × [ESP8266 Dev Board](https://www.aliexpress.com/item/4000880936043.html) (Wemos D1 MINI/D1 MINI PRO 16M, NODEMCU, etc)<br/>
 I like the 16MB version.<br/>
 or<br/>
-* 1 x [ESP32 Dev Board](https://www.aliexpress.com/item/32883116057.html)<br/> (LOLIN D32 Pro)
+* 1 x [ESP32 Dev Board](https://www.aliexpress.com/item/32883116057.html) (LOLIN D32 Pro)<br/>
 This one has 16MB Flash, 8MB PSRAM, Micro SD with I2C & TFT Port!<br/>
 (Meatloaf is not working yet on the ESP32 but it will be soon.)
 
