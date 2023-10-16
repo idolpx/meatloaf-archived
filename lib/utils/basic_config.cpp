@@ -8,8 +8,8 @@ std::string BasicConfigReader::get(std::string key) {
 }
 
 void BasicConfigReader::read(std::string name) {
-    Meat::ifstream istream(name);
-    istream.open();
+    Meat::iostream istream(name);
+
     if(istream.is_open()) {
         // skip two bytes:
         // LH - load address

@@ -1,5 +1,5 @@
-#ifndef MEATFILE_PUP_H
-#define MEATFILE_PUP_H
+#ifndef MEATLOAF_PUP_H
+#define MEATLOAF_PUP_H
 
 
 #include <string>
@@ -66,7 +66,7 @@ private:
         auto byAtSign = mstr::split(pastTheColon,'@', 2);
 
         if(byAtSign.size()==1) {
-            // just addres, port, path
+            // just address, port, path
             processAuthorityPath(mstr::drop(byAtSign[0],2));
         }
         else {
@@ -82,7 +82,7 @@ private:
             return;
 
         while(mstr::endsWith(path,"/")) {
-            path=mstr::dropLast(path,1);
+            path=mstr::dropLast(path, 1);
         }
         mstr::replaceAll(path, "//", "/");
     }
@@ -108,6 +108,14 @@ private:
 
 public:
 
+    std::string pathToFile(void)
+    {
+        if (name.size() > 0)
+            return path.substr(0, path.size() - name.size() - 1);
+        else
+            return path;
+    }
+
     std::string root(void)
     {
         // set root URL
@@ -131,34 +139,44 @@ public:
         if ( port.size() )
             root += ':' + port;
 
+        //Debug_printv("root[%s]", root.c_str());
         return root;
     }
 
     std::string base(void)
     {
         // set base URL
-        return root() + path;
-    }
+        //Debug_printv("base[%s]", (root() + "/" + path).c_str());
+        if ( !mstr::startsWith(path, "/") )
+            path = "/" + path;
 
-    std::string pathToFile(void)
-    {
-        if (name.size() > 0)
-            return path.substr(0, path.size() - name.size());
-        else
-            return path;
+        cleanPath();
+
+        return root() + pathToFile() ;
     }
 
     std::string rebuildUrl(void)
     {
         // set full URL
-        url = base();
-        url += name;
+        if ( !mstr::startsWith(path, "/") )
+            path = "/" + path;
+
+        cleanPath();
+
+        url = root() + path;
+        //Debug_printv("url[%s]", url.c_str());
+        // url += name;
+        // Debug_printv("url[%s]", url.c_str());
         // if ( query.size() )
         //     url += '?' + query;
         // if ( fragment.size() )
         //     url += '#' + fragment;
 
         return url;
+    }
+
+    uint16_t getPort() {
+        return std::stoi(port);
     }
 
     void parseUrl(std::string u) {
@@ -205,16 +223,23 @@ public:
         // Clean things up before exiting
         cleanPath();
         fillInNameExt();
-        //rebuildUrl();
+        rebuildUrl();
+
+        //dump();
 
         return;        
     }
 
     // void dump() {
-    //     printf("scheme: %s\n", scheme.c_str());
-    //     printf("host port: %s -- %s\n", host.c_str(), port.c_str());
-    //     printf("path: %s\n", path.c_str());
-    //     printf("user pass: %s -- %s\n", user.c_str(), pass.c_str());
+    //     printf("scheme: %s\r\n", scheme.c_str());
+    //     printf("user pass: %s -- %s\r\n", user.c_str(), pass.c_str());
+    //     printf("host port: %s -- %s\r\n", host.c_str(), port.c_str());
+    //     printf("path: %s\r\n", path.c_str());
+    //     printf("name: %s\r\n", name.c_str());
+    //     printf("extension: %s\r\n", extension.c_str());
+    //     printf("root: %s\r\n", root().c_str());
+    //     printf("base: %s\r\n", base().c_str());
+    //     printf("pathToFile: %s\r\n", pathToFile().c_str());
     // }
 
 };

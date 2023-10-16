@@ -1,5 +1,5 @@
-#ifndef MEATLIB_UTILS_U8CHAR
-#define MEATLIB_UTILS_U8CHAR
+#ifndef MEATLOAF_UTILS_U8CHAR
+#define MEATLOAF_UTILS_U8CHAR
 
 #include <string>
 #include <iostream>
@@ -30,4 +30,4 @@ public:
     uint8_t toPetscii();
 };
 
-#endif /* MEATLIB_UTILS_U8CHAR */
+#endif /* MEATLOAF_UTILS_U8CHAR */

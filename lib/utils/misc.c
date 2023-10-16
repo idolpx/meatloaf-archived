@@ -19,13 +19,13 @@
 
 // void LED_on()
 // {
-//   Serial.println("LED on");
+//   Debug_printv("LED on");
 //   digitalWrite(LED_PIN, LED_ON);
 // }
 
 // void LED_off()
 // {
-//   Serial.println("LED off");
+//   Debug_printv("LED off");
 //   digitalWrite(LED_PIN, LED_OFF);
 // }
 
@@ -36,10 +36,10 @@
 //   if (arg != NULL)      // As long as it existed, take it
 //   {
 //     Serial.print("Hello ");
-//     Serial.println(arg);
+//     Debug_printv(arg);
 //   }
 //   else {
-//     Serial.println("Hello, whoever you are");
+//     Debug_printv("Hello, whoever you are");
 //   }
 // }
 
@@ -48,16 +48,16 @@
 //   uint8_t aNumber;
 //   char *arg;
 
-//   Serial.println("We're in process_command");
+//   Debug_printv("We're in process_command");
 //   arg = cli.next();
 //   if (arg != NULL)
 //   {
 //     aNumber=atoi(arg);    // Converts a char string to an integer
 //     Serial.print("First argument was: ");
-//     Serial.println(aNumber);
+//     Debug_printv(aNumber);
 //   }
 //   else {
-//     Serial.println("No arguments");
+//     Debug_printv("No arguments");
 //   }
 
 //   arg = cli.next();
@@ -65,10 +65,10 @@
 //   {
 //     aNumber=atol(arg);
 //     Serial.print("Second argument was: ");
-//     Serial.println(aNumber);
+//     Debug_printv(aNumber);
 //   }
 //   else {
-//     Serial.println("No second argument");
+//     Debug_printv("No second argument");
 //   }
 
 // }
@@ -76,7 +76,7 @@
 // // // This gets set as the default handler, and gets called when no other command matches.
 // void unrecognized()
 // {
-//   Serial.println("What?");
+//   Debug_printv("What?");
 // }
 
 // void listDirectory()

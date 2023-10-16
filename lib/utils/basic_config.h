@@ -1,9 +1,11 @@
-#ifndef MEATLIB_UTILS_BASIC_CONFIG
-#define MEATLIB_UTILS_BASIC_CONFIG
+#ifndef MEATLOAF_UTILS_BASIC_CONFIG
+#define MEATLOAF_UTILS_BASIC_CONFIG
 
-#include "string_utils.h"
-#include <map>
+#include <cstring>
+#include <unordered_map>
+
 #include "meat_io.h"
+#include "meat_buffer.h"
 
 
 class BasicConfigReader {
@@ -22,4 +24,4 @@ public:
     std::string get(std::string key);
 };
 
-#endif /* MEATLIB_UTILS_BASIC_CONFIG */
+#endif /* MEATLOAF_UTILS_BASIC_CONFIG */

@@ -1,9 +1,29 @@
 #include "string_utils.h"
-#include "../../include/petscii.h"
-#include <algorithm>
 
+#include "../../include/petscii.h"
+#include "../../include/debug.h"
+
+#include <algorithm>
+#include <cstdarg>
+#include <cstring>
+#include <cmath>
+#include <sstream>
+#include <iomanip>
+
+// Copy string to char buffer
+void copyString(const std::string& input, char *dst, size_t dst_size)
+{
+    strncpy(dst, input.c_str(), dst_size - 1);
+    dst[dst_size - 1] = '\0';
+}
+
+constexpr unsigned int hash(const char *s, int off = 0) {                        
+    return !s[off] ? 5381 : (hash(s, off+1)*33) ^ s[off];                           
+}
 
 namespace mstr {
+
+    std::string byteSuffixes[9] = { "", "K", "M", "G", "T", "P", "E", "Z", "Y" };
 
     // trim from start (in place)
     void ltrim(std::string &s)
@@ -105,6 +125,25 @@ namespace mstr {
         return false;
     }
 
+    bool equals(const char* a, const char *b, bool case_sensitive)
+    {
+        int la = strlen(a);
+        int lb = strlen(b);
+        if(la != lb) return false;
+        for(lb = 0; lb < la; lb++)
+        {
+            char aa = a[lb];
+            char bb = b[lb];
+
+            if(case_sensitive && !compare_char(aa, bb))
+                return false;
+            else if(!case_sensitive && !compare_char_insensitive(aa, bb))
+                return false;
+        }
+        return true;
+    }
+
+
     bool equals(std::string &s1, std::string &s2, bool case_sensitive)
     {
         if(case_sensitive)
@@ -114,6 +153,7 @@ namespace mstr {
             return ( (s1.size() == s2.size() ) &&
                 std::equal(s1.begin(), s1.end(), s2.begin(), &compare_char_insensitive) );
     }
+
 
     bool equals(std::string &s1, char *s2, bool case_sensitive)
     {
@@ -125,7 +165,7 @@ namespace mstr {
                 std::equal(s1.begin(), s1.end(), s2, &compare_char_insensitive) );
     }
     
-    bool contains(std::string &s1, char *s2, bool case_sensitive)
+    bool contains(std::string &s1, const char *s2, bool case_sensitive)
     {
         std::string sn = s2;
         std::string::iterator it;
@@ -135,6 +175,31 @@ namespace mstr {
             it = ( std::search(s1.begin(), s1.end(), sn.begin(), sn.end(), &compare_char_insensitive) );
 
         return ( it != s1.end() );
+    }
+
+    bool compare(std::string &s1, std::string &s2, bool case_sensitive)
+    {
+        unsigned int index;
+
+        for (index = 0; index < s1.size(); index++) {
+            switch (s1[index]) {
+                case '*':
+                    return true; /* rest is not interesting, it's a match */
+                case '?':
+                    if (s2[index] == 0xa0) {
+                        return false; /* wildcard, but the other is too short */
+                    }
+                    break;
+                case 0xa0: /* This one ends, let's see if the other as well */
+                    return (s2[index] == 0xa0);
+                default:
+                    if (s1[index] != s2[index]) {
+                        return false; /* does not match */
+                    }
+            }
+        }
+
+        return true; /* matched completely */
     }
 
     // convert to lowercase (in place)
@@ -175,23 +240,33 @@ namespace mstr {
     bool isText(std::string &s) 
     {
         // extensions
-        if(equals(s, "txt", false))
+        if(equals(s, (char*)"txt", false))
             return true;
-        if(equals(s, "htm", false))
+        if(equals(s, (char*)"htm", false))
             return true;
-        if(equals(s, "html", false))
+        if(equals(s, (char*)"html", false))
             return true;
 
         // content types
-        if(contains(s, "text", false))
+        if(equals(s, (char*)"text/html", false))
             return true;
-        if(contains(s, "json", false))
+        if(equals(s, (char*)"text/plain", false))
             return true;
-        if(contains(s, "xml", false))
+        if(contains(s, (char*)"text", false))
+            return true;
+        if(contains(s, (char*)"json", false))
+            return true;
+        if(contains(s, (char*)"xml", false))
             return true;
 
         return false;
     };
+
+    bool isNumeric(std::string &s)
+    {
+        return std::all_of(s.begin(), s.end(), 
+                        [](unsigned char c) { return ::isdigit(c); });
+    }
 
     void replaceAll(std::string &s, const std::string &search, const std::string &replace) 
     {
@@ -259,30 +334,29 @@ namespace mstr {
     }
 
 
-    std::string urlEncode(std::string s) {
-        std::string new_str = "";
-        char c;
-        int ic;
-        const char* chars = s.c_str();
-        char bufHex[10];
-        int len = strlen(chars);
+    std::string urlEncode(const std::string &s) {
+        std::ostringstream escaped;
+        escaped.fill('0');
+        escaped << std::hex;
 
-        for(int i=0;i<len;i++){
-            c = chars[i];
-            ic = c;
-            // uncomment this if you want to encode spaces with +
-            if (c==' ') new_str += '+';   
-            else if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') new_str += c;
-            else {
-                sprintf(bufHex,"%X",c);
-                if(ic < 16) 
-                    new_str += "%0"; 
-                else
-                    new_str += "%";
-                new_str += bufHex;
+        for (std::string::const_iterator i = s.begin(), n = s.end(); i != n; ++i)
+        {
+            std::string::value_type c = (*i);
+
+            // Keep alphanumeric and other accepted characters intact
+            if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == '.' || c == '~' || c == '/' || c == ' ')
+            {
+                escaped << c;
+                continue;
             }
+
+            // Any other characters are percent-encoded
+            escaped << std::uppercase;
+            escaped << '%' << std::setw(2) << int((unsigned char)c);
+            escaped << std::nouppercase;
         }
-        return new_str;
+
+        return escaped.str();
     }
 
     std::string urlDecode(std::string s){
@@ -290,19 +364,24 @@ namespace mstr {
         char ch;
         int i, ii, len = s.length();
 
-        for (i=0; i < len; i++){
-            if(s[i] != '%'){
-                if(s[i] == '+')
+        for (i = 0; i < len; i++)
+        {
+            if (s[i] != '%')
+            {
+                if (s[i] == '+')
                     ret += ' ';
                 else
                     ret += s[i];
-            }else{
+            }
+            else
+            {
                 sscanf(s.substr(i + 1, 2).c_str(), "%x", &ii);
                 ch = static_cast<char>(ii);
                 ret += ch;
-                i = i + 2;
+                i += 2;
             }
         }
+
         return ret;
     }
 
@@ -316,5 +395,142 @@ namespace mstr {
         va_end(args);
 
         return text;
+    }
+
+    std::string formatBytes(uint64_t value)
+    {
+        uint8_t i = 0;
+        double n = 0;
+        char *f = NULL;
+
+        //Debug_printv("bytes[%llu]", value);
+
+        do
+        {          
+            n = value / std::pow(1024, ++i);
+            //Debug_printv("i[%d] n[%llu]", i, n);
+        }
+        while ( n >= 1 );
+
+        n = value / std::pow(1024, --i);
+        asprintf(&f, "%.2f %s", n, byteSuffixes[i].c_str());
+        return f;
+    }
+
+
+    void cd( std::string &path, std::string newDir) 
+    {
+        //Debug_printv("cd requested: [%s]", newDir.c_str());
+
+        // OK to clarify - coming here there should be ONLY path or magicSymbol-path combo!
+        // NO "cd:xxxxx", no "/cd:xxxxx" ALLOWED here! ******************
+        //
+        // if you want to support LOAD"CDxxxxxx" just parse/drop the CD BEFORE calling this function
+        // and call it ONLY with the path you want to change into!
+
+        if(newDir[0]=='/' && newDir[1]=='/') {
+            if(newDir.size()==2) {
+                // user entered: CD:// or CD//
+                // means: change to the root of roots
+                path = "/"; // chedked, works ad flash root!
+                return;
+            }
+            else {
+                // user entered: CD://DIR or CD//DIR
+                // means: change to a dir in root of roots
+                path = mstr::drop(newDir,2);
+                return;
+            }
+        }
+        // else if(newDir[0]=='/' || newDir[0]=='^') {
+        //     if(newDir.size()==1) {
+        //         // user entered: CD:/ or CD/
+        //         // means: change to container root
+        //         // *** might require a fix for flash fs!
+        //         //return MFSOwner::File(streamPath);
+        //         return MFSOwner::File("/");
+        //     }
+        //     else {
+        //         // user entered: CD:/DIR or CD/DIR
+        //         // means: change to a dir in container root
+        //         return localRoot(mstr::drop(newDir,1));
+        //     }
+        // }
+        else if(newDir[0]=='_') {
+            if(newDir.size()==1) {
+                // user entered: CD:_ or CD_
+                // means: go up one directory
+                path = parent(path);
+                return;
+            }
+            else {
+                // user entered: CD:_DIR or CD_DIR
+                // means: go to a directory in the same directory as this one
+                path = parent(path, mstr::drop(newDir,1));
+                return;
+            }
+        }
+
+        if(newDir[0]=='.' && newDir[1]=='.') {
+            if(newDir.size()==2) {
+                // user entered: CD:.. or CD..
+                // means: go up one directory
+                path = parent(path);
+                return;
+            }
+            else {
+                // user entered: CD:..DIR or CD..DIR
+                // meaning: Go back one directory
+                path = localParent(path, mstr::drop(newDir,2));
+                return;
+            }
+        }
+
+        //Debug_printv("> url[%s] newDir[%s]", url.c_str(), newDir.c_str());
+                // Add new directory to path
+        if ( !mstr::endsWith(path, "/") && newDir.size() )
+            path.push_back('/');
+
+        path += newDir;
+        return;
+    }
+
+
+    std::string parent(std::string path, std::string plus) 
+    {
+        //Debug_printv("url[%s] path[%s]", url.c_str(), path.c_str());
+
+        // drop last dir
+        // add plus
+        if(path.empty()) {
+            // from here we can go only to flash root!
+            return "/";
+        }
+        else {
+            int lastSlash = path.find_last_of('/');
+            if ( lastSlash == path.size() - 1 ) {
+                lastSlash = path.find_last_of('/', path.size() - 2);
+            }
+            std::string newDir = mstr::dropLast(path, path.size() - lastSlash);
+            if(!plus.empty())
+                newDir+= ("/" + plus);
+            return newDir;
+        }
+    }
+
+    std::string localParent(std::string path, std::string plus) 
+    {
+        //Debug_printv("url[%s] path[%s]", url.c_str(), path.c_str());
+        // drop last dir
+        // check if it isn't shorter than streamFile
+        // add plus
+        int lastSlash = path.find_last_of('/');
+        if ( lastSlash == path.size() - 1 ) {
+            lastSlash = path.find_last_of('/', path.size() - 2);
+        }
+        std::string parent = mstr::dropLast(path, path.size() - lastSlash);
+        // if(parent.length()-streamFile->url.length()>1)
+        //     parent = streamFile->url;
+        return parent + "/" + plus;
     }
 }

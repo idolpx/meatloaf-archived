@@ -6,74 +6,94 @@
 #include <WiFiClient.h>
 
 #include <string>
+
+//#include <dirent.h>
+#include <sys/stat.h>
 #include <ArduinoJson.h>
+//#include <archive_cpp.h>
+//#include <archive.h>
+//#include <archive_entry.h>
+
+#include "../include/global_defines.h"
+#include "../include/debug.h"
+
+//#include "fnFsSD.h"
+//#include "fnWiFi.h"
 
 #include "ml_tests.h"
 #include "meat_io.h"
-#include "iec_host.h"
-#include "../../include/global_defines.h"
-#include "../../include/make_unique.h"
+#include "meat_buffer.h"
+//#include "iec_host.h"
+//#include "make_unique.h"
 #include "basic_config.h"
+#include "device_db.h"
 
-std::unique_ptr<MFile> m_mfile(MFSOwner::File(""));
+//#include "fnHttpClient.h"
+//#include "fnSystem.h"
+
+//std::unique_ptr<MFile> m_mfile(MFSOwner::File(""));
 
 
 void testHeader(std::string testName) {
-    Serial.println("\n\n******************************");
-    Serial.printf("* TESTING: %s\n", testName.c_str());
-    Serial.println("******************************\n");
+    Debug_println("\n\n******************************");
+    Debug_printf("* TESTING: %s\r\n", testName.c_str());
+    Debug_println("******************************\r\n");
 }
 
-void testDiscoverDevices()
-{
-    iecHost iec;
-    testHeader("Query Bus for Devices");
-    for(size_t d=4; d<31; d++)
-        iec.deviceExists(d);
-}
+// void testDiscoverDevices()
+// {
+//     iecHost iec;
+//     testHeader("Query Bus for Devices");
+//     for(size_t d=4; d<31; d++)
+//         iec.deviceExists(d);
+// }
 
-void testReader(MFile* readeTest) {
-    // /* Test Line reader */
-    testHeader("C++ line reader");
+// void testArchiveReader(std::string archive) {
+//     // /* Test Line reader */
+//     testHeader("C++ archive reader");
 
-    Serial.printf("* Trying to read file:%s\n", readeTest->url.c_str());
+//     Debug_printf("* Trying to read archive: %s\r\n", archive.c_str());
 
-    auto readerStream = Meat::ifstream(readeTest);
-    readerStream.open();
+//     auto readerStream = ArchiveReader(readeTest);
+//     readerStream.open();
 
-    if(readerStream.is_open()) {
-        if(readerStream.eof()) {
-            Serial.printf("Reader returned EOF! :(");
-        }
+//     if(readerStream.is_open()) {
+//         if(readerStream.eof()) {
+//             Debug_printf("Reader returned EOF! :(");
+//         }
 
-        while(!readerStream.eof()) {
-            std::string line;
+//         while(!readerStream.eof()) {
+//             std::string line;
 
-            readerStream >> line;
+//             readerStream >> line;
 
-            Serial.printf("%s\n",line.c_str());
-        };
-    }
-    else {
-        Serial.printf("*** ERROR: stream could not be opened!");
-    }
-}
+//             Debug_printf("%s\r\n",line.c_str());
+//         };
+//     }
+//     else {
+//         Debug_printf("*** ERROR: stream could not be opened!");
+//     }
+// }
 
 void dumpFileProperties(MFile* testMFile) {
-    Serial.println("\n== File properties ==");
-    Serial.printf("Url: %s, isDir = %d\n", testMFile->url.c_str(), testMFile->isDirectory());
-    Serial.printf("Scheme: [%s]\n", testMFile->scheme.c_str());
-    Serial.printf("Username: [%s]\n", testMFile->user.c_str());
-    Serial.printf("Password: [%s]\n", testMFile->pass.c_str());
-    Serial.printf("Host: [%s]\n", testMFile->host.c_str());
-    Serial.printf("Port: [%s]\n", testMFile->port.c_str());    
-    Serial.printf("Path: [%s]\n", testMFile->path.c_str());
-    Serial.printf("stream src: [%s]\n", testMFile->streamFile->url.c_str());
-    Serial.printf("path in stream: [%s]\n", testMFile->pathInStream.c_str());
-    Serial.printf("File: [%s]\n", testMFile->name.c_str());
-    Serial.printf("Extension: [%s]\n", testMFile->extension.c_str());
-    Serial.printf("Size: [%d]\n", testMFile->size());
-    Serial.printf("-------------------------------\n");
+    Debug_printf("\n\n* %s File properties\r\n", testMFile->url.c_str());
+    Debug_printf("Url: %s, isDir = %d\r\n", testMFile->url.c_str(), testMFile->isDirectory());
+    Debug_printf("Scheme: [%s]\r\n", testMFile->scheme.c_str());
+    Debug_printf("Username: [%s]\r\n", testMFile->user.c_str());
+    Debug_printf("Password: [%s]\r\n", testMFile->pass.c_str());
+    Debug_printf("Host: [%s]\r\n", testMFile->host.c_str());
+    Debug_printf("Port: [%s]\r\n", testMFile->port.c_str());    
+    Debug_printf("Path: [%s]\r\n", testMFile->path.c_str());
+
+    if ( testMFile->streamFile )
+        Debug_printf("stream src: [%s]\r\n", testMFile->streamFile->url.c_str());
+
+    Debug_printf("path in stream: [%s]\r\n", testMFile->pathInStream.c_str());
+    Debug_printf("File: [%s]\r\n", testMFile->name.c_str());
+    Debug_printf("Extension: [%s]\r\n", testMFile->extension.c_str());
+    Debug_printf("Size: [%d]\r\n", testMFile->size());
+    Debug_printf("Is text: [%d]\r\n", testMFile->isText());
+    Debug_printf("-------------------------------\r\n");
 }
 
 void testDirectory(MFile* dir, bool verbose=false) {
@@ -99,12 +119,12 @@ void testRecursiveDir(MFile* file, std::string indent) {
         while(entry != nullptr) {
             if(entry->isDirectory())
             {
-                Serial.printf("%s%s <dir>\n", indent.c_str(), entry->name.c_str());
+                Debug_printf("%s%s <dir>\r\n", indent.c_str(), entry->name.c_str());
                 testRecursiveDir(entry.get(), indent+"   ");
             }
             else
             {
-                Serial.printf("%s%s\n", indent.c_str(), entry->name.c_str());                
+                Debug_printf("%s%s\r\n", indent.c_str(), entry->name.c_str());                
             }
 
             entry.reset(file->getNextFileInDir());
@@ -113,27 +133,21 @@ void testRecursiveDir(MFile* file, std::string indent) {
 }
 
 void testCopy(MFile* srcFile, MFile* dstFile) {
-    testHeader("Copy file to destination");
+    // testHeader("Copy file to destination");
 
-    Serial.printf("FROM:%s\nTO:%s\n", srcFile->url.c_str(), dstFile->url.c_str());
+    // Debug_printf("FROM:%s\nTO:%s\r\n", srcFile->url.c_str(), dstFile->url.c_str());
 
-    if(dstFile->exists()) {
-        bool result = dstFile->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
-    }
+    // if(dstFile->exists()) {
+    //     bool result = dstFile->remove();
+    //     Debug_printf("FSTEST: %s existed, delete reult: %d\r\n", dstFile->path.c_str(), result);
+    // }
 
-    srcFile->copyTo(dstFile);
+    // srcFile->copyTo(dstFile);
 }
 
 void dumpParts(std::vector<std::string> v) {
     for(auto i = v.begin(); i < v.end(); i++)
-        Serial.printf("%s::",(*i).c_str());
-}
-
-void testStringFunctions() {
-    testHeader("String functions");
-    Serial.printf("pa == %s\n", mstr::drop("dupa",2).c_str());
-    Serial.printf("du == %s\n", mstr::dropLast("dupa",2).c_str());
+        Debug_printf("%s::",(*i).c_str());
 }
 
 void testPaths(MFile* testFile, std::string subDir) {
@@ -141,28 +155,28 @@ void testPaths(MFile* testFile, std::string subDir) {
     //std::shared_ptr<MFile> testFile(MFSOwner::File("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL"));
     dumpFileProperties(testFile);
 
-    Serial.printf("We are in: %s\n",testFile->url.c_str());
+    Debug_printf("We are in: %s\r\n",testFile->url.c_str());
 
     std::unique_ptr<MFile> inDnp(testFile->cd("/"+subDir));
-    Serial.printf("- cd /%s = '%s'\n", subDir.c_str(), inDnp->url.c_str());
+    Debug_printf("- cd /%s = '%s'\r\n", subDir.c_str(), inDnp->url.c_str());
 
     std::unique_ptr<MFile> inFlash(testFile->cd("//"+subDir));
-    Serial.printf("- cd //%s = '%s'\n", subDir.c_str(), inFlash->url.c_str());
+    Debug_printf("- cd //%s = '%s'\r\n", subDir.c_str(), inFlash->url.c_str());
 
     std::unique_ptr<MFile> parallel(testFile->cd("../"+subDir));
-    Serial.printf("- cd ../%s = '%s'\n", subDir.c_str(), parallel->url.c_str());
+    Debug_printf("- cd ../%s = '%s'\r\n", subDir.c_str(), parallel->url.c_str());
 
     std::unique_ptr<MFile> inCie(testFile->cd(subDir));
-    Serial.printf("- cd %s = '%s'\n", subDir.c_str(), inCie->url.c_str());
+    Debug_printf("- cd %s = '%s'\r\n", subDir.c_str(), inCie->url.c_str());
 }
 
 void testIsDirectory() {
     std::unique_ptr<MFile> testDir(MFSOwner::File("/NOTADIR/"));
-    Serial.printf("dir [%s] exists [%d]\n",testDir->url.c_str(), testDir->isDirectory());
+    Debug_printf("dir [%s] exists [%d]\r\n",testDir->url.c_str(), testDir->isDirectory());
     testDir.reset(MFSOwner::File("/.sys"));
-    Serial.printf("dir [%s] exists [%d]\n",testDir->url.c_str(), testDir->isDirectory());
+    Debug_printf("dir [%s] exists [%d]\r\n",testDir->url.c_str(), testDir->isDirectory());
     testDir.reset(MFSOwner::File("/.sys/"));
-    Serial.printf("dir [%s] exists [%d]\n",testDir->url.c_str(), testDir->isDirectory());
+    Debug_printf("dir [%s] exists [%d]\r\n",testDir->url.c_str(), testDir->isDirectory());
 }
 
 void testUrlParser() {
@@ -187,36 +201,105 @@ void testUrlParser() {
 void testCD() {
     std::unique_ptr<MFile> testDir(MFSOwner::File(""));
 
-    Serial.println("A chain of CDs");
+    Debug_println("A chain of CDs");
     // make a folder called GAMES on root of flash
-    //testDir.reset(MFSOwner::File(""));
-    Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
+    //testDir.reset(MFSOwner::File("/"));
+    Debug_printf("I'm in %s, changing to GAMES\r\n", testDir->url.c_str());
     // then on the 64   LOAD"CD:GAMES",8
     testDir.reset(testDir->cd("GAMES"));
-    Serial.printf("I'm in %s, changing to _\n", testDir->url.c_str());
+    Debug_printf("I'm in %s, changing to _\r\n", testDir->url.c_str());
     // then LOAD"CD_",8
     testDir.reset(testDir->cd("_"));
-    Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
+    Debug_printf("I'm in %s, changing to GAMES\r\n", testDir->url.c_str());
     // then LOAD"CD:GAMES",8
     testDir.reset(testDir->cd("GAMES"));
-    Serial.printf("I'm in %s, changing to _\n", testDir->url.c_str());
+    Debug_printf("I'm in %s, changing to _\r\n", testDir->url.c_str());
     // then LOAD"CD_",8
     testDir.reset(testDir->cd("_"));
-    Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
+    Debug_printf("I'm in %s, changing to GAMES\r\n", testDir->url.c_str());
     // then LOAD"CD:GAMES",8
     testDir.reset(testDir->cd("GAMES"));
-    Serial.printf("I'm in %s, changing to _\n", testDir->url.c_str());
+    Debug_printf("I'm in %s, changing to _\r\n", testDir->url.c_str());
     // then LOAD"CD_",8
     testDir.reset(testDir->cd("_"));
-    Serial.printf("I'm in %s, changing to GAMES\n", testDir->url.c_str());
+    Debug_printf("I'm in %s, changing to GAMES\r\n", testDir->url.c_str());
     // then LOAD"CD:GAMES",8
     testDir.reset(testDir->cd("GAMES"));
-    Serial.printf("I'm in %s\n", testDir->url.c_str());
+    Debug_printf("I'm in %s\r\n", testDir->url.c_str());
+}
+
+
+void readABit(Meat::mfilebuf<char>* pbuf)
+{
+    int i = 0;
+    do {
+        int nextChar = pbuf->sgetc(); // peeks next char BUT!!! donesn't move the buffer position
+        if(nextChar != _MEAT_NO_DATA_AVAIL) {
+            i++;
+            pbuf->snextc(); // ok, there was real data in the buffer, let's actually ADVANCE buffer position
+            Debug_printf("%c", nextChar); // or - send the char across IEC to our C64
+        }
+    } while (pbuf->sgetc() != EOF && i < 100);
+
+
+}
+
+void seekTest()
+{
+    Meat::iostream stream("https://www.w3.org/TR/PNG/iso_8859-1.txt");
+
+    Debug_printv("Trying to open txt on http");
+
+    if(!stream.is_open())
+        return;
+
+    // 1. we cen obtain raw C++ buffer from our stream:
+    auto pbuf = stream.rdbuf();
+
+    Debug_printv("Seeking");
+
+    pbuf->seekposforce(3541); // D7  MULTIPLICATION SIGN
+    auto test = (*pbuf)[9]; // get 3550th character
+    Debug_printf("10th character below will be: %c", test); // or - send the char across IEC to our C64
+
+    readABit(pbuf);
+    pbuf->seekpos(3662); // D9  CAPITAL LETTER U WITH GRAVE
+    readABit(pbuf);
+    pbuf->seekpos(3597); // D8  CAPITAL LETTER O WITH STROKE
+    readABit(pbuf);
+
+    stream.close();
+    
+}
+
+
+void commodoreServer()
+{
+    Meat::iostream stream("tcp://commodoreserver.com:1541");
+
+    if(!stream.is_open())
+        return;
+
+    stream << "help\r\n";
+    stream.sync();
+
+    // 1. we cen obtain raw C++ buffer from our stream:
+    auto pbuf = stream.rdbuf();
+
+    do {
+        int nextChar = pbuf->sgetc(); // peeks next char BUT!!! donesn't move the buffer position
+        if(nextChar != _MEAT_NO_DATA_AVAIL) {
+            pbuf->snextc(); // ok, there was real data in the buffer, let's actually ADVANCE buffer position
+            Debug_printf("%c", nextChar); // or - send the char across IEC to our C64
+        }
+    } while (pbuf->sgetc() != EOF );
+
+    stream.close();
+    
 }
 
 void httpStream(char *url)
 {
-    bool success = true;
     size_t i = 0;
     size_t b_len = 1;
 	uint8_t b[b_len];
@@ -228,17 +311,13 @@ void httpStream(char *url)
         size_t len = file->size();
         Debug_printv("File exists! size [%d]\r\n", len);
 
-        std::unique_ptr<MIStream> stream(file->inputStream());
+        Meat::iostream stream(url); // dstFile
 
-		for(i=0;i < len; i++)
+        while(!stream.eof())
 		{
-			success = stream->read(b, b_len);
-			if (success)
-			{
-                Serial.write(b, b_len);
-            }
+			stream.read((char *)b, b_len);
         }
-        stream->close();
+        stream.close();
         Debug_println("");
         Debug_printv("%d of %d bytes sent\r\n", i, len);
     }
@@ -248,202 +327,226 @@ void httpStream(char *url)
     }
 }
 
-void httpGet(char *url)
-{
-    bool success = true;
-    size_t i = 0;
-    WiFiClient client;
-    HTTPClient http;
-    size_t b_len = 1;
-	uint8_t b[1];
+// void httpGet(char *url)
+// {
+//     bool success = true;
+//     size_t i = 0;
+//     fnHttpClient http;
+//     size_t b_len = 1;
+// 	uint8_t b[1];
 
-    http.setUserAgent("some agent");
-    http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-    http.setRedirectLimit(10);
+//     // http.setUserAgent("some agent");
+//     // http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+//     // http.setRedirectLimit(10);
 
-    Serial.printf("[HTTP] begin... [%s]\n", url);
-    if (http.begin(client, url)) {  // HTTP
+//     Debug_printf("[HTTP] begin... [%s]\r\n", url);
+//     if (http.begin( url )) {  // HTTP
 
-      Serial.print("[HTTP] GET...\n");
-      // start connection and send HTTP header
-      int httpCode = http.GET();
-      size_t len = http.getSize();
+//       Serial.print("[HTTP] GET...\r\n");
+//       // start connection and send HTTP header
+//       int httpCode = http.GET();
+//       size_t len = http.available();
 
-      // httpCode will be negative on error
-      if (httpCode > 0) {
-        // HTTP header has been send and Server response header has been handled
-        Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+//       // httpCode will be negative on error
+//       if (httpCode > 0) {
+//         // HTTP header has been send and Server response header has been handled
+//         Debug_printf("[HTTP] GET... code: %d\r\n", httpCode);
 
-        // file found at server
-        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+//         // file found at server
+//         if (httpCode == HttpStatus_Ok || httpCode == HttpStatus_MovedPermanently) {
 
-            for(i=0;i < len; i++)
-            {
-                success = client.readBytes(b, b_len);
-                if (success)
-                {
-                    Serial.write(b, b_len);
-                }
-            }
-        }
-      } else {
-        Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-      }
-      client.stop();
-      http.end();
-    } else {
-      Serial.printf("[HTTP} Unable to connect\n");
-    }
-}
+//             for(i=0;i < len; i++)
+//             {
+//                 success = http.read(b, b_len);
+//                 if (success)
+//                 {
+//                     Serial.write(b, b_len);
+//                 }
+//             }
+//         }
+//       } else {
+//         Debug_printf("[HTTP] GET... failed, error: %d\r\n", httpCode);
+//       }
+//       http.close();
+//     } else {
+//       Debug_printf("[HTTP} Unable to connect\r\n");
+//     }
+// }
 
-void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
+void testJson(MFile* srcFile, MFile* dstFile) {
     testHeader("C++ stream wrappers");
 
     StaticJsonDocument<512> m_device;
-    deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"http://niceurlman.com\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
+    deserializeJson(m_device, "{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"http://niceurlman.com\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}");
 
     if ( dstFile->exists() )
         dstFile->remove();
 
-    Meat::ofstream ostream(dstFile); // dstFile
-    ostream.open();
+    Meat::iostream ostream(dstFile); // dstFile
     
     if(ostream.is_open()) {
-        Serial.printf("Trying to serialize JSON to %s\n", dstFile->url.c_str());
+        Debug_printf("Trying to serialize JSON to %s\r\n", dstFile->url.c_str());
 
         auto x = serializeJson(m_device, ostream); 
 
-        Serial.printf("serializeJson returned %d\n", x);
+        Debug_printf("serializeJson returned %d\r\n", x);
+
+        Debug_printf("sbefore if");
 
         if(ostream.bad()) {
-            Serial.println("WARNING: FILE WRITE FAILED!!!");
+            Debug_println("WARNING: FILE WRITE FAILED!!!");
         }
+
+        Debug_printf("before close");
 
         ostream.close();
     }
 
-    //Serial.printf("%s size is %d\n", dstFile->url.c_str(), dstFile->size());
+    //Debug_printf("%s size is %d\r\n", dstFile->url.c_str(), dstFile->size());
 
-    Serial.printf("Copy %s to %s\n", dstFile->url.c_str(), srcFile->url.c_str());
+    Debug_printf("Copy %s to %s\r\n", dstFile->url.c_str(), srcFile->url.c_str());
 
-    if(dstFile->copyTo(srcFile)) {
-        Meat::ifstream istream(srcFile);
-        istream.open();
+    bool copyRc = -1; //dstFile->copyTo(srcFile);
+
+    Debug_printf("After copyto rc=%d\r\n", copyRc);
+
+    if(copyRc) {
+        Meat::iostream istream(srcFile);
 
         if(istream.is_open()) {
-            Serial.printf("Trying to deserialize JSON from %s\n",srcFile->url.c_str());
+            Debug_printf("Trying to deserialize JSON from %s\r\n",srcFile->url.c_str());
 
             deserializeJson(m_device, istream);
 
-            Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+            Debug_printf("Got from deserialization: %s\r\n", m_device["url"].as<const char*>());
         }
         else
         {
-            Serial.printf("Error! The stream for deserialization couldn't be opened!");
+            Debug_printf("Error! The stream for deserialization couldn't be opened!");
         }
     }
     else {
-        Serial.println("**** Copying failed *** WHY???");
+        Debug_println("**** Copying failed *** WHY???");
 
-        Serial.printf("Trying to deserialize JSON from %s\n",dstFile->url.c_str());
+        Debug_printf("Trying to deserialize JSON from %s\r\n",dstFile->url.c_str());
 
-        Meat::ifstream newIstream(dstFile); // this is your standard istream!
-        newIstream.open();
+        Meat::iostream newIstream(dstFile); // this is your standard istream!
 
-        deserializeJson(m_device, newIstream);
+        if(newIstream.is_open()) {
+            deserializeJson(m_device, newIstream);
+        }
 
-        Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+        Debug_printf("Got from deserialization: %s\r\n", m_device["url"].as<const char*>());
 
     }
 
 }
 
 
-void testNewCppStreams(std::string name) {
-    testHeader("TEST C++ streams");
+void testReader(MFile* srcFile) {
+    testHeader("TEST reading using C++ API");
 
-    Serial.println(" * Read test\n");
+    Debug_printf(" * Read test for %s\r\n", srcFile->url.c_str());
 
-    Meat::ifstream istream(name);
-    istream.open();
+    Meat::iostream istream(srcFile);
+
+    Debug_printv("reading file now!");
     if(istream.is_open()) {
+        if(istream.eof()) {
+            Debug_printf("Reader returned EOF! :(");
+        }
+
         std::string line;
 
         while(!istream.eof()) {
             istream >> line;
-            Serial.print(line.c_str());
+            Serial.printf("%s", line.c_str());
         }
 
         istream.close();
     }
+    else {
+        Debug_printf(" * Read test - ERROR:%s could not be read!\r\n", srcFile->url.c_str());
+    }
 
-    Serial.println("\n * Write test\n");
+}
 
-    Meat::ofstream ostream("/intern.txt");
+void testWriter(MFile* dstFile) {
+    testHeader("TEST writing using C++ API");
+    
+    Debug_printf(" * Write test for %s\r\n", dstFile->url.c_str());
 
-    Serial.println(" * Write test - after declaration\n");
+    Meat::iostream ostream(dstFile);
 
-    ostream.open();
+    Debug_println(" * Write test - after open\r\n");
+
+    if ( dstFile->exists() )
+        dstFile->remove();
+
     if(ostream.is_open()) {
+        Debug_println(" * Write test - isOpen\r\n");
+
         ostream << "Arise, ye workers from your slumber,";
         ostream << "Arise, ye prisoners of want.";
         ostream << "For reason in revolt now thunders,";
         ostream << "and at last ends the age of cant!";
         if(ostream.bad())
-            Serial.println("WRITING FAILED!!!");
+            Debug_println("WRITING FAILED!!!");
+            
+        Debug_println(" * Write test - after testing bad\r\n");
 
         ostream.close();
+        Debug_println(" * Write test - after close\r\n");
+    }
+    else {
+        Debug_println(" * Write test - ERROR:The Internationale could not be written!\r\n");
     }
 }
 
 void runFSTest(std::string dirPath, std::string filePath) {
-    //Serial.println("**********************************************************************\n\n");
-    // std::shared_ptr<MFile> testDir(MFSOwner::File(dirPath));
-    // std::shared_ptr<MFile> testFile(MFSOwner::File(filePath));
-    // std::shared_ptr<MFile> destFile(MFSOwner::File("/mltestfile"));
+    testHeader("A full filesystem test");
+    //Debug_println("**********************************************************************\r\n\r\n");
 
     auto testDir = Meat::New<MFile>(dirPath);
     auto testFile = Meat::New<MFile>(filePath);
-    auto destFile = Meat::New<MFile>("/mltestfile");
+    auto destFile = Meat::New<MFile>(testDir->cd("internationale.txt"));
 
-    testNewCppStreams(filePath);
+    // if this doesn't work reading and writing files won't workk
 
-    if(!dirPath.empty() && testDir != nullptr) {
-        testPaths(testDir.get(),"subDir");
+    if(testFile != nullptr) {
+        dumpFileProperties(testFile.get());
+        testReader(testFile.get());
+        //testWriter(destFile.get());
+        //testReader(destFile.get());
+    }
+    else {
+        Debug_printf("*** WARNING - %s instance couldn't be created!, , testDir->url.c_str()");
+    }
+
+    if(!dirPath.empty() && testDir->exists() && testDir->isDirectory()) {
+        dumpFileProperties(testDir.get());
         testDirectory(testDir.get());
+        //testPaths(testDir.get(),"subDir");
         //testRecursiveDir(otherFile.get(),""); // fucks upp littleFS?
     }
     else {
-        Serial.println("*** WARNING - directory instance couldn't be created!");
+        Debug_printf("*** WARNING - %s instance couldn't be created!", testDir->url.c_str());
     }
 
-    if(!filePath.empty() && testFile != nullptr) {
-        testReader(testFile.get());
-        testCopy(testFile.get(), destFile.get());
-
-        testStdStreamWrapper(testFile.get(), destFile.get());
-
-        Serial.println("\n\n\n*** Please compare file copied to ML aginst the source:\n\n\n");
-        testReader(destFile.get());
-    }
-    else {
-        Serial.println("*** WARNING - file instance couldn't be created!");
-    }
-    
-    Serial.println("**********************************************************************\n\n");
+    Debug_println("**********************************************************************\r\n\r\n");
 }
 
 void testSmartMFile() {
     testHeader("TEST smart MFile pointers");
 
-    Serial.println("Creating smart MFile from char*");
+    Debug_println("Creating smart MFile from char*");
     auto test = Meat::New<MFile>("cs://some/directory/disk.d64/file.txt");
-    Serial.println("Creating smart MFile from MFile*");
+    Debug_println("Creating smart MFile from MFile*");
     auto test2 = Meat::New<MFile>(test.get());
 
     auto wrapped = Meat::Wrap<MFile>(test2->getNextFileInDir());
 
-	Serial.printf("Extension of second one: [%s]\n", test2->extension.c_str());
+	Debug_printf("Extension of second one: [%s]\r\n", test2->extension.c_str());
 }
 
 void testBasicConfig() {
@@ -452,20 +555,100 @@ void testBasicConfig() {
     BasicConfigReader bcr;
     bcr.read("/config.prg");
     if(bcr.entries->size()>0) {
-        Serial.printf("config Wifi SSID: [%s]\n", bcr.get("ssid"));
+        Debug_printf("config Wifi SSID: [%s]\r\n", bcr.get("ssid"));
     }
 
 }
 
+void testRedirect() {
+    testHeader("HTTP fs test");
+
+    Meat::iostream istream("http://c64.meatloaf.cc/roms");
+
+    if(istream.is_open()) {
+        Debug_printf("* Stream OK!");
+
+
+        if(istream.eof()) {
+            Debug_printf("Reader returned EOF! :(");
+        }
+
+        Debug_printf("* read lines follow:\r\n");
+
+        while(!istream.eof()) {
+            std::string line;
+
+            istream >> line;
+
+            Debug_printf("LINE>%s\r\n",line.c_str());
+        };
+    }
+    else {
+        Debug_printf("* Couldn't open!");
+    }
+
+}
+
+void testStrings() {
+    testHeader("Testing strings");
+
+    std::string s1("content-type");
+    std::string s2("Content-Type");
+
+    bool result = mstr::equals(s2, s1, false);
+
+    Debug_printf("String-string case-insensitive comp:%d\r\n", result);
+
+    result = mstr::equals(s2, "content-type", false);
+
+    Debug_printf("String-char case-insensitive comp:%d\r\n", result);
+
+    result = mstr::equals("Content-Type", "content-type", false);
+
+    Debug_printf("char-char case-insensitive comp:%d\r\n", result);
+
+    Debug_printf("pa == %s\r\n", mstr::drop("dupa",2).c_str());
+    Debug_printf("du == %s\r\n", mstr::dropLast("dupa",2).c_str());
+
+}
+
+void detectLeaks() {
+    testHeader("Leak detector");
+    
+    //auto testDir = Meat::New<MFile>("https://c64.meatloaf.cc/geckos-c64.d64");
+    auto testDir = Meat::New<MFile>("/sd/WinGames.d64");
+
+    testDirectory(testDir.get());
+}
+
 void runTestsSuite() {
+    // Delay waiting for wifi to connect
+    // while ( !fnWiFi.connected() )
+    // {
+    //     fnSystem.delay_microseconds(pdMS_TO_TICKS(1000)); // 1sec between checks
+    // }
+    // fnSystem.delay_microseconds(pdMS_TO_TICKS(5000)); // 5sec after connect
+
+    //commodoreServer();
+    //seekTest();
+    //detectLeaks();
+
+    // ====== Per FS dir, read and write region =======================================
+
     // working, uncomment if you want
-    // runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
-    // runFSTest("http://google.com/we/love/commodore/disk.d64/somefile","http://jigsaw.w3.org/HTTP/connection.html");
-    //runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
-    
-    // not working yet, DO NOT UNCOMMENT!!!
-    //runFSTest("http://somneserver.com/utilities/disk tools/cie.dnp/subdir/CIE+SERIAL","");    
-    
+    //runFSTest("/.sys", "README"); // TODO - let urlparser drop the last slash!
+    //runFSTest("http://c64.meatloaf.cc/roms", "https://www.w3.org/TR/PNG/iso_8859-1.txt");
+    // http://c64.meatloaf.cc/roms
+    //runFSTest("http://192.168.1.161:8000", "https://www104.zippyshare.com/d/TEh31GeR/1191019/GeckOS-c64.d64/index.html");
+    //runFSTest("https://c64.meatloaf.cc/geckos-c64.d64", "https://c64.meatloaf.cc/geckos-c64.d64/index.html");
+    //runFSTest("sd:/geckos-c64.d64", "sd:/geckos-c64.d64/index.html");
+    //  https://c64.meatloaf.cc
+    // runFSTest("http://info.cern.ch/hypertext/WWW/TheProject.html","http://info.cern.ch/hypertext/WWW/TheProject.html");
+    // runFSTest("cs:/apps/ski_writer.d64","cs:/apps/ski_writer.d64/EDITOR.HLP");
+
+
+    // ====== Misc test region =======================================
+        
     //testIsDirectory();
     //testUrlParser();
     //testCD();
@@ -488,8 +671,35 @@ void runTestsSuite() {
     // D64 Test
     // Debug_printv("D64 Test");
     // testDirectory(MFSOwner::File("/games/arcade7.d64"), true);
-    testBasicConfig();
+    // testBasicConfig();
 
-    Serial.println("*** All tests finished ***");
+    // Debug_printv("Flash File System");
+    //testDirectoryStandard("/");
 
+    // Debug_printv("SD Card File System");
+    //std::string basepath = fnSDFAT.basepath();
+    //basepath += std::string("/");
+    //Debug_printv("basepath[%s]", basepath.c_str());
+    //testDirectory(MFSOwner::File( basepath ), true);
+    //testDirectoryStandard( "/sd/" );
+    // testDirectory(MFSOwner::File("/sd/"), true);
+
+    // DeviceDB m_device(0);
+
+    // Debug_println(m_device.path().c_str());
+    // m_device.select(8);
+    // Debug_println(m_device.path().c_str());
+    // m_device.select(9);
+    // Debug_println(m_device.path().c_str());
+    // m_device.select(10);
+    // Debug_println(m_device.path().c_str());
+    // m_device.select(11);
+    // Debug_println(m_device.path().c_str());
+    // m_device.select(30);
+    // Debug_println(m_device.path().c_str());
+
+    //testRedirect();
+    //testStrings();
+
+    Debug_println("*** All tests finished ***");
 }
