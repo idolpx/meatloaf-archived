@@ -24,7 +24,7 @@ public:
     HttpFile(std::string path): MFile(path) {};
 
     bool isDirectory() override;
-//    MIStream* inputStream() override ; // has to return OPENED stream
+//    MStream* inputStream() override; // has to return OPENED stream
 //    MOStream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
@@ -44,41 +44,41 @@ public:
  * Streams
  ********************************************************/
 
-class HttpIOStream: public MIStream, MOStream {
-public:
-    HttpIOStream(std::string& path) {
-        url = path;
-    }
-    ~HttpIOStream() {
-        close();
-    }
+// class HttpIOStream: public MStream, MOStream {
+// public:
+//     HttpIOStream(std::string& path) {
+//         url = path;
+//     }
+//     ~HttpIOStream() {
+//         close();
+//     }
 
-    void close() override;
-    bool open() override;
+//     void close() override;
+//     bool open() override;
 
-    // MStream methods
-    size_t position() override;
-    size_t available() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
+//     // MStream methods
+//     size_t position() override;
+//     size_t available() override;
+//     size_t read(uint8_t* buf, size_t size) override;
+//     size_t write(const uint8_t *buf, size_t size) override;
+//     bool isOpen();
 
-protected:
-    std::string url;
-    bool m_isOpen;
-    size_t m_length;
-    size_t m_bytesAvailable = 0;
-    size_t m_position = 0;
+// protected:
+//     std::string url;
+//     bool m_isOpen;
+//     size_t m_length;
+//     size_t m_bytesAvailable = 0;
+//     size_t m_position = 0;
        
-    WiFiClient m_file;
-	HTTPClient m_http;
-};
+//     WiFiClient m_file;
+// 	HTTPClient m_http;
+// };
 
 
-class HttpIStream: public MIStream {
+class HttpStream: public MStream {
 
 public:
-    HttpIStream(std::string path) {
+    HttpStream(std::string path) {
         m_http.setUserAgent(USER_AGENT);
         m_http.setTimeout(10000);
         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
@@ -89,11 +89,11 @@ public:
     size_t position() override;
     void close() override;
     bool open() override;
-    ~HttpIStream() {
+    ~HttpStream() {
         close();
     }
 
-    // MIStream methods
+    // MStream methods
 
     virtual bool seek(size_t pos);
     size_t available() override;
@@ -114,37 +114,37 @@ protected:
 };
 
 
-class HttpOStream: public MOStream {
+// class HttpOStream: public MOStream {
 
-public:
-    // MStream methods
-    HttpOStream(std::string path) {
-        m_http.setUserAgent(USER_AGENT);
-        m_http.setTimeout(10000);
-        m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-        m_http.setRedirectLimit(10);
-        m_http.setReuse(true);
+// public:
+//     // MStream methods
+//     HttpOStream(std::string path) {
+//         m_http.setUserAgent(USER_AGENT);
+//         m_http.setTimeout(10000);
+//         m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+//         m_http.setRedirectLimit(10);
+//         m_http.setReuse(true);
 
-        url = path;
-    }
-    size_t position() override;
-    void close() override;
-    bool open() override;
-    ~HttpOStream() {
-        close();
-    }
+//         url = path;
+//     }
+//     size_t position() override;
+//     void close() override;
+//     bool open() override;
+//     ~HttpOStream() {
+//         close();
+//     }
 
-    // MOStream methods
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
+//     // MOStream methods
+//     size_t write(const uint8_t *buf, size_t size) override;
+//     bool isOpen();
 
-protected:
-    std::string url;
-    bool m_isOpen;
-    WiFiClient m_file;
-    //WiFiClient m_client;
-	HTTPClient m_http;
-};
+// protected:
+//     std::string url;
+//     bool m_isOpen;
+//     WiFiClient m_file;
+//     //WiFiClient m_client;
+// 	HTTPClient m_http;
+// };
 
 
 /********************************************************

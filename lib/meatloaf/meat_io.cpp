@@ -1,6 +1,7 @@
 #include "meat_io.h"
 
 #include <sys/stat.h>
+
 #include <algorithm>
 #include <vector>
 #include <sstream>
@@ -233,30 +234,30 @@ std::string MFSOwner::existsLocal( std::string path )
         int i = stat(std::string(path).c_str(), &st);
 
         // If not found try for a wildcard match
-        if ( i == -1 )
-        {
-            DIR *dir;
-            struct dirent *ent;
+        // if ( i == -1 )
+        // {
+        //     DIR *dir;
+        //     struct dirent *ent;
 
-            std::string p = url.pathToFile();
-            std::string name = url.name;
-            // Debug_printv( "pathToFile[%s] basename[%s]", p.c_str(), name.c_str() );
-            if ((dir = opendir ( p.c_str() )) != NULL)
-            {
-                /* print all the files and directories within directory */
-                std::string e;
-                while ((ent = readdir (dir)) != NULL) {
-                    // Debug_printv( "%s\r\n", ent->d_name );
-                    e = ent->d_name;
-                    if ( mstr::compare( name, e ) )
-                    {
-                        path = ( p + "/" + e );
-                        break;
-                    }
-                }
-                closedir (dir);
-            }
-        }        
+        //     std::string p = url.pathToFile();
+        //     std::string name = url.name;
+        //     // Debug_printv( "pathToFile[%s] basename[%s]", p.c_str(), name.c_str() );
+        //     if ((dir = opendir ( p.c_str() )) != NULL)
+        //     {
+        //         /* print all the files and directories within directory */
+        //         std::string e;
+        //         while ((ent = readdir (dir)) != NULL) {
+        //             // Debug_printv( "%s\r\n", ent->d_name );
+        //             e = ent->d_name;
+        //             if ( mstr::compare( name, e ) )
+        //             {
+        //                 path = ( p + "/" + e );
+        //                 break;
+        //             }
+        //         }
+        //         closedir (dir);
+        //     }
+        // }
     }
 
     return path;
@@ -543,17 +544,17 @@ uint64_t MFile::getAvailableSpace()
 {
     if ( mstr::startsWith(path, (char *)"/sd") )
     {
-        FATFS* fsinfo;
-        DWORD fre_clust;
+        // FATFS* fsinfo;
+        // DWORD fre_clust;
 
-        if (f_getfree("/", &fre_clust, &fsinfo) == 0)
-        {
-            uint64_t total = ((uint64_t)(fsinfo->csize)) * (fsinfo->n_fatent - 2) * (fsinfo->ssize);
-            uint64_t used = ((uint64_t)(fsinfo->csize)) * ((fsinfo->n_fatent - 2) - (fsinfo->free_clst)) * (fsinfo->ssize);
-            uint64_t free = total - used;
-            //Debug_printv("total[%llu] used[%llu free[%llu]", total, used, free);
-            return free;
-        }
+        // if (f_getfree("/", &fre_clust, &fsinfo) == 0)
+        // {
+        //     uint64_t total = ((uint64_t)(fsinfo->csize)) * (fsinfo->n_fatent - 2) * (fsinfo->ssize);
+        //     uint64_t used = ((uint64_t)(fsinfo->csize)) * ((fsinfo->n_fatent - 2) - (fsinfo->free_clst)) * (fsinfo->ssize);
+        //     uint64_t free = total - used;
+        //     //Debug_printv("total[%llu] used[%llu free[%llu]", total, used, free);
+        //     return free;
+        // }
     }
     else
     {

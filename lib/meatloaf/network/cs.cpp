@@ -123,15 +123,15 @@ bool CServerSessionMgr::traversePath(MFile* path) {
  * I Stream impls
  ********************************************************/
 
-size_t CServerIStream::position() {
+size_t CServerStream::position() {
     return m_position;
 };
 
-void CServerIStream::close() {
+void CServerStream::close() {
     m_isOpen = false;
 };
 
-bool CServerIStream::open() {
+bool CServerStream::open() {
     auto file = std::make_unique<CServerFile>(url);
     m_isOpen = false;
 
@@ -167,16 +167,16 @@ bool CServerIStream::open() {
 };
 
 // MIStream methods
-size_t CServerIStream::available() {
+size_t CServerStream::available() {
     return m_bytesAvailable;
 };
 
-size_t CServerIStream::size() {
+size_t CServerStream::size() {
     return m_bytesAvailable;
 };
 
-size_t CServerIStream::read(uint8_t* buf, size_t size)  {
-    //Serial.println("CServerIStream::read");
+size_t CServerStream::read(uint8_t* buf, size_t size)  {
+    //Serial.println("CServerStream::read");
     auto bytesRead = CServerFileSystem::session.receive(buf, size);
     m_bytesAvailable-=bytesRead;
     m_position+=bytesRead;
@@ -184,48 +184,48 @@ size_t CServerIStream::read(uint8_t* buf, size_t size)  {
     return bytesRead;
 };
 
-bool CServerIStream::isOpen() {
+bool CServerStream::isOpen() {
     return m_isOpen;
 }
 
-/********************************************************
- * O Stream impls
- ********************************************************/
+// /********************************************************
+//  * O Stream impls
+//  ********************************************************/
 
-size_t CServerOStream::position() {
-    return 0;
-};
+// size_t CServerOStream::position() {
+//     return 0;
+// };
 
-void CServerOStream::close() {
-    m_isOpen = false;
-};
+// void CServerOStream::close() {
+//     m_isOpen = false;
+// };
 
-bool CServerOStream::open() {
-    auto file = std::make_unique<CServerFile>(url);
+// bool CServerOStream::open() {
+//     auto file = std::make_unique<CServerFile>(url);
 
-    if(CServerFileSystem::session.traversePath(file.get())) {
-        m_isOpen = true;
-    }
-    else
-        m_isOpen = false;
+//     if(CServerFileSystem::session.traversePath(file.get())) {
+//         m_isOpen = true;
+//     }
+//     else
+//         m_isOpen = false;
 
-    return m_isOpen;
-};
+//     return m_isOpen;
+// };
 
-// MOStream methods
-size_t CServerOStream::write(const uint8_t *buf, size_t size) {
-    // we have to write all at once... sorry...
-    auto file = std::make_unique<CServerFile>(url);
+// // MOStream methods
+// size_t CServerOStream::write(const uint8_t *buf, size_t size) {
+//     // we have to write all at once... sorry...
+//     auto file = std::make_unique<CServerFile>(url);
 
-    CServerFileSystem::session.sendCommand("save fileName,size[,type=PRG,SEQ]");
-    m_isOpen = false; // c64 server supports only writing all at once, so this channel has to be marked closed
-    return CServerFileSystem::session.send(buf, size);
-};
+//     CServerFileSystem::session.sendCommand("save fileName,size[,type=PRG,SEQ]");
+//     m_isOpen = false; // c64 server supports only writing all at once, so this channel has to be marked closed
+//     return CServerFileSystem::session.send(buf, size);
+// };
 
 
-bool CServerOStream::isOpen() {
-    return m_isOpen;
-};
+// bool CServerOStream::isOpen() {
+//     return m_isOpen;
+// };
 
 /********************************************************
  * File impls
@@ -359,17 +359,17 @@ bool CServerFile::isDirectory() {
     return false;
 };
 
-MIStream* CServerFile::inputStream() {
-    MIStream* istream = new CServerIStream(url);
-    istream->open();   
-    return istream;
-}; 
+// MIStream* CServerFile::inputStream() {
+//     MIStream* istream = new CServerStream(url);
+//     istream->open();   
+//     return istream;
+// }; 
 
-MOStream* CServerFile::outputStream() {
-    MOStream* ostream = new CServerOStream(url);
-    ostream->open();   
-    return ostream;
-};
+// MOStream* CServerFile::outputStream() {
+//     MOStream* ostream = new CServerOStream(url);
+//     ostream->open();   
+//     return ostream;
+// };
 
 bool CServerFile::rewindDirectory() {    
     dirIsOpen = false;

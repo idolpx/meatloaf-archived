@@ -114,13 +114,13 @@ public:
     char plusCount = 0;                 // Go to AT mode at "+++" sequence, that has to be counted
     unsigned long plusTime = 0;         // When did we last receive a "+++" sequence
     unsigned long ledTime = 0;
-    byte ringCount = 0;
+    uint8_t ringCount = 0;
     unsigned long connectTime = 0;
     bool petTranslate = false;          // Fix PET MCTerm 1.26C Pet->ASCII encoding to actual ASCII
     bool hex = false;
-    byte flowControl = F_NONE;          // Use flow control
+    uint8_t flowControl = F_NONE;          // Use flow control
     bool txPaused = false;              // Has flow control asked us to pause?
-    byte pinPolarity = P_INVERTED;
+    uint8_t pinPolarity = P_INVERTED;
     bool echo = true;
     bool autoAnswer = false;
 
@@ -128,7 +128,7 @@ public:
     // so we can't do one byte a time.)
     uint8_t txBuf[TX_BUF_SIZE];
     String speedDials[10];
-    byte serialspeed;
+    uint8_t serialspeed;
 
     String ssid, password, busyMsg;
 
@@ -149,13 +149,13 @@ public:
     void updateLed();
     void disconnectWiFi();
     void setBaudRate(int inSpeed);
-    void setCarrier(byte carrier);
+    void setCarrier(uint8_t carrier);
     void displayNetworkStatus();
     void displayCurrentSettings();
     void displayStoredSettings();
     void waitForSpace();
     void displayHelp();
-    void storeSpeedDial(byte num, String location);
+    void storeSpeedDial(uint8_t num, String location);
 #if defined(ESP8266)
     bool startWPSConnect();
 #endif

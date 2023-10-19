@@ -1,5 +1,8 @@
 #include "http.h"
 
+#include "../../../include/global_defines.h"
+#include "../../../include/debug.h"
+
 /********************************************************
  * File impls
  ********************************************************/
@@ -9,24 +12,24 @@ bool HttpFile::isDirectory() {
     return false;
 }
 
-MIStream* HttpFile::inputStream() {
-    // has to return OPENED stream
-    Debug_printv("[%s]", url.c_str());
-    MIStream* istream = new HttpIStream(url);
-    istream->open();
-    return istream;
-}
+// MStream* HttpFile::inputStream() {
+//     // has to return OPENED stream
+//     Debug_printv("[%s]", url.c_str());
+//     MStream* istream = new HttpStream(url);
+//     istream->open();
+//     return istream;
+// }
 
-MIStream* HttpFile::createIStream(std::shared_ptr<MIStream> is) {
+MStream* HttpFile::createIStream(std::shared_ptr<MStream> is) {
     return is.get(); // we've overriden istreamfunction, so this one won't be used
 }
 
-MOStream* HttpFile::outputStream() {
-    // has to return OPENED stream
-    MOStream* ostream = new HttpOStream(url);
-    ostream->open();
-    return ostream;
-}
+// MOStream* HttpFile::outputStream() {
+//     // has to return OPENED stream
+//     MOStream* ostream = new HttpOStream(url);
+//     ostream->open();
+//     return ostream;
+// }
 
 time_t HttpFile::getLastWrite() {
     return 0; // might be taken from Last-Modified, probably not worth it
@@ -38,24 +41,26 @@ time_t HttpFile::getCreationTime() {
 
 bool HttpFile::exists() {
     Debug_printv("[%s]", url.c_str());
-    // we may try open the stream to check if it exists
-    std::unique_ptr<MIStream> test(inputStream());
-    // remember that MIStream destuctor should close the stream!
-    return test->isOpen();
+    // // we may try open the stream to check if it exists
+    // std::unique_ptr<MStream> test(inputStream());
+    // // remember that MStream destuctor should close the stream!
+    // return test->isOpen();
+    return true;
 }
 
 size_t HttpFile::size() {
-    // we may take content-lenght from header if exists
-    std::unique_ptr<MIStream> test(inputStream());
+    // // we may take content-lenght from header if exists
+    // std::unique_ptr<MStream> test(inputStream());
 
-    size_t size = 0;
+    // size_t size = 0;
 
-    if(test->isOpen())
-        size = test->available();
+    // if(test->isOpen())
+    //     size = test->available();
 
-    test->close();
+    // test->close();
 
-    return size;
+    // return size;
+    return 1;
 }
 
 
@@ -65,50 +70,50 @@ size_t HttpFile::size() {
 // }
 
 
-/********************************************************
- * Ostream impls
- ********************************************************/
+// /********************************************************
+//  * Ostream impls
+//  ********************************************************/
 
-size_t HttpOStream::position() { return 0; };
-void HttpOStream::close() {
-    m_http.end();
-}
+// size_t HttpOStream::position() { return 0; };
+// void HttpOStream::close() {
+//     m_http.end();
+// }
 
-bool HttpOStream::open() {
-    // we'll ad a lambda that will allow adding headers
-    // m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    mstr::replaceAll(url, "HTTP:", "http:");
-    m_http.setReuse(true);
-    bool initOk = m_http.begin(m_file, url.c_str());
-    Debug_printv("[%s] initOk[%d]", url.c_str(), initOk);
-    if(!initOk)
-        return false;
+// bool HttpOStream::open() {
+//     // we'll ad a lambda that will allow adding headers
+//     // m_http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+//     mstr::replaceAll(url, "HTTP:", "http:");
+//     m_http.setReuse(true);
+//     bool initOk = m_http.begin(m_file, url.c_str());
+//     Debug_printv("[%s] initOk[%d]", url.c_str(), initOk);
+//     if(!initOk)
+//         return false;
 
-    //int httpCode = m_http.PUT(); //Send the request
-//Serial.printf("URLSTR: httpCode=%d\n", httpCode);
-    // if(httpCode != 200)
-    //     return false;
+//     //int httpCode = m_http.PUT(); //Send the request
+// //Serial.printf("URLSTR: httpCode=%d\n", httpCode);
+//     // if(httpCode != 200)
+//     //     return false;
 
-    m_isOpen = true;
-    //m_file = m_http.getStream();  //Get the response payload as Stream
-    return true;
-}
+//     m_isOpen = true;
+//     //m_file = m_http.getStream();  //Get the response payload as Stream
+//     return true;
+// }
 
-//size_t HttpOStream::write(uint8_t) {};
-size_t HttpOStream::write(const uint8_t *buf, size_t size) {
-    return m_file.write(buf, size);
-}
+// //size_t HttpOStream::write(uint8_t) {};
+// size_t HttpOStream::write(const uint8_t *buf, size_t size) {
+//     return m_file.write(buf, size);
+// }
 
-bool HttpOStream::isOpen() {
-    return m_isOpen;
-}
+// bool HttpOStream::isOpen() {
+//     return m_isOpen;
+// }
 
 
 /********************************************************
  * Istream impls
  ********************************************************/
 
-bool HttpIStream::seek(size_t pos) {
+bool HttpStream::seek(size_t pos) {
     if(pos==m_position)
         return true;
 
@@ -148,15 +153,15 @@ bool HttpIStream::seek(size_t pos) {
     }
 }
 
-size_t HttpIStream::position() {
+size_t HttpStream::position() {
     return m_position;
 }
 
-void HttpIStream::close() {
+void HttpStream::close() {
     m_http.end();
 }
 
-bool HttpIStream::open() {
+bool HttpStream::open() {
     //mstr::replaceAll(url, "HTTP:", "http:");
     bool initOk = m_http.begin(m_file, url.c_str());
     Debug_printv("input %s: someRc=%d", url.c_str(), initOk);
@@ -187,26 +192,26 @@ bool HttpIStream::open() {
     // Is this text?
     std::string ct = m_http.header("content-type").c_str();
     Debug_printv("content_type[%s]", ct.c_str());
-    isText = mstr::isText(ct);
+//    isText = mstr::isText(ct);
 
     return true;
 };
 
-size_t HttpIStream::available() {
+size_t HttpStream::available() {
     return m_bytesAvailable;
 };
 
-size_t HttpIStream::size() {
+size_t HttpStream::size() {
     return m_length;
 };
 
-size_t HttpIStream::read(uint8_t* buf, size_t size) {
+size_t HttpStream::read(uint8_t* buf, size_t size) {
     auto bytesRead= m_file.read((char *) buf, size);
     m_bytesAvailable = m_file.available();
     m_position+=bytesRead;
     return bytesRead;
 };
 
-bool HttpIStream::isOpen() {
+bool HttpStream::isOpen() {
     return m_isOpen;
 };

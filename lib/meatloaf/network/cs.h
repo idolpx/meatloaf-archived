@@ -192,7 +192,7 @@ public:
     }
 
     friend class CServerFile;
-    friend class CServerIStream;
+    friend class CServerStream;
     friend class CServerOStream;
 };
 
@@ -210,9 +210,9 @@ public:
         // Debug_printv("path[%s] size[%d]", path.c_str(), size);
     };
 
-    MIStream* createIStream(std::shared_ptr<MIStream> src) { return src.get(); };
-    MIStream* inputStream() override ; // has to return OPENED stream
-    MOStream* outputStream() override ; // has to return OPENED stream    
+    MStream* createIStream(std::shared_ptr<MStream> src) { return src.get(); };
+    // MIStream* inputStream() override ; // has to return OPENED stream
+    // MOStream* outputStream() override ; // has to return OPENED stream
 
     std::string petsciiName() override {
         return name;
@@ -244,13 +244,13 @@ private:
  ********************************************************/
 
 //
-class CServerIStream: public MIStream {
+class CServerStream: public MStream {
 
 public:
-    CServerIStream(std::string path) {
+    CServerStream(std::string path) {
         url = path;
     }
-    ~CServerIStream() {
+    ~CServerStream() {
         close();
     }
     // MStream methods
@@ -276,29 +276,29 @@ protected:
 };
 
 
-class CServerOStream: public MOStream {
+// class CServerOStream: public MOStream {
 
-public:
-    // MStream methods
-    CServerOStream(std::string path) {
-        url = path;
-    }
-    ~CServerOStream() {
-        close();
-    }
+// public:
+//     // MStream methods
+//     CServerOStream(std::string path) {
+//         url = path;
+//     }
+//     ~CServerOStream() {
+//         close();
+//     }
 
-    size_t position() override;
-    void close() override;
-    bool open() override;
+//     size_t position() override;
+//     void close() override;
+//     bool open() override;
 
-    // MOStream methods
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen() override;
+//     // MOStream methods
+//     size_t write(const uint8_t *buf, size_t size) override;
+//     bool isOpen() override;
 
-protected:
-    std::string url;
-    bool m_isOpen;
-};
+// protected:
+//     std::string url;
+//     bool m_isOpen;
+// };
 
 
 /********************************************************

@@ -26,7 +26,7 @@ class FlashFileSystem: public MFileSystem
 
 
 public:
-    FlashFileSystem() { };
+    FlashFileSystem() : MFileSystem("FlashFS") {};
     FlashFileSystem(uint32_t start, uint32_t size, uint32_t pageSize, uint32_t blockSize, uint32_t maxOpenFds)
         : MFileSystem("littleFS"), _start(start) , _size(size) , _pageSize(pageSize) , _blockSize(blockSize) , _maxOpenFds(maxOpenFds)
     {

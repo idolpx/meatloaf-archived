@@ -1,5 +1,8 @@
 #include "iec_buffer.h"
 
+#include "../../include/global_defines.h"
+#include "../../include/debug.h"
+
 /********************************************************
  * oiecbuf
  * 

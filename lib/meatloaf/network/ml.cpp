@@ -162,16 +162,16 @@ bool MLFile::rewindDirectory() {
     return dirIsOpen;
 };
 
-MIStream* MLFile::inputStream() {
-    // has to return OPENED stream
-    Debug_printv("[%s]", url.c_str());
-    MIStream* istream = new MLIStream(url);
-    istream->open();   
-    return istream;
-}; 
+// MStream* MLFile::inputStream() {
+//     // has to return OPENED stream
+//     Debug_printv("[%s]", url.c_str());
+//     MStream* istream = new MLStream(url);
+//     istream->open();   
+//     return istream;
+// }; 
 
 
-bool MLIStream::open() {
+bool MLStream::open() {
     PeoplesUrlParser urlParser;
     urlParser.parseUrl(url);
 

@@ -57,21 +57,21 @@ bool DeviceDB::select(uint8_t new_device_id)
     std::unique_ptr<MFile> file(MFSOwner::File(config_file));
 
     Debug_printv("config_file[%s]", config_file.c_str());
-    if ( file->exists() )
-    {
-        // Load Device Settings
-        Meat::ifstream istream(config_file);
-        istream.open();
-        deserializeJson(m_device, istream);
-        Debug_printv("loaded id[%d]", (uint8_t)m_device["id"]);
-    }
-    else
-    {
-        // Create New Settings
-        deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
-        m_device["id"] = new_device_id;
-        Debug_printv("created id[%d]", (uint8_t)m_device["id"]);
-    }
+    // if ( file->exists() )
+    // {
+    //     // Load Device Settings
+    //     Meat::ifstream istream(config_file);
+    //     istream.open();
+    //     deserializeJson(m_device, istream);
+    //     Debug_printv("loaded id[%d]", (uint8_t)m_device["id"]);
+    // }
+    // else
+    // {
+    //     // Create New Settings
+    //     deserializeJson(m_device, F("{\"id\":0,\"media\":0,\"partition\":0,\"url\":\"\",\"path\":\"/\",\"archive\":\"\",\"image\":\"\"}"));
+    //     m_device["id"] = new_device_id;
+    //     Debug_printv("created id[%d]", (uint8_t)m_device["id"]);
+    // }
 
     return true;
 }
@@ -79,25 +79,25 @@ bool DeviceDB::select(uint8_t new_device_id)
 bool DeviceDB::save()
 {
     // Only save if dirty
-    if ( m_dirty )
-    {
-        Debug_printv("saved [%s]", config_file.c_str());
-        std::unique_ptr<MFile> file(MFSOwner::File(config_file));
-        if ( file->exists() )
-            file->remove();
+    // if ( m_dirty )
+    // {
+    //     Debug_printv("saved [%s]", config_file.c_str());
+    //     std::unique_ptr<MFile> file(MFSOwner::File(config_file));
+    //     if ( file->exists() )
+    //         file->remove();
 
-        Meat::ofstream ostream(file.get()->url);
-        ostream.open();
-        if(ostream.is_open())
-        {
-            serializeJson(m_device, ostream);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
+    //     Meat::ofstream ostream(file.get()->url);
+    //     ostream.open();
+    //     if(ostream.is_open())
+    //     {
+    //         serializeJson(m_device, ostream);
+    //         return true;
+    //     }
+    //     else
+    //     {
+    //         return false;
+    //     }
+    // }
 
     return false;
 }

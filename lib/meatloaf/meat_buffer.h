@@ -302,8 +302,8 @@ namespace Meat
                 std::streampos delta = __pos - currBuffStart;
                 // TODO - check if eback == ibuffer!!!
                 // TODO - check if pbase == obuffer!!!
-                this->setg(this->eback(), ibuffer + delta, this->egptr());
-                this->setp(this->pbase(), obuffer + delta);
+//                this->setg(this->eback(), (ibuffer + delta), this->egptr());
+//                this->setp(this->pbase(), (obuffer + delta));
             }
             else if (mstream->seek(__pos))
             {

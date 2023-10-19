@@ -102,7 +102,7 @@ void setup()
         Serial.println("IEC Bus Initialized");
 
         Serial.print("Virtual Device(s) Started: [ ");
-        for (byte i = 0; i < 31; i++)
+        for (uint8_t i = 0; i < 31; i++)
         {
          if (iec.isDeviceEnabled(i))
          {

@@ -1,7 +1,7 @@
 #ifndef MEATFILESYSTEM_WRAPPERS_IEC_BUFFER
 #define MEATFILESYSTEM_WRAPPERS_IEC_BUFFER
 
-#include "iec.h"
+#include "bus.h"
 #include "iec_buffer.h"
 #include <string>
 #include <iostream>
