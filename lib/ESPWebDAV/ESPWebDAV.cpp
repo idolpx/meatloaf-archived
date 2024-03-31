@@ -810,6 +810,7 @@ void ESPWebDAVCore::sendPropResponse(bool isDir, const String& fullResPathFS, si
 {
     String fullResPath = fullResPathFS;
     replaceFront(fullResPath, _fsRoot, _davRoot);
+    String displayName = basename(fullResPath.c_str());
     fullResPath = c2enc(fullResPath);
 
     String blah;
@@ -843,7 +844,8 @@ void ESPWebDAVCore::sendPropResponse(bool isDir, const String& fullResPathFS, si
         sendContentProp(F("getetag"), entityTag);
     }
 
-    sendContentProp(F("displayname"), fullResPath);
+    sendContentProp(F("displayname"), displayName);
+    Serial.println(displayName);
 
     sendContent(F("</D:prop></D:propstat></D:response>"));
 }
