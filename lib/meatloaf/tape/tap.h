@@ -1,4 +1,6 @@
 // .TAP - The raw tape image format
+//
+// https://en.wikipedia.org/wiki/Commodore_Datasette
 // https://vice-emu.sourceforge.io/vice_17.html#SEC330
 // https://ist.uwaterloo.ca/~schepers/formats/TAP.TXT
 // https://sourceforge.net/p/tapclean/gitcode/ci/master/tree/
@@ -8,22 +10,22 @@
 //
 
 
-#ifndef MEATFILESYSTEM_MEDIA_TAP
-#define MEATFILESYSTEM_MEDIA_TAP
+#ifndef MEATLOAF_MEDIA_TAP
+#define MEATLOAF_MEDIA_TAP
 
 #include "meat_io.h"
-#include "cbm_image.h"
+#include "meat_media.h"
 
 
 /********************************************************
  * Streams
  ********************************************************/
 
-class TAPIStream : public CBMImageStream {
+class TAPIStream : public MImageStream {
     // override everything that requires overriding here
 
 public:
-    TAPIStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) { };
+    TAPIStream(std::shared_ptr<MStream> is) : MImageStream(is) { };
 
 protected:
     struct Header {
@@ -52,9 +54,9 @@ protected:
     }
 
     bool seekEntry( std::string filename ) override;
-    bool seekEntry( size_t index ) override;
+    bool seekEntry( uint16_t index ) override;
 
-    size_t readFile(uint8_t* buf, size_t size) override;
+    uint16_t readFile(uint8_t* buf, uint16_t size) override;
     bool seekPath(std::string path) override;
 
     Header header;
@@ -74,19 +76,16 @@ public:
 
     TAPFile(std::string path, bool is_dir = true): MFile(path) {
         isDir = is_dir;
+
+        media_image = name;
+        //mstr::toUTF8(media_image);
     };
     
     ~TAPFile() {
         // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
-
-    std::string petsciiName() override {
-        // It's already in PETSCII
-        mstr::replaceAll(name, "\\", "/");
-        return name;
-    }
+    MStream* getDecodedStream(std::shared_ptr<MStream> containerIstream) override;
 
     bool isDirectory() override;
     bool rewindDirectory() override;
@@ -95,10 +94,10 @@ public:
 
     bool exists() override { return true; };
     bool remove() override { return false; };
-    bool rename(std::string dest) { return false; };
+    bool rename(std::string dest) override { return false; };
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override { return 0; };
-    size_t size() override;
+    uint32_t size() override;
 
     bool isDir = true;
     bool dirIsOpen = false;
@@ -117,7 +116,7 @@ public:
         return new TAPFile(path);
     }
 
-    bool handles(std::string fileName) {
+    bool handles(std::string fileName) override {
         return byExtension(".tap", fileName);
     }
 
@@ -125,4 +124,4 @@ public:
 };
 
 
-#endif /* MEATFILESYSTEM_MEDIA_TAP */
+#endif /* MEATLOAF_MEDIA_TAP */

@@ -1,5 +1,5 @@
-#ifndef MEATFILE_DEFINES_EXCEPTION_H
-#define MEATFILE_DEFINES_EXCEPTION_H
+#ifndef MEATLOAF_EXCEPTION
+#define MEATLOAF_EXCEPTION
 
 #include <exception>
 
@@ -27,4 +27,4 @@ struct FileNotFoundException : public IOException {
 };
 
 
-#endif
+#endif // MEATLOAF_EXCEPTION

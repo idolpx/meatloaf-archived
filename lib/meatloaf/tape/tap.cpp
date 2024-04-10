@@ -1,5 +1,7 @@
 #include "tap.h"
 
+#include "endianness.h"
+
 /********************************************************
  * Streams
  ********************************************************/
@@ -22,10 +24,10 @@ bool TAPIStream::seekEntry( std::string filename )
             // Read Entry From Stream
             if (filename == "*")
             {
-                filename == entryFilename;
+                filename = entryFilename;
             }
             
-            if ( mstr::startsWith(entryFilename, filename.c_str()) )
+            if ( mstr::compare(filename, entryFilename) )
             {
                 // Move stream pointer to start track/sector
                 return true;
@@ -39,11 +41,11 @@ bool TAPIStream::seekEntry( std::string filename )
     return false;
 }
 
-bool TAPIStream::seekEntry( size_t index )
+bool TAPIStream::seekEntry( uint16_t index )
 {
     // Calculate Sector offset & Entry offset
     index--;
-    uint8_t entryOffset = 0x40 + (index * sizeof(entry));
+    uint16_t entryOffset = 0x40 + (index * sizeof(entry));
 
     //Debug_printv("----------");
     //Debug_printv("index[%d] sectorOffset[%d] entryOffset[%d] entry_index[%d]", index, sectorOffset, entryOffset, entry_index);
@@ -62,11 +64,11 @@ bool TAPIStream::seekEntry( size_t index )
 }
 
 
-size_t TAPIStream::readFile(uint8_t* buf, size_t size) {
-    size_t bytesRead = 0;
+uint16_t TAPIStream::readFile(uint8_t* buf, uint16_t size) {
+    uint16_t bytesRead = 0;
 
     bytesRead += containerStream->read(buf, size);
-    m_bytesAvailable -= bytesRead;
+    _position += bytesRead;
 
     return bytesRead;
 }
@@ -79,7 +81,6 @@ bool TAPIStream::seekPath(std::string path) {
     entry_index = 0;
 
     // call image method to obtain file bytes here, return true on success:
-    mstr::toPETSCII(path);
     if ( seekEntry(path) )
     {
         //auto entry = containerImage->entry;
@@ -87,16 +88,15 @@ bool TAPIStream::seekPath(std::string path) {
         size_t start_address = UINT16_FROM_LE_UINT16(entry.start_address);
         size_t end_address = UINT16_FROM_LE_UINT16(entry.end_address);
         size_t data_offset = UINT32_FROM_LE_UINT32(entry.data_offset);
-        Debug_printv("filename [%.16s] type[%s] start_address[%d] end_address[%d] data_offset[%d]", entry.filename, type, start_address, end_address, data_offset);
+        Debug_printv("filename [%.16s] type[%s] start_address[%zu] end_address[%zu] data_offset[%zu]", entry.filename, type, start_address, end_address, data_offset);
 
         // Calculate file size
-        m_length = ( end_address - start_address );
-        m_bytesAvailable = m_length;
+        _size = ( end_address - start_address );
 
         // Set position to beginning of file
         containerStream->seek(entry.data_offset);
 
-        Debug_printv("File Size: size[%d] available[%d]", m_length, m_bytesAvailable);
+        Debug_printv("File Size: size[%d] available[%d]", _size, available());
         
         return true;
     }
@@ -112,7 +112,7 @@ bool TAPIStream::seekPath(std::string path) {
  * File implementations
  ********************************************************/
 
-MIStream* TAPFile::createIStream(std::shared_ptr<MIStream> containerIstream) {
+MStream* TAPFile::getDecodedStream(std::shared_ptr<MStream> containerIstream) {
     Debug_printv("[%s]", url.c_str());
 
     return new TAPIStream(containerIstream);
@@ -141,10 +141,11 @@ bool TAPFile::rewindDirectory() {
 
     // Set Media Info Fields
     media_header = mstr::format("%.24", image->header.disk_name);
-    media_id = "TAP";
+    media_id = "tap";
     media_blocks_free = 0;
     media_block_size = image->block_size;
     media_image = name;
+    //mstr::toUTF8(media_image);
 
     Debug_printv("media_header[%s] media_id[%s] media_blocks_free[%d] media_block_size[%d] media_image[%s]", media_header.c_str(), media_id.c_str(), media_blocks_free, media_block_size, media_image.c_str());
 
@@ -177,12 +178,12 @@ MFile* TAPFile::getNextFileInDir() {
 }
 
 
-size_t TAPFile::size() {
+uint32_t TAPFile::size() {
     // Debug_printv("[%s]", streamFile->url.c_str());
     // use TAP to get size of the file in image
     auto image = ImageBroker::obtain<TAPIStream>(streamFile->url);
 
-    size_t blocks = (UINT16_FROM_LE_UINT16(image->entry.end_address) - UINT16_FROM_LE_UINT16(image->entry.start_address)) / image->block_size;
+    size_t bytes = UINT16_FROM_LE_UINT16(image->entry.end_address) - UINT16_FROM_LE_UINT16(image->entry.start_address);
 
-    return blocks;
+    return bytes;
 }

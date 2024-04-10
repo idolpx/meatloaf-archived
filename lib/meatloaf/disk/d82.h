@@ -1,11 +1,12 @@
 // .D82 - This is a sector-for-sector copy of an 8250 floppy disk
+//
 // https://vice-emu.sourceforge.io/vice_17.html#SEC363
 // https://ist.uwaterloo.ca/~schepers/formats/D80-D82.TXT
 //
 
 
-#ifndef MEATFILESYSTEM_MEDIA_D82
-#define MEATFILESYSTEM_MEDIA_D82
+#ifndef MEATLOAF_MEDIA_D82
+#define MEATLOAF_MEDIA_D82
 
 #include "meat_io.h"
 #include "d64.h"
@@ -19,22 +20,64 @@ class D82IStream : public D64IStream {
     // override everything that requires overriding here
 
 public:
-    D82IStream(std::shared_ptr<MIStream> is) : D64IStream(is) 
+    D82IStream(std::shared_ptr<MStream> is) : D64IStream(is) 
     {
-        // D82 Offsets
-        directory_header_offset = {39, 0, 0x06};
-        directory_list_offset = {39, 1, 0x00};
-        block_allocation_map = { {38, 0, 0x06, 1, 50, 5}, {38, 3, 0x06, 51, 100, 5}, {38, 6, 0x06, 101, 150, 5}, {38, 9, 0x06, 151, 154, 5} };
+        // D82 Partition Info
+        std::vector<BlockAllocationMap> b = { 
+            {
+                38,     // track
+                0,      // sector
+                0x06,   // offset
+                1,      // start_track
+                50,     // end_track
+                5       // byte_count
+            },
+            {
+                38,     // track
+                3,      // sector
+                0x06,   // offset
+                51,     // start_track
+                100,    // end_track
+                5       // byte_count
+            },
+            {
+                38,     // track
+                6,      // sector
+                0x06,   // offset
+                101,    // start_track
+                150,    // end_track
+                5       // byte_count
+            },
+            {
+                38,     // track
+                9,      // sector
+                0x06,   // offset
+                151,    // start_track
+                154,    // end_track
+                5       // byte_count
+            }
+        };
+
+        Partition p = {
+            39,    // track
+            0,     // sector
+            0x06,  // header_offset
+            39,    // directory_track
+            1,     // directory_sector
+            0x00,  // directory_offset
+            b      // block_allocation_map
+        };
+        partitions.clear();
+        partitions.push_back(p);
         sectorsPerTrack = { 23, 25, 27, 29 };
     };
 
-    //virtual uint16_t blocksFree() override;
-	virtual uint8_t speedZone( uint8_t track) override
+	virtual uint8_t speedZone(uint8_t track) override
 	{
-        if ( track < 78 )
-		    return (track < 39) + (track < 53) + (track < 64);
+        if (track < 78)
+            return (track < 40) + (track < 54) + (track < 65);
         else
-            return (track < 116) + (track < 130) + (track < 141);
+            return (track < 117) + (track < 131) + (track < 142);
 	};
 
 protected:
@@ -52,7 +95,12 @@ class D82File: public D64File {
 public:
     D82File(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
 
-    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+    MStream* getDecodedStream(std::shared_ptr<MStream> containerIstream) override
+    {
+        Debug_printv("[%s]", url.c_str());
+
+        return new D82IStream(containerIstream);
+    }
 };
 
 
@@ -68,7 +116,7 @@ public:
         return new D82File(path);
     }
 
-    bool handles(std::string fileName) {
+    bool handles(std::string fileName) override {
         return byExtension(".d82", fileName);
     }
 
@@ -76,4 +124,4 @@ public:
 };
 
 
-#endif /* MEATFILESYSTEM_MEDIA_D82 */
+#endif /* MEATLOAF_MEDIA_D82 */

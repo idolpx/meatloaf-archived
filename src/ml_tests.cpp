@@ -38,25 +38,25 @@ void testReader(MFile* readeTest) {
 
     Serial.printf("* Trying to read file:%s\n", readeTest->url.c_str());
 
-    auto readerStream = Meat::ifstream(readeTest);
-    readerStream.open();
+    // auto readerStream = Meat::ifstream(readeTest);
+    // readerStream.open();
 
-    if(readerStream.is_open()) {
-        if(readerStream.eof()) {
-            Serial.printf("Reader returned EOF! :(");
-        }
+    // if(readerStream.is_open()) {
+    //     if(readerStream.eof()) {
+    //         Serial.printf("Reader returned EOF! :(");
+    //     }
 
-        while(!readerStream.eof()) {
-            std::string line;
+    //     while(!readerStream.eof()) {
+    //         std::string line;
 
-            readerStream >> line;
+    //         readerStream >> line;
 
-            Serial.printf("%s\n",line.c_str());
-        };
-    }
-    else {
-        Serial.printf("*** ERROR: stream could not be opened!");
-    }
+    //         Serial.printf("%s\n",line.c_str());
+    //     };
+    // }
+    // else {
+    //     Serial.printf("*** ERROR: stream could not be opened!");
+    // }
 }
 
 void dumpFileProperties(MFile* testMFile) {
@@ -64,7 +64,7 @@ void dumpFileProperties(MFile* testMFile) {
     Serial.printf("Url: %s, isDir = %d\n", testMFile->url.c_str(), testMFile->isDirectory());
     Serial.printf("Scheme: [%s]\n", testMFile->scheme.c_str());
     Serial.printf("Username: [%s]\n", testMFile->user.c_str());
-    Serial.printf("Password: [%s]\n", testMFile->pass.c_str());
+    Serial.printf("Password: [%s]\n", testMFile->password.c_str());
     Serial.printf("Host: [%s]\n", testMFile->host.c_str());
     Serial.printf("Port: [%s]\n", testMFile->port.c_str());    
     Serial.printf("Path: [%s]\n", testMFile->path.c_str());
@@ -117,12 +117,12 @@ void testCopy(MFile* srcFile, MFile* dstFile) {
 
     Serial.printf("FROM:%s\nTO:%s\n", srcFile->url.c_str(), dstFile->url.c_str());
 
-    if(dstFile->exists()) {
-        bool result = dstFile->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
-    }
+    // if(dstFile->exists()) {
+    //     bool result = dstFile->remove();
+    //     Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
+    // }
 
-    srcFile->copyTo(dstFile);
+    // srcFile->copyTo(dstFile);
 }
 
 void dumpParts(std::vector<std::string> v) {
@@ -228,7 +228,7 @@ void httpStream(char *url)
         size_t len = file->size();
         Debug_printv("File exists! size [%d]\r\n", len);
 
-        std::unique_ptr<MIStream> stream(file->inputStream());
+        std::unique_ptr<MStream> stream(file->getSourceStream());
 
 		for(i=0;i < len; i++)
 		{
@@ -305,95 +305,95 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
     if ( dstFile->exists() )
         dstFile->remove();
 
-    Meat::ofstream ostream(dstFile); // dstFile
-    ostream.open();
+    // Meat::ofstream ostream(dstFile); // dstFile
+    // ostream.open();
     
-    if(ostream.is_open()) {
-        Serial.printf("Trying to serialize JSON to %s\n", dstFile->url.c_str());
+    // if(ostream.is_open()) {
+    //     Serial.printf("Trying to serialize JSON to %s\n", dstFile->url.c_str());
 
-        auto x = serializeJson(m_device, ostream); 
+    //     auto x = serializeJson(m_device, ostream); 
 
-        Serial.printf("serializeJson returned %d\n", x);
+    //     Serial.printf("serializeJson returned %d\n", x);
 
-        if(ostream.bad()) {
-            Serial.println("WARNING: FILE WRITE FAILED!!!");
-        }
+    //     if(ostream.bad()) {
+    //         Serial.println("WARNING: FILE WRITE FAILED!!!");
+    //     }
 
-        ostream.close();
-    }
+    //     ostream.close();
+    // }
 
     //Serial.printf("%s size is %d\n", dstFile->url.c_str(), dstFile->size());
 
     Serial.printf("Copy %s to %s\n", dstFile->url.c_str(), srcFile->url.c_str());
 
-    if(dstFile->copyTo(srcFile)) {
-        Meat::ifstream istream(srcFile);
-        istream.open();
+    // if(dstFile->copyTo(srcFile)) {
+    //     Meat::ifstream istream(srcFile);
+    //     istream.open();
 
-        if(istream.is_open()) {
-            Serial.printf("Trying to deserialize JSON from %s\n",srcFile->url.c_str());
+    //     if(istream.is_open()) {
+    //         Serial.printf("Trying to deserialize JSON from %s\n",srcFile->url.c_str());
 
-            deserializeJson(m_device, istream);
+    //         deserializeJson(m_device, istream);
 
-            Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
-        }
-        else
-        {
-            Serial.printf("Error! The stream for deserialization couldn't be opened!");
-        }
-    }
-    else {
-        Serial.println("**** Copying failed *** WHY???");
+    //         Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+    //     }
+    //     else
+    //     {
+    //         Serial.printf("Error! The stream for deserialization couldn't be opened!");
+    //     }
+    // }
+    // else {
+    //     Serial.println("**** Copying failed *** WHY???");
 
-        Serial.printf("Trying to deserialize JSON from %s\n",dstFile->url.c_str());
+    //     Serial.printf("Trying to deserialize JSON from %s\n",dstFile->url.c_str());
 
-        Meat::ifstream newIstream(dstFile); // this is your standard istream!
-        newIstream.open();
+    //     Meat::ifstream newIstream(dstFile); // this is your standard istream!
+    //     newIstream.open();
 
-        deserializeJson(m_device, newIstream);
+    //     deserializeJson(m_device, newIstream);
 
-        Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+    //     Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
 
-    }
+    // }
 
 }
 
 
 void testNewCppStreams(std::string name) {
-    testHeader("TEST C++ streams");
+    // testHeader("TEST C++ streams");
 
-    Serial.println(" * Read test\n");
+    // Serial.println(" * Read test\n");
 
-    Meat::ifstream istream(name);
-    istream.open();
-    if(istream.is_open()) {
-        std::string line;
+    // Meat::ifstream istream(name);
+    // istream.open();
+    // if(istream.is_open()) {
+    //     std::string line;
 
-        while(!istream.eof()) {
-            istream >> line;
-            Serial.print(line.c_str());
-        }
+    //     while(!istream.eof()) {
+    //         istream >> line;
+    //         Serial.print(line.c_str());
+    //     }
 
-        istream.close();
-    }
+    //     istream.close();
+    // }
 
-    Serial.println("\n * Write test\n");
+    // Serial.println("\n * Write test\n");
 
-    Meat::ofstream ostream("/intern.txt");
+    // Meat::ofstream ostream("/intern.txt");
 
-    Serial.println(" * Write test - after declaration\n");
+    // Serial.println(" * Write test - after declaration\n");
 
-    ostream.open();
-    if(ostream.is_open()) {
-        ostream << "Arise, ye workers from your slumber,";
-        ostream << "Arise, ye prisoners of want.";
-        ostream << "For reason in revolt now thunders,";
-        ostream << "and at last ends the age of cant!";
-        if(ostream.bad())
-            Serial.println("WRITING FAILED!!!");
+    // ostream.open();
+    // if(ostream.is_open()) {
+    //     ostream << "Arise, ye workers from your slumber,";
+    //     ostream << "Arise, ye prisoners of want.";
+    //     ostream << "For reason in revolt now thunders,";
+    //     ostream << "and at last ends the age of cant!";
+    //     if(ostream.bad())
+    //         Serial.println("WRITING FAILED!!!");
 
-        ostream.close();
-    }
+    //     ostream.close();
+    // }
 }
 
 void runFSTest(std::string dirPath, std::string filePath) {

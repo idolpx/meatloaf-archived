@@ -166,7 +166,7 @@ bool CServerIStream::open() {
     return m_isOpen;
 };
 
-// MIStream methods
+// MStream methods
 size_t CServerIStream::available() {
     return m_bytesAvailable;
 };
@@ -212,7 +212,7 @@ bool CServerOStream::open() {
     return m_isOpen;
 };
 
-// MOStream methods
+// MStream methods
 size_t CServerOStream::write(const uint8_t *buf, size_t size) {
     // we have to write all at once... sorry...
     auto file = std::make_unique<CServerFile>(url);
@@ -359,14 +359,14 @@ bool CServerFile::isDirectory() {
     return false;
 };
 
-MIStream* CServerFile::inputStream() {
-    MIStream* istream = new CServerIStream(url);
+MStream* CServerFile::getSourceStream() {
+    MStream* istream = new CServerIStream(url);
     istream->open();   
     return istream;
 }; 
 
-MOStream* CServerFile::outputStream() {
-    MOStream* ostream = new CServerOStream(url);
+MStream* CServerFile::getDecodedStream() {
+    MStream* ostream = new CServerOStream(url);
     ostream->open();   
     return ostream;
 };

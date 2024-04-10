@@ -210,9 +210,9 @@ public:
         // Debug_printv("path[%s] size[%d]", path.c_str(), size);
     };
 
-    MIStream* createIStream(std::shared_ptr<MIStream> src) { return src.get(); };
-    MIStream* inputStream() override ; // has to return OPENED stream
-    MOStream* outputStream() override ; // has to return OPENED stream    
+    MStream* createIStream(std::shared_ptr<MStream> src) { return src.get(); };
+    MStream* getSourceStream() override ; // has to return OPENED stream
+    MStream* getDecodedStream() override ; // has to return OPENED stream    
 
     std::string petsciiName() override {
         return name;
@@ -244,7 +244,7 @@ private:
  ********************************************************/
 
 //
-class CServerIStream: public MIStream {
+class CServerIStream: public MStream {
 
 public:
     CServerIStream(std::string path) {
@@ -258,7 +258,7 @@ public:
     void close() override;
     bool open() override;
 
-    // MIStream methods
+    // MStream methods
     size_t available() override;
     size_t size() override;
     size_t read(uint8_t* buf, size_t size) override;
@@ -276,7 +276,7 @@ protected:
 };
 
 
-class CServerOStream: public MOStream {
+class CServerOStream: public MStream {
 
 public:
     // MStream methods
@@ -291,7 +291,7 @@ public:
     void close() override;
     bool open() override;
 
-    // MOStream methods
+    // MStream methods
     size_t write(const uint8_t *buf, size_t size) override;
     bool isOpen() override;
 

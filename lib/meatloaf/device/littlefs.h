@@ -49,7 +49,7 @@ public:
         _lfs_cfg.name_max = 0;
         _lfs_cfg.file_max = 0;
         _lfs_cfg.attr_max = 0;
-        m_isMounted = false;
+        _is_mounted = false;
         mount();
     }
 
@@ -91,12 +91,21 @@ friend class LittleOStream;
 friend class LittleIStream;
 
 public:
-    LittleFile(std::string path) {
-        parseUrl(path);
-        if(!pathValid(path.c_str()))
+    std::string basepath = "";
+
+    LittleFile(std::string path): MFile(path) {
+        // parseUrl( path );
+
+        // Find full filename for wildcard
+        if (mstr::contains(name, "?") || mstr::contains(name, "*"))
+            seekEntry( name );
+
+        if (!pathValid(path.c_str()))
             m_isNull = true;
         else
             m_isNull = false;
+
+        //Debug_printv("basepath[%s] path[%s] valid[%d]", basepath.c_str(), this->path.c_str(), m_isNull);
     };
     ~LittleFile() {
         //Serial.printf("*** Destroying littlefile %s\n", url.c_str());
@@ -105,18 +114,21 @@ public:
 
     //MFile* cd(std::string newDir);
     bool isDirectory() override;
-    MIStream* inputStream() override ; // has to return OPENED stream
-    MOStream* outputStream() override ; // has to return OPENED stream
-    time_t getLastWrite() override ;
-    time_t getCreationTime() override ;
-    bool rewindDirectory() override ;
-    MFile* getNextFileInDir() override ;
-    bool mkDir() override ;
-    bool exists() override ;
-    size_t size() override ;
-    bool remove() override ;
+    MStream* getSourceStream(std::ios_base::openmode mode=std::ios_base::in) override ; // has to return OPENED stream
+    MStream* getDecodedStream(std::shared_ptr<MStream> src);
+
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool mkDir() override;
+    bool exists() override;
+    bool remove() override;
     bool rename(std::string dest);
-    MIStream* createIStream(std::shared_ptr<MIStream> src);
+
+    time_t getLastWrite() override;
+    time_t getCreationTime() override;
+    uint32_t size() override;
+
+    bool seekEntry( std::string filename );
 
 private:
     void openDir(std::string path);
@@ -153,64 +165,50 @@ private:
     int flags;
 };
 
-/********************************************************
- * MStreams O
- ********************************************************/
-
-class LittleOStream: public MOStream {
-public:
-    // MStream methods
-    LittleOStream(std::string& path) {
-        localPath = path;
-        handle = std::make_unique<LittleHandle>();
-    }
-    size_t position() override;
-    void close() override;
-    bool open() override;
-    ~LittleOStream() override {
-        close();
-    }
-
-    // MOStream methods
-    //size_t write(uint8_t) override;
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
-
-protected:
-    std::string localPath;
-
-    std::unique_ptr<LittleHandle> handle;    
-};
-
 
 /********************************************************
  * MStreams I
  ********************************************************/
 
 
-class LittleIStream: public MIStream {
+class LittleIStream: public MStream {
 public:
-    LittleIStream(std::string& path) {
+    LittleIStream(std::string& path, std::ios_base::openmode m) {
         localPath = path;
+        mode = m;
         handle = std::make_unique<LittleHandle>();
     }
-    // MStream methods
-    size_t position() override;
-    void close() override;
-    bool open() override;
     ~LittleIStream() override {
         close();
     }
 
-    // MIStream methods
-    size_t available() override;
-    size_t size() override;
-    //uint8_t read() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    bool isOpen();
-    virtual bool seek(size_t pos) override;
-    virtual bool seek(size_t pos, SeekMode mode) override;
+    // MStream methods
+    bool isBrowsable() override { return false; };
+    bool isRandomAccess() override { return true; };
 
+    // MStream methods
+    // uint32_t available() override;
+    // uint32_t size() override;
+    // uint32_t position() override;
+    // size_t error() override;
+
+    virtual bool seek(uint32_t pos) override;
+    virtual bool seek(uint32_t pos, int mode) override;    
+
+    void close() override;
+    bool open() override;
+
+    // MStream methods
+    //uint8_t read() override;
+    uint32_t read(uint8_t* buf, uint32_t size) override;
+    uint32_t write(const uint8_t *buf, uint32_t size) override;
+
+    virtual bool seekPath(std::string path) override {
+        //Debug_printv( "path[%s]", path.c_str() );
+        return false;
+    }
+
+    bool isOpen();
 protected:
     std::string localPath;
 

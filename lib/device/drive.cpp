@@ -940,7 +940,7 @@ void devDrive::sendFile()
 	}
 	else
 	{
-		std::unique_ptr<MIStream> istream(file->inputStream());
+		std::unique_ptr<MStream> istream(file->getSourceStream());
 
 		if( istream == nullptr )
 		{
@@ -1067,7 +1067,7 @@ void devDrive::saveFile()
 	std::unique_ptr<MFile> file(MFSOwner::File(m_filename));
 	Debug_printv("[%s]", file->url.c_str());
 
-	std::unique_ptr<MOStream> ostream(file->outputStream());
+	std::unique_ptr<MStream> ostream(file->getDecodedStream());
 
 
     if(!ostream->isOpen()) {

@@ -24,8 +24,8 @@ public:
     HttpFile(std::string path): MFile(path) {};
 
     bool isDirectory() override;
-    MIStream* inputStream() override ; // has to return OPENED stream
-    MOStream* outputStream() override ; // has to return OPENED stream
+    MStream* getSourceStream() override ; // has to return OPENED stream
+    MStream* getDecodedStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
     bool rewindDirectory() override { return false; };
@@ -35,7 +35,7 @@ public:
     size_t size() override ;
     bool remove() override { return false; };
     bool rename(std::string dest) { return false; };
-    MIStream* createIStream(std::shared_ptr<MIStream> src);
+    MStream* createIStream(std::shared_ptr<MStream> src);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 };
 
@@ -44,7 +44,7 @@ public:
  * Streams
  ********************************************************/
 
-class HttpIOStream: public MIStream, MOStream {
+class HttpIOStream: public MStream, MStream {
 public:
     HttpIOStream(std::string& path) {
         url = path;
@@ -75,7 +75,7 @@ protected:
 };
 
 
-class HttpIStream: public MIStream {
+class HttpIStream: public MStream {
 
 public:
     HttpIStream(std::string path) {
@@ -93,7 +93,7 @@ public:
         close();
     }
 
-    // MIStream methods
+    // MStream methods
 
     virtual bool seek(size_t pos);
     size_t available() override;
@@ -114,7 +114,7 @@ protected:
 };
 
 
-class HttpOStream: public MOStream {
+class HttpOStream: public MStream {
 
 public:
     // MStream methods
@@ -134,7 +134,7 @@ public:
         close();
     }
 
-    // MOStream methods
+    // MStream methods
     size_t write(const uint8_t *buf, size_t size) override;
     bool isOpen();
 
