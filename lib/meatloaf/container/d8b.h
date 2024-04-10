@@ -7,7 +7,7 @@
 #define MEATFILESYSTEM_MEDIA_D8B
 
 #include "meat_io.h"
-#include "d64.h"
+#include "../disk/d64.h"
 
 
 /********************************************************

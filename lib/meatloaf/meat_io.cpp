@@ -2,26 +2,41 @@
 
 #include "MIOException.h"
 
-// Scheme
-#include "scheme/littlefs.h"
-#include "scheme/http.h"
-#include "scheme/smb.h"
-#include "scheme/ml.h"
-#include "scheme/cs.h"
-#include "scheme/ws.h"
+// Archive
+// Cartridge
+// Container
+#include "container/d8b.h"
+
+// Device
+#include "device/littlefs.h"
 
 // Disk
-#include "media/d64.h"
-#include "media/d71.h"
-#include "media/d80.h"
-#include "media/d81.h"
-#include "media/d82.h"
-#include "media/d8b.h"
-#include "media/dnp.h"
+#include "disk/d64.h"
+#include "disk/d71.h"
+#include "disk/d80.h"
+#include "disk/d81.h"
+#include "disk/d82.h"
+#include "disk/dnp.h"
+
+// File
+// Link
+// Loaders
+
+// Network
+#include "network/http.h"
+#include "network/smb.h"
+#include "network/ws.h"
+
+// Scanners
+
+// Service
+#include "service/ml.h"
+#include "service/cs.h"
 
 // Tape
-#include "media/t64.h"
-#include "media/tcrt.h"
+#include "tape/t64.h"
+#include "tape/tcrt.h"
+
 
 #include <vector>
 #include <sstream>
