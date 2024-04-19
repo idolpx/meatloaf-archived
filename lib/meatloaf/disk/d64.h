@@ -17,17 +17,17 @@
 #include <bitset>
 
 #include "string_utils.h"
-#include "cbm_image.h"
+#include "meat_media.h"
 
 
 /********************************************************
  * Streams
  ********************************************************/
 
-class D64IStream : public CBMImageStream {
+class D64IStream : public MImageStream {
 
 public:
-    D64IStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) {};
+    D64IStream(std::shared_ptr<MIStream> is) : MImageStream(is) {};
 
 protected:
 
@@ -175,7 +175,7 @@ public:
         // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> containerIstream) override;
 
     std::string petsciiName() override {
         // It's already in PETSCII

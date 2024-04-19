@@ -1,8 +1,8 @@
-#include "cbm_image.h"
+#include "meat_media.h"
 
 // Utility Functions
 
-std::string CBMImageStream::decodeType(uint8_t file_type, bool show_hidden)
+std::string MImageStream::decodeType(uint8_t file_type, bool show_hidden)
 {
     //bool hide = false;
     std::string type = file_type_label[ file_type & 0b00000111 ];
@@ -29,14 +29,14 @@ std::string CBMImageStream::decodeType(uint8_t file_type, bool show_hidden)
  * Istream impls
  ********************************************************/
 
-// std::string CBMImageStream::seekNextEntry() {
+// std::string MImageStream::seekNextEntry() {
 //     // Implement this to skip a queue of file streams to start of next file and return its name
 //     // this will cause the next read to return bytes of "next" file in D64 image
 //     // might not have sense in this case, as D64 is kinda random access, not a stream.
 //     return "";
 // };
 
-bool CBMImageStream::open() {
+bool MImageStream::open() {
     // return true if we were able to read the image and confirmed it is valid.
     // it's up to you in what state the stream will be after open. Could be either:
     // 1. EOF-like state (0 available) and the state will be cleared only after succesful seekNextEntry or seekPath
@@ -45,11 +45,11 @@ bool CBMImageStream::open() {
     return false;
 };
 
-void CBMImageStream::close() {
+void MImageStream::close() {
 
 };
 
-// bool CBMImageStream::seek(uint32_t pos) {
+// bool MImageStream::seek(uint32_t pos) {
 //     // seek only within current "active" ("seeked") file within the image (see above)
 //     if(pos==m_position)
 //         return true;
@@ -57,22 +57,22 @@ void CBMImageStream::close() {
 //     return false;
 // };
 
-size_t CBMImageStream::position() {
+size_t MImageStream::position() {
     return m_position; // return position within "seeked" file, not the D64 image!
 };
 
 
-size_t CBMImageStream::available() {
+size_t MImageStream::available() {
     // return bytes available in currently "seeked" file
     return m_bytesAvailable;
 };
 
-size_t CBMImageStream::size() {
+size_t MImageStream::size() {
     // size of the "seeked" file, not the image.
     return m_length;
 };
 
-size_t CBMImageStream::read(uint8_t* buf, size_t size) {
+size_t MImageStream::read(uint8_t* buf, size_t size) {
     size_t bytesRead = 0;
 
     if(seekCalled) {
@@ -90,10 +90,10 @@ size_t CBMImageStream::read(uint8_t* buf, size_t size) {
     return bytesRead;
 };
 
-bool CBMImageStream::isOpen() {
+bool MImageStream::isOpen() {
 
     return m_isOpen;
 };
 
 
-std::unordered_map<std::string, CBMImageStream*> ImageBroker::repo;
+std::unordered_map<std::string, MImageStream*> ImageBroker::repo;

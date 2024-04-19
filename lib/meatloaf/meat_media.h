@@ -16,10 +16,10 @@
  * Streams
  ********************************************************/
 
-class CBMImageStream: public MIStream {
+class MImageStream: public MIStream {
 
 public:
-    CBMImageStream(std::shared_ptr<MIStream> is) {
+    MImageStream(std::shared_ptr<MIStream> is) {
         containerStream = is; 
     }
 
@@ -27,7 +27,7 @@ public:
     size_t position() override;
     void close() override;
     bool open() override;
-    ~CBMImageStream() {
+    ~MImageStream() {
         //Debug_printv("close");
         close();
     }
@@ -61,7 +61,7 @@ protected:
     size_t m_bytesAvailable = 0;
     size_t m_position = 0;
 
-    CBMImageStream* decodedStream;
+    MImageStream* decodedStream;
 
     bool show_hidden = false;
 
@@ -116,7 +116,7 @@ private:
  * Utility implementations
  ********************************************************/
 class ImageBroker {
-    static std::unordered_map<std::string, CBMImageStream*> repo;
+    static std::unordered_map<std::string, MImageStream*> repo;
 public:
     template<class T> static T* obtain(std::string url) {
         // obviously you have to supply STREAMFILE.url to this function!
@@ -126,7 +126,7 @@ public:
 
         // create and add stream to broker if not found
         auto newFile = MFSOwner::File(url);
-        T* newStream = (T*)newFile->inputStream();
+        T* newStream = (T*)newFile->getSourceStream();
 
         // Are we at the root of the pathInStream?
         if ( newFile->pathInStream == "")
@@ -143,8 +143,8 @@ public:
         return newStream;
     }
 
-    static CBMImageStream* obtain(std::string url) {
-        return obtain<CBMImageStream>(url);
+    static MImageStream* obtain(std::string url) {
+        return obtain<MImageStream>(url);
     }
 
     static void dispose(std::string url) {

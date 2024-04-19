@@ -132,7 +132,7 @@ public:
     WSFile(std::string path): MFile(path) {};
 
     bool isDirectory() override { return false; }
-    MIStream* inputStream() override {
+    MIStream* getSourceStream() override {
         // input stream = SERVER socket
         return new CSIOStream(this, true);
     }; 
@@ -149,7 +149,7 @@ public:
     size_t size() override { return 0; };
     bool remove() override { return false; };
     bool rename(std::string dest) { return false; };
-    MIStream* createIStream(std::shared_ptr<MIStream> src) {
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> src) {
         return nullptr;
     };
 

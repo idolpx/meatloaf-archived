@@ -9,7 +9,7 @@ bool HttpFile::isDirectory() {
     return false;
 }
 
-MIStream* HttpFile::inputStream() {
+MIStream* HttpFile::getSourceStream() {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
     MIStream* istream = new HttpIStream(url);
@@ -17,7 +17,7 @@ MIStream* HttpFile::inputStream() {
     return istream;
 }
 
-MIStream* HttpFile::createIStream(std::shared_ptr<MIStream> is) {
+MIStream* HttpFile::getDecodedStream(std::shared_ptr<MIStream> is) {
     return is.get(); // we've overriden istreamfunction, so this one won't be used
 }
 
@@ -39,14 +39,14 @@ time_t HttpFile::getCreationTime() {
 bool HttpFile::exists() {
     Debug_printv("[%s]", url.c_str());
     // we may try open the stream to check if it exists
-    std::unique_ptr<MIStream> test(inputStream());
+    std::unique_ptr<MIStream> test(getSourceStream());
     // remember that MIStream destuctor should close the stream!
     return test->isOpen();
 }
 
 size_t HttpFile::size() {
     // we may take content-lenght from header if exists
-    std::unique_ptr<MIStream> test(inputStream());
+    std::unique_ptr<MIStream> test(getSourceStream());
 
     size_t size = 0;
 

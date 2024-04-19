@@ -210,8 +210,8 @@ public:
         // Debug_printv("path[%s] size[%d]", path.c_str(), size);
     };
 
-    MIStream* createIStream(std::shared_ptr<MIStream> src) { return src.get(); };
-    MIStream* inputStream() override ; // has to return OPENED stream
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> src) { return src.get(); };
+    MIStream* getSourceStream() override ; // has to return OPENED stream
     MOStream* outputStream() override ; // has to return OPENED stream    
 
     std::string petsciiName() override {

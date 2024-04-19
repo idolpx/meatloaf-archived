@@ -228,7 +228,7 @@ void httpStream(char *url)
         size_t len = file->size();
         Debug_printv("File exists! size [%d]\r\n", len);
 
-        std::unique_ptr<MIStream> stream(file->inputStream());
+        std::unique_ptr<MIStream> stream(file->getSourceStream());
 
 		for(i=0;i < len; i++)
 		{

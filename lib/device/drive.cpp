@@ -940,7 +940,7 @@ void devDrive::sendFile()
 	}
 	else
 	{
-		std::unique_ptr<MIStream> istream(file->inputStream());
+		std::unique_ptr<MIStream> istream(file->getSourceStream());
 
 		if( istream == nullptr )
 		{

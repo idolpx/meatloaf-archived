@@ -235,15 +235,15 @@ bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
 }
 
-MIStream* MFile::inputStream() {
+MIStream* MFile::getSourceStream() {
     // has to return OPENED stream
     Debug_printv("pathInStream[%s] streamFile[%s]", pathInStream.c_str(), streamFile->url.c_str());
     //std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
 
-    std::shared_ptr<MIStream> containerStream(streamFile->inputStream()); // get its base stream, i.e. zip raw file contents
+    std::shared_ptr<MIStream> containerStream(streamFile->getSourceStream()); // get its base stream, i.e. zip raw file contents
     Debug_printv("containerStream isRandomAccess[%d] isBrowsable[%d]", containerStream->isRandomAccess(), containerStream->isBrowsable());
 
-    MIStream* decodedStream(createIStream(containerStream)); // wrap this stream into decodec stream, i.e. unpacked zip files
+    MIStream* decodedStream(getDecodedStream(containerStream)); // wrap this stream into decodec stream, i.e. unpacked zip files
     Debug_printv("decodedStream isRandomAccess[%d] isBrowsable[%d]", decodedStream->isRandomAccess(), decodedStream->isBrowsable());
 
     if(decodedStream->isRandomAccess() && pathInStream != "") {

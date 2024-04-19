@@ -12,18 +12,18 @@
 #define MEATFILESYSTEM_MEDIA_TAP
 
 #include "meat_io.h"
-#include "cbm_image.h"
+#include "meat_media.h"
 
 
 /********************************************************
  * Streams
  ********************************************************/
 
-class TAPIStream : public CBMImageStream {
+class TAPIStream : public MImageStream {
     // override everything that requires overriding here
 
 public:
-    TAPIStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) { };
+    TAPIStream(std::shared_ptr<MIStream> is) : MImageStream(is) { };
 
 protected:
     struct Header {
@@ -80,7 +80,7 @@ public:
         // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> containerIstream) override;
 
     std::string petsciiName() override {
         // It's already in PETSCII

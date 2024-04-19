@@ -45,10 +45,10 @@ class SevenZipFile: public MFile
 {
 public:
     SevenZipFile(std::string path) : MFile(path) {};
-    MIStream* createIStream(std::shared_ptr<MIStream> src) override;
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> src) override;
 
     bool isDirectory() override;
-    MIStream* inputStream() override ; // has to return OPENED stream
+    MIStream* getSourceStream() override ; // has to return OPENED stream
     MOStream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;

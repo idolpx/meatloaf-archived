@@ -359,7 +359,7 @@ bool CServerFile::isDirectory() {
     return false;
 };
 
-MIStream* CServerFile::inputStream() {
+MIStream* CServerFile::getSourceStream() {
     MIStream* istream = new CServerIStream(url);
     istream->open();   
     return istream;

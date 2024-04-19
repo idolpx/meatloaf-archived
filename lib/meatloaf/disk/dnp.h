@@ -44,7 +44,12 @@ class DNPFile: public D64File {
 public:
     DNPFile(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
 
-    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> containerIstream) override
+    {
+        Debug_printv("[%s]", url.c_str());
+
+        return new DNPIStream(containerIstream);
+    }
 };
 
 

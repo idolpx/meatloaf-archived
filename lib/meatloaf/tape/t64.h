@@ -8,18 +8,18 @@
 #define MEATFILESYSTEM_MEDIA_T64
 
 #include "meat_io.h"
-#include "cbm_image.h"
+#include "meat_media.h"
 
 
 /********************************************************
  * Streams
  ********************************************************/
 
-class T64IStream : public CBMImageStream {
+class T64IStream : public MImageStream {
     // override everything that requires overriding here
 
 public:
-    T64IStream(std::shared_ptr<MIStream> is) : CBMImageStream(is) { };
+    T64IStream(std::shared_ptr<MIStream> is) : MImageStream(is) { };
 
 protected:
     struct Header {
@@ -75,7 +75,7 @@ public:
         // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    MIStream* createIStream(std::shared_ptr<MIStream> containerIstream) override;
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> containerIstream) override;
 
     std::string petsciiName() override {
         // It's already in PETSCII

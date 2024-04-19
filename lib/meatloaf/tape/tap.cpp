@@ -112,7 +112,7 @@ bool TAPIStream::seekPath(std::string path) {
  * File implementations
  ********************************************************/
 
-MIStream* TAPFile::createIStream(std::shared_ptr<MIStream> containerIstream) {
+MIStream* TAPFile::getDecodedStream(std::shared_ptr<MIStream> containerIstream) {
     Debug_printv("[%s]", url.c_str());
 
     return new TAPIStream(containerIstream);

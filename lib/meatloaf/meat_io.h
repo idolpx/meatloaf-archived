@@ -60,7 +60,7 @@ public:
     }
 
     // has to return OPENED stream
-    virtual MIStream* inputStream();
+    virtual MIStream* getSourceStream();
     virtual MOStream* outputStream() { return nullptr; };
 
     virtual MFile* cd(std::string newDir);
@@ -80,7 +80,7 @@ public:
     std::string pathInStream;
 
 protected:
-    virtual MIStream* createIStream(std::shared_ptr<MIStream> src) = 0;
+    virtual MIStream* getDecodedStream(std::shared_ptr<MIStream> src) = 0;
     bool m_isNull;
 
 friend class MFSOwner;
@@ -215,7 +215,7 @@ namespace Meat {
 
         std::filebuf* open(std::string filename) {
             mfile.reset(MFSOwner::File(filename));
-            mistream.reset(mfile->inputStream());
+            mistream.reset(mfile->getSourceStream());
             if(mistream->isOpen())
                 return this;
             else
@@ -224,7 +224,7 @@ namespace Meat {
 
         std::filebuf* open(MFile* file) {
             mfile.reset(MFSOwner::File(file->url));
-            mistream.reset(mfile->inputStream());
+            mistream.reset(mfile->getSourceStream());
             if(mistream->isOpen())
                 return this;
             else

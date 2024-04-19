@@ -162,7 +162,7 @@ bool MLFile::rewindDirectory() {
     return dirIsOpen;
 };
 
-MIStream* MLFile::inputStream() {
+MIStream* MLFile::getSourceStream() {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
     MIStream* istream = new MLIStream(url);

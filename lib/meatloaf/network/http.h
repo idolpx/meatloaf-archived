@@ -24,7 +24,7 @@ public:
     HttpFile(std::string path): MFile(path) {};
 
     bool isDirectory() override;
-    MIStream* inputStream() override ; // has to return OPENED stream
+    MIStream* getSourceStream() override ; // has to return OPENED stream
     MOStream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
@@ -35,7 +35,7 @@ public:
     size_t size() override ;
     bool remove() override { return false; };
     bool rename(std::string dest) { return false; };
-    MIStream* createIStream(std::shared_ptr<MIStream> src);
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> src);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
 };
 

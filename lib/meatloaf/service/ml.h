@@ -41,7 +41,7 @@ public:
     //void openDir(const char *path) override;
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
-    MIStream* inputStream() override ; // file on ML server = standard HTTP file available via GET
+    MIStream* getSourceStream() override ; // file on ML server = standard HTTP file available via GET
 
     //MOStream* outputStream() override ; // we can't write to ML server, can we?
     //time_t getLastWrite() override ; // you can implement it if you want
@@ -51,7 +51,7 @@ public:
     size_t size() override { return m_size; };
     //bool remove() override { return false; }; // we can't write to ML server, can we?
     //bool rename(std::string dest) { return false; }; // we can't write to ML server, can we?
-    //MIStream* createIStream(std::shared_ptr<MIStream> src); // not used anyway
+    //MIStream* getDecodedStream(std::shared_ptr<MIStream> src); // not used anyway
 
     //std::string mediaRoot();
 

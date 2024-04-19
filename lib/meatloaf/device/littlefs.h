@@ -105,7 +105,7 @@ public:
 
     //MFile* cd(std::string newDir);
     bool isDirectory() override;
-    MIStream* inputStream() override ; // has to return OPENED stream
+    MIStream* getSourceStream() override ; // has to return OPENED stream
     MOStream* outputStream() override ; // has to return OPENED stream
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
@@ -116,7 +116,7 @@ public:
     size_t size() override ;
     bool remove() override ;
     bool rename(std::string dest);
-    MIStream* createIStream(std::shared_ptr<MIStream> src);
+    MIStream* getDecodedStream(std::shared_ptr<MIStream> src);
 
 private:
     void openDir(std::string path);

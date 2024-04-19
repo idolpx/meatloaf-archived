@@ -185,11 +185,11 @@ bool LittleFile::isDirectory()
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
 }
 
-MIStream* LittleFile::createIStream(std::shared_ptr<MIStream> is) {
+MIStream* LittleFile::getDecodedStream(std::shared_ptr<MIStream> is) {
     return is.get(); // we don't have to process this stream in any way, just return the original stream
 }
 
-MIStream* LittleFile::inputStream()
+MIStream* LittleFile::getSourceStream()
 {
     MIStream* istream = new LittleIStream(path);
     istream->open();   
