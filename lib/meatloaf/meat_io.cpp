@@ -1,11 +1,14 @@
 #include "meat_io.h"
 
+#include <iostream>
+
 #include "MIOException.h"
 
 // Archive
 // Cartridge
 // Container
 #include "container/d8b.h"
+#include "container/dfi.h"
 
 // Device
 #include "device/littlefs.h"
@@ -16,9 +19,12 @@
 #include "disk/d80.h"
 #include "disk/d81.h"
 #include "disk/d82.h"
+#include "disk/d90.h"
 #include "disk/dnp.h"
 
 // File
+#include "file/p00.h"
+
 // Link
 // Loaders
 
@@ -52,11 +58,17 @@
 // initialize other filesystems here
 LittleFileSystem defaultFS(FS_PHYS_ADDR, FS_PHYS_SIZE, FS_PHYS_PAGE, FS_PHYS_BLOCK, 5);
 
-// Scheme
-HttpFileSystem httpFS;
-MLFileSystem mlFS;
-CServerFileSystem csFS;
-WSFileSystem wsFS;
+// Archive
+//ArchiveContainerFileSystem archiveFS;
+
+// Cartridge
+
+// Container
+D8BFileSystem d8bFS;
+DFIFileSystem dfiFS;
+
+// File
+P00FileSystem p00FS;
 
 // Disk
 D64FileSystem d64FS;
@@ -64,20 +76,46 @@ D71FileSystem d71FS;
 D80FileSystem d80FS;
 D81FileSystem d81FS;
 D82FileSystem d82FS;
-D8BFileSystem d8bFS;
+D90FileSystem d90FS;
 DNPFileSystem dnpFS;
+
+// Network
+HttpFileSystem httpFS;
+//TNFSFileSystem tnfsFS;
+// IPFSFileSystem ipfsFS;
+// TNFSFileSystem tnfsFS;
+// TcpFileSystem tcpFS;
+//WSFileSystem wsFS;
+
+// Service
+CServerFileSystem csFS;
+MLFileSystem mlFS;
 
 // Tape
 T64FileSystem t64FS;
 TCRTFileSystem tcrtFS;
 
-// Cartridge
+
 
 
 
 // put all available filesystems in this array - first matching system gets the file!
 // fist in list is default
-std::vector<MFileSystem*> MFSOwner::availableFS{ &defaultFS, &d64FS, &d71FS, &d80FS, &d81FS, &d82FS, &d8bFS, &dnpFS, &t64FS, &tcrtFS, &mlFS, &httpFS, &wsFS };
+std::vector<MFileSystem*> MFSOwner::availableFS { 
+    &defaultFS,
+#ifdef SD_CARD
+    &sdFS,
+#endif
+//    &archiveFS, // extension-based FS have to be on top to be picked first, otherwise the scheme will pick them!
+    &d64FS, &d71FS, &d80FS, &d81FS, &d82FS, &d90FS, &dnpFS,
+    &d8bFS, &dfiFS,
+    &p00FS,
+    &httpFS, // &tnfsFS,
+    &mlFS,
+    &t64FS, &tcrtFS
+//    &ipfsFS, &tcpFS,
+//    &tnfsFS
+};
 
 bool MFSOwner::mount(std::string name) {
     Serial.print("MFSOwner::mount fs:");
@@ -152,12 +190,13 @@ MFile* MFSOwner::File(std::string path) {
         auto endHere = pathIterator;
         pathIterator--;
 
-        if(begin == pathIterator) {
+        if(begin == pathIterator) 
+        {
             //Debug_printv("** LOOK DOWN PATH NOT NEEDED   path[%s]", path.c_str());
             newFile->streamFile = foundFS->getFile(mstr::joinToString(&begin, &pathIterator, "/"));
-            //newFile->streamFile = foundFS->getFile(path);
         } 
-        else {
+        else 
+        {
             auto upperPath = mstr::joinToString(&begin, &pathIterator, "/");
             //Debug_printv("** LOOK DOWN PATH: %s", upperPath.c_str());
 
@@ -182,6 +221,45 @@ MFile* MFSOwner::File(std::string path) {
     return nullptr;
 }
 
+std::string MFSOwner::existsLocal( std::string path )
+{
+    PeoplesUrlParser *url = PeoplesUrlParser::parseURL( path );
+
+    // // Debug_printv( "path[%s] name[%s] size[%d]", path.c_str(), url.name.c_str(), url.name.size() );
+    // if ( url->name.size() == 16 )
+    // {
+    //     struct stat st;
+    //     int i = stat(std::string(path).c_str(), &st);
+
+    //     // If not found try for a wildcard match
+    //     if ( i == -1 )
+    //     {
+    //         DIR *dir;
+    //         struct dirent *ent;
+
+    //         std::string p = url->pathToFile();
+    //         std::string name = url->name;
+    //         // Debug_printv( "pathToFile[%s] basename[%s]", p.c_str(), name.c_str() );
+    //         if ((dir = opendir ( p.c_str() )) != NULL)
+    //         {
+    //             /* print all the files and directories within directory */
+    //             std::string e;
+    //             while ((ent = readdir (dir)) != NULL) {
+    //                 // Debug_printv( "%s\r\n", ent->d_name );
+    //                 e = ent->d_name;
+    //                 if ( mstr::compare( name, e ) )
+    //                 {
+    //                     path = ( p + "/" + e );
+    //                     break;
+    //                 }
+    //             }
+    //             closedir (dir);
+    //         }
+    //     }        
+    // }
+
+    return path;
+}
 
 MFileSystem* MFSOwner::testScan(std::vector<std::string>::iterator &begin, std::vector<std::string>::iterator &end, std::vector<std::string>::iterator &pathIterator) {
     while (pathIterator != begin) {
@@ -192,13 +270,13 @@ MFileSystem* MFSOwner::testScan(std::vector<std::string>::iterator &begin, std::
 
         //Debug_printv("index[%d] pathIterator[%s] size[%d]", pathIterator, pathIterator->c_str(), pathIterator->size());
 
-        auto foundIter=find_if(availableFS.begin() + 1, availableFS.end(), [&part](MFileSystem* fs){ 
+        auto foundIter=std::find_if(availableFS.begin() + 1, availableFS.end(), [&part](MFileSystem* fs){ 
             //Debug_printv("symbol[%s]", fs->symbol);
             return fs->handles(part); 
         } );
 
         if(foundIter != availableFS.end()) {
-            //Debug_printv("matched part '%s'\n", part.c_str());
+            //Debug_printv("matched part '%s'\r\n", part.c_str());
             return (*foundIter);
         }
     };
@@ -224,7 +302,16 @@ MFileSystem::~MFileSystem() {}
  ********************************************************/
 
 MFile::MFile(std::string path) {
-    parseUrl(path);
+    // Debug_printv("path[%s]", path.c_str());
+
+    // if ( mstr::contains(path, "$") )
+    // {
+    //     // Create directory stream here
+    //     Debug_printv("Create directory stream here!");
+    //     path = "";
+    // }
+
+    resetURL(path);
 }
 
 MFile::MFile(std::string path, std::string name) : MFile(path + "/" + name) {}
@@ -235,16 +322,18 @@ bool MFile::operator!=(nullptr_t ptr) {
     return m_isNull;
 }
 
-MIStream* MFile::getSourceStream() {
+MStream* MFile::getSourceStream() {
     // has to return OPENED stream
     Debug_printv("pathInStream[%s] streamFile[%s]", pathInStream.c_str(), streamFile->url.c_str());
     //std::shared_ptr<MFile> containerFile(MFSOwner::File(streamPath)); // get the base file that knows how to handle this kind of container, i.e 7z
 
-    std::shared_ptr<MIStream> containerStream(streamFile->getSourceStream()); // get its base stream, i.e. zip raw file contents
+    std::shared_ptr<MStream> containerStream(streamFile->getSourceStream()); // get its base stream, i.e. zip raw file contents
     Debug_printv("containerStream isRandomAccess[%d] isBrowsable[%d]", containerStream->isRandomAccess(), containerStream->isBrowsable());
 
-    MIStream* decodedStream(getDecodedStream(containerStream)); // wrap this stream into decodec stream, i.e. unpacked zip files
+    MStream* decodedStream(getDecodedStream(containerStream)); // wrap this stream into decodec stream, i.e. unpacked zip files
     Debug_printv("decodedStream isRandomAccess[%d] isBrowsable[%d]", decodedStream->isRandomAccess(), decodedStream->isBrowsable());
+
+    Debug_printv("pathInStream [%s]", pathInStream.c_str());
 
     if(decodedStream->isRandomAccess() && pathInStream != "") {
         bool foundIt = decodedStream->seekPath(this->pathInStream);
@@ -260,9 +349,9 @@ MIStream* MFile::getSourceStream() {
 
         while (!pointedFile.empty())
         {
-            if(pointedFile == this->pathInStream)
+            if(mstr::compare(this->pathInStream, pointedFile))
             {
-                Debug_printv("returning decodedStream");
+                //Debug_printv("returning decodedStream");
                 return decodedStream;                
             }
 
@@ -273,49 +362,15 @@ MIStream* MFile::getSourceStream() {
             return nullptr;        
     }
 
-    Debug_printv("returning decodedStream");
+    //Debug_printv("returning decodedStream");
     return decodedStream;
 };
 
-
-MFile* MFile::parent(std::string plus) {
-    // drop last dir
-    // add plus
-    if(!path.empty()) {
-        // from here we can go only to flash root!
-        return MFSOwner::File("/");
-    }
-    else {
-        int lastSlash = url.find_last_of('/');
-        std::string newDir = mstr::dropLast(url, lastSlash);
-        if(!plus.empty())
-            newDir+= ("/" + plus);
-        return MFSOwner::File(newDir);
-    }
-};
-
-MFile* MFile::localParent(std::string plus) {
-    // drop last dir
-    // check if it isn't shorter than streamFile
-    // add plus
-    int lastSlash = url.find_last_of('/');
-    std::string parent = mstr::dropLast(url, lastSlash);
-    if(parent.length()-streamFile->url.length()>1)
-        parent = streamFile->url;
-    return MFSOwner::File(parent+"/"+plus);
-};
-
-MFile* MFile::root(std::string plus) {
-    return new LittleFile("/"+plus);
-};
-
-MFile* MFile::localRoot(std::string plus) {
-    return MFSOwner::File(streamFile->url+"/"+plus);
-};
-
-MFile* MFile::cd(std::string newDir) {
-
+MFile* MFile::cd(std::string newDir) 
+{
     Debug_printv("cd requested: [%s]", newDir.c_str());
+    if ( streamFile != nullptr)
+        Debug_printv("streamFile[%s]", streamFile->url.c_str());
 
     // OK to clarify - coming here there should be ONLY path or magicSymbol-path combo!
     // NO "cd:xxxxx", no "/cd:xxxxx" ALLOWED here! ******************
@@ -323,114 +378,213 @@ MFile* MFile::cd(std::string newDir) {
     // if you want to support LOAD"CDxxxxxx" just parse/drop the CD BEFORE calling this function
     // and call it ONLY with the path you want to change into!
 
-    if(newDir[0]=='/' && newDir[1]=='/') {
-        if(newDir.size()==2) {
-            // user entered: CD:// or CD//
-            // means: change to the root of roots
-            return MFSOwner::File("/"); // chedked, works ad flash root!
-        }
-        else {
-            // user entered: CD://DIR or CD//DIR
-            // means: change to a dir in root of roots
-            return root(mstr::drop(newDir,2));
-        }
-    }
-    else if(newDir[0]=='/' || newDir[0]=='^') {
-        if(newDir.size()==1) {
-            // user entered: CD:/ or CD/
-            // means: change to container root
-            // *** might require a fix for flash fs!
-            //return MFSOwner::File(streamPath);
-            return MFSOwner::File("/");
-        }
-        else {
-            // user entered: CD:/DIR or CD/DIR
-            // means: change to a dir in container root
-            return localRoot(mstr::drop(newDir,1));
-        }
-    }
-    else if(newDir[0]=='_') {
-        if(newDir.size()==1) {
-            // user entered: CD:_ or CD_
-            // means: go up one directory
-            return parent();
-        }
-        else {
-            // user entered: CD:_DIR or CD_DIR
-            // means: go to a directory in the same directory as this one
-            return parent(mstr::drop(newDir,1));
-        }
-    }
-
-    if(newDir[0]=='.' && newDir[1]=='.') {
-        if(newDir.size()==2) {
-            // user entered: CD:.. or CD..
-            // means: go up one directory
-            return parent();
-        }
-        else {
-            // user entered: CD:..DIR or CD..DIR
-            // meaning: Go back one directory
-            return localParent(mstr::drop(newDir,2));
-        }
-    }
-
-    if(newDir[0]=='@' /*&& newDir[1]=='/' let's be consistent!*/) {
-        if(newDir.size() == 1) {
-            // user entered: CD:@ or CD@
-            // meaning: go to the .sys folder
-            return MFSOwner::File("/.sys");
-        }
-        else {
-            // user entered: CD:@FOLDER or CD@FOLDER
-            // meaning: go to a folder in .sys folder
-            return MFSOwner::File("/.sys/" + mstr::drop(newDir,1));
-        }
-    }
-
-    if(newDir.find(':') != std::string::npos) {
+    if(newDir.find(':') != std::string::npos) 
+    {
         // I can only guess we're CDing into another url scheme, this means we're changing whole path
         return MFSOwner::File(newDir);
     }
-    else {
-        Debug_printv("> url[%s] newDir[%s]", url.c_str(), newDir.c_str());
+    else if(newDir[0]=='_') // {CBM LEFT ARROW}
+    {
+        // user entered: CD:_ or CD_ 
+        // means: go up one directory
+
+        // user entered: CD:_DIR or CD_DIR
+        // means: go to a directory in the same directory as this one
+        return cdParent(mstr::drop(newDir,1));
+    }
+    else if(newDir[0]=='.' && newDir[1]=='.')
+    {
+        if(newDir.size()==2) 
+        {
+            // user entered: CD:.. or CD..
+            // means: go up one directory
+            return cdParent();
+        }
+        else 
+        {
+            // user entered: CD:..DIR or CD..DIR
+            // meaning: Go back one directory
+            return cdLocalParent(mstr::drop(newDir,2));
+        }
+    }
+    else if(newDir[0]=='/' && newDir[1]=='/') 
+    {
+        // user entered: CD:// or CD//
+        // means: change to the root of stream
+
+        // user entered: CD://DIR or CD//DIR
+        // means: change to a dir in root of stream
+        return cdLocalRoot(mstr::drop(newDir,2));
+    }
+    else if(newDir[0]=='/') 
+    {
+        // user entered: CD:/DIR or CD/DIR
+        // means: go to a directory in the same directory as this one
+        return cdParent(mstr::drop(newDir,1));
+    }
+    else if(newDir[0]=='^') // {CBM UP ARROW}
+    {
+        // user entered: CD:^ or CD^ 
+        // means: change to flash root
+        return MFSOwner::File("/");
+    }
+    else 
+    {
+        //newDir = mstr::toUTF8( newDir );
+
         // Add new directory to path
-        if ( !mstr::endsWith(url, "/") )
+        if ( !mstr::endsWith(url, "/") && newDir.size() )
             url.push_back('/');
 
-        return MFSOwner::File(url+newDir);
+        Debug_printv("> url[%s] newDir[%s]", url.c_str(), newDir.c_str());
+
+        // Add new directory to path
+        MFile* newPath = MFSOwner::File(url + newDir);
+
+        // if(mstr::endsWith(newDir, ".url", false)) {
+        //     // we need to get actual url
+
+        //     //auto reader = Meat::New<MFile>(newDir);
+        //     //auto istream = reader->getSourceStream();
+        //     //Meat::iostream reader(newPath);
+        //     Meat::iostream reader(newPath);
+
+
+        //     //uint8_t url[istream->size()]; // NOPE, streams have no size!
+        //     //istream->read(url, istream->size());
+        //     std::string url;
+        //     reader >> url;
+
+        //     Debug_printv("url[%s]", url.c_str());
+        //     //std::string ml_url((char *)url);
+
+        //     delete newPath;
+        //     newPath = MFSOwner::File(url);
+        // }
+        
+        return newPath;
     }
 };
 
-bool MFile::copyTo(MFile* dst) {
-    auto istream = Meat::ifstream(this);
-    auto ostream = Meat::ofstream(dst);
 
-    int rc;
+MFile* MFile::cdParent(std::string plus) 
+{
+    Debug_printv("url[%s] path[%s] plus[%s]", url.c_str(), path.c_str(), plus.c_str());
 
-    istream.open();
-    ostream.open();
-
-    //Debug_printv("in copyTo, iopen=%d oopen=%d", istream.is_open(), ostream.is_open());
-
-    if(!istream.is_open() || !ostream.is_open())
-        return false;
-
-    //Debug_printv("commencing copy");
-
-    while((rc = istream.get())!= EOF) {     
-        //Serial.print(".");
-        ostream.put(rc);
-        if(ostream.bad() || istream.bad())
-            return false;
+    // drop last dir
+    // add plus
+    if(path.empty()) 
+    {
+        // from here we can go only to flash root!
+        return MFSOwner::File("/");
     }
+    else 
+    {
+        int lastSlash = url.find_last_of('/');
+        if ( lastSlash == url.size() - 1 ) 
+        {
+            lastSlash = url.find_last_of('/', url.size() - 2);
+        }
+        std::string newDir = mstr::dropLast(url, url.size() - lastSlash);
+        if(!plus.empty())
+            newDir+= ("/" + plus);
 
-    //Debug_printv("copying finished, rc=%d", rc);
-
-    return true;
+        return MFSOwner::File(newDir);
+    }
 };
 
+MFile* MFile::cdLocalParent(std::string plus) 
+{
+    Debug_printv("url[%s] path[%s] plus[%s]", url.c_str(), path.c_str(), plus.c_str());
+    // drop last dir
+    // check if it isn't shorter than streamFile
+    // add plus
+    int lastSlash = url.find_last_of('/');
+    if ( lastSlash == url.size() - 1 ) {
+        lastSlash = url.find_last_of('/', url.size() - 2);
+    }
+    std::string parent = mstr::dropLast(url, url.size() - lastSlash);
+    if(parent.length()-streamFile->url.length()>1)
+        parent = streamFile->url;
+    return MFSOwner::File( parent + "/" + plus );
+};
 
+MFile* MFile::cdRoot(std::string plus) 
+{
+    Debug_printv("url[%s] path[%s] plus[%s]", url.c_str(), path.c_str(), plus.c_str());
+    return MFSOwner::File( "/" + plus );
+};
+
+MFile* MFile::cdLocalRoot(std::string plus) 
+{
+    Debug_printv("url[%s] path[%s] plus[%s]", url.c_str(), path.c_str(), plus.c_str());
+
+    if ( path.empty() || streamFile == nullptr ) {
+        // from here we can go only to flash root!
+        return MFSOwner::File( "/" + plus );
+    }
+    return MFSOwner::File( streamFile->url + "/" + plus );
+};
+
+// bool MFile::copyTo(MFile* dst) {
+//     Debug_printv("in copyTo\r\n");
+//     Meat::iostream istream(this);
+//     Meat::iostream ostream(dst);
+
+//     int rc;
+
+//     Debug_printv("in copyTo, iopen=%d oopen=%d\r\n", istream.is_open(), ostream.is_open());
+
+//     if(!istream.is_open() || !ostream.is_open())
+//         return false;
+
+//     Debug_printv("commencing copy\r\n");
+
+//     while((rc = istream.get())!= EOF) {     
+//         ostream.put(rc);
+//         if(ostream.bad() || istream.bad())
+//             return false;
+//     }
+
+//     Debug_printv("copying finished, rc=%d\r\n", rc);
+
+//     return true;
+// };
+
+uint64_t MFile::getAvailableSpace()
+{
+    if ( mstr::startsWith(path, (char *)"/sd") )
+    {
+#ifdef SD_CARD
+        FATFS* fsinfo;
+        DWORD fre_clust;
+
+        if (f_getfree("/", &fre_clust, &fsinfo) == 0)
+        {
+            uint64_t total = ((uint64_t)(fsinfo->csize)) * (fsinfo->n_fatent - 2) * (fsinfo->ssize);
+            uint64_t used = ((uint64_t)(fsinfo->csize)) * ((fsinfo->n_fatent - 2) - (fsinfo->free_clst)) * (fsinfo->ssize);
+            uint64_t free = total - used;
+            //Debug_printv("total[%llu] used[%llu free[%llu]", total, used, free);
+            return free;
+        }
+#endif
+    }
+    else
+    {
+#ifdef FLASH_SPIFFS
+        size_t total = 0, used = 0;
+        esp_spiffs_info("flash", &total, &used);
+        size_t free = total - used;
+        //Debug_printv("total[%d] used[%d] free[%d]", total, used, free);
+        return free;
+#elif FLASH_LITTLEFS
+        // TODO: Implement for LITTLEFS
+        Debug_printv("LITTLEFS getAvailableSpace()");
+#endif
+    }
+
+    return 65535;
+}
 
 
 

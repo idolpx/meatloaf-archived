@@ -4,11 +4,11 @@
 // https://github.com/alexkazik/tapecart-browser/blob/master/doc/Tapecart-FileSystem.md
 
 
-#ifndef MEATFILESYSTEM_MEDIA_TCRT
-#define MEATFILESYSTEM_MEDIA_TCRT
+#ifndef MEATLOAF_MEDIA_TCRT
+#define MEATLOAF_MEDIA_TCRT
 
-#include "meat_io.h"
-#include "../disk/d64.h"
+#include "../meat_io.h"
+#include "../meat_media.h"
 
 
 /********************************************************
@@ -19,7 +19,7 @@ class TCRTIStream : public MImageStream {
     // override everything that requires overriding here
 
 public:
-    TCRTIStream(std::shared_ptr<MIStream> is) : MImageStream(is) {};
+    TCRTIStream(std::shared_ptr<MStream> is) : MImageStream(is) {};
 
 protected:
     struct Header {
@@ -29,9 +29,9 @@ protected:
     struct Entry {
         char filename[16];
         uint8_t file_type;
-        uint16_t data_offset;
+        uint8_t file_start_address[2]; // from tcrt file system at 0xD8
         uint8_t file_size[3];
-        uint16_t load_address;
+        uint8_t file_load_address[2];
         uint16_t bundle_compatibility;
         uint16_t bundle_main_start;
         uint16_t bundle_main_length;
@@ -39,7 +39,6 @@ protected:
     };
 
     void seekHeader() override {
-        Debug_printv("here");
         containerStream->seek(0x18);
         containerStream->read((uint8_t*)&header, sizeof(header));
     }
@@ -49,13 +48,15 @@ protected:
     }
 
     bool seekEntry( std::string filename ) override;
-    bool seekEntry( size_t index ) override;
-
-    size_t readFile(uint8_t* buf, size_t size) override;
+    bool seekEntry( uint16_t index ) override;
     bool seekPath(std::string path) override;
+
+    uint16_t readFile(uint8_t* buf, uint16_t size) override;
 
     Header header;
     Entry entry;
+
+    std::string decodeType(uint8_t file_type, bool show_hidden = false) override;
 
 private:
     friend class TCRTFile;
@@ -71,18 +72,20 @@ public:
 
     TCRTFile(std::string path, bool is_dir = true): MFile(path) {
         isDir = is_dir;
+
+        media_image = name;
+        isPETSCII = true;
     };
     
     ~TCRTFile() {
         // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    MIStream* getDecodedStream(std::shared_ptr<MIStream> containerIstream) override;
+    MStream* getDecodedStream(std::shared_ptr<MStream> containerIstream) override
+    {
+        Debug_printv("[%s]", url.c_str());
 
-    std::string petsciiName() override {
-        // It's already in PETSCII
-        mstr::replaceAll(name, "\\", "/");
-        return name;
+        return new TCRTIStream(containerIstream);
     }
 
     bool isDirectory() override;
@@ -92,10 +95,10 @@ public:
 
     bool exists() override { return true; };
     bool remove() override { return false; };
-    bool rename(std::string dest) { return false; };
+    bool rename(std::string dest) override { return false; };
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override { return 0; };
-    size_t size() override;
+    uint32_t size() override;
 
     bool isDir = true;
     bool dirIsOpen = false;
@@ -114,7 +117,7 @@ public:
         return new TCRTFile(path);
     }
 
-    bool handles(std::string fileName) {
+    bool handles(std::string fileName) override {
         return byExtension(".tcrt", fileName);
     }
 
@@ -122,4 +125,4 @@ public:
 };
 
 
-#endif /* MEATFILESYSTEM_MEDIA_TCRT */
+#endif /* MEATLOAF_MEDIA_TCRT */

@@ -14,7 +14,7 @@ bool LittleFileSystem::handles(std::string apath)
 
 MFile* LittleFileSystem::getFile(std::string apath)
 {
-    if(m_isMounted)
+    if(_is_mounted)
         return new LittleFile(apath);
     else
         return nullptr;
@@ -23,7 +23,7 @@ MFile* LittleFileSystem::getFile(std::string apath)
 
 bool LittleFileSystem::mount()
 {
-    if (m_isMounted)
+    if (_is_mounted)
         return true;
 
     if (_size <= 0) {
@@ -44,23 +44,23 @@ bool LittleFileSystem::mount()
 
 bool LittleFileSystem::umount()
 {
-    if (m_isMounted) {
+    if (_is_mounted) {
         lfs_unmount(&lfsStruct);
     }
     return true;
 }
 
 bool LittleFileSystem::_tryMount() {
-    if (m_isMounted) {
+    if (_is_mounted) {
         lfs_unmount(&lfsStruct);
-        m_isMounted = false;
+        _is_mounted = false;
     }
     memset(&lfsStruct, 0, sizeof(lfsStruct));
     int rc = lfs_mount(&lfsStruct, &_lfs_cfg);
     if (rc==0) {
-        m_isMounted = true;
+        _is_mounted = true;
     }
-    return m_isMounted;
+    return _is_mounted;
 }
 
 bool LittleFileSystem::format() {
@@ -69,10 +69,10 @@ bool LittleFileSystem::format() {
         return false;
     }
 
-    bool wasMounted = m_isMounted;
-    if (m_isMounted) {
+    bool wasMounted = _is_mounted;
+    if (_is_mounted) {
         lfs_unmount(&lfsStruct);
-        m_isMounted = false;
+        _is_mounted = false;
     }
 
     memset(&lfsStruct, 0, sizeof(lfsStruct));
@@ -185,20 +185,20 @@ bool LittleFile::isDirectory()
     return (rc == 0) && (info.type == LFS_TYPE_DIR);
 }
 
-MIStream* LittleFile::getDecodedStream(std::shared_ptr<MIStream> is) {
+MStream* LittleFile::getDecodedStream(std::shared_ptr<MStream> is) {
     return is.get(); // we don't have to process this stream in any way, just return the original stream
 }
 
-MIStream* LittleFile::getSourceStream()
+MStream* LittleFile::getSourceStream()
 {
-    MIStream* istream = new LittleIStream(path);
+    MStream* istream = new LittleIStream(path);
     istream->open();   
     return istream;
 }
 
-MOStream* LittleFile::outputStream()
+MStream* LittleFile::outputStream()
 {
-    MOStream* ostream = new LittleOStream(path);
+    MStream* ostream = new LittleOStream(path);
     ostream->open();   
     return ostream;
 }
@@ -370,6 +370,72 @@ MFile* LittleFile::getNextFileInDir()
 
 
 
+bool LittleFile::seekEntry( std::string filename )
+{
+    // std::string apath = (basepath + pathToFile()).c_str();
+    // if (apath.empty()) {
+    //     apath = "/";
+    // }
+
+    // Debug_printv( "path[%s] filename[%s] size[%d]", apath.c_str(), filename.c_str(), filename.size());
+
+    // DIR* d = opendir( apath.c_str() );
+    // if(d == nullptr)
+    //     return false;
+
+    // // Read Directory Entries
+    // if ( filename.size() > 0 )
+    // {
+    //     struct dirent* dirent = NULL;
+    //     bool found = false;
+    //     bool wildcard =  ( mstr::contains(filename, "*") || mstr::contains(filename, "?") );
+    //     while ( (dirent = readdir( d )) != NULL )
+    //     {
+    //         std::string entryFilename = dirent->d_name;
+
+    //         Debug_printv("path[%s] filename[%s] entry.filename[%.16s]", apath.c_str(), filename.c_str(), entryFilename.c_str());
+
+    //         // Read Entry From Stream
+    //         if ( dirent->d_type != DT_DIR ) // Only want to match files not directories
+    //         {
+    //             // Read Entry From Stream
+    //             if (filename == "*") // Match first entry
+    //             {
+    //                 filename = entryFilename;
+    //                 found = true;
+    //             }
+    //             else if ( filename == entryFilename ) // Match exact
+    //             {
+    //                 found = true;
+    //             }
+    //             else if ( wildcard )
+    //             {
+    //                 if ( mstr::compare(filename, entryFilename) ) // X?XX?X* Wildcard match
+    //                 {
+    //                     // Set filename to this filename
+    //                     Debug_printv( "Found! file[%s] -> entry[%s]", filename.c_str(), entryFilename.c_str() );
+    //                     resetURL(apath + "/" + entryFilename);
+    //                     found = true;
+    //                 }
+    //             }
+
+    //             if ( found )
+    //             {
+    //                 _exists = true;
+    //                 closedir( d );
+    //                 return true;
+    //             }
+    //         }
+    //     }
+
+    //     Debug_printv( "Not Found! file[%s]", filename.c_str() );
+    // }
+
+    // closedir( d );
+    return false;
+}
+
+
 
 
 /********************************************************
@@ -449,7 +515,7 @@ bool LittleIStream::open() {
     return isOpen();
 };
 
-// MIStream methods
+// MStream methods
 size_t LittleIStream::available() {
     if(!isOpen()) return 0;
     return lfs_file_size(&LittleFileSystem::lfsStruct, &handle->lfsFile) - position();
@@ -483,7 +549,7 @@ bool LittleIStream::seek(size_t pos) {
     return seek(pos, SeekMode::SeekSet);
 };
 
-bool LittleIStream::seek(size_t pos, SeekMode mode) {
+bool LittleIStream::seek(size_t pos, int mode) {
     // Debug_printv("pos[%d] mode[%d]", pos, mode);
     if (!isOpen()) {
         Debug_printv("Not open");

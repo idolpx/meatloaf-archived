@@ -64,7 +64,7 @@ void dumpFileProperties(MFile* testMFile) {
     Serial.printf("Url: %s, isDir = %d\n", testMFile->url.c_str(), testMFile->isDirectory());
     Serial.printf("Scheme: [%s]\n", testMFile->scheme.c_str());
     Serial.printf("Username: [%s]\n", testMFile->user.c_str());
-    Serial.printf("Password: [%s]\n", testMFile->pass.c_str());
+    Serial.printf("Password: [%s]\n", testMFile->password.c_str());
     Serial.printf("Host: [%s]\n", testMFile->host.c_str());
     Serial.printf("Port: [%s]\n", testMFile->port.c_str());    
     Serial.printf("Path: [%s]\n", testMFile->path.c_str());
@@ -113,16 +113,16 @@ void testRecursiveDir(MFile* file, std::string indent) {
 }
 
 void testCopy(MFile* srcFile, MFile* dstFile) {
-    testHeader("Copy file to destination");
+    // testHeader("Copy file to destination");
 
-    Serial.printf("FROM:%s\nTO:%s\n", srcFile->url.c_str(), dstFile->url.c_str());
+    // Serial.printf("FROM:%s\nTO:%s\n", srcFile->url.c_str(), dstFile->url.c_str());
 
-    if(dstFile->exists()) {
-        bool result = dstFile->remove();
-        Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
-    }
+    // if(dstFile->exists()) {
+    //     bool result = dstFile->remove();
+    //     Serial.printf("FSTEST: %s existed, delete reult: %d\n", dstFile->path.c_str(), result);
+    // }
 
-    srcFile->copyTo(dstFile);
+    // srcFile->copyTo(dstFile);
 }
 
 void dumpParts(std::vector<std::string> v) {
@@ -228,7 +228,7 @@ void httpStream(char *url)
         size_t len = file->size();
         Debug_printv("File exists! size [%d]\r\n", len);
 
-        std::unique_ptr<MIStream> stream(file->getSourceStream());
+        std::unique_ptr<MStream> stream(file->getSourceStream());
 
 		for(i=0;i < len; i++)
 		{
@@ -326,35 +326,35 @@ void testStdStreamWrapper(MFile* srcFile, MFile* dstFile) {
 
     Serial.printf("Copy %s to %s\n", dstFile->url.c_str(), srcFile->url.c_str());
 
-    if(dstFile->copyTo(srcFile)) {
-        Meat::ifstream istream(srcFile);
-        istream.open();
+    // if(dstFile->copyTo(srcFile)) {
+    //     Meat::ifstream istream(srcFile);
+    //     istream.open();
 
-        if(istream.is_open()) {
-            Serial.printf("Trying to deserialize JSON from %s\n",srcFile->url.c_str());
+    //     if(istream.is_open()) {
+    //         Serial.printf("Trying to deserialize JSON from %s\n",srcFile->url.c_str());
 
-            deserializeJson(m_device, istream);
+    //         deserializeJson(m_device, istream);
 
-            Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
-        }
-        else
-        {
-            Serial.printf("Error! The stream for deserialization couldn't be opened!");
-        }
-    }
-    else {
-        Serial.println("**** Copying failed *** WHY???");
+    //         Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+    //     }
+    //     else
+    //     {
+    //         Serial.printf("Error! The stream for deserialization couldn't be opened!");
+    //     }
+    // }
+    // else {
+    //     Serial.println("**** Copying failed *** WHY???");
 
-        Serial.printf("Trying to deserialize JSON from %s\n",dstFile->url.c_str());
+    //     Serial.printf("Trying to deserialize JSON from %s\n",dstFile->url.c_str());
 
-        Meat::ifstream newIstream(dstFile); // this is your standard istream!
-        newIstream.open();
+    //     Meat::ifstream newIstream(dstFile); // this is your standard istream!
+    //     newIstream.open();
 
-        deserializeJson(m_device, newIstream);
+    //     deserializeJson(m_device, newIstream);
 
-        Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
+    //     Serial.printf("Got from deserialization: %s\n", ((std::string)m_device["url"]).c_str());
 
-    }
+    // }
 
 }
 

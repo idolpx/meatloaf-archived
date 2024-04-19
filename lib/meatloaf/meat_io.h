@@ -1,10 +1,11 @@
-#ifndef MEATLIB_FILESYSTEM_MEAT_IO
-#define MEATLIB_FILESYSTEM_MEAT_IO
+#ifndef MEATLOAF_FILE
+#define MEATLOAF_FILE
 
 #include <memory>
 #include <string>
 #include <vector>
 #include <fstream>
+#include <ctime>
 
 #include <Arduino.h>
 #include <FS.h>
@@ -38,49 +39,62 @@ public:
         }
     };
 
-    MFile* parent(std::string = "");
-    MFile* localParent(std::string);
-    MFile* root(std::string);
-    MFile* localRoot(std::string);
-
+    bool isPETSCII = false;
     std::string media_header;
     std::string media_id;
+    std::string media_archive;
     std::string media_image;
     uint16_t media_blocks_free = 0;
     uint16_t media_block_size = 256;
 
     bool operator!=(nullptr_t ptr);
 
-    bool copyTo(MFile* dst);
-
-    virtual std::string petsciiName() {
-        std::string pname = name;
-        mstr::toPETSCII(pname);
-        return pname;
-    }
+    // bool copyTo(MFile* dst);
 
     // has to return OPENED stream
-    virtual MIStream* getSourceStream();
-    virtual MOStream* outputStream() { return nullptr; };
+    virtual MStream* getSourceStream();
+    virtual MStream* outputStream() { return nullptr; };
+    virtual MStream* getDecodedStream(std::shared_ptr<MStream> src) = 0;
 
-    virtual MFile* cd(std::string newDir);
+    MFile* cd(std::string newDir);
+    MFile* cdParent(std::string = "");
+    MFile* cdLocalParent(std::string);
+    MFile* cdRoot(std::string);
+    MFile* cdLocalRoot(std::string);
     virtual bool isDirectory() = 0;
     virtual bool rewindDirectory() = 0 ;
     virtual MFile* getNextFileInDir() = 0 ;
     virtual bool mkDir() = 0 ;    
 
-    virtual bool exists() = 0;
+    virtual bool exists() { return _exists; };
     virtual bool remove() = 0;
     virtual bool rename(std::string dest) = 0;    
     virtual time_t getLastWrite() = 0 ;
     virtual time_t getCreationTime() = 0 ;
-    virtual size_t size() = 0;
+    virtual uint64_t getAvailableSpace();
+
+    virtual uint32_t size() {
+        return _size;
+    };
+    virtual uint32_t blocks() {
+        auto s = size();
+        if ( s > 0 && s < media_block_size )
+            return 1;
+        else
+            return ( s / media_block_size );
+    }
+
+    virtual bool isText() {
+        return mstr::isText(extension);
+    }
 
     MFile* streamFile = nullptr;
     std::string pathInStream;
 
+    uint32_t _size = 0;
+    uint32_t _exists = true;
+
 protected:
-    virtual MIStream* getDecodedStream(std::shared_ptr<MIStream> src) = 0;
     bool m_isNull;
 
 friend class MFSOwner;
@@ -100,16 +114,26 @@ public:
     virtual bool handles(std::string path) = 0;
     virtual MFile* getFile(std::string path) = 0;
     bool isMounted() {
-        return m_isMounted;
+        return _is_mounted;
     }
 
     static bool byExtension(const char* ext, std::string fileName) {
         return mstr::endsWith(fileName, ext, false);
     }
 
+    static bool byExtension(const std::vector<std::string> &ext, std::string fileName) {
+        for ( const auto &e : ext )
+        {
+            if ( mstr::endsWith(fileName, e.c_str(), false) )
+                return true;
+        }
+
+        return false;
+    }
+
 protected:
-    const char* symbol;
-    bool m_isMounted;
+    const char* symbol = nullptr;
+    bool _is_mounted = false;
 
     friend class MFSOwner;
 };
@@ -129,6 +153,7 @@ public:
 
     static MFileSystem* scanPathLeft(std::vector<std::string> paths, std::vector<std::string>::iterator &pathIterator);
 
+    static std::string existsLocal( std::string path );
     static MFileSystem* testScan(std::vector<std::string>::iterator &begin, std::vector<std::string>::iterator &end, std::vector<std::string>::iterator &pathIterator);
 
 
@@ -165,19 +190,18 @@ namespace Meat {
     */
     template<class MFile>
         typename _Unique_mf::_Single_file
-        New(char* url) {
+        New(const char* url) {
             return std::unique_ptr<MFile>(MFSOwner::File(std::string(url)));
         }
 
     /**
-    *  @brief  Creates a unique_ptr<MFile> instance froma given MFile
+    *  @brief  Creates a unique_ptr<MFile> instance from a given MFile
     *  @param  file  The url to the file.
     *  @return  @c unique_ptr<MFile>
     */
     template<class MFile>
         typename _Unique_mf::_Single_file
         New(MFile* mFile) {
-            mFile->name;
             return std::unique_ptr<MFile>(MFSOwner::File(mFile->url));
         }
 
@@ -197,7 +221,7 @@ namespace Meat {
  ********************************************************/
 
     class imfilebuf : public std::filebuf {
-        std::unique_ptr<MIStream> mistream;
+        std::unique_ptr<MStream> mistream;
         std::unique_ptr<MFile> mfile;
         char* data;
 
@@ -311,7 +335,7 @@ namespace Meat {
 
     class omfilebuf : public std::filebuf {
         static const size_t obufsize = 256;
-        std::unique_ptr<MOStream> mostream;
+        std::unique_ptr<MStream> mostream;
         std::unique_ptr<MFile> mfile;
         char* data;
 
@@ -533,4 +557,4 @@ namespace Meat {
     };
 }
 
-#endif /* MEATLIB_FILESYSTEM_MEAT_IO */
+#endif // MEATLOAF_FILE

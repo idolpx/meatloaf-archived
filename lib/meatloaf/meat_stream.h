@@ -1,53 +1,92 @@
-#ifndef MEATFILE_STREAMS_H
-#define MEATFILE_STREAMS_H
+#ifndef MEATLOAF_STREAM
+#define MEATLOAF_STREAM
 
-//#include "../../include/global_defines.h"
+#include <unordered_map>
 
 /********************************************************
  * Universal streams
  ********************************************************/
 
-// enum SeekMode {
-//     SeekSet = 0,
-//     SeekCur = 1,
-//     SeekEnd = 2
-// };
+#define SEEK_SET  0
+#define SEEK_CUR  1
+#define SEEK_END  2
 
-class MStream {
+class MStream 
+{
+protected:
+    uint32_t _size = 0;
+    uint32_t _position = 0;
+    uint8_t _load_address[2] = {0, 0};
+    uint8_t _error = 0;
+
 public:
-    virtual size_t position() = 0;
+    virtual ~MStream() {};
+
+    std::ios_base::openmode mode;
+    std::string url = "";
+
+    bool has_subdirs = true;
+    size_t block_size = 256;
+
+    virtual std::unordered_map<std::string, std::string> info() {
+        return {};
+    }
+
+    virtual uint32_t size() {
+        return _size;
+    };
+
+    virtual uint32_t available() {
+        return _size - _position;
+    };
+
+    virtual uint32_t position() {
+        return _position;
+    }
+    virtual void position( uint32_t p) {
+        _position = p;
+    }
+
+    virtual size_t error() {
+        return _error;
+    }
+
+    virtual bool eos()  {
+//        Debug_printv("_size[%d] m_bytesAvailable[%d] _position[%d]", _size, available(), _position);
+        if ( available() == 0 )
+            return true;
+        
+        return false;
+    }
+    virtual void reset() 
+    {
+        _size = block_size;
+        _position = 0;
+    };
+    
+    virtual bool isOpen() = 0;
+    virtual bool isBrowsable() { return false; };
+    virtual bool isRandomAccess() { return false; };
+
     virtual void close() = 0;
     virtual bool open() = 0;
-    virtual ~MStream() {};
-    virtual bool isOpen() = 0;
 
-    bool isText = false;
-};
+    virtual uint32_t write(const uint8_t *buf, uint32_t size) { return 0; }; // = 0;
+    virtual uint32_t read(uint8_t* buf, uint32_t size) { return 0; }; // = 0;
 
-class MOStream: public MStream {
-public:
-    virtual size_t write(const uint8_t *buf, size_t size) = 0;
-};
-
-
-class MIStream: public MStream {
-public:
-    virtual bool seek(size_t pos, SeekMode mode) {
-        if(mode == SeekSet) {
+    virtual bool seek(uint32_t pos, int mode) {
+        if(mode == SEEK_SET) {
             return seek(pos);
         }
-        else if(mode == SeekCur) {
+        else if(mode == SEEK_CUR) {
+            if(pos == 0) return true;
             return seek(position()+pos);
         }
         else {
             return seek(size() - pos);
         }
     }
-    virtual bool seek(size_t pos) = 0;
-
-    virtual size_t available() = 0;
-    virtual size_t size() = 0;
-    virtual size_t read(uint8_t* buf, size_t size) = 0;
+    virtual bool seek(uint32_t pos) { return true; }; // = 0;
 
     // For files with a browsable random access directory structure
     // d64, d74, d81, dnp, etc.
@@ -61,9 +100,9 @@ public:
         return "";
     };
 
-    virtual bool isBrowsable() { return false; };
-    virtual bool isRandomAccess() { return false; };
+    virtual bool seekBlock( uint64_t index, uint8_t offset = 0 ) { return false; };
+    virtual bool seekSector( uint8_t track, uint8_t sector, uint8_t offset = 0 ) { return false; };
+    virtual bool seekSector( std::vector<uint8_t> trackSectorOffset ) { return false; };
 };
 
-
-#endif
+#endif // MEATLOAF_STREAM

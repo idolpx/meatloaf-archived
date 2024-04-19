@@ -4,8 +4,8 @@
 //
 
 
-#ifndef MEATFILESYSTEM_MEDIA_T64
-#define MEATFILESYSTEM_MEDIA_T64
+#ifndef MEATLOAF_MEDIA_T64
+#define MEATLOAF_MEDIA_T64
 
 #include "meat_io.h"
 #include "meat_media.h"
@@ -19,7 +19,7 @@ class T64IStream : public MImageStream {
     // override everything that requires overriding here
 
 public:
-    T64IStream(std::shared_ptr<MIStream> is) : MImageStream(is) { };
+    T64IStream(std::shared_ptr<MStream> is) : MImageStream(is) { };
 
 protected:
     struct Header {
@@ -47,13 +47,15 @@ protected:
     }
 
     bool seekEntry( std::string filename ) override;
-    bool seekEntry( size_t index ) override;
+    bool seekEntry( uint16_t index ) override;
 
-    size_t readFile(uint8_t* buf, size_t size) override;
+    uint16_t readFile(uint8_t* buf, uint16_t size) override;
     bool seekPath(std::string path) override;
 
     Header header;
     Entry entry;
+
+    std::string decodeType(uint8_t file_type, bool show_hidden = false) override;
 
 private:
     friend class T64File;
@@ -69,18 +71,20 @@ public:
 
     T64File(std::string path, bool is_dir = true): MFile(path) {
         isDir = is_dir;
+
+        media_image = name;
+        isPETSCII = true;
     };
     
     ~T64File() {
         // don't close the stream here! It will be used by shared ptr D64Util to keep reading image params
     }
 
-    MIStream* getDecodedStream(std::shared_ptr<MIStream> containerIstream) override;
+    MStream* getDecodedStream(std::shared_ptr<MStream> containerIstream) override
+    {
+        Debug_printv("[%s]", url.c_str());
 
-    std::string petsciiName() override {
-        // It's already in PETSCII
-        mstr::replaceAll(name, "\\", "/");
-        return name;
+        return new T64IStream(containerIstream);
     }
 
     bool isDirectory() override;
@@ -90,10 +94,10 @@ public:
 
     bool exists() override { return true; };
     bool remove() override { return false; };
-    bool rename(std::string dest) { return false; };
+    bool rename(std::string dest) override { return false; };
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override { return 0; };
-    size_t size() override;
+    uint32_t size() override;
 
     bool isDir = true;
     bool dirIsOpen = false;
@@ -112,7 +116,7 @@ public:
         return new T64File(path);
     }
 
-    bool handles(std::string fileName) {
+    bool handles(std::string fileName) override {
         return byExtension(".t64", fileName);
     }
 
@@ -120,4 +124,4 @@ public:
 };
 
 
-#endif /* MEATFILESYSTEM_MEDIA_T64 */
+#endif /* MEATLOAF_MEDIA_T64 */

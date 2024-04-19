@@ -162,24 +162,23 @@ bool MLFile::rewindDirectory() {
     return dirIsOpen;
 };
 
-MIStream* MLFile::getSourceStream() {
+MStream* MLFile::getSourceStream() {
     // has to return OPENED stream
     Debug_printv("[%s]", url.c_str());
-    MIStream* istream = new MLIStream(url);
+    MStream* istream = new MLIStream(url);
     istream->open();   
     return istream;
 }; 
 
 
 bool MLIStream::open() {
-    PeoplesUrlParser urlParser;
-    urlParser.parseUrl(url);
+    PeoplesUrlParser *urlParser = PeoplesUrlParser::parseURL( url );
 
     //String ml_url = std::string("http://" + urlParser.host + "/api/").c_str();
 	//String post_data("p=" + urlencode(m_device.path()) + "&i=" + urlencode(m_device.image()) + "&f=" + urlencode(m_filename));
     //String post_data = std::string("p=" + mstr::urlEncode(urlParser.path)).c_str(); // pathInStream will return here /c64.meatloaf.cc/some/directory
-    std::string ml_url = "http://" + urlParser.host + "/api";
-    std::string post_data = "p=" + urlParser.path;
+    std::string ml_url = "http://" + urlParser->host + "/api";
+    std::string post_data = "p=" + urlParser->path;
 
     m_http.setReuse(true);
     bool initOk = m_http.begin(m_file, ml_url.c_str());

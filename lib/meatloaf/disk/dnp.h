@@ -1,9 +1,10 @@
 // .DNP - CMD hard Disk Native Partition
+//
 // https://ist.uwaterloo.ca/~schepers/formats/D2M-DNP.TXT
 //
 
-#ifndef MEATFILESYSTEM_MEDIA_DNP
-#define MEATFILESYSTEM_MEDIA_DNP
+#ifndef MEATLOAF_MEDIA_DNP
+#define MEATLOAF_MEDIA_DNP
 
 #include "meat_io.h"
 #include "d64.h"
@@ -17,17 +18,34 @@ class DNPIStream : public D64IStream {
     // override everything that requires overriding here
 
 public:
-    DNPIStream(std::shared_ptr<MIStream> is) : D64IStream(is) 
+    DNPIStream(std::shared_ptr<MStream> is) : D64IStream(is) 
     {
-        // DNP Offsets
-        directory_header_offset = {1, 0, 0x04};
-        directory_list_offset = {1, 0, 0x20}; // Read this offset to get t/s link to start of directory
-        block_allocation_map = { {1, 2, 0x10, 1, 255, 8} };
-        sectorsPerTrack = { 255 };
-    };
+        // DNP Partition Info
+        std::vector<BlockAllocationMap> b = { 
+            {
+                1,      // track
+                2,      // sector
+                0x10,   // offset
+                1,      // start_track
+                255,    // end_track
+                8       // byte_count
+            } 
+        };
 
-    //virtual uint16_t blocksFree() override;
-	virtual uint8_t speedZone( uint8_t track) override { return 0; };
+        Partition p = {
+            1,     // track
+            0,     // sector
+            0x04,  // header_offset
+            1,     // directory_track
+            0,     // directory_sector
+            0x20,  // directory_offset
+            b      // block_allocation_map
+        };
+        partitions.clear();
+        partitions.push_back(p);
+        sectorsPerTrack = { 256 };
+        has_subdirs = true;
+    };
 
 protected:
 
@@ -44,7 +62,7 @@ class DNPFile: public D64File {
 public:
     DNPFile(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
 
-    MIStream* getDecodedStream(std::shared_ptr<MIStream> containerIstream) override
+    MStream* getDecodedStream(std::shared_ptr<MStream> containerIstream) override
     {
         Debug_printv("[%s]", url.c_str());
 
@@ -65,7 +83,7 @@ public:
         return new DNPFile(path);
     }
 
-    bool handles(std::string fileName) {
+    bool handles(std::string fileName) override {
         return byExtension(".dnp", fileName);
     }
 
@@ -73,4 +91,4 @@ public:
 };
 
 
-#endif /* MEATFILESYSTEM_MEDIA_DNP */
+#endif /* MEATLOAF_MEDIA_DNP */

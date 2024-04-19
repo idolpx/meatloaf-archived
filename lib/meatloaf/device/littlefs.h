@@ -49,7 +49,7 @@ public:
         _lfs_cfg.name_max = 0;
         _lfs_cfg.file_max = 0;
         _lfs_cfg.attr_max = 0;
-        m_isMounted = false;
+        _is_mounted = false;
         mount();
     }
 
@@ -92,11 +92,18 @@ friend class LittleIStream;
 
 public:
     LittleFile(std::string path) {
-        parseUrl(path);
-        if(!pathValid(path.c_str()))
+        // parseUrl( path );
+
+        // Find full filename for wildcard
+        if (mstr::contains(name, "?") || mstr::contains(name, "*"))
+            seekEntry( name );
+
+        if (!pathValid(path.c_str()))
             m_isNull = true;
         else
             m_isNull = false;
+
+        //Debug_printv("basepath[%s] path[%s] valid[%d]", basepath.c_str(), this->path.c_str(), m_isNull);
     };
     ~LittleFile() {
         //Serial.printf("*** Destroying littlefile %s\n", url.c_str());
@@ -105,29 +112,35 @@ public:
 
     //MFile* cd(std::string newDir);
     bool isDirectory() override;
-    MIStream* getSourceStream() override ; // has to return OPENED stream
-    MOStream* outputStream() override ; // has to return OPENED stream
-    time_t getLastWrite() override ;
-    time_t getCreationTime() override ;
-    bool rewindDirectory() override ;
-    MFile* getNextFileInDir() override ;
-    bool mkDir() override ;
-    bool exists() override ;
-    size_t size() override ;
-    bool remove() override ;
-    bool rename(std::string dest);
-    MIStream* getDecodedStream(std::shared_ptr<MIStream> src);
+    MStream* getSourceStream() override ; // has to return OPENED stream
+    MStream* outputStream() override ; // has to return OPENED stream
+    MStream* getDecodedStream(std::shared_ptr<MStream> src);
+
+    bool rewindDirectory() override;
+    MFile* getNextFileInDir() override;
+    bool mkDir() override;
+    bool exists() override;
+    bool remove() override;
+    bool rename(std::string dest) override;
+
+    time_t getLastWrite() override;
+    time_t getCreationTime() override;
+    uint32_t size() override;
+
+    bool seekEntry( std::string filename );
+
+protected:
+    lfs_dir_t dir;
+    bool dirOpened = false;
 
 private:
     void openDir(std::string path);
     void closeDir();
-    lfs_dir_t dir;
-    bool dirOpened = false;
+
     bool _valid;
     std::string _pattern;
 
     bool pathValid(std::string path);
-
 };
 
 
@@ -157,7 +170,7 @@ private:
  * MStreams O
  ********************************************************/
 
-class LittleOStream: public MOStream {
+class LittleOStream: public MStream {
 public:
     // MStream methods
     LittleOStream(std::string& path) {
@@ -171,7 +184,7 @@ public:
         close();
     }
 
-    // MOStream methods
+    // MStream methods
     //size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
     bool isOpen();
@@ -188,7 +201,7 @@ protected:
  ********************************************************/
 
 
-class LittleIStream: public MIStream {
+class LittleIStream: public MStream {
 public:
     LittleIStream(std::string& path) {
         localPath = path;
@@ -202,14 +215,14 @@ public:
         close();
     }
 
-    // MIStream methods
+    // MStream methods
     size_t available() override;
     size_t size() override;
     //uint8_t read() override;
     size_t read(uint8_t* buf, size_t size) override;
     bool isOpen();
     virtual bool seek(size_t pos) override;
-    virtual bool seek(size_t pos, SeekMode mode) override;
+    virtual bool seek(size_t pos, int mode) override;
 
 protected:
     std::string localPath;

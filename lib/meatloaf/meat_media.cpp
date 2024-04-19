@@ -49,31 +49,38 @@ void MImageStream::close() {
 
 };
 
-// bool MImageStream::seek(uint32_t pos) {
-//     // seek only within current "active" ("seeked") file within the image (see above)
-//     if(pos==m_position)
-//         return true;
+uint32_t MImageStream::seekFileSize( uint8_t start_track, uint8_t start_sector )
+{
+    // Calculate file size
+    seekSector(start_track, start_sector);
 
-//     return false;
-// };
-
-size_t MImageStream::position() {
-    return m_position; // return position within "seeked" file, not the D64 image!
+    size_t blocks = 0; 
+    do
+    {
+        //Debug_printv("t[%d] s[%d]", t, s);
+        containerStream->read(&start_track, 1);
+        containerStream->read(&start_sector, 1);
+        blocks++;
+        if ( start_track > 0 )
+            if ( !seekSector( start_track, start_sector ) )
+                break;
+    } while ( start_track > 0 );
+    blocks--;
+    return (blocks * (block_size - 2)) + start_sector - 1;
 };
 
 
-size_t MImageStream::available() {
-    // return bytes available in currently "seeked" file
-    return m_bytesAvailable;
-};
 
-size_t MImageStream::size() {
-    // size of the "seeked" file, not the image.
-    return m_length;
-};
+uint32_t MImageStream::write(const uint8_t *buf, uint32_t size) {
+    return -1;
+}
 
-size_t MImageStream::read(uint8_t* buf, size_t size) {
-    size_t bytesRead = 0;
+uint32_t MImageStream::read(uint8_t* buf, uint32_t size) {
+    uint32_t bytesRead = 0;
+
+    //Debug_printv("seekCalled[%d]", seekCalled);
+    if ( _position >= _size )
+        return 0;
 
     if(seekCalled) {
         // if we have the stream set to a specific file already, either via seekNextEntry or seekPath, return bytes of the file here
@@ -86,13 +93,14 @@ size_t MImageStream::read(uint8_t* buf, size_t size) {
         bytesRead = containerStream->read(buf, size);
     }
 
-    m_position += bytesRead;
+    _position += bytesRead;
+
     return bytesRead;
 };
 
 bool MImageStream::isOpen() {
 
-    return m_isOpen;
+    return _is_open;
 };
 
 

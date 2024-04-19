@@ -227,7 +227,7 @@ CommandPathTuple devDrive::parseLine(std::string command, size_t channel)
 	std::string guessedPath = command;
 	CommandPathTuple tuple;
 
-	mstr::toASCII(guessedPath);
+//	mstr::toASCII(guessedPath);
 
 	// check to see if it starts with a known command token
 	if ( mstr::startsWith(command, "cd", false) ) // would be case sensitive, but I don't know the proper case
@@ -668,16 +668,15 @@ uint16_t devDrive::sendHeader(uint16_t &basicPtr, std::string header, std::strin
 	uint16_t byte_count = 0;
 	bool sent_info = false;
 
-	PeoplesUrlParser p;
 	std::string url = m_device.url();
 
-	mstr::toPETSCII(url);
-	p.parseUrl(url);
+//	mstr::toPETSCII(url);
+	PeoplesUrlParser *p = PeoplesUrlParser::parseURL( url );
 
-	url = p.root();
-	std::string path = p.pathToFile();
+	url = p->root();
+	std::string path = p->pathToFile();
 	std::string archive = "";
-	std::string image = p.name;
+	std::string image = p->name;
 
 
 
@@ -800,8 +799,8 @@ void devDrive::sendListing()
 		// Don't show hidden folders or files
 		//Debug_printv("size[%d] name[%s]", entry->size(), entry->name.c_str());
 
-		std::string name = entry->petsciiName();
-		mstr::toPETSCII(extension);
+		std::string name = entry->base_name; // entry->petsciiName();
+		mstr::toPETSCII2(extension);
 
 		if (entry->name[0]!='.' || m_show_hidden)
 		{
@@ -940,7 +939,7 @@ void devDrive::sendFile()
 	}
 	else
 	{
-		std::unique_ptr<MIStream> istream(file->getSourceStream());
+		std::unique_ptr<MStream> istream(file->getSourceStream());
 
 		if( istream == nullptr )
 		{
@@ -1063,11 +1062,11 @@ void devDrive::saveFile()
 	ba[8] = '\0';
 #endif
 
-	mstr::toASCII(m_filename);
+//	mstr::toASCII(m_filename);
 	std::unique_ptr<MFile> file(MFSOwner::File(m_filename));
 	Debug_printv("[%s]", file->url.c_str());
 
-	std::unique_ptr<MOStream> ostream(file->outputStream());
+	std::unique_ptr<MStream> ostream(file->outputStream());
 
 
     if(!ostream->isOpen()) {
@@ -1154,7 +1153,7 @@ void devDrive::dumpState()
     Debug_printv("pathInStream: [%s]", m_mfile->pathInStream.c_str());
 	Debug_printv("Scheme: [%s]", m_mfile->scheme.c_str());
 	Debug_printv("Username: [%s]", m_mfile->user.c_str());
-	Debug_printv("Password: [%s]", m_mfile->pass.c_str());
+	Debug_printv("Password: [%s]", m_mfile->password.c_str());
 	Debug_printv("Host: [%s]", m_mfile->host.c_str());
 	Debug_printv("Port: [%s]", m_mfile->port.c_str());
 	Debug_printv("Path: [%s]", m_mfile->path.c_str());

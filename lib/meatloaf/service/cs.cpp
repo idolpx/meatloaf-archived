@@ -144,7 +144,7 @@ bool CServerIStream::open() {
         // name here MUST BE UPPER CASE
         // trim spaces from right of name too
         mstr::rtrimA0(file->name);
-        mstr::toPETSCII(file->name);
+        //mstr::toPETSCII(file->name);
         CServerFileSystem::session.sendCommand("load "+file->name);
         // read first 2 bytes with size, low first, but may also reply with: ?500 - ERROR
         uint8_t buffer[2] = { 0, 0 };
@@ -166,7 +166,7 @@ bool CServerIStream::open() {
     return m_isOpen;
 };
 
-// MIStream methods
+// MStream methods
 size_t CServerIStream::available() {
     return m_bytesAvailable;
 };
@@ -212,7 +212,7 @@ bool CServerOStream::open() {
     return m_isOpen;
 };
 
-// MOStream methods
+// MStream methods
 size_t CServerOStream::write(const uint8_t *buf, size_t size) {
     // we have to write all at once... sorry...
     auto file = std::make_unique<CServerFile>(url);
@@ -230,105 +230,6 @@ bool CServerOStream::isOpen() {
 /********************************************************
  * File impls
  ********************************************************/
-
-
-MFile* CServerFile::cd(std::string newDir) {
-    // maah - don't really know how to handle this!
-
-    // Drop the : if it is included
-    if(newDir[0]==':') {
-        Debug_printv("[:]");
-        newDir = mstr::drop(newDir,1);
-    }
-
-    Debug_printv("cd in CServerFile! New dir [%s]\n", newDir.c_str());
-    if(newDir[0]=='/' && newDir[1]=='/') {
-        if(newDir.size()==2) {
-            // user entered: CD:// or CD//
-            // means: change to the root of roots
-            return MFSOwner::File("/"); // chedked, works ad flash root!
-        }
-        else {
-            // user entered: CD://DIR or CD//DIR
-            // means: change to a dir in root of roots
-            Debug_printv("[//]");
-            return root(mstr::drop(newDir,2));
-        }
-    }
-    else if(newDir[0]=='/') {
-        if(newDir.size()==1) {
-            // user entered: CD:/ or CD/
-            // means: change to container root
-            // *** might require a fix for flash fs!
-            return MFSOwner::File(streamFile->path);
-        }
-        else {
-            Debug_printv("[/]");
-            // user entered: CD:/DIR or CD/DIR
-            // means: change to a dir in container root
-            return MFSOwner::File("cs:/"+mstr::drop(newDir,1));
-        }
-    }
-    else if(newDir[0]=='_') {
-        if(newDir.size()==1) {
-            // user entered: CD:_ or CD_
-            // means: go up one directory
-            return parent();
-        }
-        else {
-            Debug_printv("[_]");
-            // user entered: CD:_DIR or CD_DIR
-            // means: go to a directory in the same directory as this one
-            return parent(mstr::drop(newDir,1));
-        }
-    }
-    if(newDir[0]=='.' && newDir[1]=='.') {
-        if(newDir.size()==2) {
-            // user entered: CD:.. or CD..
-            // means: go up one directory
-            return parent();
-        }
-        else {
-            Debug_printv("[..]");
-            // user entered: CD:..DIR or CD..DIR
-            // meaning: Go back one directory
-            return localParent(mstr::drop(newDir,2));
-        }
-    }
-
-    // ain't that redundant?
-    // if(newDir[0]=='.' && newDir[1]=='/') {
-    //     Debug_printv("[./]");
-    //     // Reference to current directory
-    //     return localParent(mstr::drop(newDir,2));
-    // }
-
-    if(newDir[0]=='~' /*&& newDir[1]=='/' let's be consistent!*/) {
-        if(newDir.size() == 1) {
-            // user entered: CD:~ or CD~
-            // meaning: go to the .sys folder
-            return MFSOwner::File("/.sys");
-        }
-        else {
-            Debug_printv("[~]");
-            // user entered: CD:~FOLDER or CD~FOLDER
-            // meaning: go to a folder in .sys folder
-            return MFSOwner::File("/.sys/" + mstr::drop(newDir,1));
-        }
-    }    
-    if(newDir.find(':') != std::string::npos) {
-        // I can only guess we're CDing into another url scheme, this means we're changing whole path
-        return MFSOwner::File(newDir);
-    }
-    else {
-        // Add new directory to path
-        if(mstr::endsWith(url,"/"))
-            return MFSOwner::File(url+newDir);
-        else
-            return MFSOwner::File(url+"/"+newDir);
-    }
-};
-
 
 bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
@@ -359,14 +260,14 @@ bool CServerFile::isDirectory() {
     return false;
 };
 
-MIStream* CServerFile::getSourceStream() {
-    MIStream* istream = new CServerIStream(url);
+MStream* CServerFile::getSourceStream() {
+    MStream* istream = new CServerIStream(url);
     istream->open();   
     return istream;
 }; 
 
-MOStream* CServerFile::outputStream() {
-    MOStream* ostream = new CServerOStream(url);
+MStream* CServerFile::outputStream() {
+    MStream* ostream = new CServerOStream(url);
     ostream->open();   
     return ostream;
 };

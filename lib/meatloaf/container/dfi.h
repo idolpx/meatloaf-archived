@@ -1,4 +1,5 @@
 // .DFI - DreamLoad File Archive
+//
 // https://www.lemon64.com/forum/viewtopic.php?t=37415#458552
 //
 
@@ -86,6 +87,125 @@
 // For some example sources please download the patched cbmconvert
 // sources "cbmconvert-2.1.2_dfi.tar.gz" from the retrohackers forum:
 // http://retrohackers.org/forum/viewtopic.php?p=434#434
+// https://github.com/dr-m/cbmconvert
+// https://www.cise.ufl.edu/ubuntu/pool/universe/c/cbmconvert/
 //
-
+// https://sourceforge.net/projects/rrtools/
 // https://cbm8bit.com/8bit/commodore/server/Unrenamed%20Achives/browse/c64/dfi
+
+
+#ifndef MEATLOAF_MEDIA_DFI
+#define MEATLOAF_MEDIA_DFI
+
+#include "../meat_io.h"
+#include "../disk/d64.h"
+
+
+/********************************************************
+ * Streams
+ ********************************************************/
+
+class DFIIStream : public D64IStream {
+    // override everything that requires overriding here
+
+public:
+    DFIIStream(std::shared_ptr<MStream> is) : D64IStream(is)
+    {
+        // DFI Partition Info
+        std::vector<BlockAllocationMap> b = { 
+            {
+                1,      // track
+                0,      // sector
+                0x00,   // offset
+                1,      // start_track
+                40,    // end_track
+                4       // byte_count
+            } 
+        };
+
+        Partition p = {
+            1,     // track
+            0,     // sector
+            0x90,  // header_offset
+            1,     // directory_track
+            4,     // directory_sector
+            0x00,  // directory_offset
+            b      // block_allocation_map
+        };
+        partitions.clear();
+        partitions.push_back(p);
+        sectorsPerTrack = { 256 };
+
+        // // The header's size is 256 bytes, that's exactly one sector. The header is
+        // // always the first sector in the image (track 1, sector 0).
+        // //
+        // // $00 - $17 : magic (0x00, dreamload file archive, 0x00)
+        // // $18 - $1b : version (bit 0-15: minor, 16-31: major. $00010000 is v1.0)
+        // // $1c - $1f : tracks in this image (a track has always 256 sectors)
+        // // $20 - $21 : root dir track and sektor
+        // // $22 - $23 : bam track and sector
+        // // $24 - $5f : reserved
+        // // $60 - $ff : comment or notes
+        // this.seek(0x20);
+        seek ( 0x20 );
+        // this.partitions[0].track = this.read();
+        partitions[0].header_track = read();
+        // this.partitions[0].sector = this.read();
+        partitions[0].header_sector = read();
+        // this.partitions[0].block_allocation_map[0].track = this.read();
+        partitions[0].block_allocation_map[0].track = read();
+        // this.partitions[0].block_allocation_map[0].sector = this.read();
+        partitions[0].block_allocation_map[0].sector = read();
+
+        // this.partitions[0].directory_track = this.partitions[0].track;
+        partitions[0].directory_track = partitions[0].header_track;
+        // this.partitions[0].directory_sector = this.partitions[0].sector + 1;
+        partitions[0].directory_sector = partitions[0].header_sector + 1;
+    };
+
+
+protected:
+
+private:
+    friend class DFIFile;
+};
+
+
+/********************************************************
+ * File implementations
+ ********************************************************/
+
+class DFIFile: public D64File {
+public:
+    DFIFile(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
+
+    MStream* getDecodedStream(std::shared_ptr<MStream> containerIstream) override
+    {
+        Debug_printv("[%s]", url.c_str());
+
+        return new DFIIStream(containerIstream);
+    }
+};
+
+
+
+/********************************************************
+ * FS
+ ********************************************************/
+
+class DFIFileSystem: public MFileSystem
+{
+public:
+    MFile* getFile(std::string path) override {
+        return new DFIFile(path);
+    }
+
+    bool handles(std::string fileName) override {
+        return byExtension(".dfi", fileName);
+    }
+
+    DFIFileSystem(): MFileSystem("dfi") {};
+};
+
+
+#endif /* MEATLOAF_MEDIA_DFI */

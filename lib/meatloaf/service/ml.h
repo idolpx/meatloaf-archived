@@ -32,7 +32,7 @@ public:
     MLFile(std::string path, size_t size = 0, bool isDir = false):
     HttpFile(path), m_size(size), m_isDir(isDir)
     {
-        parseUrl(path);
+        //parseUrl(path);
         //Debug_printv("path[%s] size[%d] is_dir[%d]", path.c_str(), size, isDir);
     };
     ~MLFile();
@@ -41,9 +41,9 @@ public:
     //void openDir(const char *path) override;
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
-    MIStream* getSourceStream() override ; // file on ML server = standard HTTP file available via GET
+    MStream* getSourceStream() override ; // file on ML server = standard HTTP file available via GET
 
-    //MOStream* outputStream() override ; // we can't write to ML server, can we?
+    //MStream* outputStream() override ; // we can't write to ML server, can we?
     //time_t getLastWrite() override ; // you can implement it if you want
     //time_t getCreationTime() override ; // you can implement it if you want
     //bool mkDir() override { return false; }; // we can't write to ML server, can we?
@@ -51,7 +51,7 @@ public:
     size_t size() override { return m_size; };
     //bool remove() override { return false; }; // we can't write to ML server, can we?
     //bool rename(std::string dest) { return false; }; // we can't write to ML server, can we?
-    //MIStream* getDecodedStream(std::shared_ptr<MIStream> src); // not used anyway
+    //MStream* getDecodedStream(std::shared_ptr<MStream> src); // not used anyway
 
     //std::string mediaRoot();
 
@@ -92,7 +92,7 @@ public:
     bool open() override;
 
 
-    // MIStream methods
+    // MStream methods
     // int available() override;
     // size_t read(uint8_t* buf, size_t size) override;
     // bool isOpen();
