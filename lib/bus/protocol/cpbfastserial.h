@@ -15,25 +15,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
+//
 // https://www.c64-wiki.com/wiki/Fast_serial_bus_protocol
 // https://a1bert.kapsi.fi/Dev/burst/
+// https://web.archive.org/web/20220125025330/https://sites.google.com/site/h2obsession/CBM/C128/fast-serial-for-uiec
 //
 
-#ifndef PROTOCOL_CBMFASTSERIAL_H
-#define PROTOCOL_CBMFASTSERIAL_H
+// #ifndef PROTOCOL_CPBFASTSERIAL_H
+// #define PROTOCOL_CPBFASTSERIAL_H
 
-#include "cbmstandardserial.h"
+// Commodore Peripheral Bus: Fast Serial
 
-namespace Protocol
-{
-	class CBMFastSerial : public CBMStandardSerial
-	{
-	public:
+//#include "cpbstandardserial.h"
 
-		virtual int16_t receiveByte(uint8_t device) override;
-		virtual bool sendByte(uint8_t data, bool signalEOI) override;
+// namespace Protocol
+// {
+// 	class CPBFastSerial : public CBMStandardSerial
+// 	{
+// 	public:
 
-	};
-}
+// 		virtual int16_t receiveByte(uint8_t device) override;
+// 		virtual bool sendByte(uint8_t data, bool signalEOI) override;
 
-#endif
+// 	};
+// }
+
+// #endif // PROTOCOL_CPBFASTSERIAL_H

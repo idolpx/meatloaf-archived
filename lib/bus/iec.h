@@ -25,7 +25,7 @@
 #include "../../include/petscii.h"
 #include "string_utils.h"
 
-#include "protocol/cbmstandardserial.h"
+#include "protocol/cpbstandardserial.h"
 //#include "protocol/jiffydos.h"
 
 #define	IEC_CMD_MAX_LENGTH 	100
@@ -105,7 +105,7 @@ public:
 
 	uint8_t state();
 
-	CBMStandardSerial protocol;
+	CPBStandardSerial protocol;
 
 private:
 	// IEC Bus Commands

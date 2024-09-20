@@ -12,7 +12,6 @@
 description = MeatLoaf is a wifi enabled multi-device emulator for Commodore 64/128
 ; Change this to target the device you use from the list of [env:xxx] sections below
 default_envs = d1_mini
-;default_envs = esp32doit-devkit-v1
 
 [env]
 framework = arduino
@@ -25,16 +24,18 @@ monitor_speed = 921600
 ;monitor_port = /dev/ttyUSB0 ; Linux
 monitor_port = /dev/tty.SLAB_USBtoUART ; Mac
 monitor_filters = default, esp8266_exception_decoder
-;monitor_filters = default, esp32_exception_decoder
 
 lib_deps = 
-    ArduinoJson
-    ArduinoWebsockets
+	ArduinoJson
+	ArduinoWebsockets
+	ESPAsyncTCP
+	ESPDateTime
 
 build_type = debug
-
-build_flags =
-    -D USE_LITTLEFS
+build_flags = 
+	-D USE_LITTLEFS
+	-DDEBUG_ESP_OOM     ;https://docs.platformio.org/en/latest/platforms/espressif8266.html#debug-level
+	-Wl,-Map,output.map ;Creates a map file to figure out relative sizes of included stuff
 
 [env:d1_mini]
 platform = espressif8266
@@ -43,6 +44,7 @@ board = d1_mini
 board_build.f_cpu = 160000000L
 board_build.filesystem = littlefs
 ;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
+board_build.ldscript = eagle.flash.4m3m.ld
 
 [env:d1_mini_pro]
 platform = espressif8266
@@ -51,6 +53,8 @@ board = d1_mini_pro
 board_build.f_cpu = 160000000L
 board_build.filesystem = littlefs
 ;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
+board_build.ldscript = eagle.flash.8m7m.ld
+;board_build.ldscript = eagle.flash.16m14m.ld  // Builds a 4GB file???
 
 [env:nodemcuv2]
 platform = espressif8266
@@ -59,9 +63,11 @@ board = nodemcuv2
 board_build.f_cpu = 160000000L
 board_build.filesystem = littlefs
 ;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
+board_build.ldscript = eagle.flash.4m3m.ld
 
 [env:esp32doit-devkit-v1]
 platform = espressif32
 board = esp32doit-devkit-v1
 board_build.filesystem = littlefs
 ;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
+board_build.ldscript = eagle.flash.4m3m.ld

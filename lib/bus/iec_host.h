@@ -25,7 +25,7 @@
 #include "../../include/petscii.h"
 
 #include "iec.h"
-#include "protocol/cbmstandardserial.h"
+#include "protocol/cpbstandardserial.h"
 
 using namespace Protocol;
 
@@ -62,7 +62,7 @@ public:
     // change    wait for a disk to be changed in the specified drive
 
 private:
-    CBMStandardSerial protocol;
+    CPBStandardSerial protocol;
 
 };
 

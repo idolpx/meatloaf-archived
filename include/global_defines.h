@@ -49,8 +49,8 @@
 
 #if defined(ESP8266)
     // ESP8266 GPIO to C64 User Port
-    #define TX_PIN           TX  // TX   //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
-    #define RX_PIN           RX  // RX   //64-M+5
+    #define TX_PIN           TX  // TX      //64-B+C+7  //64-A+1+N+12=GND, 64-2=+5v, 64-L+6
+    #define RX_PIN           RX  // RX      //64-M+5
 
     #define CTS_PIN          D1  // IO5 IN  //64-D      // CTS Clear to Send, connect to host's RTS pin
     #define RTS_PIN          D2  // IO4 OUT //64-K      // RTS Request to Send, connect to host's CTS pin
@@ -83,19 +83,19 @@
 
 #if defined(ESP8266)
     // ESP8266 GPIO to C64 IEC Serial Port
-    #define IEC_PIN_ATN          D5    // IO14  INPUT/OUTPUT
-    #define IEC_PIN_CLK          D6    // IO12  INPUT/OUTPUT
-    #define IEC_PIN_DATA         D7    // IO13  INPUT/OUTPUT
-    #define IEC_PIN_SRQ          D1    // IO5   INPUT/OUTPUT
-    #define IEC_PIN_RESET        D0 //D2    // IO4   INPUT/OUTPUT
+    #define IEC_PIN_ATN          D5     // IO14  INPUT/OUTPUT
+    #define IEC_PIN_CLK          D6     // IO12  INPUT/OUTPUT
+    #define IEC_PIN_DATA         D7     // IO13  INPUT/OUTPUT
+    #define IEC_PIN_SRQ          D1     // IO5   INPUT/OUTPUT
+    #define IEC_PIN_RESET        D0     // IO4   INPUT/OUTPUT
 #elif defined(ESP32)
     // ESP32 GPIO to C64 IEC Serial Port
-    #define IEC_PIN_ATN          26    // SIO13 INTERRUPT
-    #define IEC_PIN_CLK          27    // SIO1  CLOCK IN
-    #define IEC_PIN_DATA         32    // SIO3  CLOCK OUT
-    #define IEC_PIN_SRQ          22    // SIO9  PROCEED
-    #define IEC_PIN_RESET        36    // SIO7  MOTOR
-                                       // SIO4  GND
+    #define IEC_PIN_ATN          26     // SIO13 INTERRUPT
+    #define IEC_PIN_CLK          27     // SIO1  CLOCK IN
+    #define IEC_PIN_DATA         32     // SIO3  CLOCK OUT
+    #define IEC_PIN_SRQ          22     // SIO9  PROCEED
+    #define IEC_PIN_RESET        36     // SIO7  MOTOR
+                                        // SIO4  GND
 #endif
 
 

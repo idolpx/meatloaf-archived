@@ -22,9 +22,9 @@
 
 #include <Arduino.h>
 
-#include "cbmstandardserial.h"
+#include "cpbstandardserial.h"
 
-class JiffyDOS : public CBMStandardSerial
+class JiffyDOS : public CPBStandardSerial
 {
 
 protected:

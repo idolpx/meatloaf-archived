@@ -6,66 +6,77 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // Meatloaf is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
 
-#include "cbmfastserial.h"
+#include "cpbstandardserial.h"
 
 using namespace Protocol;
 
+// CPBStandardSerial::CPBStandardSerial()
+// {
+
+// }
+
+// CPBStandardSerial::~CPBStandardSerial()
+// {
+
+// }
+
+
 // STEP 1: READY TO SEND
-// Sooner or later, the talker will want to talk, and send a character.
-// When it's ready to go, it releases the Clock line to false.  This signal change might be
-// translated as "I'm ready to send a character." The listener must detect this and respond,
-// but it doesn't have to do so immediately. The listener will respond  to  the  talker's
-// "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's
-// a printer chugging out a line of print, or a disk drive with a formatting job in progress,
-// it might holdback for quite a while; there's no time limit.
-int16_t  CBMFastSerial::receiveByte(uint8_t device)
+// Sooner or later, the talker will want to talk, and send a character. 
+// When it's ready to go, it releases the Clock line to false.  This signal change might be 
+// translated as "I'm ready to send a character." The listener must detect this and respond, 
+// but it doesn't have to do so immediately. The listener will respond  to  the  talker's  
+// "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's  
+// a printer chugging out a line of print, or a disk drive with a formatting job in progress, 
+// it might holdback for quite a while; there's no time limit. 
+int16_t  CPBStandardSerial::receiveByte(uint8_t device)
 {
 	flags = CLEAR;
 
 	// Wait for talker ready
 	while(status(IEC_PIN_CLK) != RELEASED)
 	{
-		ESP.wdtFeed();
+		ESP.wdtFeed();		
 	}
 
 	// Say we're ready
 	// STEP 2: READY FOR DATA
-	// When  the  listener  is  ready  to  listen,  it  releases  the  Data
-	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false
-	// only when all listeners have RELEASED it - in other words, when  all  listeners  are  ready
+	// When  the  listener  is  ready  to  listen,  it  releases  the  Data  
+	// line  to  false.    Suppose  there  is  more  than one listener.  The Data line will go false 
+	// only when all listeners have RELEASED it - in other words, when  all  listeners  are  ready  
 	// to  accept  data.  What  happens  next  is  variable.
 	release(IEC_PIN_DATA);
 	while(status(IEC_PIN_DATA) != RELEASED); // Wait for all other devices to release the data line
 	//timeoutWait(IEC_PIN_DATA, RELEASED, FOREVER, 1);
 
-	// Either  the  talker  will pull the
-	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it
-	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass
+	// Either  the  talker  will pull the 
+	// Clock line back to true in less than 200 microseconds - usually within 60 microseconds - or it  
+	// will  do  nothing.    The  listener  should  be  watching,  and  if  200  microseconds  pass  
 	// without  the Clock line going to true, it has a special task to perform: note EOI.
-
+	
 	if(timeoutWait(IEC_PIN_CLK, PULLED, TIMEOUT_Tne) == TIMED_OUT)
 	{
 		// INTERMISSION: EOI
-		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the
-		// listener knows  that  the  talker  is  trying  to  signal  EOI.    EOI,  which  formally
-		// stands  for  "End  of  Indicator," means  "this  character  will  be  the  last  one."
-		// If  it's  a  sequential  disk  file,  don't  ask  for  more:  there will be no more.  If it's
-		// a relative record, that's the end of the record.  The character itself will still be coming, but
-		// the listener should note: here comes the last character. So if the listener sees the 200 microsecond
-		// time-out,  it  must  signal  "OK,  I  noticed  the  EOI"  back  to  the  talker,    I  does  this
-		// by pulling  the  Data  line  true  for  at  least  60  microseconds,  and  then  releasing  it.
-		// The  talker  will  then revert to transmitting the character in the usual way; within 60 microseconds
-		// it will pull the Clock line  true,  and  transmission  will  continue.  At  this point,  the  Clock
-		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common
+		// If the Ready for Data signal isn't acknowledged by the talker within 200 microseconds, the 
+		// listener knows  that  the  talker  is  trying  to  signal  EOI.    EOI,  which  formally  
+		// stands  for  "End  of  Indicator," means  "this  character  will  be  the  last  one."    
+		// If  it's  a  sequential  disk  file,  don't  ask  for  more:  there will be no more.  If it's 
+		// a relative record, that's the end of the record.  The character itself will still be coming, but 
+		// the listener should note: here comes the last character. So if the listener sees the 200 microsecond  
+		// time-out,  it  must  signal  "OK,  I  noticed  the  EOI"  back  to  the  talker,    It  does  this  
+		// by pulling  the  Data  line  true  for  at  least  60  microseconds,  and  then  releasing  it.  
+		// The  talker  will  then revert to transmitting the character in the usual way; within 60 microseconds 
+		// it will pull the Clock line  true,  and  transmission  will  continue.  At  this point,  the  Clock  
+		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common 
 		// transmission sequence.
 
 		flags or_eq EOI_RECVD;
@@ -81,7 +92,7 @@ int16_t  CBMFastSerial::receiveByte(uint8_t device)
 			Debug_printv("After Acknowledge EOI");
 			flags or_eq ERROR;
 			return -1; // return error because timeout
-		}
+		}		
 	}
 
 	// Sample ATN and set flag to indicate SELECT or DATA mode
@@ -89,21 +100,21 @@ int16_t  CBMFastSerial::receiveByte(uint8_t device)
 		flags or_eq ATN_PULLED;
 
 	// STEP 3: SENDING THE BITS
-	// The talker has eight bits to send.  They will go out without handshake; in other words,
-	// the listener had better be there to catch them, since the talker won't wait to hear from the listener.  At this
-	// point, the talker controls both lines, Clock and Data.  At the beginning of the sequence, it is holding the
-	// Clock true, while the Data line is RELEASED to false.  the Data line will change soon, since we'll sendthe data
-	// over it. The eights bits will go out from the character one at a time, with the least significant bit going first.
-	// For example, if the character is the ASCII question mark, which is  written  in  binary  as  00011111,  the  ones
-	// will  go out  first,  followed  by  the  zeros.  Now,  for  each bit, we set the Data line true or false according
-	// to whether the bit is one or zero.  As soon as that'sset, the Clock line is RELEASED to false, signalling "data ready."
-	// The talker will typically have a bit in  place  and  be  signalling  ready  in  70  microseconds  or  less.  Once
-	// the  talker  has  signalled  "data ready," it will hold the two lines steady for at least 20 microseconds timing needs
-	// to be increased to 60  microseconds  if  the  Commodore  64  is  listening,  since  the  64's  video  chip  may
-	// interrupt  the processor for 42 microseconds at a time, and without the extra wait the 64 might completely miss a
-	// bit. The listener plays a passive role here; it sends nothing, and just watches.  As soon as it sees the Clock line
-	// false, it grabs the bit from the Data line and puts it away.  It then waits for the clock line to go true, in order
-	// to prepare for the next bit. When the talker figures the data has been held for a sufficient  length  of  time,  it
+	// The talker has eight bits to send.  They will go out without handshake; in other words, 
+	// the listener had better be there to catch them, since the talker won't wait to hear from the listener.  At this 
+	// point, the talker controls both lines, Clock and Data.  At the beginning of the sequence, it is holding the 
+	// Clock true, while the Data line is RELEASED to false.  the Data line will change soon, since we'll sendthe data 
+	// over it. The eights bits will go out from the character one at a time, with the least significant bit going first.  
+	// For example, if the character is the ASCII question mark, which is  written  in  binary  as  00011111,  the  ones  
+	// will  go out  first,  followed  by  the  zeros.  Now,  for  each bit, we set the Data line true or false according 
+	// to whether the bit is one or zero.  As soon as that'sset, the Clock line is RELEASED to false, signalling "data ready."  
+	// The talker will typically have a bit in  place  and  be  signalling  ready  in  70  microseconds  or  less.  Once  
+	// the  talker  has  signalled  "data ready," it will hold the two lines steady for at least 20 microseconds timing needs 
+	// to be increased to 60  microseconds  if  the  Commodore  64  is  listening,  since  the  64's  video  chip  may  
+	// interrupt  the processor for 42 microseconds at a time, and without the extra wait the 64 might completely miss a 
+	// bit. The listener plays a passive role here; it sends nothing, and just watches.  As soon as it sees the Clock line 
+	// false, it grabs the bit from the Data line and puts it away.  It then waits for the clock line to go true, in order 
+	// to prepare for the next bit. When the talker figures the data has been held for a sufficient  length  of  time,  it  
 	// pulls  the  Clock  line true  and  releases  the  Data  line  to  false.    Then  it starts to prepare the next bit.
 
 	// Listening for bits
@@ -112,9 +123,9 @@ int16_t  CBMFastSerial::receiveByte(uint8_t device)
 #endif
 	uint8_t data = 0;
 	uint8_t bit_time;  // Used to detect JiffyDOS
-
+	
 	uint8_t n = 0;
-	for(n = 0; n < 8; n++)
+	for(n = 0; n < 8; n++) 
 	{
 		data >>= 1;
 
@@ -186,7 +197,7 @@ int16_t  CBMFastSerial::receiveByte(uint8_t device)
 // "ready  to  send"  signal  whenever  it  likes;  it  can  wait  a  long  time.    If  it's
 // a printer chugging out a line of print, or a disk drive with a formatting job in progress,
 // it might holdback for quite a while; there's no time limit.
-bool CBMFastSerial::sendByte(uint8_t data, bool signalEOI)
+bool CPBStandardSerial::sendByte(uint8_t data, bool signalEOI)
 {
 	flags = CLEAR;
 
@@ -276,7 +287,7 @@ bool CBMFastSerial::sendByte(uint8_t data, bool signalEOI)
 	pull(IEC_PIN_CLK);
 	delayMicroseconds(TIMING_Tv);
 
-	for(uint8_t n = 0; n < 8; n++)
+	for(uint8_t n = 0; n < 8; n++) 
 	{
 		// FIXME: Here check whether data pin is PULLED, if so end (enter cleanup)!
 
@@ -334,3 +345,41 @@ bool CBMFastSerial::sendByte(uint8_t data, bool signalEOI)
 
 	return true;
 } // sendByte
+
+
+// Wait indefinitely if wait = 0
+int16_t CPBStandardSerial::timeoutWait(byte iecPIN, bool lineStatus, size_t wait, size_t step)
+{
+
+#if defined(ESP8266)
+	ESP.wdtFeed();
+#endif
+
+	size_t t = 0;
+	if(wait == FOREVER)
+	{
+		while(status(iecPIN) != lineStatus) {
+			ESP.wdtFeed();
+			delayMicroseconds(step);
+			t++;
+		}
+		return (t * step);
+	}
+	else
+	{
+		while(status(iecPIN) != lineStatus && (t < wait)) {
+			delayMicroseconds(step);
+			t++;
+		}
+		// Check the waiting condition:
+		if(t < wait)
+		{
+			// Got it!  Continue!
+			return (t * step);
+		}
+	}
+
+	Debug_printv("pin[%d] state[%d] wait[%d] step[%d] t[%d]", iecPIN, lineStatus, wait, step, t);
+	return -1;
+} // timeoutWait
+

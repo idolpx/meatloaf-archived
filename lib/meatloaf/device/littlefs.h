@@ -200,7 +200,6 @@ protected:
  * MStreams I
  ********************************************************/
 
-
 class LittleIStream: public MStream {
 public:
     LittleIStream(std::string& path) {

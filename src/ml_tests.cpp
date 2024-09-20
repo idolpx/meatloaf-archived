@@ -15,8 +15,6 @@
 #include "../../include/make_unique.h"
 #include "basic_config.h"
 
-std::unique_ptr<MFile> m_mfile(MFSOwner::File(""));
-
 
 void testHeader(std::string testName) {
     Serial.println("\n\n******************************");

@@ -19,10 +19,13 @@
 // https://codebase64.org/doku.php?id=base:how_the_vic_64_serial_bus_works
 // http://www.zimmers.net/anonftp/pub/cbm/programming/serial-bus.pdf
 // https://github.com/0cjs/sedoc/blob/master/8bit/cbm/serial-bus.md
+// https://github.com/mist64/cbmsrc/blob/5c5138ff128d289ccd98d260f700af52c4a75521/DOS_1541_05/seratn.src#L6
 
 
-#ifndef PROTOCOL_CBMSTANDARDSERIAL_H
-#define PROTOCOL_CBMSTANDARDSERIAL_H
+#ifndef PROTOCOL_CPBSTANDARDSERIAL_H
+#define PROTOCOL_CPBSTANDARDSERIAL_H
+
+// Commodore Peripheral Bus: Standard Serial
 
 #include "../../../include/global_defines.h"
 
@@ -68,7 +71,7 @@
 
 namespace Protocol
 {
-	class CBMStandardSerial
+	class CPBStandardSerial
 	{
 	public:
 		// communication must be reset
@@ -139,4 +142,4 @@ namespace Protocol
 
 };
 
-#endif
+#endif // PROTOCOL_CPBSTANDARDSERIAL_H
