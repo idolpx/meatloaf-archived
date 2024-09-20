@@ -53,8 +53,12 @@ board = d1_mini_pro
 board_build.f_cpu = 160000000L
 board_build.filesystem = littlefs
 ;board_build.flash_mode = dio ;Uncomment this line and reflash if your device doesn't boot
-board_build.ldscript = eagle.flash.8m7m.ld
-;board_build.ldscript = eagle.flash.16m14m.ld  // Builds a 4GB file???
+
+;Have to do the fix to main.py to get the full filesystem size
+;https://github.com/platformio/platform-espressif8266/issues/190#issuecomment-1374266591
+board_build.ldscript = eagle.flash.16m14m.ld
+;otherwise use the following line
+;board_build.ldscript = eagle.flash.8m7m.ld
 
 [env:nodemcuv2]
 platform = espressif8266
