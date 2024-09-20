@@ -991,6 +991,10 @@ void ESPWebDAVCore::handlePut(ResourceType resource)
     if ((code = allowed(uri)) != 200)
         return handleIssue(code, "Lock error");
 
+    // Expect: 100-continue
+    if ( continueHeader )
+        client->write( "HTTP/1.1 100 Continue\r\n\r\n" );
+
     File file;
     stripName(uri);
     DBG_PRINT("create file '%s'", uri.c_str());
@@ -1542,6 +1546,8 @@ bool ESPWebDAVCore::parseRequest(const String& givenMethod,
             contentLengthHeader = headerValue.toInt();
         else if (headerName.equalsIgnoreCase("Destination"))
             destinationHeader = headerValue;
+        else if (headerName.equalsIgnoreCase("Expect"))
+            continueHeader = true;
         else if (headerName.equalsIgnoreCase("Range"))
             processRange(headerValue);
         else if (headerName.equalsIgnoreCase("Overwrite"))

@@ -216,6 +216,7 @@ protected:
     String 		depthHeader;
     String 		hostHeader;
     String		destinationHeader;
+    bool        continueHeader;
     String      overwrite;
     String      ifHeader;
     String      lockTokenHeader;
