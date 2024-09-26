@@ -2,13 +2,15 @@
 // see: https://www.commodoreserver.com/BlogEntryView.asp?EID=9D133160E7C344A398EC1F45AEF4BF32
 //
 
-#ifndef MEATFILESYSTEM_SCHEME_CS
-#define MEATFILESYSTEM_SCHEME_CS
+#ifndef MEATLOAF_SCHEME_CS
+#define MEATLOAF_SCHEME_CS
 
-#include "../../include/global_defines.h"
-#include "../../include/make_unique.h"
-#include "meat_io.h"
-#include "WiFiClient.h"
+#include "meatloaf.h"
+#include "network/tcp.h"
+
+#include "fnSystem.h"
+#include "fnTcpClient.h"
+
 #include "utils.h"
 #include "string_utils.h"
 
@@ -24,7 +26,7 @@ class csstreambuf : public std::streambuf {
     char* pbuf;
 
 protected:
-    WiFiClient m_wifi;
+    MeatSocket m_wifi;
 
 public:
     csstreambuf() {}
@@ -34,15 +36,15 @@ public:
     }      
 
     bool is_open() {
-        return (m_wifi.connected());
+        return (m_wifi.isOpen());
     }
 
     bool open() {
-        if(m_wifi.connected())
+        if(m_wifi.isOpen())
             return true;
 
-        int rc = m_wifi.connect("commodoreserver.com", 1541);
-        Serial.printf("csstreambuf: connect to cserver returned: %d\n", rc);
+        int rc = m_wifi.open("commodoreserver.com", 1541);
+        Serial.printf("csstreambuf: connect to cserver returned: %d\r\n", rc);
 
         if(rc == 1) {
             if(gbuf == nullptr)
@@ -57,9 +59,9 @@ public:
     }
 
     void close() {
-        Serial.printf("csstreambuf: closing\n");
-        if(m_wifi.connected()) {
-            m_wifi.stop();
+        Serial.printf("csstreambuf: closing\r\n");
+        if(m_wifi.isOpen()) {
+            m_wifi.close();
         }
         if(gbuf != nullptr)
             delete[] gbuf;
@@ -68,9 +70,9 @@ public:
     }
 
     int underflow() override {
-        //_printv("In underflow");
-        if (!m_wifi.connected()) {
-            //Debug_printv("In connection closed");
+        Debug_printv("In underflow");
+        if (!m_wifi.isOpen()) {
+            Debug_printv("In connection closed");
             close();
             return std::char_traits<char>::eof();
         }
@@ -79,13 +81,19 @@ public:
             int attempts = 5;
             int wait = 500;
             
-            while(!(readCount = m_wifi.read((uint8_t*)gbuf, 512)) && (attempts--)>0 && m_wifi.connected()) {
-                //Debug_printv("read attempt");
-                delay(wait);
+            readCount = m_wifi.read((uint8_t*)gbuf, 512);
+
+            while( readCount <= 0 && (attempts--)>0 && m_wifi.isOpen()) {
+                Debug_printv("got rc: %d, retrying", readCount);
+                fnSystem.delay(wait);
                 wait+=100;
+                readCount = m_wifi.read((uint8_t*)gbuf, 512);
             } 
-            //Debug_printv("readcount: %d, %s", readCount, gbuf);
+            Debug_printv("read success: %d", readCount);
             this->setg(gbuf, gbuf, gbuf + readCount);
+        }
+        else {
+            Debug_printv("else: %d - %d, (%d)", this->gptr(), this->egptr(), this->gbuf);
         }
 
         return this->gptr() == this->egptr()
@@ -98,7 +106,7 @@ public:
     {
         //Debug_printv("in overflow");
 
-        if (!m_wifi.connected()) {
+        if (!m_wifi.isOpen()) {
             close();
             return EOF;
         }
@@ -122,7 +130,7 @@ public:
 
     int sync() { 
 
-        if (!m_wifi.connected()) {
+        if (!m_wifi.isOpen()) {
             close();
             return 0;
         }
@@ -171,7 +179,7 @@ public:
         sendCommand("quit");
     };
 
-    // read/write are used only by MStreams
+    // read/write are used only by MStream
     size_t receive(uint8_t* buffer, size_t size) {
         if(buf.is_open())
             return buf.m_wifi.read(buffer, size);
@@ -179,7 +187,7 @@ public:
             return 0;
     }
 
-    // read/write are used only by MStreams
+    // read/write are used only by MStream
     size_t send(const uint8_t* buffer, size_t size) {
         if(buf.is_open())
             return buf.m_wifi.write(buffer, size);
@@ -208,17 +216,13 @@ public:
         media_block_size = 1; // blocks are already calculated
         //parseUrl(path);
         // Debug_printv("path[%s] size[%d]", path.c_str(), size);
+        isPETSCII = true;
     };
 
     MStream* getDecodedStream(std::shared_ptr<MStream> src) { return src.get(); };
-    MStream* getSourceStream() override ; // has to return OPENED stream
-    MStream* outputStream() override ; // has to return OPENED stream    
+    MStream* getSourceStream(std::ios_base::openmode mode=std::ios_base::in) override ; // has to return OPENED stream
 
-    // std::string petsciiName() override {
-    //     return name;
-    // }
-
-    MFile* cd(std::string newDir);
+    //MFile* cd(std::string newDir);
     bool isDirectory() override;
     bool rewindDirectory() override;
     MFile* getNextFileInDir() override;
@@ -229,7 +233,7 @@ public:
     bool rename(std::string dest) { return false; };
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override { return 0; };
-    size_t size() override;     
+    uint32_t size() override;     
 
     bool isDir = true;
     bool dirIsOpen = false;
@@ -254,51 +258,30 @@ public:
         close();
     }
     // MStream methods
-    size_t position() override;
-    void close() override;
     bool open() override;
+    void close() override;
 
-    // MStream methods
-    size_t available() override;
-    size_t size() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    bool isOpen() override;
-    virtual bool seek(size_t pos) {
+    uint32_t available() override;
+    uint32_t size() override;
+    uint32_t position() override;
+    size_t error() override;
+
+    virtual bool seek(uint32_t pos) {
         return false;
     };
 
-protected:
-    std::string url;
-    bool m_isOpen;
-    size_t m_length;
-    size_t m_bytesAvailable = 0;
-    size_t m_position = 0;
-};
-
-
-class CServerOStream: public MStream {
-
-public:
-    // MStream methods
-    CServerOStream(std::string path) {
-        url = path;
-    }
-    ~CServerOStream() {
-        close();
-    }
-
-    size_t position() override;
-    void close() override;
-    bool open() override;
-
-    // MStream methods
-    size_t write(const uint8_t *buf, size_t size) override;
+    uint32_t read(uint8_t* buf, uint32_t size) override;
+    uint32_t write(const uint8_t *buf, uint32_t size) override;
     bool isOpen() override;
 
 protected:
     std::string url;
-    bool m_isOpen;
+    bool _is_open;
+    // uint32_t _size;
+    // uint32_t m_bytesAvailable = 0;
+    // uint32_t _position = 0;
 };
+
 
 
 /********************************************************
@@ -323,4 +306,4 @@ public:
 
 
 
-#endif /* MEATFILESYSTEM_SCHEME_CS */
+#endif /* MEATLOAF_SCHEME_CS */

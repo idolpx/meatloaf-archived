@@ -1,13 +1,15 @@
 
-#ifndef MEATLOAF_CBM_MEDIA
-#define MEATLOAF_CBM_MEDIA
+#ifndef MEATLOAF_MEDIA
+#define MEATLOAF_MEDIA
 
-#include "meat_io.h"
+#include "meatloaf.h"
 
 #include <map>
 #include <bitset>
 #include <unordered_map>
 #include <sstream>
+
+#include "../../include/debug.h"
 
 #include "string_utils.h"
 
@@ -16,10 +18,10 @@
  * Streams
  ********************************************************/
 
-class MImageStream: public MStream {
+class MMediaStream: public MStream {
 
 public:
-    MImageStream(std::shared_ptr<MStream> is) {
+    MMediaStream(std::shared_ptr<MStream> is) {
         containerStream = is;
         _is_open = true;
         has_subdirs = false;
@@ -29,7 +31,7 @@ public:
     bool open() override;
     void close() override;
 
-    ~MImageStream() {
+    ~MMediaStream() {
         //Debug_printv("close");
         close();
     }
@@ -43,6 +45,7 @@ public:
     virtual uint8_t read() {
         uint8_t b = 0;
         containerStream->read( &b, 1 );
+        _position++;
         return b;
     }
     // readUntil = (delimiter = 0x00) => this.containerStream.readUntil(delimiter);
@@ -54,7 +57,10 @@ public:
         {
             r = containerStream->read( &b, 1 );
             if ( b != delimiter )
+            {
                 bytes += b;
+                _position++;
+            }
             else
                 break;
         } while ( r );
@@ -65,9 +71,11 @@ public:
     virtual std::string readString( uint8_t size )
     {
         uint8_t b[size];
-        if ( containerStream->read( b, size ) )
+        if ( auto s = containerStream->read( b, size ) )
+        {
+            _position += s;
             return std::string((char *)b);
-        
+        }
         return std::string();
     }
     // readStringUntil = (delimiter = 0x00) => this.containerStream.readStringUntil(delimiter);
@@ -112,7 +120,7 @@ protected:
 
     bool _is_open = false;
 
-    MImageStream* decodedStream;
+    MMediaStream* decodedStream;
 
     bool show_hidden = false;
 
@@ -143,8 +151,10 @@ protected:
     virtual bool seekEntry( std::string filename ) { return false; };
     virtual bool seekEntry( uint16_t index ) { return false; };
 
+    virtual uint16_t readContainer(uint8_t *buf, uint16_t size);
     virtual uint16_t readFile(uint8_t* buf, uint16_t size) = 0;
     virtual std::string decodeType(uint8_t file_type, bool show_hidden = false);
+    virtual std::string decodeType(std::string file_type);
 
 private:
 
@@ -153,26 +163,26 @@ private:
     friend class CRTFile;
 
     // CONTAINER
-    friend class D8BFile;
-    friend class DFIFile;
+    friend class D8BMFile;
+    friend class DFIMFile;
 
     // FLOPPY DISK
-    friend class D64File;
-    friend class D71File;
-    friend class D80File;
-    friend class D81File;
-    friend class D82File;
+    friend class D64MFile;
+    friend class D71MFile;
+    friend class D80MFile;
+    friend class D81MFile;
+    friend class D82MFile;
 
     // HARD DRIVE
-    friend class DNPFile;
-    friend class D90File;
+    friend class DNPMFile;
+    friend class D90MFile;
 
     // FILE
-    friend class P00File;
+    friend class P00MFile;
 
     // CASSETTE TAPE
-    friend class T64File;
-    friend class TCRTFile;
+    friend class T64MFile;
+    friend class TCRTMFile;
 };
 
 
@@ -181,7 +191,7 @@ private:
  * Utility implementations
  ********************************************************/
 class ImageBroker {
-    static std::unordered_map<std::string, MImageStream*> repo;
+    static std::unordered_map<std::string, MMediaStream*> repo;
 public:
     template<class T> static T* obtain(std::string url) {
         // obviously you have to supply STREAMFILE.url to this function!
@@ -208,8 +218,8 @@ public:
         return newStream;
     }
 
-    static MImageStream* obtain(std::string url) {
-        return obtain<MImageStream>(url);
+    static MMediaStream* obtain(std::string url) {
+        return obtain<MMediaStream>(url);
     }
 
     static void dispose(std::string url) {
@@ -221,4 +231,4 @@ public:
     }
 };
 
-#endif // MEATLOAF_CBM_MEDIA
+#endif // MEATLOAF_MEDIA

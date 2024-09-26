@@ -34,18 +34,17 @@ void setup()
 
     modem.start();
 
-#if defined(ESP8266)
-    // initialize selected file system
-    fileSystemConfig.setAutoFormat ( AUTO_FORMAT );
-#if defined USE_SDFS
-    fileSystemConfig.setCSPin ( CHIP_SELECT_PIN );
-    fileSystemConfig.setSPI ( SPI_SETTINGS );
-#endif
-    fileSystem->setConfig ( fileSystemConfig );
-#endif
+// #if defined(ESP8266)
+//     // initialize selected file system
+//     fileSystemConfig.setAutoFormat ( AUTO_FORMAT );
+// #if defined USE_SDFS
+//     fileSystemConfig.setCSPin ( CHIP_SELECT_PIN );
+//     fileSystemConfig.setSPI ( SPI_SETTINGS );
+// #endif
+//     fileSystem->setConfig ( fileSystemConfig );
+// #endif
 
 #if defined(ESP8266)
-
     if ( !fileSystem->begin() )
 #elif defined(ESP32) && defined(USE_LITTLEFS)
     if ( !LITTLEFS.begin() ) // not sure why pointer is not working

@@ -1,0 +1,16 @@
+#ifndef DEVICE_CASSETTE_H
+#define DEVICE_CASSETTE_H
+
+#ifdef BUILD_ATARI
+# include "sio/cassette.h"
+#endif
+
+#ifdef BUILD_LYNX
+
+#endif 
+
+#ifdef NEW_TARGET
+# include "new/cassette.h"
+#endif
+
+#endif // DEVICE_CASSETTE_H

@@ -860,7 +860,7 @@ void ESPWebDAVCore::handleGet(ResourceType resource, File& file, bool isGet)
     if (!v)
     {
         if (resource == RESOURCE_DIR)
-            return handleIssue(200, "GET/HEAD on dir");
+            return handleIssue(200, "OK");
         if (resource != RESOURCE_FILE)
             return handleIssue(404, "Not found");
     }

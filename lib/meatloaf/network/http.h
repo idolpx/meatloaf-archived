@@ -1,17 +1,99 @@
-// HTTP:// - Hypertext Transfer Protocol
+// HTTP://  - Hypertext Transfer Protocol
+// HTTPS:// - Hypertext Transfer Protocol Secure
+// https://buger.dread.cz/simple-esp8266-https-client-without-verification-of-certificate-fingerprint.html
+// https://forum.arduino.cc/t/esp8266-httpclient-library-for-https/495245
+// 
 
-#ifndef MEATFILE_DEFINES_FSHTTP_H
-#define MEATFILE_DEFINES_FSHTTP_H
 
-#include "meat_io.h"
-#include "../../include/global_defines.h"
-#if defined(ESP32)
-#include <WiFi.h>
-#include <HTTPClient.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#endif
+#ifndef MEATLOAF_SCHEME_HTTP
+#define MEATLOAF_SCHEME_HTTP
+
+#include "meatloaf.h"
+
+#include <esp_http_client.h>
+#include <functional>
+#include <map>
+
+#include "../../../include/debug.h"
+//#include "../../include/global_defines.h"
+//#include "../../include/version.h"
+#include "utils.h"
+
+#define HTTP_BLOCK_SIZE 256
+
+//#define PRODUCT_ID "MEATLOAF CBM"
+//#define PLATFORM_DETAILS "C64; 6510; 2; NTSC; EN;" // Make configurable. This will help server side to select appropriate content.
+//#define USER_AGENT "MEATLOAF/" FN_VERSION_FULL " (" PLATFORM_DETAILS ")"
+
+class MeatHttpClient {
+    esp_http_client_handle_t _http = nullptr;
+    static esp_err_t _http_event_handler(esp_http_client_event_t *evt);
+    int openAndFetchHeaders(esp_http_client_method_t meth, int resume = 0);
+    esp_http_client_method_t lastMethod;
+    std::function<int(char*, char*)> onHeader = [] (char* key, char* value){ 
+        //Debug_printv("HTTP_EVENT_ON_HEADER, key=%s, value=%s", key, value);
+        return 0; 
+    };
+
+    std::map<std::string, std::string> headers;
+
+public:
+
+    MeatHttpClient() {
+    }
+    
+    ~MeatHttpClient() {
+        close();
+    }
+
+    bool setHeader(const std::string header) {
+        auto h = util_tokenize(header, ':');
+        if ( h.size() == 2)
+        {
+            headers.insert( std::pair<std::string, std::string>(h[0], h[1]) );
+            return true;
+        }
+        return false;
+    }
+    std::string getHeader(std::string header)
+    {
+        return headers[header];
+    }
+
+    bool GET(std::string url);
+    bool POST(std::string url);
+    bool PUT(std::string url);
+    bool HEAD(std::string url);
+
+    bool processRedirectsAndOpen(int range);
+    bool open(std::string url, esp_http_client_method_t meth);
+    void close();
+    void setOnHeader(const std::function<int(char*, char*)> &f);
+    bool seek(uint32_t pos);
+    uint32_t read(uint8_t* buf, uint32_t size);
+    uint32_t write(const uint8_t* buf, uint32_t size);
+
+    bool _is_open = false;
+    bool _exists = false;
+
+    uint32_t available() {
+        return _size - _position;
+    }
+
+    uint32_t _size = 0;
+    // uint32_t m_bytesAvailable = 0;
+    uint32_t _position = 0;
+    size_t _error = 0;
+
+    bool m_isWebDAV = false;
+    bool m_isDirectory = false;
+    bool isText = false;
+    bool isFriendlySkipper = false;
+    bool wasRedirected = false;
+    std::string url;
+
+    int lastRC = 0;
+};
 
 /********************************************************
  * File implementations
@@ -19,21 +101,32 @@
 
 
 class HttpFile: public MFile {
+    MeatHttpClient* fromHeader();
+    MeatHttpClient* client = nullptr;
 
 public:
-    HttpFile(std::string path): MFile(path) {};
-
+    HttpFile() {
+        Debug_printv("C++, if you try to call this, be damned!");
+    };
+    HttpFile(std::string path): MFile(path) { 
+        // Debug_printv("constructing http file from url [%s]", url.c_str());
+    };
+    HttpFile(std::string path, std::string filename): MFile(path) {};
+    ~HttpFile() override {
+        if(client != nullptr)
+            delete client;
+    }
     bool isDirectory() override;
-    MStream* getSourceStream() override ; // has to return OPENED stream
-    MStream* outputStream() override ; // has to return OPENED stream
+    MStream* getSourceStream(std::ios_base::openmode mode=std::ios_base::in) override ; // has to return OPENED streamm
     time_t getLastWrite() override ;
     time_t getCreationTime() override ;
-    bool rewindDirectory() override { return false; };
-    MFile* getNextFileInDir() override { return nullptr; };
-    bool mkDir() override { return false; };
+    bool rewindDirectory() override ;
+    MFile* getNextFileInDir() override ;
+    bool mkDir() override ;
     bool exists() override ;
-    size_t size() override ;
-    bool remove() override { return false; };
+    uint32_t size() override ;
+    bool remove() override ;
+    bool isText() override ;
     bool rename(std::string dest) { return false; };
     MStream* getDecodedStream(std::shared_ptr<MStream> src);
     //void addHeader(const String& name, const String& value, bool first = false, bool replace = true);
@@ -44,107 +137,43 @@ public:
  * Streams
  ********************************************************/
 
-class HttpIOStream: public MStream {
-public:
-    HttpIOStream(std::string& path) {
-        url = path;
-    }
-    ~HttpIOStream() {
-        close();
-    }
-
-    void close() override;
-    bool open() override;
-
-    // MStream methods
-    size_t position() override;
-    size_t available() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
-
-protected:
-    std::string url;
-    bool m_isOpen;
-    size_t m_length;
-    size_t m_bytesAvailable = 0;
-    size_t m_position = 0;
-       
-    WiFiClient m_file;
-	HTTPClient m_http;
-};
-
-
 class HttpIStream: public MStream {
 
 public:
     HttpIStream(std::string path) {
-        m_http.setUserAgent(USER_AGENT);
-        m_http.setTimeout(10000);
-        m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-        m_http.setRedirectLimit(10);
         url = path;
-    }
-    // MStream methods
-    size_t position() override;
-    void close() override;
-    bool open() override;
+    };
+    HttpIStream(std::string path, std::ios_base::openmode m) {
+        url = path;
+        mode = m;
+    };
+
     ~HttpIStream() {
         close();
-    }
+    };
 
     // MStream methods
+    // uint32_t size() override;
+    // uint32_t available() override;     
+    // uint32_t position() override;
+    // size_t error() override;
 
-    virtual bool seek(size_t pos);
-    size_t available() override;
-    size_t size() override;
-    size_t read(uint8_t* buf, size_t size) override;
-    bool isOpen();
+    virtual bool seek(uint32_t pos);
 
-protected:
-    std::string url;
-    bool m_isOpen;
-    size_t m_bytesAvailable = 0;
-    size_t m_length = 0;
-    size_t m_position = 0;
-    bool isFriendlySkipper = false;
-
-    WiFiClient m_file;
-	HTTPClient m_http;
-};
-
-
-class HttpOStream: public MStream {
-
-public:
-    // MStream methods
-    HttpOStream(std::string path) {
-        m_http.setUserAgent(USER_AGENT);
-        m_http.setTimeout(10000);
-        m_http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-        m_http.setRedirectLimit(10);
-        m_http.setReuse(true);
-
-        url = path;
-    }
-    size_t position() override;
     void close() override;
     bool open() override;
-    ~HttpOStream() {
-        close();
-    }
 
     // MStream methods
-    size_t write(const uint8_t *buf, size_t size) override;
-    bool isOpen();
+    uint32_t read(uint8_t* buf, uint32_t size) override;
+    uint32_t write(const uint8_t *buf, uint32_t size) override;
+
+    bool isOpen() override;
 
 protected:
-    std::string url;
-    bool m_isOpen;
-    WiFiClient m_file;
-    //WiFiClient m_client;
-	HTTPClient m_http;
+    MeatHttpClient _http;
+
 };
+
 
 
 /********************************************************
@@ -158,12 +187,17 @@ class HttpFileSystem: public MFileSystem
     }
 
     bool handles(std::string name) {
-        std::string pattern = "http:";
-        return mstr::equals(name, pattern, false);
+        if ( mstr::equals(name, (char *)"http:", false) )
+            return true;
+
+        if ( mstr::equals(name, (char *)"https:", false) )
+            return true;
+            
+        return false;
     }
 public:
     HttpFileSystem(): MFileSystem("http") {};
 };
 
 
-#endif
+#endif /* MEATLOAF_SCHEME_HTTP */

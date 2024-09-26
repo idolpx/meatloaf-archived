@@ -3,12 +3,12 @@
 // https://en.wikipedia.org/wiki/WebSocket
 //
 
-#ifndef MEATFILESYSTEM_SCHEME_WS
-#define MEATFILESYSTEM_SCHEME_WS
+#ifndef MEATLOAF_SCHEME_WS
+#define MEATLOAF_SCHEME_WS
 
-#include "meat_io.h"
+#include "meatloaf.h"
 #include "../../include/global_defines.h"
-#include <ArduinoWebsockets.h>
+
 #include "string_utils.h"
 
 /********************************************************
@@ -37,28 +37,28 @@ public:
             server.listen(port);
             client = server.accept();
             prepareClientCallbacks();
-            m_isOpen = server.available();
+            _is_open = server.available();
         }
         else {
             prepareClientCallbacks();
-            m_isOpen = client.connect(address);
+            _is_open = client.connect(address);
             // waring - client->poll() required to keep it working!
         }
 
-        return m_isOpen;
+        return _is_open;
     };
 
     // MStream methods
-    size_t position() override { return 0; };
-    size_t available() override { return INT_MAX; };
-    bool isOpen() { return m_isOpen; };
-    bool seek(size_t pos) { return false; };
-    size_t size() { return INT_MAX; };
+    uint32_t position() override { return 0; };
+    uint32_t available() override { return INT_MAX; };
+    bool isOpen() { return _is_open; };
+    bool seek(uint32_t pos) { return false; };
+    uint32_t size() { return INT_MAX; };
 
-    size_t read(uint8_t* buf, size_t size) override {
+    uint32_t read(uint8_t* buf, uint32_t size) override {
         //auto msg = client.readBlocking(); // we don't want to block. We'll store a message from callback in msg
 
-        if(!m_isOpen)
+        if(!_is_open)
             return 0;
 
         if(!lastMsg.isEmpty()) {
@@ -76,7 +76,7 @@ public:
         }
     }
     size_t write(const uint8_t *buf, size_t size) override {
-        if(!m_isOpen)
+        if(!_is_open)
             return 0;
 
         websockets::WSInterfaceString message((char *)buf);
@@ -87,7 +87,7 @@ public:
 protected:
     websockets::WSInterfaceString address; // format: www.myserver.com:8080
     uint16_t port = 80;
-    bool m_isOpen;
+    bool _is_open;
     bool m_isServer;
     websockets::WebsocketsClient client;
     websockets::WebsocketsServer server;
@@ -109,10 +109,10 @@ protected:
         client.onEvent([this](websockets::WebsocketsEvent event, String data) {
             if(event == websockets::WebsocketsEvent::ConnectionOpened) {
                 Debug_printv("Socket Connnection Opened");
-                this->m_isOpen = true;
+                this->_is_open = true;
             } else if(event == websockets::WebsocketsEvent::ConnectionClosed) {
                 Debug_printv("Socket Connnection Closed");
-                this->m_isOpen = false;
+                this->_is_open = false;
             } else if(event == websockets::WebsocketsEvent::GotPing) {
                 Debug_printv("Got a Ping!");
             } else if(event == websockets::WebsocketsEvent::GotPong) {
@@ -132,13 +132,9 @@ public:
     WSFile(std::string path): MFile(path) {};
 
     bool isDirectory() override { return false; }
-    MStream* getSourceStream() override {
+    MStream* getSourceStream(std::ios_base::openmode mode=std::ios_base::in) override {
         // input stream = SERVER socket
         return new CSIOStream(this, true);
-    }; 
-    MStream* outputStream() override {
-        // output stream = CLIENT socket
-        return new CSIOStream(this, false);
     }; 
     time_t getLastWrite() override { return 0; };
     time_t getCreationTime() override { return 0; };
@@ -177,4 +173,4 @@ public:
 
 
 
-#endif /* MEATFILESYSTEM_SCHEME_WS */
+#endif /* MEATLOAF_SCHEME_WS */

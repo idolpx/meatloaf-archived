@@ -1,12 +1,12 @@
 #include "cs.h"
 
+#include "make_unique.h"
+
 /********************************************************
  * Client impls
  ********************************************************/
 // fajna sciezka do sprawdzenia:
 // utilities/disk tools/cie.d64
-
-#define OK_REPLY "00 - OK\x0d"
 
 CServerSessionMgr CServerFileSystem::session;
 
@@ -23,15 +23,16 @@ std::string CServerSessionMgr::readLn() {
     char buffer[80];
     // telnet line ends with 10;
     getline(buffer, 80, 10);
-    //Debug_printv("Inside readLn: %s", buffer);
+    Debug_printv("Inside readln got: '%s'", buffer);
     return std::string((char *)buffer);
 }
 
 bool CServerSessionMgr::sendCommand(std::string command) {
+    std::string c = mstr::toPETSCII2(command);
     // 13 (CR) sends the command
     if(establishSession()) {
-        Serial.printf("CServer: send command: %s\n", command.c_str());
-        (*this) << (command+'\r');
+        Serial.printf("CServer: send command: %s\r\n", c.c_str());
+        (*this) << (c+'\r');
         (*this).flush();
         return true;
     }
@@ -42,10 +43,15 @@ bool CServerSessionMgr::sendCommand(std::string command) {
 bool CServerSessionMgr::isOK() {
     // auto a = readLn();
 
-    // for(int i = 0 ; i<a.length(); i++)
-    //     Debug_printv("'%d'", a[i]);
+    auto reply = readLn();
+    // for(int i = 0 ; i<reply.length(); i++)
+    //     Debug_printv("'%d'", reply[i]);
 
-    return readLn() == OK_REPLY;
+    bool equals = strncmp("00 - OK\x0d", reply.c_str(), 7);
+
+    //Debug_printv("Testing of OK, got:'%s', %d", reply.c_str(), equals);
+
+    return equals;
 }
 
 bool CServerSessionMgr::traversePath(MFile* path) {
@@ -66,7 +72,9 @@ bool CServerSessionMgr::traversePath(MFile* path) {
             return false;
     }
 
+    Debug_printv("here");
     if(isOK()) {
+        Debug_printv("path[%s]", path->path.c_str());
         if(path->path.compare("/") == 0) {
             currentDir = path->url;
             return true;
@@ -77,15 +85,15 @@ bool CServerSessionMgr::traversePath(MFile* path) {
         //MFile::parsePath(&chopped, path->path); - nope this doessn't work and crases in the loop!
 
         Debug_printv("Before loop");
-        //Debug_printv("Chopped size:%d\n", chopped.size());
-        delay(500);
+        //Debug_printv("Chopped size:%d\r\n", chopped.size());
+        fnSystem.delay(500);
 
         for(size_t i = 1; i < chopped.size(); i++) {
             //Debug_printv("Before chopped deref");
 
             auto part = chopped[i];
             
-            //Debug_printv("traverse path part: [%s]\n", part.c_str());
+            //Debug_printv("traverse path part: [%s]\r\n", part.c_str());
             if(mstr::endsWith(part, ".d64", false)) 
             {
                 // THEN we have to mount the image INSERT image_name
@@ -123,17 +131,14 @@ bool CServerSessionMgr::traversePath(MFile* path) {
  * I Stream impls
  ********************************************************/
 
-size_t CServerIStream::position() {
-    return m_position;
-};
 
 void CServerIStream::close() {
-    m_isOpen = false;
+    _is_open = false;
 };
 
 bool CServerIStream::open() {
     auto file = std::make_unique<CServerFile>(url);
-    m_isOpen = false;
+    _is_open = false;
 
     if(file->isDirectory())
         return false; // or do we want to stream whole d64 image? :D
@@ -144,92 +149,149 @@ bool CServerIStream::open() {
         // name here MUST BE UPPER CASE
         // trim spaces from right of name too
         mstr::rtrimA0(file->name);
-        //mstr::toPETSCII(file->name);
+        //mstr::toPETSCII2(file->name);
         CServerFileSystem::session.sendCommand("load "+file->name);
         // read first 2 bytes with size, low first, but may also reply with: ?500 - ERROR
         uint8_t buffer[2] = { 0, 0 };
         read(buffer, 2);
         // hmmm... should we check if they're "?5" for error?!
         if(buffer[0]=='?' && buffer[1]=='5') {
-            Serial.println("CServer: open file failed");
+            Debug_printv("CServer: open file failed");
             CServerFileSystem::session.readLn();
-            m_isOpen = false;
+            _is_open = false;
         }
         else {
-            m_bytesAvailable = buffer[0] + buffer[1]*256; // put len here
+            _size = buffer[0] + buffer[1]*256; // put len here
             // if everything was ok
-            Serial.printf("CServer: file open, size: %d\n", m_bytesAvailable);
-            m_isOpen = true;
+            Serial.printf("CServer: file open, size: %d\r\n", _size);
+            _is_open = true;
         }
     }
 
-    return m_isOpen;
+    return _is_open;
 };
 
 // MStream methods
-size_t CServerIStream::available() {
-    return m_bytesAvailable;
-};
 
-size_t CServerIStream::size() {
-    return m_bytesAvailable;
-};
+uint32_t CServerIStream::write(const uint8_t *buf, uint32_t size) {
+    return -1;
+}
 
-size_t CServerIStream::read(uint8_t* buf, size_t size)  {
-    //Serial.println("CServerIStream::read");
+uint32_t CServerIStream::read(uint8_t* buf, uint32_t size)  {
+    //Debug_printv("CServerIStream::read");
     auto bytesRead = CServerFileSystem::session.receive(buf, size);
-    m_bytesAvailable-=bytesRead;
-    m_position+=bytesRead;
+    _position+=bytesRead;
     //ledTogg(true);
     return bytesRead;
 };
 
 bool CServerIStream::isOpen() {
-    return m_isOpen;
+    return _is_open;
 }
 
-/********************************************************
- * O Stream impls
- ********************************************************/
-
-size_t CServerOStream::position() {
-    return 0;
-};
-
-void CServerOStream::close() {
-    m_isOpen = false;
-};
-
-bool CServerOStream::open() {
-    auto file = std::make_unique<CServerFile>(url);
-
-    if(CServerFileSystem::session.traversePath(file.get())) {
-        m_isOpen = true;
-    }
-    else
-        m_isOpen = false;
-
-    return m_isOpen;
-};
-
-// MStream methods
-size_t CServerOStream::write(const uint8_t *buf, size_t size) {
-    // we have to write all at once... sorry...
-    auto file = std::make_unique<CServerFile>(url);
-
-    CServerFileSystem::session.sendCommand("save fileName,size[,type=PRG,SEQ]");
-    m_isOpen = false; // c64 server supports only writing all at once, so this channel has to be marked closed
-    return CServerFileSystem::session.send(buf, size);
-};
-
-
-bool CServerOStream::isOpen() {
-    return m_isOpen;
-};
 
 /********************************************************
  * File impls
  ********************************************************/
+
+
+// MFile* CServerFile::cd(std::string newDir) {
+//     // maah - don't really know how to handle this!
+
+//     // Drop the : if it is included
+//     if(newDir[0]==':') {
+//         Debug_printv("[:]");
+//         newDir = mstr::drop(newDir,1);
+//     }
+
+//     Debug_printv("cd in CServerFile! New dir [%s]\r\n", newDir.c_str());
+//     if(newDir[0]=='/' && newDir[1]=='/') {
+//         if(newDir.size()==2) {
+//             // user entered: CD:// or CD//
+//             // means: change to the root of roots
+//             return MFSOwner::File("/"); // chedked, works ad flash root!
+//         }
+//         else {
+//             // user entered: CD://DIR or CD//DIR
+//             // means: change to a dir in root of roots
+//             Debug_printv("[//]");
+//             return root(mstr::drop(newDir,2));
+//         }
+//     }
+//     else if(newDir[0]=='/') {
+//         if(newDir.size()==1) {
+//             // user entered: CD:/ or CD/
+//             // means: change to container root
+//             // *** might require a fix for flash fs!
+//             return MFSOwner::File(streamFile->path);
+//         }
+//         else {
+//             Debug_printv("[/]");
+//             // user entered: CD:/DIR or CD/DIR
+//             // means: change to a dir in container root
+//             return MFSOwner::File("cs:/"+mstr::drop(newDir,1));
+//         }
+//     }
+//     else if(newDir[0]=='_') {
+//         if(newDir.size()==1) {
+//             // user entered: CD:_ or CD_
+//             // means: go up one directory
+//             return parent();
+//         }
+//         else {
+//             Debug_printv("[_]");
+//             // user entered: CD:_DIR or CD_DIR
+//             // means: go to a directory in the same directory as this one
+//             return parent(mstr::drop(newDir,1));
+//         }
+//     }
+//     if(newDir[0]=='.' && newDir[1]=='.') {
+//         if(newDir.size()==2) {
+//             // user entered: CD:.. or CD..
+//             // means: go up one directory
+//             return parent();
+//         }
+//         else {
+//             Debug_printv("[..]");
+//             // user entered: CD:..DIR or CD..DIR
+//             // meaning: Go back one directory
+//             return localParent(mstr::drop(newDir,2));
+//         }
+//     }
+
+//     // ain't that redundant?
+//     // if(newDir[0]=='.' && newDir[1]=='/') {
+//     //     Debug_printv("[./]");
+//     //     // Reference to current directory
+//     //     return localParent(mstr::drop(newDir,2));
+//     // }
+
+//     if(newDir[0]=='~' /*&& newDir[1]=='/' let's be consistent!*/) {
+//         if(newDir.size() == 1) {
+//             // user entered: CD:~ or CD~
+//             // meaning: go to the .sys folder
+//             return MFSOwner::File("/.sys");
+//         }
+//         else {
+//             Debug_printv("[~]");
+//             // user entered: CD:~FOLDER or CD~FOLDER
+//             // meaning: go to a folder in .sys folder
+//             return MFSOwner::File("/.sys/" + mstr::drop(newDir,1));
+//         }
+//     }    
+//     if(newDir.find(':') != std::string::npos) {
+//         // I can only guess we're CDing into another url scheme, this means we're changing whole path
+//         return MFSOwner::File(newDir);
+//     }
+//     else {
+//         // Add new directory to path
+//         if(mstr::endsWith(url,"/"))
+//             return MFSOwner::File(url+newDir);
+//         else
+//             return MFSOwner::File(url+"/"+newDir);
+//     }
+// };
+
 
 bool CServerFile::isDirectory() {
     // if penultimate part is .d64 - it is a file
@@ -260,17 +322,11 @@ bool CServerFile::isDirectory() {
     return false;
 };
 
-MStream* CServerFile::getSourceStream() {
+MStream* CServerFile::getSourceStream(std::ios_base::openmode mode) {
     MStream* istream = new CServerIStream(url);
     istream->open();   
     return istream;
 }; 
-
-MStream* CServerFile::outputStream() {
-    MStream* ostream = new CServerOStream(url);
-    ostream->open();   
-    return ostream;
-};
 
 bool CServerFile::rewindDirectory() {    
     dirIsOpen = false;
@@ -278,13 +334,18 @@ bool CServerFile::rewindDirectory() {
     if(!isDirectory())
         return false;
 
+
+    Debug_printv("pre traverse path");
+
     if(!CServerFileSystem::session.traversePath(this)) return false;
+
+    Debug_printv("post traverse path");
 
     if(mstr::endsWith(path, ".d64", false))
     {
         dirIsImage = true;
         // to list image contents we have to run
-        //Serial.println("cserver: this is a d64 img!");
+        Debug_printv("cserver: this is a d64 img, sending $ command!");
         CServerFileSystem::session.sendCommand("$");
         auto line = CServerFileSystem::session.readLn(); // mounted image name
         if(CServerFileSystem::session.is_open()) {
@@ -302,7 +363,7 @@ bool CServerFile::rewindDirectory() {
     {
         dirIsImage = false;
         // to list directory contents we use
-        //Serial.println("cserver: this is a directory!");
+        //Debug_printv("cserver: this is a directory!");
         CServerFileSystem::session.sendCommand("disks");
         auto line = CServerFileSystem::session.readLn(); // dir header
         if(CServerFileSystem::session.is_open()) {
@@ -318,8 +379,13 @@ bool CServerFile::rewindDirectory() {
 };
 
 MFile* CServerFile::getNextFileInDir() {
+
+    Debug_printv("pre rewind");
+
     if(!dirIsOpen)
         rewindDirectory();
+
+    Debug_printv("pre dir is open");
 
     if(!dirIsOpen)
         return nullptr;
@@ -331,9 +397,11 @@ MFile* CServerFile::getNextFileInDir() {
     if(url.size()>4) // If we are not at root then add additional "/"
         new_url += "/";
 
+    Debug_printv("pre dir is image");
+
     if(dirIsImage) {
         auto line = CServerFileSystem::session.readLn();
-        Debug_printv("next file in dir got %s", line);
+        Debug_printv("next file in dir got %s", line.c_str());
         // 'ot line:'0 ␒"CIE�������������" 00�2A�
         // 'ot line:'2   "CIE+SERIAL      " PRG   2049
         // 'ot line:'1   "CIE-SYS31801    " PRG   2049
@@ -343,7 +411,7 @@ MFile* CServerFile::getNextFileInDir() {
         // 'ot line:'658 BLOCKS FREE.
 
         if(line.find('\x04')!=std::string::npos) {
-            Serial.println("No more!");
+            Debug_printv("No more!");
             dirIsOpen = false;
             return nullptr;
         }
@@ -380,7 +448,7 @@ MFile* CServerFile::getNextFileInDir() {
         // 32 62 91 68 73 83 75 32 84 79 79 76 83 93 13 No more! = > [DISK TOOLS]
 
         if(line.find('\x04')!=std::string::npos) {
-            Serial.println("No more!");
+            Debug_printv("No more!");
             dirIsOpen = false;
             return nullptr;
         }
@@ -395,7 +463,7 @@ MFile* CServerFile::getNextFileInDir() {
                 size = 683;
             }
 
-            // Debug_printv("\nurl[%s] name[%s] size[%d]\n", url.c_str(), name.c_str(), size);
+            // Debug_printv("\nurl[%s] name[%s] size[%d]\r\n", url.c_str(), name.c_str(), size);
             if(name.size() > 0)
             {
                 new_url += name;
@@ -411,7 +479,7 @@ bool CServerFile::exists() {
     return true;
 } ;
 
-size_t CServerFile::size() {
+uint32_t CServerFile::size() {
     return m_size;
 };
 

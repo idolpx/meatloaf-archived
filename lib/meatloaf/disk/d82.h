@@ -8,7 +8,7 @@
 #ifndef MEATLOAF_MEDIA_D82
 #define MEATLOAF_MEDIA_D82
 
-#include "meat_io.h"
+#include "../meatloaf.h"
 #include "d64.h"
 
 
@@ -16,11 +16,11 @@
  * Streams
  ********************************************************/
 
-class D82IStream : public D64IStream {
+class D82MStream : public D64MStream {
     // override everything that requires overriding here
 
 public:
-    D82IStream(std::shared_ptr<MStream> is) : D64IStream(is) 
+    D82MStream(std::shared_ptr<MStream> is) : D64MStream(is) 
     {
         // D82 Partition Info
         std::vector<BlockAllocationMap> b = { 
@@ -83,7 +83,7 @@ public:
 protected:
 
 private:
-    friend class D82File;
+    friend class D82MFile;
 };
 
 
@@ -91,15 +91,15 @@ private:
  * File implementations
  ********************************************************/
 
-class D82File: public D64File {
+class D82MFile: public D64MFile {
 public:
-    D82File(std::string path, bool is_dir = true) : D64File(path, is_dir) {};
+    D82MFile(std::string path, bool is_dir = true) : D64MFile(path, is_dir) {};
 
     MStream* getDecodedStream(std::shared_ptr<MStream> containerIstream) override
     {
         Debug_printv("[%s]", url.c_str());
 
-        return new D82IStream(containerIstream);
+        return new D82MStream(containerIstream);
     }
 };
 
@@ -109,18 +109,18 @@ public:
  * FS
  ********************************************************/
 
-class D82FileSystem: public MFileSystem
+class D82MFileSystem: public MFileSystem
 {
 public:
     MFile* getFile(std::string path) override {
-        return new D82File(path);
+        return new D82MFile(path);
     }
 
     bool handles(std::string fileName) override {
         return byExtension(".d82", fileName);
     }
 
-    D82FileSystem(): MFileSystem("d82") {};
+    D82MFileSystem(): MFileSystem("d82") {};
 };
 
 
