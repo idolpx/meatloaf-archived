@@ -74,17 +74,17 @@ public:
 	devDrive(IEC &iec);
 	virtual ~devDrive() {};
 
- 	virtual uint8_t command(IEC::Data &iec_data) { return 0; };
-	virtual uint8_t execute(IEC::Data &iec_data) { return 0; };
+ 	virtual uint8_t command() { return 0; };
+	virtual uint8_t execute() { return 0; };
 	virtual uint8_t status(void) { return 0; };
 
 protected:
 	// handler helpers.
-	virtual void handleListenCommand(IEC::Data &iec_data) override;
+	virtual void handleListenCommand() override;
 	virtual void handleListenData(void) override;
 	virtual void handleTalk(byte chan) override;
-	virtual void handleOpen(IEC::Data &iec_data) override;
-	virtual void handleClose(IEC::Data &iec_data) override;
+	virtual void handleOpen() override;
+	virtual void handleClose() override;
 
 private:
 	void reset(void);

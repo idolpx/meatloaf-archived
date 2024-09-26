@@ -14,30 +14,34 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Meatloaf. If not, see <http://www.gnu.org/licenses/>.
-
 //
-// https://github.com/MEGA65/open-roms/blob/master/doc/Protocol-DolphinDOS.md
-// https://mega65.github.io/open-roms/doc/Protocol-DolphinDOS.html
-// https://github.com/FeralChild64/open-roms/blob/master/src/kernal/iec_fast/dolphindos_detect.s
-// http://sta.c64.org/cbmpar41c.html
-// http://sta.c64.org/cbmpar71c.html
+// https://github.com/MEGA65/open-roms/blob/master/doc/Protocol-SauceDOS.md
+// http://www.nlq.de/
+// http://www.baltissen.org/newhtm/sourcecodes.htm
+// https://www.amigalove.com/viewtopic.php?t=1734
+// https://ar.c64.org/rrwiki/images/4/48/The_Transactor_Vol09_03_1989_Feb_JD_review.pdf
+// https://web.archive.org/web/20090826145226/http://home.arcor.de/jochen.adler/ajnjil-t.htm
+// https://web.archive.org/web/20220423162959/https://sites.google.com/site/h2obsession/CBM/C128/JiffySoft128
 //
 
-
-#ifndef PROTOCOL_DOLPHINDOS_H
-#define PROTOCOL_DOLPHINDOS_H
+#ifndef PROTOCOL_SAUCEDOS_H
+#define PROTOCOL_SAUCEDOS_H
 
 #include "_protocol.h"
-#include "../userport.h"
 
 namespace Protocol
 {
-    class DolphinDOS: public IECProtocol
-    {
+	class SauceDOS : public IECProtocol
+	{
+		public:
+			SauceDOS() {
+
+			};
+
 		protected:
 			uint8_t receiveByte(void) override;
-			bool sendByte(uint8_t data, bool signalEOI) override;
-    };
+			bool sendByte(uint8_t data, bool eoi) override;
+	};
 };
 
-#endif // PROTOCOL_DOLPHINDOS_H
+#endif // PROTOCOL_SAUCEDOS_H

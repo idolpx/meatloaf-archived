@@ -88,8 +88,8 @@ public:
 
 	uint8_t service(void);
 	
-	virtual uint8_t command(IEC::Data &iec_data) = 0;
-	virtual uint8_t execute(IEC::Data &iec_data) = 0;
+	virtual uint8_t command() = 0;
+	virtual uint8_t execute() = 0;
 	virtual uint8_t status(void) = 0;
 
 	uint8_t device_id;
@@ -99,15 +99,14 @@ protected:
 	void reset(void);
 
 	// handler helpers.
-	virtual void handleListenCommand(IEC::Data &iec_data) = 0;
+	virtual void handleListenCommand() = 0;
 	virtual void handleListenData(void) = 0;
 	virtual void handleTalk(byte chan) = 0;
-	virtual void handleOpen(IEC::Data &iec_data) = 0;
-	virtual void handleClose(IEC::Data &iec_data) = 0;
+	virtual void handleOpen() = 0;
+	virtual void handleClose() = 0;
 
 	// our iec low level driver:
 	IEC &m_iec;
-	IEC::Data &m_iec_data;	// IEC command buffer struct
 
 	// This is set after an open command and determines what to send next
 	byte m_openState;
@@ -115,8 +114,8 @@ protected:
 	DeviceDB m_device;
 
 private:
-	Channel channelSelect(IEC::Data &iec_data);
-	bool channelClose(IEC::Data &iec_data, bool close_all = false);
+	Channel channelSelect();
+	bool channelClose(bool close_all = false);
 
 };
 

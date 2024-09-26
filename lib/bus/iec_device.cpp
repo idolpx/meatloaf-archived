@@ -153,25 +153,25 @@ uint8_t iecDevice::service(void)
 } // service
 
 
-Channel iecDevice::channelSelect(IEC::Data &iec_data)
+Channel iecDevice::channelSelect()
 {
-	size_t key = (iec_data.device * 100) + iec_data.channel;
+	size_t key = (IEC->data.device * 100) + IEC->data.channel;
 	if(channels.find(key)!=channels.end()) {
 		return channels.at(key);
 	}
 
 	// create and add channel if not found
 	auto newChannel = Channel();
-	newChannel.url = iec_data.content;
-	Debug_printv("CHANNEL device[%d] channel[%d] url[%s]", iec_data.device, iec_data.channel, iec_data.content.c_str());
+	newChannel.url = IEC->data.content;
+	Debug_printv("CHANNEL device[%d] channel[%d] url[%s]", IEC->data.device, IEC->data.channel, IEC->data.content.c_str());
 
 	channels.insert(std::make_pair(key, newChannel));
 	return newChannel;
 }
 
-bool iecDevice::channelClose(IEC::Data &iec_data, bool close_all)
+bool iecDevice::channelClose(, bool close_all)
 {
-	size_t key = (iec_data.device * 100) + iec_data.channel;
+	size_t key = (IEC->data.device * 100) + IEC->data.channel;
 	if(channels.find(key)!=channels.end()) {
 		return channels.erase(key);
 	}

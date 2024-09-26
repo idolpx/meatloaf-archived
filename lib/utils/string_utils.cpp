@@ -1,15 +1,22 @@
 #include "string_utils.h"
 
-//#include "../../include/petscii.h"
-//#include "../../include/debug.h"
-#include "U8Char.h"
-
 #include <algorithm>
 #include <cstdarg>
 #include <cstring>
 #include <cmath>
 #include <sstream>
 #include <iomanip>
+//#include <mbedtls/sha1.h>
+//#include <mbedtls/base64.h>
+
+//#include "../../include/petscii.h"
+#include "../../include/debug.h"
+#include "U8Char.h"
+
+
+#if defined(_WIN32)
+#include "asprintf.h" // use asprintf from libsmb2
+#endif
 
 // Copy string to char buffer
 void copyString(const std::string& input, char *dst, size_t dst_size)
@@ -35,6 +42,11 @@ namespace mstr {
     // trim from end (in place)
     void rtrim(std::string &s)
     {
+        // CR
+        s.erase(
+            std::find_if(s.rbegin(), s.rend(), [](int ch) { return (ch != 0x0D); }).base(), s.end());
+        
+        // SPACE
         s.erase(
             std::find_if(s.rbegin(), s.rend(), [](int ch) { return !std::isspace(ch); }).base(), s.end());
     }
@@ -57,6 +69,31 @@ namespace mstr {
         return ch == '\xA0' || std::isspace(ch);
     }
 
+    // is OSX/Windows junk system file
+    bool isJunk(std::string &s)
+    {
+        std::vector<std::string> names = {
+            // OSX
+            "/._",
+            "/.DS_Store",
+            "/.fseventsd",
+            "/.Spotlight-V",
+            "/.TemporaryItems",
+            "/.Trashes",
+            "/.VolumeIcon.icns",
+
+            // Windows
+            "/Desktop.ini",
+            "/Thumbs.ini"
+        };
+
+        for (auto it = begin (names); it != end (names); ++it) {
+            if (s.contains(it->c_str()))
+                return true;
+        }
+        
+        return false;
+    }
 
 
     std::string drop(std::string str, size_t count) {
@@ -181,16 +218,16 @@ namespace mstr {
         unsigned int index;
 
         for (index = 0; index < s1.size(); index++) {
-            switch (s1[index]) {
+            switch ((unsigned char)s1[index]) {
                 case '*':
                     return true; /* rest is not interesting, it's a match */
                 case '?':
-                    if (s2[index] == 0xa0) {
+                    if ((unsigned char)s2[index] == 0xa0) {
                         return false; /* wildcard, but the other is too short */
                     }
                     break;
                 case 0xa0: /* This one ends, let's see if the other as well */
-                    return (s2[index] == 0xa0);
+                    return ((unsigned char)s2[index] == 0xa0);
                 default:
                     if (s1[index] != s2[index]) {
                         return false; /* does not match */
@@ -230,18 +267,21 @@ namespace mstr {
     // }
 
     // convert PETSCII to UTF8, using methods from U8Char
-    std::string toUTF8(std::string &petsciiInput)
+    std::string toUTF8(const std::string &petsciiInput)
     {
         std::string utf8string;
         for(char petscii : petsciiInput) {
-            U8Char u8char(petscii);
-            utf8string+=u8char.toUtf8();
+            if(petscii > 0)
+            {
+                U8Char u8char(petscii);
+                utf8string+=u8char.toUtf8();
+            }
         }
         return utf8string;
     }
 
     // convert UTF8 to PETSCII, using methods from U8Char
-    std::string toPETSCII2(std::string &utfInputString)
+    std::string toPETSCII2(const std::string &utfInputString)
     {
         std::string petsciiString;
         char* utfInput = (char*)utfInputString.c_str();
@@ -256,11 +296,37 @@ namespace mstr {
         return petsciiString;
     }
 
+    // convert bytes to hex
+    std::string toHex(const uint8_t *input, size_t size)
+    {
+        std::stringstream ss;
+        for(int i=0; i<size; ++i)
+            ss << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << (int)input[i];
+        return ss.str();
+    }
+    // convert string to hex
+    std::string toHex(const std::string &input)
+    {
+        return toHex((const uint8_t *)input.c_str(), input.size());
+    }
+
+    // convert hex char to it's integer value
+    char fromHex(char ch)
+    {
+        return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
+    }
+
+    bool isHex(std::string &s)
+    {
+        return std::all_of(s.begin(), s.end(), 
+                        [](unsigned char c) { return ::isxdigit(c); });
+    }
+
     // convert to A0 space to 20 space (in place)
     void A02Space(std::string &s)
     {
         std::transform(s.begin(), s.end(), s.begin(),
-                    [](unsigned char c) { return (c == '\xA0') ? '\x20': c; });
+                    [](unsigned char c) { return (c == 0xa0) ? 0x20: c; });
     }
 
     bool isText(std::string &s) 
@@ -379,8 +445,16 @@ namespace mstr {
         {
             std::string::value_type c = (*i);
 
+            // Change space to '+'
+            // if ( c == ' ')
+            // {
+            //     escaped << '+';
+            //     continue;
+            // }
+
             // Keep alphanumeric and other accepted characters intact
-            if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == '.' || c == '~' || c == '/' || c == ' ')
+            //if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == '.' || c == '~' || c == '/' || c == ' ')
+            if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == '.' || c == '~' || c == '/' || c == '+')
             {
                 escaped << c;
                 continue;
@@ -395,30 +469,69 @@ namespace mstr {
         return escaped.str();
     }
 
-    std::string urlDecode(std::string s){
-        std::string ret;
+    void urlDecode(char *s, size_t size, bool alter_pluses)
+    {
         char ch;
-        int i, ii, len = s.length();
+        int i = 0, ii = 0;
 
-        for (i = 0; i < len; i++)
-        {
-            if (s[i] != '%')
+        while (s[i] != '\0' && i < size) {
+            if (alter_pluses && s[i] == '+')
             {
-                if (s[i] == '+')
-                    ret += ' ';
-                else
-                    ret += s[i];
+                s[ii++] = ' ';
+                i++;
+            } 
+            else if ((s[i] == '%') && 
+                    isxdigit(s[i + 1]) && 
+                    isxdigit(s[i + 2]) &&
+                    (i + 2 < size))
+            {
+                ch = fromHex(s[i + 1]) << 4 | fromHex(s[i + 2]);
+                s[ii++] = ch;
+                i += 3; // Skip past the percent encoding.
             }
             else
             {
-                sscanf(s.substr(i + 1, 2).c_str(), "%x", &ii);
-                ch = static_cast<char>(ii);
-                ret += ch;
-                i += 2;
+                s[ii++] = s[i++];
             }
         }
+        s[ii] = '\0'; // Null-terminate the decoded string.
+    }
 
-        return ret;
+    void urlDecode(char *s, size_t size)
+    {
+        urlDecode(s, size, true);
+    }
+
+    std::string urlDecode(const std::string& s, bool alter_pluses)
+    {
+        if (s.empty()) return s;
+
+        size_t size = s.size() + 1; // +1 for null terminator
+        char* buffer = new char[size];
+        std::copy(s.begin(), s.end(), buffer);
+        buffer[s.size()] = '\0'; // Ensure null termination
+
+        urlDecode(buffer, size, alter_pluses);
+
+        std::string result(buffer);
+        delete[] buffer;
+        return result;
+    }
+
+    std::string sha1(const std::string &s)
+    {
+        unsigned char hash[21] = { 0x00 };
+        mbedtls_sha1((const unsigned char *)s.c_str(), s.length(), hash);
+        // unsigned char output[64];
+        // size_t outlen;
+        // mbedtls_base64_encode(output, 64, &outlen, hash, 20);
+        std::string o(reinterpret_cast< char const* >(hash));
+        return toHex(o);
+    }
+
+    std::string urlDecode(const std::string& s)
+    {
+        return urlDecode(s, true);
     }
 
     std::string format(const char *format, ...)
@@ -567,4 +680,5 @@ namespace mstr {
         //     parent = streamFile->url;
         return parent + "/" + plus;
     }
+
 }

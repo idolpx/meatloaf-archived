@@ -83,18 +83,20 @@
 
 #if defined(ESP8266)
     // ESP8266 GPIO to C64 IEC Serial Port
-    #define IEC_PIN_ATN          D5     // IO14  INPUT/OUTPUT
-    #define IEC_PIN_CLK          D6     // IO12  INPUT/OUTPUT
-    #define IEC_PIN_DATA         D7     // IO13  INPUT/OUTPUT
-    #define IEC_PIN_SRQ          D1     // IO5   INPUT/OUTPUT
-    #define IEC_PIN_RESET        D0     // IO4   INPUT/OUTPUT
+    #define PIN_IEC_ATN          D5     // IO14  INPUT/OUTPUT
+    #define PIN_IEC_CLK_IN       D6
+    #define PIN_IEC_CLK_OUT      D6
+    #define PIN_IEC_DATA_IN      D7     // IO13  INPUT/OUTPUT
+    #define PIN_IEC_DATA_OUT     D7     // IO13  INPUT/OUTPUT
+    #define PIN_IEC_SRQ          D1     // IO5   INPUT/OUTPUT
+    #define PIN_IEC_RESET        D0     // IO4   INPUT/OUTPUT
 #elif defined(ESP32)
     // ESP32 GPIO to C64 IEC Serial Port
-    #define IEC_PIN_ATN          26     // SIO13 INTERRUPT
-    #define IEC_PIN_CLK          27     // SIO1  CLOCK IN
-    #define IEC_PIN_DATA         32     // SIO3  CLOCK OUT
-    #define IEC_PIN_SRQ          22     // SIO9  PROCEED
-    #define IEC_PIN_RESET        36     // SIO7  MOTOR
+    #define PIN_IEC_ATN          26     // SIO13 INTERRUPT
+    #define PIN_IEC_CLK          27     // SIO1  CLOCK IN
+    #define PIN_IEC_DATA         32     // SIO3  CLOCK OUT
+    #define PIN_IEC_SRQ          22     // SIO9  PROCEED
+    #define PIN_IEC_RESET        36     // SIO7  MOTOR
                                         // SIO4  GND
 #endif
 

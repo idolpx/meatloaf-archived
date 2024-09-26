@@ -1,6 +1,7 @@
 #ifndef STRING_UTILS_H
 #define STRING_UTILS_H
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -8,17 +9,17 @@
 
 void copyString(const std::string& input, char *dst, size_t dst_size);
 
-// inline constexpr auto hash_djb2a(const std::string_view sv) {
-//     unsigned long hash{ 5381 };
-//     for (unsigned char c : sv) {
-//         hash = ((hash << 5) + hash) ^ c;
-//     }
-//     return hash;
-// }
+inline constexpr auto hash_djb2a(const std::string_view sv) {
+    unsigned long hash{ 5381 };
+    for (unsigned char c : sv) {
+        hash = ((hash << 5) + hash) ^ c;
+    }
+    return hash;
+}
 
-// inline constexpr auto operator"" _sh(const char *str, size_t len) {
-//     return hash_djb2a(std::string_view{ str, len });
-// }
+inline constexpr auto operator"" _sh(const char *str, size_t len) {
+    return hash_djb2a(std::string_view{ str, len });
+}
 
 namespace mstr {
     std::string drop(std::string str, size_t count);
@@ -48,16 +49,25 @@ namespace mstr {
     std::string joinToString(std::vector<std::string>, std::string separator);
 
     std::string urlEncode(const std::string &s);
-    std::string urlDecode(std::string s);
+
+    std::string urlDecode(const std::string& s, bool alter_pluses);
+    std::string urlDecode(const std::string& s);
+    void urlDecode(char *s, size_t size, bool alter_pluses);
+    void urlDecode(char *s, size_t size);
+
+    std::string sha1(const std::string &s);
 
     // void toASCII(std::string &s);
     // void toPETSCII(std::string &s);
-    std::string toUTF8(std::string &petsciiInput);
-    std::string toPETSCII2(std::string &utfInputString);
+    std::string toUTF8(const std::string &petsciiInput);
+    std::string toPETSCII2(const std::string &utfInputString);
+    std::string toHex(const uint8_t *input, size_t size);
+    std::string toHex(const std::string &input);
 
     bool isText(std::string &s);
     bool isNumeric(std::string &s);
     bool isA0Space(int ch);
+    bool isJunk(std::string &s);
     void A02Space(std::string &s);
 
     std::string format(const char *format, ...);

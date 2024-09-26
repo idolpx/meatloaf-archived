@@ -27,7 +27,7 @@
 #include "wrappers/iec_buffer.h"
 #include "wrappers/directory_stream.h"
 
-using namespace CBM;
+//using namespace CBM;
 using namespace Protocol;
 
 
@@ -324,29 +324,29 @@ void devDrive::prepareFileStream(std::string url)
 
 
 
-void devDrive::handleListenCommand(IEC::Data &iec_data)
+void devDrive::handleListenCommand()
 {
-	if (m_device.select(iec_data.device))
+	if (m_device.select(IEC->data.device))
 	{
 		Debug_printv("!!!! device changed: unit:%d current url: [%s]", m_device.id(), m_device.url().c_str());
 		m_mfile.reset(MFSOwner::File(m_device.url()));
 		Debug_printv("m_mfile[%s]", m_mfile->url.c_str());
 	}
 
-	size_t channel = iec_data.channel;
+	size_t channel = IEC->data.channel;
 	m_openState = O_NOTHING;
 
-	if (iec_data.content.size() == 0 )
+	if (IEC->data.content.size() == 0 )
 	{
 		Debug_printv("No command to process");
 
-		if ( iec_data.channel == CMD_CHANNEL )
+		if ( IEC->data.channel == CHANNEL_COMMAND )
 			m_openState = O_STATUS;
 		return;
 	}
 
 	// 1. obtain command and fullPath
-	auto commandAndPath = parseLine(iec_data.content, channel);
+	auto commandAndPath = parseLine(IEC->data.content, channel);
 	auto referencedPath = Meat::New<MFile>(commandAndPath.fullPath);
 
 	Debug_printv("command[%s]", commandAndPath.command.c_str());
@@ -461,22 +461,22 @@ void devDrive::handleTalk(byte chan)
 } // handleTalk
 
 
-void devDrive::handleOpen(IEC::Data &iec_data)
+void devDrive::handleOpen()
 {
-	Debug_printv("OPEN Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
-	auto channel = channels[iec_data.command];
+	Debug_printv("OPEN Named Channel (%.2d Device) (%.2d Channel)", IEC->data.device, IEC->data.channel);
+	auto channel = channels[IEC->data.command];
 
 	// Are we writing?  Appending?
-	channels[iec_data.command].url = iec_data.content;
-	channels[iec_data.command].cursor = 0;
-	channels[iec_data.command].writing = 0;
+	channels[IEC->data.command].url = IEC->data.content;
+	channels[IEC->data.command].cursor = 0;
+	channels[IEC->data.command].writing = 0;
 } // handleOpen
 
 
-void devDrive::handleClose(IEC::Data &iec_data)
+void devDrive::handleClose()
 {
-	Debug_printv("CLOSE Named Channel (%.2d Device) (%.2d Channel)", iec_data.device, iec_data.channel);
-	auto channel = channels[iec_data.command];
+	Debug_printv("CLOSE Named Channel (%.2d Device) (%.2d Channel)", IEC->data.device, IEC->data.channel);
+	auto channel = channels[IEC->data.command];
 
 	// If writing update BAM & Directory
 
@@ -492,7 +492,7 @@ void devDrive::sendMeatloafSystemInformation()
 	Debug_printf("\r\nsendDeviceInfo:\r\n");
 
 	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
+	uint16_t basicPtr = CBM_BASIC_START;
 
 	// #if defined(USE_LITTLEFS)
 	// FSInfo64 fs_info;
@@ -502,8 +502,8 @@ void devDrive::sendMeatloafSystemInformation()
 	dtostrf(getFragmentation(), 3, 2, floatBuffer);
 
 	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	m_iec.send(CBM_BASIC_START bitand 0xff);
+	m_iec.send((CBM_BASIC_START >> 8) bitand 0xff);
 	Debug_println("");
 
 	// Send List HEADER
@@ -570,11 +570,11 @@ void devDrive::sendMeatloafVirtualDeviceStatus()
 	Debug_printf("\r\nsendDeviceStatus:\r\n");
 
 	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
+	uint16_t basicPtr = CBM_BASIC_START;
 
 	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	m_iec.send(CBM_BASIC_START bitand 0xff);
+	m_iec.send((CBM_BASIC_START >> 8) bitand 0xff);
 	Debug_println("");
 
 	// Send List HEADER
@@ -739,11 +739,11 @@ void devDrive::sendListing()
 	}
 
 	// Reset basic memory pointer:
-	uint16_t basicPtr = C64_BASIC_START;
+	uint16_t basicPtr = CBM_BASIC_START;
 
 	// Send load address
-	m_iec.send(C64_BASIC_START bitand 0xff);
-	m_iec.send((C64_BASIC_START >> 8) bitand 0xff);
+	m_iec.send(CBM_BASIC_START bitand 0xff);
+	m_iec.send((CBM_BASIC_START >> 8) bitand 0xff);
 	byte_count += 2;
 	Debug_println("");
 

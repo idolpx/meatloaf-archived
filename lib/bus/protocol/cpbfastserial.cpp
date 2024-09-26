@@ -79,7 +79,7 @@
 // 		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common 
 // 		// transmission sequence.
 
-// 		flags or_eq EOI_RECVD;
+// 		flags |= EOI_RECVD;
 
 // 		// Acknowledge by pull down data more than 60us
 // 		pull(PIN_IEC_DATA_OUT);
@@ -177,7 +177,7 @@
 // 	// happened. If EOI was sent or received in this last transmission, both talker and listener "letgo."  After a suitable pause,
 // 	// the Clock and Data lines are RELEASED to false and transmission stops.
 
-// 	// if(flags bitand EOI_RECVD)
+// 	// if(flags & EOI_RECVD)
 // 	// {
 // 	// 	// EOI Received
 // 	// 	// delayMicroseconds(TIMING_Tfr);
@@ -237,7 +237,7 @@
 // 		// line  is  true  whether  or  not  we have gone through the EOI sequence; we're back to a common
 // 		// transmission sequence.
 
-// 		//flags or_eq EOI_RECVD;
+// 		//flags |= EOI_RECVD;
 
 // 		// Signal eoi by waiting 200 us
 // 		delayMicroseconds(TIMING_Tye);

@@ -113,7 +113,7 @@ void setup()
 
         // Setup interrupt for ATN
         attachInterrupt(
-            digitalPinToInterrupt(IEC_PIN_ATN),
+            digitalPinToInterrupt(PIN_IEC_ATN),
             onAttention,
             FALLING
         );
