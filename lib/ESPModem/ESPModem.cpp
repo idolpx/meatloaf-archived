@@ -518,8 +518,8 @@ void ESPModem::setup()
   serialspeed = EEPROM.read(BAUD_ADDRESS);
   // Check if it's out of bounds-- we have to be able to talk
   if (serialspeed < 0 || serialspeed > sizeof(bauds)) {
-    //serialspeed = 2; // 2400
-    serialspeed = 11; // 921600
+    serialspeed = 2; // 2400
+    //serialspeed = 11; // 921600
   }
 
   Serial.begin(bauds[serialspeed]);
